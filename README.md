@@ -1,1 +1,1 @@
-# geojero-fe
+# geojero-client
