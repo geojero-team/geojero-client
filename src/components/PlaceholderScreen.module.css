@@ -1,0 +1,73 @@
+.header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: calc(env(safe-area-inset-top, 0px) + var(--space-sm)) var(--space-lg)
+    var(--space-sm);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-surface);
+}
+
+.back {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-left: -8px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.back:active {
+  background: var(--bg-page);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-title);
+  color: var(--text-primary);
+}
+
+/* 뒤로가기 버튼이 없는 탭 화면은 제목이 왼쪽 여백에 바로 붙습니다. */
+.titleTab {
+  padding: var(--space-xs) 0;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-xl) var(--space-lg);
+  background: var(--bg-page);
+}
+
+.lead {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+.list {
+  margin: var(--space-lg) 0 0;
+  padding: var(--space-xs) 0;
+  list-style: none;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--bg-surface);
+}
+
+.item {
+  padding: var(--space-md) var(--space-lg);
+  font: var(--type-body);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+.item + .item {
+  border-top: 1px solid var(--border-default);
+}

@@ -1,0 +1,31 @@
+/* 조건 칩 아래에 뜨는 상태 표시 */
+.pending,
+.error {
+  position: absolute;
+  z-index: 4;
+  top: calc(env(safe-area-inset-top, 0px) + 62px);
+  left: var(--space-md);
+  right: var(--space-md);
+  margin: 0 auto;
+  width: fit-content;
+  max-width: calc(100% - var(--space-xl));
+  padding: 5px var(--space-md);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--elevation-chip);
+  font: var(--type-label);
+  text-align: center;
+  word-break: keep-all;
+}
+
+.pending {
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
+
+.error {
+  border: 1px solid var(--status-no);
+  background: var(--status-no-bg);
+  color: var(--status-no);
+  font: var(--type-caption);
+}

@@ -1,0 +1,99 @@
+/* 지도 위에 떠 있는 줄. 칩만 클릭을 받고 나머지는 지도로 통과시킵니다. */
+.bar {
+  position: absolute;
+  z-index: 4;
+  top: calc(env(safe-area-inset-top, 0px) + var(--space-md));
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--space-md);
+  pointer-events: none;
+}
+
+.chip {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  box-shadow: var(--elevation-chip);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chip::-webkit-scrollbar {
+  display: none;
+}
+
+/* 칸마다 따로 눌립니다. 눌리는 곳이 알약 전체가 아니라는 걸
+   hover/active 배경으로 알려줍니다. */
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  transition: background-color 120ms ease;
+}
+
+.segment:hover {
+  background: var(--bg-page);
+}
+
+.segment:active {
+  background: var(--bg-pressed);
+}
+
+.divider {
+  flex: none;
+  width: 1px;
+  height: 14px;
+  background: var(--border-default);
+}
+
+/* 아이콘 색은 조건 종류를 구분하는 용도입니다.
+   민트(성립)·빨강(불성립)은 지도에서 판정 결과를 뜻하므로 여기 쓰지 않습니다. */
+.iconPlace,
+.iconDate,
+.iconDepart,
+.iconReturn {
+  flex: none;
+}
+
+.iconPlace {
+  color: var(--accent-place);
+}
+
+.iconDate {
+  color: var(--accent-date);
+}
+
+.iconDepart {
+  color: var(--accent-depart);
+}
+
+.iconReturn {
+  color: var(--accent-return);
+}
+
+.value {
+  font: var(--type-caption);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.arrow {
+  margin: 0 1px;
+  font: var(--type-label);
+  color: var(--text-secondary);
+}

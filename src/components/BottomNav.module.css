@@ -1,0 +1,33 @@
+.nav {
+  flex: none;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-surface);
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition: color 120ms ease;
+}
+
+.tab:active {
+  background: var(--bg-page);
+}
+
+.label {
+  font: var(--type-label);
+}
+
+.active {
+  color: var(--brand-strong);
+}

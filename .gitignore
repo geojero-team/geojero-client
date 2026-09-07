@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# 작업용 레퍼런스 이미지 (프로젝트 루트에 둔 것만)
+# 맨 앞 "/" 가 루트를 뜻해서 src/assets, public 안의 이미지는 그대로 올라갑니다.
+/*.png
+/*.jpg
+/*.jpeg
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

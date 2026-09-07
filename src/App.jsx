@@ -1,21 +1,38 @@
-import { useEffect, useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { MAP_PATH } from './components/BottomNav'
+import ConditionsPage from './pages/ConditionsPage'
+import CourseDetailPage from './pages/CourseDetailPage'
+import HomePage from './pages/HomePage'
+import MapPage from './pages/MapPage'
+import MyPlansPage from './pages/MyPlansPage'
+import SpotsPage from './pages/SpotsPage'
 
-function App() {
-  const [status, setStatus] = useState("호출 중");
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/health`)
-      .then((res) => (res.ok ? res.text() : Promise.reject(res.status)))
-      .then((data) => setStatus(`성공: ${data}`))
-      .catch((err) => setStatus(`실패: ${err}`));
-  }, []);
-
+/**
+ * 하단 탭 4개 — 홈 / 스팟 / 지도 / 내 일정.
+ *
+ * 지도는 아직 '/'에 있습니다. 홈 화면이 만들어지면 지도를 '/map'으로 옮기고
+ * BottomNav의 MAP_PATH만 바꾸면 나머지는 따라옵니다.
+ *
+ *   /                 지도 (개발 중)
+ *   /home             홈
+ *   /spots            스팟
+ *   /my               내 일정
+ *   /conditions       판정 조건 — 지도 상단 칩이 인라인 편집으로 바뀌어
+ *                     지금은 아무 데서도 링크하지 않습니다
+ *   /courses/:id      코스 상세 — 역산 타임라인
+ */
+export default function App() {
   return (
-    <div style={{ padding: 40, fontSize: 20 }}>
-      <p>API_BASE: {import.meta.env.VITE_API_BASE_URL ?? "(없음)"}</p>
-      <p>{status}</p>
-    </div>
-  );
+    <BrowserRouter>
+      <Routes>
+        <Route path={MAP_PATH} element={<MapPage />} />
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/spots" element={<SpotsPage />} />
+        <Route path="/my" element={<MyPlansPage />} />
+        <Route path="/conditions" element={<ConditionsPage />} />
+        <Route path="/courses/:courseId" element={<CourseDetailPage />} />
+        <Route path="*" element={<Navigate to={MAP_PATH} replace />} />
+      </Routes>
+    </BrowserRouter>
+  )
 }
-
-export default App;

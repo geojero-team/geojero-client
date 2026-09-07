@@ -1,0 +1,279 @@
+/* 헤더 아래 남은 공간을 전부 차지합니다. */
+.root {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  background: var(--map-sea);
+}
+
+/* ── 마커 ─────────────────────────────────────────────────────────────────
+   .pin 은 56x56 투명 박스이고, CustomOverlay가 이 박스의 "아래 가운데"를
+   좌표에 맞춥니다(yAnchor:1). 즉 꼬리 끝이 실제 지점입니다.
+   몸통은 그 위로 떠 있어서, 마커끼리 겹쳐도 카드가 포개진 것처럼 읽힙니다.
+
+   [주의] 아래 치수를 바꾸면 MapView.jsx의 MARKER_* / LABEL_* 상수도
+   같이 고쳐야 이름표 충돌 계산이 어긋나지 않습니다. */
+
+.pin {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  transform-origin: 50% 100%; /* 확대해도 꼬리 끝은 좌표에 붙어 있어야 합니다 */
+  transition: transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 코스 사진을 민트 링이 감쌉니다. 바깥 흰 테두리는 지도 위에서 마커를 띄우는 용도. */
+.pinBody {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  border: 3px solid var(--brand-strong);
+  background: var(--brand-tint);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 2px var(--bg-surface),
+    0 3px 8px rgba(15, 23, 30, 0.32);
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.pinBody img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 몸통과 좌표를 잇는 꼬리. 끝이 정확히 지점에 닿습니다. */
+.pinTail {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 9px solid var(--brand-strong);
+  filter: drop-shadow(0 2px 1px rgba(15, 23, 30, 0.25));
+  transition: border-top-color 140ms ease;
+}
+
+/* 이름표는 알약 대신 흰 테두리 글씨로 둡니다.
+   지도 위에 흰 덩어리가 늘어나면 정작 마커가 안 보입니다.
+
+   흐린 그림자로는 바다·경계선 위에서 글씨가 묻힙니다. text-stroke로 진짜 흰
+   외곽선을 두르고 paint-order로 글자를 그 위에 얹어야 어디서든 또렷합니다. */
+.pinLabel {
+  position: absolute;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--text-primary);
+  font: var(--type-label);
+  font-weight: 700;
+  white-space: nowrap;
+  -webkit-text-stroke: 3.5px var(--bg-surface);
+  paint-order: stroke fill;
+  text-shadow: 0 1px 2px rgb(255 255 255 / 0.9);
+  transition:
+    color 140ms ease,
+    opacity 140ms ease;
+}
+
+/* 아래가 다른 마커에 막혔을 때 이름표를 몸통 위로 뒤집습니다. */
+.pinLabelAbove {
+  top: auto;
+  bottom: 50px;
+}
+
+/* 불성립 — 순한 빨강 링 + 흑백 사진.
+   "회색"이면 그냥 비활성처럼 보이는데, 이건 판정 결과라 색으로 말해야 합니다.
+   다만 배지에 쓰는 생빨강(status/no)은 지도에 상시로 깔리면 시끄러워서
+   한 톤 눌러둔 status/no-soft를 씁니다. */
+.pinNo .pinBody {
+  border-color: var(--status-no-soft);
+}
+
+.pinNo .pinTail {
+  border-top-color: var(--status-no-soft);
+}
+
+.pinNo .pinBody img {
+  filter: grayscale(1);
+  opacity: 0.72;
+}
+
+/* 이름표도 링과 같은 색으로. 회색으로 두면 "비활성"으로 읽히고 잘 보이지도 않습니다. */
+.pinNo .pinLabel {
+  color: var(--status-no-soft);
+}
+
+.pinSelected {
+  transform: scale(1.12);
+}
+
+.pinSelected .pinBody {
+  box-shadow:
+    0 0 0 2px var(--bg-surface),
+    0 0 0 6px var(--brand-tint),
+    0 4px 10px rgba(15, 23, 30, 0.34);
+}
+
+.pinSelected .pinLabel {
+  color: var(--brand-strong);
+  font-weight: 700;
+}
+
+.pinNo.pinSelected .pinBody {
+  box-shadow:
+    0 0 0 2px var(--bg-surface),
+    0 0 0 6px var(--status-no-bg),
+    0 4px 10px rgba(15, 23, 30, 0.34);
+}
+
+.pinNo.pinSelected .pinLabel {
+  color: var(--status-no);
+  font-weight: 700;
+}
+
+/* ── 지도 컨트롤 ──────────────────────────────────────────────────────────
+   하단 코스 카드와 겹치지 않도록 우측 상단에 둡니다. */
+
+.controls {
+  position: absolute;
+  z-index: 2;
+  right: var(--space-lg);
+  /* 위에 떠 있는 조건 알약 줄 아래로 내려둡니다. */
+  top: calc(env(safe-area-inset-top, 0px) + 66px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.controlButton {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: var(--elevation-chip);
+}
+
+.controlButton:active {
+  background: var(--bg-page);
+}
+
+.zoomGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.zoomGroup .controlButton:first-child {
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
+.zoomGroup .controlButton:last-child {
+  border-radius: 0 0 var(--radius-card) var(--radius-card);
+  margin-top: -1px;
+}
+
+/* ── 로딩 / 에러 ──────────────────────────────────────────────────────────*/
+
+.overlayState {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-2xl);
+  text-align: center;
+  background: var(--bg-surface);
+}
+
+/* 로딩 중에도 지도 자리처럼 보이게 — 바다 위에 모래색 섬 하나 */
+.stateLoading {
+  background:
+    radial-gradient(
+      68% 44% at 52% 54%,
+      var(--map-land) 0 62%,
+      transparent 63%
+    ),
+    var(--map-sea);
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-pill);
+  border: 3px solid var(--border-default);
+  border-top-color: var(--brand-strong);
+  animation: spin 720ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+  .pin {
+    transition: none;
+  }
+}
+
+.stateTitle {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.stateText {
+  margin: 0;
+  max-width: 30ch;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+.errorIcon {
+  color: var(--status-no);
+}
+
+.retryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+  padding: 10px var(--space-lg);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--brand-strong);
+  color: var(--text-on-brand);
+  font: var(--type-body-strong);
+}
