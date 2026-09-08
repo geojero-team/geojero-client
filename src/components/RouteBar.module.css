@@ -1,0 +1,67 @@
+.bar {
+  position: absolute;
+  z-index: 6;
+  left: 0;
+  right: 0;
+  /* 하단 탭바 바로 위. 코스 카드는 이 줄 위로 올라옵니다. */
+  bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+  padding: var(--space-sm) 0 var(--space-md);
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-surface);
+}
+
+/* 안내 문구가 위, 버튼이 아래. 문구는 왼쪽에 붙입니다 —
+   버튼을 훑기 전에 "이게 뭔지"를 먼저 읽는 순서가 자연스럽습니다. */
+.hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: 0 0 var(--space-sm);
+  padding: 0 var(--space-lg);
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+.scroller {
+  display: flex;
+  gap: 6px;
+  padding: 0 var(--space-md);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding: 8px var(--space-md);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  white-space: nowrap;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.chip:active {
+  filter: brightness(0.96);
+}
+
+.chipOn {
+  border-color: var(--brand-strong);
+  background: var(--brand-tint);
+  color: var(--brand-strong);
+}
+
+.label {
+  font: var(--type-caption);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

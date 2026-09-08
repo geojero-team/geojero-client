@@ -5,8 +5,13 @@
   z-index: 5;
   left: 0;
   right: 0;
-  /* 하단 탭바 위에 앉습니다. 탭바를 덮으면 다른 화면으로 못 넘어갑니다. */
-  bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+  /* 하단 탭바 + 추천 코스 버튼 줄 위에 앉습니다.
+     탭바를 덮으면 다른 화면으로 못 넘어가고, 버튼 줄을 덮으면 코스를 못 바꿉니다.
+     --stack-offset(버튼 줄 높이)은 인라인 스타일로 들어옵니다. */
+  bottom: calc(
+    var(--nav-height) + env(safe-area-inset-bottom, 0px) +
+      var(--stack-offset, 0px)
+  );
   padding: var(--space-md) var(--space-lg) var(--space-lg);
   border-top: 1px solid var(--border-default);
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
@@ -42,6 +47,19 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-sm);
+}
+
+.badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.strategy {
+  font: var(--type-label);
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .badge {

@@ -101,6 +101,46 @@
   bottom: 50px;
 }
 
+/* 조건을 아직 안 고른 채 지도만 둘러보는 상태.
+   판정을 하지 않았으므로 색으로 성립/불성립을 말하면 안 됩니다. 중립 회색만. */
+.pinNeutral .pinBody {
+  border-color: var(--status-dim);
+}
+
+.pinNeutral .pinTail {
+  border-top-color: var(--status-dim);
+}
+
+.pinNeutral.pinSelected .pinBody {
+  box-shadow:
+    0 0 0 2px var(--bg-surface),
+    0 0 0 6px var(--status-unknown-bg),
+    0 4px 10px rgba(15, 23, 30, 0.34);
+}
+
+.pinNeutral.pinSelected .pinLabel {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* 코스를 골랐을 때만 붙는 방문 순서. 선만으로는 어디가 시작인지 모릅니다. */
+.pinOrder {
+  position: absolute;
+  top: 4px;
+  left: calc(50% + 6px);
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--bg-surface);
+  background: var(--brand-strong);
+  color: var(--text-on-brand);
+  font: var(--type-label);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(15, 23, 30, 0.3);
+}
+
 /* 불성립 — 순한 빨강 링 + 흑백 사진.
    "회색"이면 그냥 비활성처럼 보이는데, 이건 판정 결과라 색으로 말해야 합니다.
    다만 배지에 쓰는 생빨강(status/no)은 지도에 상시로 깔리면 시끄러워서
@@ -154,12 +194,11 @@
 /* ── 지도 컨트롤 ──────────────────────────────────────────────────────────
    하단 코스 카드와 겹치지 않도록 우측 상단에 둡니다. */
 
+/* top은 인라인 스타일로 들어옵니다 — 조건 칩이 있을 때와 없을 때 위치가 달라서. */
 .controls {
   position: absolute;
   z-index: 2;
   right: var(--space-lg);
-  /* 위에 떠 있는 조건 알약 줄 아래로 내려둡니다. */
-  top: calc(env(safe-area-inset-top, 0px) + 66px);
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);

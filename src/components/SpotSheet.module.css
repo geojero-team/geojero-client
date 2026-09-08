@@ -1,0 +1,143 @@
+/* 화면 아래에 붙는 시트입니다. 좌우에 여백을 두면 그 틈이 회색 띠처럼 보여서
+   카드가 화면에서 떠 있는 부스러기가 됩니다. 끝까지 붙이고 위쪽 모서리만 굴립니다. */
+.sheet {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  /* 하단 탭바 + (있으면) 추천 코스 버튼 줄 위에 앉습니다.
+     --stack-offset은 인라인 스타일로 들어옵니다. */
+  bottom: calc(
+    var(--nav-height) + env(safe-area-inset-bottom, 0px) +
+      var(--stack-offset, 0px)
+  );
+  padding: var(--space-md) var(--space-lg) var(--space-lg);
+  border-top: 1px solid var(--border-default);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--bg-surface);
+  box-shadow: var(--elevation-sheet);
+  animation: rise 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    animation: none;
+  }
+}
+
+.grabber {
+  width: 36px;
+  height: 4px;
+  margin: 0 auto var(--space-md);
+  border-radius: var(--radius-pill);
+  background: var(--border-default);
+}
+
+.close {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.close:active {
+  background: var(--bg-page);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.photo {
+  flex: none;
+  width: 84px;
+  height: 84px;
+  border-radius: var(--radius-card);
+  object-fit: cover;
+  background: var(--bg-page);
+}
+
+.body {
+  min-width: 0;
+  padding-right: var(--space-xl);
+}
+
+.name {
+  margin: 0;
+  font: var(--type-title);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+.meta {
+  margin: var(--space-xs) 0 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.summary {
+  margin: var(--space-sm) 0 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  word-break: keep-all;
+}
+
+.reason {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+  padding: var(--space-md);
+  border-radius: var(--radius-card);
+  background: var(--status-no-bg);
+}
+
+.reasonIcon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--status-no);
+}
+
+.reasonText {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  width: 100%;
+  margin-top: var(--space-lg);
+  padding: 13px var(--space-lg);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font: var(--type-body-strong);
+}
+
+.cta:active {
+  background: var(--bg-page);
+}

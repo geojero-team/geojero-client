@@ -1,9 +1,10 @@
-/* 조건 칩 아래에 뜨는 상태 표시 */
+/* 조건 칩 아래에 뜨는 상태 표시.
+   --top-offset은 인라인 스타일로 들어옵니다 (조건 칩이 있을 때와 없을 때가 달라서). */
 .pending,
 .error {
   position: absolute;
   z-index: 4;
-  top: calc(env(safe-area-inset-top, 0px) + 62px);
+  top: calc(env(safe-area-inset-top, 0px) + var(--top-offset, 16px));
   left: var(--space-md);
   right: var(--space-md);
   margin: 0 auto;
@@ -28,4 +29,36 @@
   background: var(--status-no-bg);
   color: var(--status-no);
   font: var(--type-caption);
+}
+
+/* 둘러보기 상태 안내 — 스팟을 아직 안 고른 채 탭바로 들어온 경우.
+   지도 영역을 물리지 않고 그 위에 반투명하게 떠 있습니다. 지도가 뒤로 비쳐야
+   "지도가 주인공"이라는 이 화면의 성격이 유지됩니다.
+   아래로 32px 띄운 건 카카오 로고·축척이 안내에 가리지 않게 하려는 것입니다. */
+.browseNotice {
+  position: absolute;
+  z-index: 4;
+  left: var(--space-lg);
+  right: var(--space-lg);
+  bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 32px);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-sheet);
+  background: rgb(255 255 255 / 0.86);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--elevation-chip);
+  text-align: center;
+}
+
+.browseTitle {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.browseText {
+  margin: var(--space-xs) 0 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
 }
