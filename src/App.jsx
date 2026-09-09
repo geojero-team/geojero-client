@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { MAP_PATH } from './components/BottomNav'
+import ApiOverlay from './dev/ApiOverlay'
 import ConditionsPage from './pages/ConditionsPage'
 import HomePage from './pages/HomePage'
 import MapPage from './pages/MapPage'
@@ -11,12 +12,12 @@ import VerdictPage from './pages/VerdictPage'
 /**
  * 하단 탭 4개 — 홈 / 스팟 / 지도 / 내 일정.
  *
- * 지도는 아직 '/'에 있습니다. 홈 화면이 만들어지면 지도를 '/map'으로 옮기고
- * BottomNav의 MAP_PATH만 바꾸면 나머지는 따라옵니다.
+ * 홈이 첫 진입 화면입니다. 조건을 정하고 스팟을 고르러 들어가는 순서라
+ * 판정 결과(지도)보다 조건 세팅이 먼저 옵니다.
  *
- *   /                     지도 — 스팟을 아직 안 고른 둘러보기 상태
- *   /?spots=5,2,7         지도 — 스팟 고르기에서 넘어온 판정 상태
- *   /home                 홈
+ *   /                     홈
+ *   /map                  지도 — 스팟을 아직 안 고른 둘러보기 상태
+ *   /map?spots=5,2,7      지도 — 스팟 고르기에서 넘어온 판정 상태
  *   /spots                스팟 목록
  *   /spots/:spotId        스팟 상세
  *   /verdict/:routeId     판정 결과 (정류장 타임라인)
@@ -28,15 +29,20 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<HomePage />} />
         <Route path={MAP_PATH} element={<MapPage />} />
-        <Route path="/home" element={<HomePage />} />
+        {/* 홈이 '/'로 올라오기 전에 나간 링크가 죽지 않게 남겨둡니다. */}
+        <Route path="/home" element={<Navigate to="/" replace />} />
         <Route path="/spots" element={<SpotsPage />} />
         <Route path="/spots/:spotId" element={<SpotDetailPage />} />
         <Route path="/verdict/:routeId" element={<VerdictPage />} />
         <Route path="/my" element={<MyPlansPage />} />
         <Route path="/conditions" element={<ConditionsPage />} />
-        <Route path="*" element={<Navigate to={MAP_PATH} replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      {/* 개발용 API 오버레이(`?debug=api`). DEV 분기라 프로덕션 번들에서는 통째로 빠집니다. */}
+      {import.meta.env.DEV && <ApiOverlay />}
     </BrowserRouter>
   )
 }

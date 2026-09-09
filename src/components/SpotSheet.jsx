@@ -75,7 +75,12 @@ export default function SpotSheet({
         </div>
       )}
 
-      <button type="button" className={styles.cta} onClick={onOpenDetail}>
+      <button
+        type="button"
+        className={styles.cta}
+        onClick={onOpenDetail}
+        data-api="GET /api/spots/{spotId}"
+      >
         자세히 보기
         <ChevronRight size={18} aria-hidden="true" />
       </button>

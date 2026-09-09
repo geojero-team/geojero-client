@@ -111,6 +111,7 @@ export default function CourseSheet({
             type="button"
             className={styles.primaryButton}
             onClick={onOpenVerdict}
+            data-api="GET /api/routes/timeline"
           >
             자세히 보기
             <ChevronRight size={18} aria-hidden="true" />

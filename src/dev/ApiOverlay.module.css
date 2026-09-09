@@ -1,0 +1,73 @@
+/* 개발용 오버레이입니다.
+   색을 디자인 토큰에서 가져오지 않고 여기서 직접 정합니다 — 제품 UI와 절대
+   헷갈리면 안 되는 자리라, 판정 색(파랑·초록·빨강)과 겹치지 않는 자홍색을
+   일부러 골랐습니다. 이 파일의 색은 디자인 시스템이 아닙니다. */
+
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: none;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+}
+
+.frame {
+  position: absolute;
+  outline: 1.5px dashed #c026d3;
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+.badge {
+  position: absolute;
+  left: 0;
+  max-width: 100%;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #c026d3;
+  color: #ffffff;
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  max-width: calc(100% - 24px);
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(24, 8, 28, 0.92);
+  color: #fdf4ff;
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.panelTitle {
+  margin: 0 0 4px;
+  color: #f0abfc;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.panelEmpty {
+  margin: 0;
+  color: #e9d5ff;
+}
+
+.panelList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.panelItem {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,225 @@
+/* 홈 — Figma `홈 — A 최근 코스 섹션 숨김` (233:296)
+   치수는 Figma 실측값이고, 색·타이포는 전부 tokens.css의 의미 토큰을 씁니다. */
+
+.page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* Figma의 bg/surface(#f8fafc)가 페이지 바닥입니다. 프로젝트 토큰에서는
+     같은 회색이 --bg-page라 이름만 다릅니다 (API_DRAFT 5장 ⑨). */
+  background: var(--bg-page);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 20px 24px;
+}
+
+.wordmark {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--brand-strong);
+}
+
+.headline {
+  margin: 0;
+  font: var(--type-display);
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+/* ── 조건 카드 ──────────────────────────────────────────────────────────── */
+
+.inputCard {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 16px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  /* Figma 실측. --elevation-chip보다 넓고 푸른 그림자라 여기서만 씁니다.
+     다른 화면에도 같은 카드가 생기면 토큰으로 올리세요. */
+  box-shadow: 0 2px 12px rgba(0, 60, 120, 0.08);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* 첫 줄 위에는 선이 없습니다. 카드 테두리가 그 역할을 합니다. */
+.rowRuled {
+  border-top: 1px solid var(--border-default);
+}
+
+.row:active {
+  background: var(--bg-pressed);
+}
+
+.rowDot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-strong);
+}
+
+.rowCol {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowLabel {
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+.rowValue {
+  font: var(--type-body-strong);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowChevron {
+  flex: none;
+  font: var(--type-title);
+  color: var(--text-secondary);
+}
+
+.cta {
+  height: 48px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--brand-strong);
+  font: var(--type-body-strong);
+  color: var(--text-on-brand);
+  cursor: pointer;
+}
+
+.cta:active {
+  filter: brightness(0.94);
+}
+
+/* ── 오늘 되는 코스 ─────────────────────────────────────────────────────── */
+
+.today {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font: var(--type-title);
+  color: var(--text-primary);
+}
+
+.notice {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* 카드는 화면 끝까지 흘러가야 "더 있다"가 읽힙니다. 본문 좌우 여백만큼
+   음수 마진으로 빼고 같은 값을 안쪽 패딩으로 돌려줍니다. */
+.cards {
+  display: flex;
+  gap: 12px;
+  margin-inline: -20px;
+  padding-inline: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.cards::-webkit-scrollbar {
+  display: none;
+}
+
+.card {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 210px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  scroll-snap-align: start;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card:active {
+  background: var(--bg-pressed);
+}
+
+.photo {
+  position: relative;
+  height: 110px;
+  overflow: hidden;
+}
+
+.photoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-pill);
+  background: var(--status-yes-bg);
+  font: var(--type-label);
+  color: var(--status-yes);
+}
+
+.badgeNo {
+  background: var(--status-no-bg);
+  color: var(--status-no);
+}
+
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px 10px;
+}
+
+.cardName {
+  font: var(--type-caption);
+  color: var(--text-primary);
+}
+
+.cardMeta {
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+.dotYes {
+  color: var(--status-yes);
+}
+
+.dotNo {
+  color: var(--status-no);
+}

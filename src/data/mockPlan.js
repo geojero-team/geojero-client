@@ -165,6 +165,79 @@ const ROUTES = [
   },
 ]
 
+/**
+ * 홈의 "오늘 버스로 되는 코스" — 미리 만들어둔 큐레이션 코스입니다 (API_DRAFT 4.6).
+ * 사용자가 고른 스팟으로 짜는 ROUTES와 달리, 조건만 있으면 바로 보여줍니다.
+ *
+ * [백엔드와 맞출 것] 4.6 명세에 `spots[]`가 없습니다. Figma의 CourseCard2는 스팟이
+ * 여러 개일 때 카드 둘째 줄에 "● 바람의언덕 · ● 학동몽돌해변"처럼 **스팟별 판정**을
+ * 찍으라고 돼 있는데, 그러려면 코스 안 스팟의 이름과 verdict가 필요합니다.
+ * 지금은 목에만 넣어뒀고, 명세에 추가해야 합니다.
+ */
+const COURSES = [
+  {
+    courseId: 1,
+    name: '부산발 당일치기 · 해금강',
+    shortName: '해금강',
+    theme: 'VIEW',
+    region: '남부권',
+    thumbnailUrl: null,
+    spotIds: [1],
+    verdict: 'YES',
+    reason: null,
+    summary: '07:00 → 22:30 · 막차 21:20',
+    spots: [{ spotId: 1, shortName: '해금강', verdict: 'YES' }],
+  },
+  {
+    courseId: 2,
+    name: '바람의언덕 · 학동몽돌해변',
+    shortName: '바람의언덕',
+    theme: 'VIEW',
+    region: '남부권',
+    thumbnailUrl: null,
+    spotIds: [2, 7],
+    verdict: 'YES',
+    reason: null,
+    summary: '07:00 → 22:10 · 막차 21:20',
+    spots: [
+      { spotId: 2, shortName: '바람의언덕', verdict: 'YES' },
+      { spotId: 7, shortName: '학동몽돌해변', verdict: 'YES' },
+    ],
+  },
+  {
+    courseId: 3,
+    name: '거제식물원 · 바람의언덕',
+    shortName: '거제식물원',
+    theme: 'GARDEN',
+    region: '중부권',
+    thumbnailUrl: null,
+    spotIds: [5, 2],
+    verdict: 'YES',
+    reason: null,
+    summary: '07:00 → 21:40 · 막차 21:20',
+    spots: [
+      { spotId: 5, shortName: '거제식물원', verdict: 'YES' },
+      { spotId: 2, shortName: '바람의언덕', verdict: 'YES' },
+    ],
+  },
+  {
+    courseId: 4,
+    name: '매미성 · 거제식물원',
+    shortName: '매미성',
+    theme: 'CASTLE',
+    region: '동부권',
+    thumbnailUrl: null,
+    spotIds: [4, 5],
+    verdict: 'YES',
+    reason: null,
+    summary: '07:30 → 21:50 · 막차 21:20',
+    spots: [
+      { spotId: 4, shortName: '매미성', verdict: 'YES' },
+      { spotId: 5, shortName: '거제식물원', verdict: 'YES' },
+    ],
+  },
+]
+
 const MOCK_DELAY_MS = 250
 const SOURCE = { source: '거제시 BIS 원문', baseDate: '2026-08-18' }
 
@@ -189,11 +262,10 @@ export async function fetchSpots({ theme, q } = {}) {
  */
 // eslint-disable-next-line no-unused-vars
 export async function fetchPlan({ spotIds, origin, date, departTime, returnBy }) {
-  // const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/verdict`, {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({ spotIds, origin, date, departTime, returnBy }),
+  // const query = new URLSearchParams({
+  //   origin, date, departTime, returnBy, spots: spotIds.join(','),
   // })
+  // const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/routes?${query}`)
   // if (!res.ok) throw new Error(`판정에 실패했습니다 (${res.status})`)
   // return res.json()
 
@@ -222,4 +294,19 @@ export function findMockSpot(spotId) {
 
 export function findMockRoute(routeId) {
   return ROUTES.find((route) => route.routeId === routeId) ?? null
+}
+
+/**
+ * 홈 — 오늘 되는 코스. 스팟을 고르기 전이라 조건만으로 판정합니다.
+ * 홈은 조건이 항상 기본값으로라도 있으므로 조건 없이 부르는 경우는 없습니다.
+ */
+// eslint-disable-next-line no-unused-vars
+export async function fetchCourses({ origin, date, departTime, returnBy, limit = 6 } = {}) {
+  // const query = new URLSearchParams({ origin, date, departTime, returnBy, limit })
+  // const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/courses?${query}`)
+  // if (!res.ok) throw new Error(`코스를 불러오지 못했습니다 (${res.status})`)
+  // return res.json()
+
+  await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS))
+  return { courses: COURSES.slice(0, limit), ...SOURCE }
 }

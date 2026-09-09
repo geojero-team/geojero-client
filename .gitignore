@@ -18,6 +18,11 @@ dist-ssr
 /*.jpg
 /*.jpeg
 
+# Claude Code
+.claude/settings.local.json
+.claude/skills/
+.claude/agents/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

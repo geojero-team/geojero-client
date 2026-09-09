@@ -149,7 +149,7 @@ export default function MapPage() {
     !planned && result.status === 'ready' && !showSpotSheet
 
   return (
-    <Screen>
+    <Screen data-api={planned ? 'GET /api/routes' : 'GET /api/spots'}>
       <MapView
         spots={visibleSpots}
         selectedSpotId={selectedSpotId}
