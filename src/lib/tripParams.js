@@ -67,8 +67,8 @@ export function defaultTripParams() {
    홈에서 확정한 조건이 지도까지 살아남아야 카드의 판정과 지도의 판정이 같은 조건이 됩니다.
    returnBy=null(막차까지)은 'last'로 적습니다. */
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
-const TIME_RE = /^\d{2}:\d{2}$/
+const DATE_RE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
 
 export function tripToSearch(trip, extra = {}) {
   return new URLSearchParams({
