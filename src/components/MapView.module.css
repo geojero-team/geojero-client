@@ -44,7 +44,7 @@
   background: var(--brand-tint);
   overflow: hidden;
   box-shadow:
-    0 0 0 2px var(--bg-surface),
+    0 0 0 2px var(--bg-page),
     0 3px 8px rgba(15, 23, 30, 0.32);
   transition:
     border-color 140ms ease,
@@ -87,7 +87,7 @@
   font: var(--type-label);
   font-weight: 700;
   white-space: nowrap;
-  -webkit-text-stroke: 3.5px var(--bg-surface);
+  -webkit-text-stroke: 3.5px var(--bg-page);
   paint-order: stroke fill;
   text-shadow: 0 1px 2px rgb(255 255 255 / 0.9);
   transition:
@@ -113,7 +113,7 @@
 
 .pinNeutral.pinSelected .pinBody {
   box-shadow:
-    0 0 0 2px var(--bg-surface),
+    0 0 0 2px var(--bg-page),
     0 0 0 6px var(--status-unknown-bg),
     0 4px 10px rgba(15, 23, 30, 0.34);
 }
@@ -133,7 +133,7 @@
   width: 20px;
   height: 20px;
   border-radius: var(--radius-pill);
-  border: 2px solid var(--bg-surface);
+  border: 2px solid var(--bg-page);
   background: var(--brand-strong);
   color: var(--text-on-brand);
   font: var(--type-label);
@@ -169,7 +169,7 @@
 
 .pinSelected .pinBody {
   box-shadow:
-    0 0 0 2px var(--bg-surface),
+    0 0 0 2px var(--bg-page),
     0 0 0 6px var(--brand-tint),
     0 4px 10px rgba(15, 23, 30, 0.34);
 }
@@ -181,7 +181,7 @@
 
 .pinNo.pinSelected .pinBody {
   box-shadow:
-    0 0 0 2px var(--bg-surface),
+    0 0 0 2px var(--bg-page),
     0 0 0 6px var(--status-no-bg),
     0 4px 10px rgba(15, 23, 30, 0.34);
 }
@@ -212,13 +212,13 @@
   padding: 0;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-card);
-  background: var(--bg-surface);
+  background: var(--bg-page);
   color: var(--text-primary);
   box-shadow: var(--elevation-chip);
 }
 
 .controlButton:active {
-  background: var(--bg-page);
+  background: var(--bg-surface);
 }
 
 .zoomGroup {
@@ -248,7 +248,7 @@
   gap: var(--space-sm);
   padding: var(--space-2xl);
   text-align: center;
-  background: var(--bg-surface);
+  background: var(--bg-page);
 }
 
 /* 로딩 중에도 지도 자리처럼 보이게 — 바다 위에 모래색 섬 하나 */

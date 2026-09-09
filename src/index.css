@@ -16,9 +16,8 @@ body {
   margin: 0;
   font: var(--type-body);
   color: var(--text-primary);
-  background: var(--bg-page);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* 390 컬럼 바깥 바닥. 화면 안 바닥색은 각 화면이 Figma 프레임대로 정한다. */
+  background: var(--bg-surface);
   text-rendering: optimizeLegibility;
   /* 지도를 끌 때 브라우저의 당겨서 새로고침이 걸리지 않도록 */
   overscroll-behavior: none;

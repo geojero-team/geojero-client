@@ -19,7 +19,7 @@
   padding: 4px 6px;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-pill);
-  background: var(--bg-surface);
+  background: var(--bg-page);
   box-shadow: var(--elevation-chip);
   color: var(--text-primary);
   white-space: nowrap;
@@ -47,7 +47,7 @@
 }
 
 .segment:hover {
-  background: var(--bg-page);
+  background: var(--bg-surface);
 }
 
 .segment:active {

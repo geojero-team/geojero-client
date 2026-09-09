@@ -1,12 +1,12 @@
+/* Figma 탭 화면 header(233:563): h56 · px20 · 구분선 없음 · 페이지와 같은 흰 바닥 */
 .header {
   flex: none;
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  padding: calc(env(safe-area-inset-top, 0px) + var(--space-sm)) var(--space-lg)
-    var(--space-sm);
-  border-bottom: 1px solid var(--border-default);
-  background: var(--bg-surface);
+  min-height: 56px;
+  padding: env(safe-area-inset-top, 0px) 20px 0;
+  background: var(--bg-page);
 }
 
 .back {
@@ -23,7 +23,7 @@
 }
 
 .back:active {
-  background: var(--bg-page);
+  background: var(--bg-surface);
 }
 
 .title {
@@ -41,7 +41,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-xl) var(--space-lg);
+  /* Figma body(233:565): pt4 pb16 px20, 흰 바닥 */
+  padding: 4px 20px 16px;
   background: var(--bg-page);
 }
 
@@ -58,7 +59,7 @@
   list-style: none;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-card);
-  background: var(--bg-surface);
+  background: var(--bg-page);
 }
 
 .item {

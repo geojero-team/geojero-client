@@ -1,13 +1,11 @@
-/* 홈 — Figma `홈 — A 최근 코스 섹션 숨김` (233:296)
-   치수는 Figma 실측값이고, 색·타이포는 전부 tokens.css의 의미 토큰을 씁니다. */
+/* 홈 — Figma 233:296(A) · 233:337(B) · 274:529 실측값. 색·타이포는 tokens.css 의미 토큰. */
 
 .page {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  /* Figma의 bg/surface(#f8fafc)가 페이지 바닥입니다. 프로젝트 토큰에서는
-     같은 회색이 --bg-page라 이름만 다릅니다 (API_DRAFT 5장 ⑨). */
-  background: var(--bg-page);
+  /* Figma 홈 프레임 루트는 bg/surface(연회색) 바닥 + bg/page(흰) 카드 */
+  background: var(--bg-surface);
 }
 
 .body {
@@ -28,19 +26,17 @@
   margin: 0;
   font: var(--type-display);
   color: var(--text-primary);
-  text-wrap: balance;
 }
 
-/* ── 조건 카드 ──────────────────────────────────────────────────────────── */
+/* ── 조건 카드 (233:300) — 350×351: 패딩 6 + 행 4×70(+선 3) + 버튼 48 + 스페이서 8 + 패딩 6 ── */
 
 .inputCard {
   display: flex;
   flex-direction: column;
-  padding: 6px 16px 14px;
+  padding: 6px 16px;
   border-radius: var(--radius-lg);
-  background: var(--bg-surface);
-  /* Figma 실측. --elevation-chip보다 넓고 푸른 그림자라 여기서만 씁니다.
-     다른 화면에도 같은 카드가 생기면 토큰으로 올리세요. */
+  background: var(--bg-page);
+  /* Figma 실측. --elevation-chip보다 넓고 푸른 그림자라 여기서만 씁니다. */
   box-shadow: 0 2px 12px rgba(0, 60, 120, 0.08);
 }
 
@@ -95,27 +91,71 @@
   white-space: nowrap;
 }
 
+/* Figma 233:306 — '›' 텍스트 20/28 700 */
 .rowChevron {
   flex: none;
+  font: var(--type-title);
   color: var(--text-secondary);
 }
 
+/* 버튼은 마지막 행에 바로 붙고(위 여백 0), 아래에 8px 스페이서(233:322) */
 .cta {
-  height: 48px;
-  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+/* ── 최근에 본 코스 (233:364 빈 / 274:556 채움) — py12 px14 gap10 radius 12 ── */
+
+.recent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
   border: 0;
-  border-radius: var(--radius-sm);
-  background: var(--brand-strong);
-  font: var(--type-body-strong);
-  color: var(--text-on-brand);
+  border-radius: var(--radius-md);
+  background: var(--bg-page);
+  text-align: left;
   cursor: pointer;
 }
 
-.cta:active {
-  filter: brightness(0.94);
+.recent:active {
+  background: var(--bg-pressed);
 }
 
-/* ── 오늘 되는 코스 ─────────────────────────────────────────────────────── */
+.recentCol {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recentLabel {
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+.recentEmpty {
+  font: var(--type-body);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+.recentName {
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recentChevron {
+  flex: none;
+  font: var(--type-title);
+  color: var(--text-secondary);
+}
+
+/* ── 오늘 버스로 되는 코스 (233:330) ─────────────────────────────────────── */
 
 .today {
   display: flex;
@@ -153,17 +193,13 @@
   color: var(--text-secondary);
 }
 
-/* 카드는 화면 끝까지 흘러가야 "더 있다"가 읽힙니다. 본문 좌우 여백만큼
-   음수 마진으로 빼고 같은 값을 안쪽 패딩으로 돌려줍니다. */
+/* Figma 233:333 cards — 본문 폭(350) 안에서 잘립니다. 두 번째 카드가 오른쪽 여백에서 끊겨
+   "더 있다"가 읽히고, 페이지 여백 20은 그대로 남습니다. */
 .cards {
   display: flex;
   gap: 12px;
-  margin-inline: -20px;
-  padding-inline: 20px;
   overflow-x: auto;
   scroll-snap-type: x proximity;
-  /* 없으면 스냅된 카드가 24px 거터가 아니라 화면 끝(x=0)에 붙습니다. */
-  scroll-padding-inline: 20px;
   scrollbar-width: none;
 }
 
@@ -180,7 +216,7 @@
   overflow: hidden;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background: var(--bg-surface);
+  background: var(--bg-page);
   scroll-snap-align: start;
   text-align: left;
   cursor: pointer;
@@ -207,16 +243,6 @@
   position: absolute;
   top: 8px;
   left: 8px;
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--radius-pill);
-  background: var(--status-yes-bg);
-  font: var(--type-label);
-  color: var(--status-yes);
-}
-
-.badgeNo {
-  background: var(--status-no-bg);
-  color: var(--status-no);
 }
 
 .cardInfo {
@@ -242,4 +268,8 @@
 
 .dotNo {
   color: var(--status-no);
+}
+
+.dotUnknown {
+  color: var(--status-unknown);
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
-import { ChevronRight, TriangleAlert, X } from 'lucide-react'
+import { TriangleAlert, X } from 'lucide-react'
 import { courseImage } from '../lib/courseImage'
+import Button from './Button'
 import styles from './SpotSheet.module.css'
 
 /**
@@ -75,15 +76,14 @@ export default function SpotSheet({
         </div>
       )}
 
-      <button
-        type="button"
+      {/* Figma 240:194 — primary(파랑) '자세히 보기 ›' */}
+      <Button
         className={styles.cta}
         onClick={onOpenDetail}
         data-api="GET /api/spots/{spotId}"
       >
-        자세히 보기
-        <ChevronRight size={18} aria-hidden="true" />
-      </button>
+        자세히 보기 ›
+      </Button>
     </section>
   )
 }

@@ -9,6 +9,7 @@ import RouteBar from '../components/RouteBar'
 import Screen from '../components/Screen'
 import SpotSheet from '../components/SpotSheet'
 import { fetchPlan, fetchSpots } from '../data/mockPlan'
+import { markRecommended, saveRecentCourse } from '../lib/recentCourse'
 import { defaultTripParams, saveOrigin } from '../lib/tripParams'
 import styles from './MapPage.module.css'
 
@@ -65,6 +66,11 @@ export default function MapPage() {
   const [selectedSpotId, setSelectedSpotId] = useState(null)
   const [sheetHeight, setSheetHeight] = useState(0)
   const [routeBarHeight, setRouteBarHeight] = useState(0)
+
+  // 판정 상태로 들어왔다 = 코스 추천을 받았다. 홈 '최근에 본 코스' 섹션이 열립니다.
+  useEffect(() => {
+    if (planned) markRecommended()
+  }, [planned])
 
   useEffect(() => {
     let cancelled = false
@@ -209,7 +215,15 @@ export default function MapPage() {
           spotCount={visibleSpots.length}
           stackOffset={routeBarHeight}
           onClose={() => setActiveRouteId(null)}
-          onOpenVerdict={() => navigate(`/verdict/${activeRoute.routeId}`)}
+          onOpenVerdict={() => {
+            saveRecentCourse({
+              name: activeRoute.name,
+              spotIds: activeRoute.spotIds,
+              verdict: activeRoute.verdict,
+              date: trip.date,
+            })
+            navigate(`/verdict/${activeRoute.routeId}`)
+          }}
           onHeightChange={setSheetHeight}
         />
       )}

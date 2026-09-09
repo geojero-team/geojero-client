@@ -4,7 +4,7 @@
   z-index: 8;
   padding: 0;
   border: 0;
-  background: rgb(15 23 30 / 0.32);
+  background: rgba(16, 24, 40, 0.4); /* Figma scrim(274:570) */
   animation: fade 160ms ease;
 }
 
@@ -18,9 +18,8 @@
   overflow-y: auto;
   padding: var(--space-md) var(--space-lg)
     calc(env(safe-area-inset-bottom, 0px) + var(--space-xl));
-  border-top: 1px solid var(--border-default);
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
-  background: var(--bg-surface);
+  background: var(--bg-page);
   box-shadow: var(--elevation-sheet);
   animation: rise 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -81,7 +80,7 @@
 }
 
 .close:active {
-  background: var(--bg-page);
+  background: var(--bg-surface);
 }
 
 /* ── 출발지 ───────────────────────────────────────────────────────────────*/
@@ -93,7 +92,7 @@
   padding: 10px var(--space-md);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-card);
-  background: var(--bg-page);
+  background: var(--bg-surface);
 }
 
 .search:focus-within {
@@ -132,7 +131,7 @@
   border: 0;
   border-radius: var(--radius-pill);
   background: var(--status-dim);
-  color: var(--bg-surface);
+  color: var(--bg-page);
 }
 
 .sectionLabel {
@@ -145,13 +144,13 @@
   flex: none;
   padding: 3px var(--space-sm);
   border-radius: var(--radius-xs);
-  background: var(--bg-page);
+  background: var(--bg-surface);
   font: var(--type-label);
   color: var(--text-secondary);
 }
 
 .rowOn .tag {
-  background: var(--bg-surface);
+  background: var(--bg-page);
 }
 
 .empty {
@@ -186,7 +185,7 @@
   margin: var(--space-lg) 0 0;
   padding: var(--space-md);
   border-radius: var(--radius-card);
-  background: var(--bg-page);
+  background: var(--bg-surface);
   font: var(--type-caption);
   color: var(--text-secondary);
   word-break: keep-all;
@@ -209,13 +208,13 @@
   padding: var(--space-md) var(--space-lg);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-card);
-  background: var(--bg-surface);
+  background: var(--bg-page);
   color: var(--text-primary);
   text-align: left;
 }
 
 .row:active {
-  background: var(--bg-page);
+  background: var(--bg-surface);
 }
 
 .rowOn {
@@ -275,13 +274,13 @@
   padding: 0;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-card);
-  background: var(--bg-surface);
+  background: var(--bg-page);
   color: var(--text-primary);
 }
 
 .monthButton:disabled {
   color: var(--text-disabled);
-  border-color: var(--bg-page);
+  border-color: var(--bg-surface);
   cursor: default;
 }
 
@@ -342,7 +341,7 @@
   margin: var(--space-md) 0 0;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-card);
-  background: var(--bg-page);
+  background: var(--bg-surface);
   font: var(--type-caption);
   color: var(--text-secondary);
   text-align: center;
@@ -398,17 +397,17 @@
   padding: 0;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-pill);
-  background: var(--bg-surface);
+  background: var(--bg-page);
   color: var(--text-primary);
 }
 
 .stepButton:active {
-  background: var(--bg-page);
+  background: var(--bg-surface);
 }
 
 .stepButton:disabled {
   color: var(--text-disabled);
-  border-color: var(--bg-page);
+  border-color: var(--bg-surface);
   cursor: default;
 }
 

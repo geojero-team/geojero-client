@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
-import { Bus, ChevronRight, TriangleAlert, X } from 'lucide-react'
+import { Bus, TriangleAlert, X } from 'lucide-react'
 import { formatCost, formatDuration } from '../lib/format'
+import Button from './Button'
+import StatusBadge from './StatusBadge'
 import styles from './CourseSheet.module.css'
 
 /**
@@ -35,6 +37,8 @@ export default function CourseSheet({
     return () => observer.disconnect()
   }, [onHeightChange])
 
+  // 배지는 3분법 그대로(미확인을 성립으로 그리지 않는다). 아래 블록 분기는
+  // 불성립 사유 박스 vs 나머지 — 미확인은 사유가 없으면 통계를 그대로 보여준다.
   const feasible = route.verdict !== 'NO'
 
   return (
@@ -48,11 +52,7 @@ export default function CourseSheet({
 
       <header className={styles.header}>
         <div className={styles.badges}>
-          <span
-            className={`${styles.badge} ${feasible ? styles.badgeYes : styles.badgeNo}`}
-          >
-            {feasible ? '성립' : '불성립'}
-          </span>
+          <StatusBadge status={route.verdict} />
           {/* 버튼에는 번호만 있어서, 그 번호가 무슨 기준인지는 여기서 알려줍니다. */}
           <span className={styles.strategy}>
             맞춤 경로 {route.rank} · {route.strategyLabel}
@@ -107,15 +107,13 @@ export default function CourseSheet({
             </div>
           </div>
 
-          <button
-            type="button"
-            className={styles.primaryButton}
+          <Button
+            className={styles.cta}
             onClick={onOpenVerdict}
             data-api="GET /api/routes/timeline"
           >
-            자세히 보기
-            <ChevronRight size={18} aria-hidden="true" />
-          </button>
+            자세히 보기 ›
+          </Button>
         </>
       ) : (
         <div className={styles.reason}>

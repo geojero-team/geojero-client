@@ -5,8 +5,9 @@
   grid-auto-columns: 1fr;
   height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  border-top: 1px solid var(--border-default);
-  background: var(--bg-surface);
+  /* Figma TabBar4(234:66): 1px 테두리 4면, 흰 바닥, 높이 64(테두리 포함) */
+  border: 1px solid var(--border-default);
+  background: var(--bg-page);
 }
 
 .tab {
@@ -14,14 +15,22 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
   text-decoration: none;
   color: var(--text-secondary);
   transition: color 120ms ease;
 }
 
 .tab:active {
-  background: var(--bg-page);
+  background: var(--bg-surface);
+}
+
+/* Figma Vector 16×16 박스, 내보낸 SVG는 inset -5%(17.6px)로 획이 박스 밖까지 나갑니다. */
+.icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  overflow: visible;
 }
 
 .label {
