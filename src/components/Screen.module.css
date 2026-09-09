@@ -1,7 +1,9 @@
 .screen {
   position: relative;
   width: 100%;
-  max-width: 520px;
+  /* 실존하는 가장 넓은 폰의 논리 폭입니다. Figma 프레임이 390px라
+     이보다 넓어지면 타이포는 그대로인 채 가로만 늘어나 비율이 무너집니다. */
+  max-width: 430px;
   height: 100dvh;
   margin: 0 auto;
   display: flex;
@@ -10,7 +12,7 @@
   background: var(--bg-surface);
 }
 
-@media (min-width: 560px) {
+@media (min-width: 470px) {
   .screen {
     border-inline: 1px solid var(--border-default);
   }

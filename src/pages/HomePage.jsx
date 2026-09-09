@@ -1,3 +1,4 @@
+import { ChevronRight } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNav, { MAP_PATH } from '../components/BottomNav'
@@ -155,9 +156,11 @@ export default function HomePage() {
                   <span className={styles.rowLabel}>{label}</span>
                   <span className={styles.rowValue}>{value}</span>
                 </span>
-                <span className={styles.rowChevron} aria-hidden="true">
-                  ›
-                </span>
+                <ChevronRight
+                  className={styles.rowChevron}
+                  size={20}
+                  aria-hidden="true"
+                />
               </button>
             ))}
 
@@ -172,7 +175,17 @@ export default function HomePage() {
           </div>
 
           <section className={styles.today}>
-            <h2 className={styles.sectionTitle}>오늘 버스로 되는 코스</h2>
+            <div className={styles.todayHead}>
+              <h2 className={styles.sectionTitle}>주요 스팟</h2>
+              <button
+                type="button"
+                className={styles.more}
+                onClick={() => navigate('/spots')}
+                data-api="GET /api/spots"
+              >
+                더보기
+              </button>
+            </div>
 
             {result.status === 'error' ? (
               <p className={styles.notice}>불러오지 못했습니다 — {result.error}</p>
