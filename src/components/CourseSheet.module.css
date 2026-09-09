@@ -12,7 +12,7 @@
     var(--nav-height) + env(safe-area-inset-bottom, 0px) +
       var(--stack-offset, 0px)
   );
-  padding: var(--space-md) var(--space-lg) var(--space-lg);
+  padding: var(--space-sm) 20px var(--space-lg); /* Figma 240:173 pt8 px20 pb16 */
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   background: var(--bg-page);
   box-shadow: var(--elevation-sheet);

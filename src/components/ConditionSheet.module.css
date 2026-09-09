@@ -22,8 +22,7 @@
   overflow-y: auto;
   padding: 8px 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  background: var(--bg-page);
-  box-shadow: var(--elevation-sheet);
+  background: var(--bg-page); /* 274:571엔 그림자 없음 — 스크림 위라 필요 없음 */
 }
 
 .handle {
@@ -73,22 +72,19 @@
   color: var(--text-secondary);
 }
 
-.fieldInput {
+.fieldValue,
+.fieldPlaceholder {
   flex: 1;
   min-width: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font: var(--type-body);
   color: var(--text-primary);
 }
 
-.fieldInput::placeholder {
+.fieldPlaceholder {
   color: var(--text-disabled);
-}
-
-.fieldInput:focus {
-  outline: none;
 }
 
 .fieldClear {
@@ -124,16 +120,17 @@
   color: var(--brand-strong);
 }
 
+/* 줄바꿈은 Figma(break-word, 글자 단위)대로 — keep-all 쓰지 않음 */
 .hint {
   margin: 0;
   font: var(--type-label);
   color: var(--text-secondary);
-  word-break: keep-all;
 }
 
 /* ── FieldRow (49:33) — h56 · bg/surface · radius/control · px12 · gap12 ── */
 .pair {
   display: flex;
+  align-items: center; /* '막차까지' 칩(40)이 56px 행 가운데 */
   gap: 8px;
 }
 
@@ -150,13 +147,13 @@
   text-align: left;
 }
 
-/* Figma 폭 206 / 136 / 255 (+ 칩 87) — 비율로 나눕니다. */
+/* Figma: 날짜 fill / 출발 136 고정 / 복귀 fill (+ 칩 hug) */
 .fieldRowDate {
-  flex: 206;
+  flex: 1;
 }
 
 .fieldRowDepart {
-  flex: 136;
+  flex: 0 0 136px;
 }
 
 .fieldRowReturn {
@@ -176,7 +173,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font: var(--type-body-strong);
-  font-variant-numeric: tabular-nums;
   color: var(--text-primary);
   text-align: right;
 }
@@ -191,5 +187,4 @@
   margin: 0;
   font: var(--type-caption);
   color: var(--text-secondary);
-  word-break: keep-all;
 }

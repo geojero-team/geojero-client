@@ -48,7 +48,7 @@ export default function ConditionHeader({ trip, onEdit }) {
           type="button"
           className={styles.segment}
           onClick={() => onEdit('time')}
-          aria-label={`출발 ${trip.departTime}, 귀가 ${trip.returnBy}, 바꾸기`}
+          aria-label={`출발 ${trip.departTime}, 귀가 ${trip.returnBy ?? '막차까지'}, 바꾸기`}
         >
           <Bus className={styles.iconDepart} size={15} aria-hidden="true" />
           <span className={styles.value}>{trip.departTime}</span>
@@ -56,7 +56,7 @@ export default function ConditionHeader({ trip, onEdit }) {
             →
           </span>
           <House className={styles.iconReturn} size={15} aria-hidden="true" />
-          <span className={styles.value}>{trip.returnBy}</span>
+          <span className={styles.value}>{trip.returnBy ?? '막차까지'}</span>
         </button>
       </div>
     </div>

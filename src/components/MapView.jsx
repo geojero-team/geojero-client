@@ -51,7 +51,9 @@ function createPinElement(spot, { showVerdict, order }) {
       : styles.pinYes
   element.className = `${styles.pin} ${tone}`
 
-  const state = !showVerdict ? '' : ` · ${spot.verdict === 'NO' ? '불성립' : '성립'}`
+  // 판정 3분법 — 미확인을 성립으로 읽지 않는다.
+  const VERDICT_LABEL = { YES: '성립', NO: '불성립' }
+  const state = !showVerdict ? '' : ` · ${VERDICT_LABEL[spot.verdict] ?? '미확인'}`
   element.setAttribute('aria-label', `${spot.shortName ?? spot.name}${state}`)
 
   const body = document.createElement('span')

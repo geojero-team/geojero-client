@@ -49,7 +49,7 @@ export default function SpotSheet({
         onClick={onClose}
         aria-label="닫기"
       >
-        <X size={18} aria-hidden="true" />
+        <X size={16} aria-hidden="true" />
       </button>
 
       <div className={styles.row}>

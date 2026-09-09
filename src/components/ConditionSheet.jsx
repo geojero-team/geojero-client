@@ -27,12 +27,6 @@ function SheetBody({ trip, onClose, onSubmit }) {
   const originLabel = draft.origin ? ORIGIN_LABELS[draft.origin] : ''
   const untilLastBus = draft.returnBy === null
 
-  // 스테퍼는 값이 있어야 움직입니다. '막차까지' 상태에서 복귀 행을 열면 기본값부터.
-  const openTimePicker = () => {
-    if (untilLastBus) patch({ returnBy: '23:00' })
-    setPicker('time')
-  }
-
   return (
     <>
       <button
@@ -53,14 +47,19 @@ function SheetBody({ trip, onClose, onSubmit }) {
           <div
             className={draft.origin ? `${styles.field} ${styles.fieldFilled}` : styles.field}
           >
-            <Search className={styles.fieldIcon} size={12} aria-hidden="true" />
-            <input
-              className={styles.fieldInput}
-              value={originLabel}
-              placeholder="도시나 터미널 이름"
-              readOnly
-              aria-label="출발지"
+            <Search
+              className={styles.fieldIcon}
+              size={12}
+              strokeWidth={1.6}
+              absoluteStrokeWidth
+              aria-hidden="true"
             />
+            {/* 표시 전용 — 고르는 건 아래 칩. 검색 입력 동작은 Figma에 정의 없음([미확인]). */}
+            <span
+              className={draft.origin ? styles.fieldValue : styles.fieldPlaceholder}
+            >
+              {draft.origin ? originLabel : '도시나 터미널 이름'}
+            </span>
             {draft.origin && (
               <button
                 type="button"
@@ -122,7 +121,7 @@ function SheetBody({ trip, onClose, onSubmit }) {
             <button
               type="button"
               className={`${styles.fieldRow} ${styles.fieldRowReturn}`}
-              onClick={openTimePicker}
+              onClick={() => setPicker('time')}
             >
               <span className={styles.fieldRowLabel}>
                 복귀{originLabel && ` (${originLabel} 도착)`}
@@ -147,6 +146,10 @@ function SheetBody({ trip, onClose, onSubmit }) {
           </p>
         </div>
 
+        {/* Button 컴포넌트 가이드(09-07): 비활성 사유는 옆 텍스트로. 이 문구는 Figma에 없음([미확인]). */}
+        {!draft.origin && (
+          <p className={styles.hintReturn}>출발지를 고르면 코스를 추천해 드려요</p>
+        )}
         <Button onClick={() => onSubmit(draft)} disabled={!draft.origin}>
           코스 추천 받기
         </Button>

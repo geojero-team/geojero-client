@@ -251,6 +251,8 @@ function DateContent({ trip, onChange, onClose }) {
 
 /* ── 시각 ─────────────────────────────────────────────────────────────────*/
 
+const TIME_RE = /^\d{2}:\d{2}$/
+
 function Stepper({ label, hint, value, range, onStep }) {
   return (
     <div className={styles.stepper}>
@@ -264,7 +266,7 @@ function Stepper({ label, hint, value, range, onStep }) {
           type="button"
           className={styles.stepButton}
           onClick={() => onStep(-TIME_STEP_MIN)}
-          disabled={atLimit(value, -1, range)}
+          disabled={TIME_RE.test(value) && atLimit(value, -1, range)}
           aria-label={`${label} 30분 앞당기기`}
         >
           <Minus size={18} aria-hidden="true" />
@@ -274,7 +276,7 @@ function Stepper({ label, hint, value, range, onStep }) {
           type="button"
           className={styles.stepButton}
           onClick={() => onStep(TIME_STEP_MIN)}
-          disabled={atLimit(value, 1, range)}
+          disabled={TIME_RE.test(value) && atLimit(value, 1, range)}
           aria-label={`${label} 30분 미루기`}
         >
           <Plus size={18} aria-hidden="true" />
@@ -284,7 +286,10 @@ function Stepper({ label, hint, value, range, onStep }) {
   )
 }
 
+/** 귀가가 '막차까지'(null)면 스테퍼는 범위 끝에서 시작합니다. 건드리는 순간 시각 지정으로 바뀝니다. */
 function TimeContent({ trip, onChange }) {
+  const returnBy = trip.returnBy ?? RETURN_RANGE[1]
+
   return (
     <div className={styles.steppers}>
       <Stepper
@@ -299,11 +304,9 @@ function TimeContent({ trip, onChange }) {
       <Stepper
         label="귀가 시각"
         hint="이 시각까지는 돌아와야 합니다"
-        value={trip.returnBy}
+        value={trip.returnBy === null ? '막차까지' : returnBy}
         range={RETURN_RANGE}
-        onStep={(delta) =>
-          onChange({ returnBy: shiftTime(trip.returnBy, delta, RETURN_RANGE) })
-        }
+        onStep={(delta) => onChange({ returnBy: shiftTime(returnBy, delta, RETURN_RANGE) })}
       />
     </div>
   )

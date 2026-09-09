@@ -63,6 +63,39 @@ export function defaultTripParams() {
   }
 }
 
+/* ── URL 왕복 ──────────────────────────────────────────────────────────────
+   홈에서 확정한 조건이 지도까지 살아남아야 카드의 판정과 지도의 판정이 같은 조건이 됩니다.
+   returnBy=null(막차까지)은 'last'로 적습니다. */
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const TIME_RE = /^\d{2}:\d{2}$/
+
+export function tripToSearch(trip, extra = {}) {
+  return new URLSearchParams({
+    ...extra,
+    origin: trip.origin,
+    date: trip.date,
+    departTime: trip.departTime,
+    returnBy: trip.returnBy ?? 'last',
+  }).toString()
+}
+
+/** 쿼리에 없거나 형식이 틀린 값은 기본값으로 — 손상된 링크로 판정이 죽지 않게. */
+export function tripFromSearch(params) {
+  const base = defaultTripParams()
+  const origin = params.get('origin')
+  const date = params.get('date')
+  const departTime = params.get('departTime')
+  const returnBy = params.get('returnBy')
+  return {
+    origin: origin && origin in ORIGIN_LABELS ? origin : base.origin,
+    date: date && DATE_RE.test(date) ? date : base.date,
+    departTime: departTime && TIME_RE.test(departTime) ? departTime : base.departTime,
+    returnBy:
+      returnBy === 'last' ? null : returnBy && TIME_RE.test(returnBy) ? returnBy : base.returnBy,
+  }
+}
+
 /* ── 시각 조정 ─────────────────────────────────────────────────────────────
    30분 단위로 올리고 내립니다. 시외버스 배차가 그보다 촘촘한 지역이 아니라
    10분 단위로 쪼개면 탭만 늘고 판정 결과는 거의 안 바뀝니다. */

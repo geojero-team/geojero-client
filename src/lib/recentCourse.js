@@ -25,10 +25,18 @@ export function markRecommended() {
   }
 }
 
+/** 형태가 맞지 않는 기록(손상·구버전)은 없는 것으로 — 홈이 죽으면 안 됩니다. */
 export function loadRecentCourse() {
   try {
     const raw = window.localStorage.getItem(RECENT_KEY)
-    return raw ? JSON.parse(raw) : null
+    if (!raw) return null
+    const entry = JSON.parse(raw)
+    const valid =
+      entry &&
+      typeof entry.name === 'string' &&
+      Array.isArray(entry.spotIds) &&
+      typeof entry.date === 'string'
+    return valid ? entry : null
   } catch {
     return null
   }

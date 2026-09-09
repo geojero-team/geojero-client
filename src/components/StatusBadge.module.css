@@ -23,8 +23,8 @@
   color: var(--status-no);
 }
 
-/* 미확인은 면 없이 테두리만 (노란 면 금지 원칙, 09-07) */
+/* 미확인은 면 없이 테두리만 (노란 면 금지 원칙, 09-07). 높이 24를 yes/no와 맞추려고 안쪽 선으로. */
 .unknown {
-  border: 1px solid var(--status-unknown);
+  box-shadow: inset 0 0 0 1px var(--status-unknown);
   color: var(--status-unknown);
 }

@@ -14,7 +14,12 @@ import {
   markRecommended,
   saveRecentCourse,
 } from '../lib/recentCourse'
-import { ORIGIN_LABELS, defaultTripParams, saveOrigin } from '../lib/tripParams'
+import {
+  ORIGIN_LABELS,
+  defaultTripParams,
+  saveOrigin,
+  tripToSearch,
+} from '../lib/tripParams'
 import styles from './HomePage.module.css'
 
 /**
@@ -45,6 +50,12 @@ function CourseCard({ course, onOpen }) {
       <div className={styles.photo}>
         <img className={styles.photoImg} src={courseImage(course)} alt="" />
         <StatusBadge status={course.verdict} className={styles.badge} />
+        {/* Figma dots — 스팟 사진 수 + 경로 미니지도 1장. 캐러셀 스크롤은 사진이 들어온 뒤. */}
+        <span className={styles.dots} aria-hidden="true">
+          {Array.from({ length: Math.max(spots.length, 1) + 1 }, (_, index) => (
+            <span key={index} className={index === 0 ? styles.dotActive : styles.dotIdle} />
+          ))}
+        </span>
       </div>
 
       <div className={styles.cardInfo}>
@@ -114,8 +125,10 @@ export default function HomePage() {
   const [trip, setTrip] = useState(defaultTripParams)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
-  const [recommended, setRecommended] = useState(hasRecommendation)
   const [recent, setRecent] = useState(loadRecentCourse)
+  const [recommended, setRecommended] = useState(
+    () => hasRecommendation() || recent !== null,
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -144,14 +157,18 @@ export default function HomePage() {
     setSheetOpen(false)
   }, [])
 
+  // 코스를 열면 홈에서 확정한 조건(날짜·시각)을 지도에 그대로 넘깁니다. 최근 카드에서
+  // 다시 열 때는 그 카드에 적힌 날짜로 봅니다.
   const openCourse = useCallback(
-    ({ name, spotIds, verdict }) => {
-      const entry = { name, spotIds, verdict, date: trip.date }
+    ({ name, spotIds, verdict, date = trip.date }) => {
+      const entry = { name, spotIds, verdict, date }
       saveRecentCourse(entry)
       setRecent(entry)
-      navigate(`${MAP_PATH}?spots=${spotIds.join(',')}`)
+      navigate(
+        `${MAP_PATH}?${tripToSearch({ ...trip, date }, { spots: spotIds.join(',') })}`,
+      )
     },
-    [navigate, trip.date],
+    [navigate, trip],
   )
 
   const originLabel = ORIGIN_LABELS[trip.origin] ?? trip.origin

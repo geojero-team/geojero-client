@@ -84,7 +84,6 @@
 
 .rowValue {
   font: var(--type-body-strong);
-  font-variant-numeric: tabular-nums;
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -197,6 +196,7 @@
    "더 있다"가 읽히고, 페이지 여백 20은 그대로 남습니다. */
 .cards {
   display: flex;
+  align-items: flex-start;
   gap: 12px;
   overflow-x: auto;
   scroll-snap-type: x proximity;
@@ -207,19 +207,30 @@
   display: none;
 }
 
+/* CourseCard2 210×166 — Figma의 1px 테두리는 레이아웃 밖(겹침)이라 border 대신 ::after로 그립니다. */
 .card {
+  position: relative;
   display: flex;
   flex: none;
   flex-direction: column;
   width: 210px;
   padding: 0;
   overflow: hidden;
-  border: 1px solid var(--border-default);
+  border: 0;
   border-radius: var(--radius-md);
   background: var(--bg-page);
   scroll-snap-align: start;
   text-align: left;
   cursor: pointer;
+}
+
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--border-default);
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 .card:active {
@@ -230,6 +241,35 @@
   position: relative;
   height: 110px;
   overflow: hidden;
+}
+
+/* 캐러셀 점(Figma dots, 24×6 @ left 72.5 top 98): 활성 r3 흰색, 나머지 r2.5 흰색 55% */
+.dots {
+  position: absolute;
+  top: 98px;
+  left: 72.5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 6px;
+}
+
+.dotActive,
+.dotIdle {
+  border-radius: var(--radius-pill);
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.35));
+}
+
+.dotActive {
+  width: 6px;
+  height: 6px;
+  background: #fff;
+}
+
+.dotIdle {
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.55);
 }
 
 .photoImg {

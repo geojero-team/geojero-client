@@ -11,7 +11,7 @@ const LABELS = {
  * 성립으로 추정하지 않는다(엔진 규칙)는 것이 화면에서도 지켜져야 합니다.
  */
 export default function StatusBadge({ status, className = '' }) {
-  const key = status in LABELS ? status : 'UNKNOWN'
+  const key = Object.hasOwn(LABELS, status) ? status : 'UNKNOWN'
   const [mark, label] = LABELS[key]
 
   return (
