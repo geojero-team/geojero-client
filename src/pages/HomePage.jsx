@@ -218,7 +218,7 @@ export default function HomePage() {
 
             <Button
               className={styles.cta}
-              onClick={() => navigate('/spots')}
+              onClick={() => navigate(`/spots/pick?${tripToSearch(trip)}`)}
               data-api="GET /api/spots"
             >
               가고 싶은 곳 고르기

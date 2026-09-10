@@ -107,7 +107,14 @@ export default function MapPage() {
     setTrip((prev) => ({ ...prev, ...patch }))
   }, [])
 
-  const allSpots = useMemo(() => result.data?.spots ?? [], [result.data])
+  // 좌표가 [미확인]인 스팟(명사해수욕장)은 지도에 찍지 않습니다.
+  const allSpots = useMemo(
+    () =>
+      (result.data?.spots ?? []).filter(
+        (spot) => Number.isFinite(spot.lat) && Number.isFinite(spot.lng),
+      ),
+    [result.data],
+  )
   const routes = useMemo(() => result.data?.routes ?? [], [result.data])
 
   const activeRoute =

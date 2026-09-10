@@ -1,0 +1,7 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="SpotMarker">
+<rect x="0.75" y="0.75" width="26.5" height="26.5" rx="13.25" fill="white"/>
+<rect x="0.75" y="0.75" width="26.5" height="26.5" rx="13.25" stroke="#0069B3" stroke-width="1.5"/>
+<path id="icon-ferry" d="M11.25 14.125V11.125H17.25V14.125M14.25 11.125V8.125M7.75 19.125C9.25 18.125 10.25 18.125 11.75 19.125C13.25 20.125 14.25 20.125 15.75 19.125C17.25 18.125 18.25 18.125 19.75 19.125M8.25 14.125H20.25L18.75 17.125H9.75L8.25 14.125Z" stroke="#0069B3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

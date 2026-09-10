@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage'
 import MapPage from './pages/MapPage'
 import MyPlansPage from './pages/MyPlansPage'
 import SpotDetailPage from './pages/SpotDetailPage'
+import SpotPickPage from './pages/SpotPickPage'
 import SpotsPage from './pages/SpotsPage'
 import VerdictPage from './pages/VerdictPage'
 
@@ -19,6 +20,7 @@ import VerdictPage from './pages/VerdictPage'
  *   /map                  지도 — 스팟을 아직 안 고른 둘러보기 상태
  *   /map?spots=5,2,7      지도 — 스팟 고르기에서 넘어온 판정 상태
  *   /spots                스팟 목록
+ *   /spots/pick           스팟 고르기 (조건은 쿼리로; 없으면 시트에서 정함)
  *   /spots/:spotId        스팟 상세
  *   /verdict/:routeId     판정 결과 (정류장 타임라인)
  *   /my                   내 일정
@@ -34,6 +36,7 @@ export default function App() {
         {/* 홈이 '/'로 올라오기 전에 나간 링크가 죽지 않게 남겨둡니다. */}
         <Route path="/home" element={<Navigate to="/" replace />} />
         <Route path="/spots" element={<SpotsPage />} />
+        <Route path="/spots/pick" element={<SpotPickPage />} />
         <Route path="/spots/:spotId" element={<SpotDetailPage />} />
         <Route path="/verdict/:routeId" element={<VerdictPage />} />
         <Route path="/my" element={<MyPlansPage />} />

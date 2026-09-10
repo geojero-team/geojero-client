@@ -16,98 +16,48 @@
  */
 
 const SPOTS = [
-  {
-    spotId: 1,
-    name: '해금강',
-    shortName: '해금강',
-    theme: 'VIEW',
-    category: '언덕·전망',
-    region: '남부권',
-    thumbnailUrl: null,
-    lat: 34.7398,
-    lng: 128.6653,
-  },
-  {
-    spotId: 2,
-    name: '바람의언덕',
-    shortName: '바람의언덕',
-    theme: 'VIEW',
-    category: '언덕·전망',
-    region: '남부권',
-    thumbnailUrl: null,
-    lat: 34.7849,
-    lng: 128.6558,
-  },
-  {
-    spotId: 3,
-    name: '여차홍포 전망대',
-    shortName: '여차홍포',
-    theme: 'VIEW',
-    category: '언덕·전망',
-    region: '남부권',
-    thumbnailUrl: null,
-    lat: 34.7085,
-    lng: 128.556,
-  },
-  {
-    spotId: 4,
-    name: '매미성',
-    shortName: '매미성',
-    theme: 'CASTLE',
-    category: '성',
-    region: '동부권',
-    thumbnailUrl: null,
-    lat: 34.8836,
-    lng: 128.7263,
-  },
-  {
-    spotId: 5,
-    name: '거제식물원 정글돔',
-    shortName: '거제식물원',
-    theme: 'GARDEN',
-    category: '식물원',
-    region: '중부권',
-    thumbnailUrl: null,
-    lat: 34.858,
-    lng: 128.6046,
-  },
-  {
-    spotId: 6,
-    name: '외도 보타니아',
-    shortName: '외도 보타니아',
-    theme: 'CRUISE',
-    category: '유람선',
-    region: '남부권',
-    thumbnailUrl: null,
-    lat: 34.7472,
-    lng: 128.6883,
-  },
-  {
-    spotId: 7,
-    name: '학동몽돌해변',
-    shortName: '학동몽돌해변',
-    theme: 'BEACH',
-    category: '해수욕장',
-    region: '남부권',
-    thumbnailUrl: null,
-    lat: 34.7605,
-    lng: 128.6402,
-  },
+  // Figma 233:378 순서. 좌표는 TourAPI 실측(geojero data/seed/pois.json, 2026-09-06).
+  // notice = 조건과 무관한 사실(기준문서 §2·§3) — 목록에서도 보이는 둘째 줄.
+  spot(2, '바람의언덕', 'VIEW', '언덕·전망', '남부권', 34.7440458, 128.6633111),
+  spot(8, '도장포', 'CRUISE', '유람선', '남부권', 34.7421508, 128.6626096),
+  spot(1, '해금강', 'VIEW', '언덕·전망', '남부권', 34.7333, 128.6839),
+  spot(7, '학동', 'BEACH', '해수욕장', '남부권', 34.774752, 128.641498),
+  // Figma 내부 불일치: 목록(233:378)은 '식물원', 고르기(285:419)는 '식물원 · 유람선' — 최신 프레임을 따름
+  spot(6, '외도', 'GARDEN', '식물원 · 유람선', '동부권', 34.7694723, 128.7113921, {
+    kind: 'UNKNOWN',
+    text: '당일 확인',
+  }),
+  // 좌표 [미확인] — 지도에는 찍히지 않음
+  spot(9, '명사해수욕장', 'BEACH', '해수욕장', '남부권', null, null, {
+    kind: 'NO',
+    text: '오늘 버스로 안 돼요',
+  }),
+  spot(4, '매미성', 'CASTLE', '성', '북부권', 34.9682131, 128.7050934),
+  spot(5, '거제식물원', 'GARDEN', '식물원', '서부권', 34.8568211, 128.5780987),
 ]
+
+function spot(spotId, name, theme, category, region, lat, lng, notice = null) {
+  return { spotId, name, shortName: name, theme, category, region, thumbnailUrl: null, lat, lng, notice }
+}
 
 /** 스팟별 판정. 조건(출발지·날짜·시각)이 정해졌을 때만 붙습니다. */
 const SPOT_VERDICTS = {
   1: { verdict: 'YES', summary: '왕복 5시간 20분 · 머무는 시간 1시간 40분' },
   2: { verdict: 'YES', summary: '왕복 4시간 50분 · 머무는 시간 2시간' },
-  3: { verdict: 'NO', summary: null, reason: '주말 배차 감축으로 당일 왕복 불가' },
   4: { verdict: 'YES', summary: '왕복 3시간 30분 · 머무는 시간 2시간 20분' },
   5: { verdict: 'YES', summary: '왕복 2시간 40분 · 머무는 시간 3시간' },
   6: {
-    verdict: 'NO',
+    verdict: 'UNKNOWN',
     summary: null,
-    reason: '외도 막배(16:00) 이후 부산행 막차 연결 불가',
+    reason: '외도유람선은 매일 출항 시각이 달라요 · 당일 확인',
   },
   7: { verdict: 'YES', summary: '왕복 5시간 · 머무는 시간 1시간 20분' },
+  8: { verdict: 'YES', summary: null },
+  9: {
+    verdict: 'NO',
+    summary: null,
+    reason: '도로 유실로 명사해수욕장앞 우회 중 (53·53-1 해당 구간 이용 불가)',
+  },
 }
 
 /**
@@ -120,7 +70,7 @@ const ROUTES = [
     rank: 1,
     strategy: 'MOST_SPOTS',
     strategyLabel: '많이 도는',
-    name: '거제식물원 · 바람의언덕 · 학동몽돌해변 · 해금강',
+    name: '거제식물원 · 바람의언덕 · 학동 · 해금강',
     spotIds: [5, 2, 7, 1],
     verdict: 'YES',
     reason: null,
@@ -190,18 +140,18 @@ const COURSES = [
   },
   {
     courseId: 2,
-    name: '바람의언덕 · 학동몽돌해변',
+    name: '바람의언덕 · 도장포',
     shortName: '바람의언덕',
     theme: 'VIEW',
     region: '남부권',
     thumbnailUrl: null,
-    spotIds: [2, 7],
+    spotIds: [2, 8],
     verdict: 'YES',
     reason: null,
     summary: '07:00 → 22:10 · 막차 21:20',
     spots: [
       { spotId: 2, shortName: '바람의언덕', verdict: 'YES' },
-      { spotId: 7, shortName: '학동몽돌해변', verdict: 'YES' },
+      { spotId: 8, shortName: '도장포', verdict: 'YES' },
     ],
   },
   {
@@ -253,7 +203,7 @@ export async function fetchSpots({ theme, q } = {}) {
   // return res.json()
 
   await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS))
-  return { spots: SPOTS, ...SOURCE }
+  return { spots: theme ? SPOTS.filter((spot) => spot.theme === theme) : SPOTS, ...SOURCE }
 }
 
 /**

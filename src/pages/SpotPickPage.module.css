@@ -1,0 +1,239 @@
+/* 스팟 고르기 — Figma 233:417 / 285:419 실측. 탭바 없음, 하단 selection-bar 고정. */
+
+/* body(285:420): px20 py16, gap 16 */
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 16px) 20px 16px;
+  background: var(--bg-page);
+}
+
+/* header(285:421): '‹' 24/32 700 + 제목 20/28 700, gap 8, h32 */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.back {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--type-display);
+  color: var(--text-primary);
+}
+
+.title {
+  flex: 1;
+  margin: 0;
+  font: var(--type-title);
+  color: var(--text-primary);
+}
+
+.headline {
+  margin: 0;
+  font: var(--type-display);
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.sub {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+/* condition-pill(없음)(285:426): surface 면, 1px dashed status/unknown, pill, pl14 pr12 py8, gap 6 */
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px 8px 14px;
+  border: 1px dashed var(--status-unknown);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  font: var(--type-body-strong);
+  color: var(--status-unknown);
+  text-align: left;
+}
+
+.pillText {
+  flex: 1;
+  min-width: 0;
+}
+
+.notice {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* 카드 169×160: 사진 104 + info 56. 테두리는 겹침(1px / 선택 2px brand) */
+.card {
+  position: relative;
+  width: 169px;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--bg-page);
+}
+
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--border-default);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.cardOn::after {
+  border: 2px solid var(--brand-strong);
+}
+
+.cardMain {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cardMain:active {
+  background: var(--bg-pressed);
+}
+
+.photo {
+  height: 104px;
+  overflow: hidden;
+}
+
+.photoImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* info(285:454): 가로, pt8 pb10 px10, gap 8, items-center */
+.info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 10px;
+}
+
+.col {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.name {
+  font: var(--type-caption);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  font: var(--type-label);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  flex: none;
+  font: var(--type-body);
+  color: var(--text-disabled);
+}
+
+/* check(285:461): 32px 원, 우10 상10. 비선택 흰 92% + 1.5px #98a2b3 + 그림자 / 선택 brand 면 + 흰 2px 링 */
+.check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1.5px solid var(--text-disabled);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.checkOn {
+  border: 0;
+  background: var(--brand-strong);
+  box-shadow:
+    0 0 0 2px #fff,
+    0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* selection-bar(285:515): 흰 면, 1px 테두리, 그림자 0 -4 12 rgba(16,24,40,.08), px20 pt12 pb20, gap 10 */
+.bar {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 20px calc(env(safe-area-inset-bottom, 0px) + 20px);
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-page);
+  box-shadow: 0 -4px 12px rgba(16, 24, 40, 0.08);
+}
+
+.chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+/* chip(285:517): brand/tint pill, pl10 pr8 py4, gap 4 */
+.chip {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px 4px 10px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--brand-tint);
+  color: var(--brand-strong);
+}
+
+.chipName {
+  font: var(--type-label);
+}
+
+.chipX {
+  font: var(--type-caption);
+}

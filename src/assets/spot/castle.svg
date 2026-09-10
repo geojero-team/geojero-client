@@ -1,0 +1,7 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="SpotMarker">
+<rect x="0.75" y="0.75" width="26.5" height="26.5" rx="13.25" fill="white"/>
+<rect x="0.75" y="0.75" width="26.5" height="26.5" rx="13.25" stroke="#0069B3" stroke-width="1.5"/>
+<path id="icon-castle" d="M13 19V15.5H15V19M9 19V11H11V9H13V11H15V9H17V11H19V19H9Z" stroke="#0069B3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

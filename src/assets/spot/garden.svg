@@ -1,0 +1,7 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="SpotMarker">
+<rect x="0.75" y="0.75" width="26.5" height="26.5" rx="13.25" fill="white"/>
+<rect x="0.75" y="0.75" width="26.5" height="26.5" rx="13.25" stroke="#0069B3" stroke-width="1.5"/>
+<path id="icon-garden" d="M14 20V13M14 13C14 10 16 8 19 8C19 11 17 13 14 13ZM14 15.5C11 15.5 9 13.5 9 10C12 10 14 12 14 15.5Z" stroke="#0069B3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
