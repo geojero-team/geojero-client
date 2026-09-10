@@ -1,7 +1,7 @@
 import { api } from '../lib/api'
 import { formatDuration } from '../lib/format'
 import { ORIGIN_LABELS, toHHMM, toMinutes } from '../lib/tripParams'
-import { resolvePoiId } from './poiIndex'
+import { loadSpotImages, resolvePoiId } from './poiIndex'
 
 /**
  * 목 데이터 — 화면이 쓰는 네 덩어리
@@ -405,9 +405,10 @@ function buildBack(spots, trip) {
 
 /* ── 추천 코스(일정 고르기 카드) ─────────────────────────────────────────── */
 
-function pickSpots(spotIds) {
-  if (!spotIds?.length) return SPOTS
-  return spotIds.map((id) => SPOTS.find((s) => s.spotId === id)).filter(Boolean)
+/** source는 사진을 얹은 목록을 넘기기 위한 자리입니다 — 코스 카드도 같은 사진을 씁니다. */
+function pickSpots(spotIds, source = SPOTS) {
+  if (!spotIds?.length) return source
+  return spotIds.map((id) => source.find((s) => s.spotId === id)).filter(Boolean)
 }
 
 /**
@@ -576,6 +577,23 @@ const delay = () => new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS))
  * 조건 없이 지도만 둘러보는 경우 — 스팟 목록만 돌려줍니다.
  * 판정을 안 했으므로 verdict가 없고, 마커도 판정색을 쓰지 않습니다.
  */
+/**
+ * 목 스팟에 서버 사진을 얹습니다.
+ *
+ * 스팟의 정체(spotId·분류·좌표)는 아직 목이 쥐고 있습니다 — 판정·코스 조립이 전부 그
+ * spotId에 묶여 있어서, 서버 poi_id로 갈아끼우면 화면이 통째로 흔들립니다. 사진만 먼저
+ * 서버 것으로 바꿉니다. 사진이 없는 스팟은 손대지 않아 기존 자리 그림이 그대로 남습니다.
+ */
+async function withPhotos(spots) {
+  const images = await loadSpotImages()
+  if (images.size === 0) return spots
+
+  return spots.map((spot) => {
+    const url = images.get(spot.spotId)
+    return url ? { ...spot, thumbnailUrl: url } : spot
+  })
+}
+
 // eslint-disable-next-line no-unused-vars
 export async function fetchSpots({ theme, q } = {}) {
   // const query = new URLSearchParams({ ...(theme && { theme }), ...(q && { q }) })
@@ -583,8 +601,8 @@ export async function fetchSpots({ theme, q } = {}) {
   // if (!res.ok) throw new Error(`스팟을 불러오지 못했습니다 (${res.status})`)
   // return res.json()
 
-  await delay()
-  return { spots: theme ? SPOTS.filter((spot) => spot.theme === theme) : SPOTS, ...SOURCE }
+  const spots = await withPhotos(SPOTS)
+  return { spots: theme ? spots.filter((spot) => spot.theme === theme) : spots, ...SOURCE }
 }
 
 /**
@@ -599,8 +617,8 @@ export async function fetchPlan({ spotIds, ...trip }) {
   // if (!res.ok) throw new Error(`판정에 실패했습니다 (${res.status})`)
   // return res.json()
 
-  await delay()
-  const picked = pickSpots(spotIds)
+  const withImages = await withPhotos(SPOTS)
+  const picked = pickSpots(spotIds, withImages)
   const info = ORIGIN_INFO[trip.origin] ?? {}
   return {
     arrivalTime: info.rideMin != null ? addMin(trip.departTime, info.rideMin) : null,
@@ -609,7 +627,7 @@ export async function fetchPlan({ spotIds, ...trip }) {
     // 지도는 고르지 않은 스팟도 아이콘 핀으로 계속 보여줍니다(Figma 285:208).
     // 무엇을 골랐는지는 routes[].spotIds가 말합니다.
     pickedSpotIds: picked.map((spot) => spot.spotId),
-    spots: SPOTS.map((spot) => ({ ...spot, ...SPOT_VERDICTS[spot.spotId] })),
+    spots: withImages.map((spot) => ({ ...spot, ...SPOT_VERDICTS[spot.spotId] })),
     ...buildItineraries(picked, trip),
     ...SOURCE,
   }
@@ -737,12 +755,17 @@ export async function fetchCourses({ origin, date, departTime, returnBy, limit =
   // if (!res.ok) throw new Error(`코스를 불러오지 못했습니다 (${res.status})`)
   // return res.json()
 
-  await delay()
   // 성립만 내보냅니다(2026-09-10 결정). 미확인 코스는 목록에서 뺍니다 —
   // 매미성 하차 정류소·거제식물원 운영 재개는 기준문서 §9 미해결이라, 확인되면 다시 나타납니다.
+  const images = await loadSpotImages()
   const trip = { origin, date, departTime, returnBy }
-  const courses = COURSES.map((course) => judgeCourse(course, trip)).filter(
-    (course) => course.verdict === 'YES',
-  )
+  const courses = COURSES.map((course) => judgeCourse(course, trip))
+    .filter((course) => course.verdict === 'YES')
+    // 코스 썸네일은 첫 스팟의 사진을 씁니다. 코스 자체의 사진은 원천이 없습니다
+    // (courses.thumbnail_url은 스키마에 있으나 비어 있습니다).
+    .map((course) => {
+      const url = course.spotIds?.map((id) => images.get(id)).find(Boolean)
+      return url ? { ...course, thumbnailUrl: url } : course
+    })
   return { courses: courses.slice(0, limit), ...SOURCE }
 }

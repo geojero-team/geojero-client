@@ -57,8 +57,15 @@ async function request(path, { method = 'GET', body, session = false } = {}) {
  * 쓰지 않는 줄은 계약이 맞는지 확인할 방법도 없습니다.
  */
 export const api = {
-  /** PoisRes { pois: [{ poiId, name, kind, tier, hasEnglish }] } — 좌표 없음(BE 추가 필요) */
-  pois: () => request('/api/pois'),
+  /**
+   * PoisRes { pois: [{ poiId, name, shortName, kind, theme, region, category,
+   *                    tier, hasEnglish, lat, lng, imageUrl }] }
+   *
+   * withImages=true면 서버가 POI마다 TourAPI를 부릅니다(24h 캐시). 사진이 필요한 화면만
+   * 켭니다 — 이름→id 해석은 사진이 필요 없고, 켜면 첫 요청이 느려집니다.
+   * 저작권 보류(cpyrhtDivCd Type3)인 POI는 imageUrl이 null로 옵니다.
+   */
+  pois: (withImages = false) => request(`/api/pois${withImages ? '?withImages=true' : ''}`),
 
   /**
    * PoiDetailRes { poiId, name, kind, tier, lang, langFallback,

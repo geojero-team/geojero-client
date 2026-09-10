@@ -7,7 +7,7 @@ import Screen from '../components/Screen'
 import StatusBadge from '../components/StatusBadge'
 import { t } from '../i18n'
 import { fetchCourses } from '../data/mockPlan'
-import { courseImage } from '../lib/courseImage'
+import { courseImage, onImageError } from '../lib/courseImage'
 import { THEME_LABELS, formatDateLong } from '../lib/format'
 import {
   ORIGIN_LABELS,
@@ -47,7 +47,7 @@ function CourseCard({ course, onOpen }) {
       data-api="GET /api/routes"
     >
       <div className={styles.photo}>
-        <img className={styles.photoImg} src={courseImage(course)} alt="" />
+        <img className={styles.photoImg} src={courseImage(course)} alt="" onError={onImageError(course)} />
         <StatusBadge status={course.verdict} className={styles.badge} />
         {/* Figma dots — 스팟 사진 수 + 경로 미니지도 1장. 캐러셀 스크롤은 사진이 들어온 뒤. */}
         <span className={styles.dots} aria-hidden="true">

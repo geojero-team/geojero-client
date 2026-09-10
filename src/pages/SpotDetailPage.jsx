@@ -4,7 +4,7 @@ import Button from '../components/Button'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { fetchSpotDetail } from '../data/mockPlan'
-import { courseImage } from '../lib/courseImage'
+import { courseImage, onImageError } from '../lib/courseImage'
 import {
   carrySearch,
   spotIdsFromSearch,
@@ -97,6 +97,7 @@ export default function SpotDetailPage() {
             className={styles.heroImg}
             src={hasPhotos ? photos[0] : courseImage(spot)}
             alt=""
+            onError={onImageError(spot)}
           />
 
           <button

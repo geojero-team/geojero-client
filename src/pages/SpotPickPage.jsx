@@ -6,7 +6,7 @@ import ConditionSheet from '../components/ConditionSheet'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { fetchSpots } from '../data/mockPlan'
-import { courseImage } from '../lib/courseImage'
+import { courseImage, onImageError } from '../lib/courseImage'
 import {
   carrySearch,
   defaultTripParams,
@@ -60,7 +60,7 @@ function PickCard({ spot, selected, onToggle, onOpen }) {
     <div className={selected ? `${styles.card} ${styles.cardOn}` : styles.card}>
       <button type="button" className={styles.cardMain} onClick={() => onOpen(spot)}>
         <div className={styles.photo}>
-          <img className={styles.photoImg} src={courseImage(spot)} alt="" />
+          <img className={styles.photoImg} src={courseImage(spot)} alt="" onError={onImageError(spot)} />
         </div>
         <div className={styles.info}>
           <span className={styles.col}>

@@ -5,7 +5,7 @@ import CategoryBar from '../components/CategoryBar'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { fetchSpots } from '../data/mockPlan'
-import { courseImage } from '../lib/courseImage'
+import { courseImage, onImageError } from '../lib/courseImage'
 import styles from './SpotsPage.module.css'
 
 /**
@@ -24,7 +24,7 @@ function SpotCard({ spot, onOpen }) {
   return (
     <button type="button" className={styles.card} onClick={() => onOpen(spot)}>
       <div className={styles.photo}>
-        <img className={styles.photoImg} src={courseImage(spot)} alt="" />
+        <img className={styles.photoImg} src={courseImage(spot)} alt="" onError={onImageError(spot)} />
       </div>
       <div className={styles.info}>
         <span className={styles.name}>{spot.name}</span>

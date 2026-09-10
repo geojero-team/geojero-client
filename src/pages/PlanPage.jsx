@@ -5,7 +5,7 @@ import Button from '../components/Button'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { fetchPlan } from '../data/mockPlan'
-import { courseImage } from '../lib/courseImage'
+import { courseImage, onImageError } from '../lib/courseImage'
 import { formatDateDay } from '../lib/format'
 import { ORIGIN_LABELS, spotIdsFromSearch, tripFromSearch, tripToSearch } from '../lib/tripParams'
 import styles from './PlanPage.module.css'
@@ -51,7 +51,7 @@ function ItineraryCard({ route, spotsById, selected, onSelect }) {
             )}
             <span className={styles.stop}>
               <span className={styles.thumb}>
-                <img className={styles.thumbImg} src={courseImage(spot)} alt="" />
+                <img className={styles.thumbImg} src={courseImage(spot)} alt="" onError={onImageError(spot)} />
                 <span className={styles.num}>{index + 1}</span>
               </span>
               <span className={styles.stopName}>{spot.shortName}</span>
@@ -155,7 +155,7 @@ export default function PlanPage() {
             <div className={styles.picked}>
               {picked.map((spot) => (
                 <span key={spot.spotId} className={styles.chip}>
-                  <img className={styles.chipPhoto} src={courseImage(spot)} alt="" />
+                  <img className={styles.chipPhoto} src={courseImage(spot)} alt="" onError={onImageError(spot)} />
                   <span className={styles.chipName}>{spot.shortName}</span>
                 </span>
               ))}

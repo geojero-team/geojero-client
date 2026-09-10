@@ -32,12 +32,15 @@ const SERVER_POI_NAME = {
 
 let indexPromise = null
 
-/** 목록은 한 번만 받아 이름→id 맵으로 들고 있습니다. 스팟마다 다시 부를 이유가 없습니다. */
+/**
+ * 목록은 한 번만 받아 이름→POI 맵으로 들고 있습니다. 스팟마다 다시 부를 이유가 없습니다.
+ * 사진까지 함께 받습니다 — 카드·핀이 전부 이 한 번의 응답으로 채워집니다.
+ */
 function loadIndex() {
   if (!indexPromise) {
     indexPromise = api
-      .pois()
-      .then(({ pois }) => new Map(pois.map((poi) => [poi.name, poi.poiId])))
+      .pois(true)
+      .then(({ pois }) => new Map(pois.map((poi) => [poi.name, poi])))
       .catch((error) => {
         // 실패한 약속을 캐시에 남기면 다시 시도해도 영원히 같은 에러가 납니다.
         indexPromise = null
@@ -56,8 +59,31 @@ export async function resolvePoiId(spotId) {
   if (!name) return null
 
   try {
-    return (await loadIndex()).get(name) ?? null
+    return (await loadIndex()).get(name)?.poiId ?? null
   } catch {
     return null
+  }
+}
+
+/**
+ * 화면 spotId → TourAPI 사진 URL.
+ *
+ * 서버가 죽었거나 사진이 없으면 그 스팟은 맵에 없습니다 — 호출부는 기존 자리 그림을
+ * 그대로 쓰면 됩니다. 사진이 없는 경우는 세 가지입니다: 시드에 contentId가 없거나
+ * (덕포해수욕장), TourAPI 호출이 실패했거나, 저작권 보류(도장포유람선·신선대)입니다.
+ */
+export async function loadSpotImages() {
+  try {
+    const byName = await loadIndex()
+    const images = new Map()
+
+    Object.entries(SERVER_POI_NAME).forEach(([spotId, name]) => {
+      const url = name ? byName.get(name)?.imageUrl : null
+      if (url) images.set(Number(spotId), url)
+    })
+
+    return images
+  } catch {
+    return new Map()
   }
 }

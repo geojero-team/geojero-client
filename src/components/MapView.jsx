@@ -68,6 +68,15 @@ function toneClassOf(spot, isStop, showVerdict) {
  *   코스 정류소  StopMarker — brand 면 + 흰 번호 (미확인·불성립이면 테두리 톤)
  *   코스 밖 스팟 SpotMarker — 흰 면 + brand 테두리 + 카테고리 아이콘
  */
+/** 사진이 없거나 링크가 죽었을 때 쓰는 테마 아이콘. Figma SpotMarker(55:45)와 같은 패스입니다. */
+function themeIconSvg(theme) {
+  return (
+    `<svg width="${MARKER_SIZE}" height="${MARKER_SIZE}" viewBox="0 0 28 28" aria-hidden="true">` +
+    `<path d="${ICON_PATHS[theme] ?? ICON_PATHS.VIEW}" fill="none" stroke="currentColor"` +
+    ' stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  )
+}
+
 function createPinElement(spot, { order, tone }) {
   const isStop = order != null
 
@@ -88,11 +97,18 @@ function createPinElement(spot, { order, tone }) {
   dot.className = styles.pinDot
   if (isStop) {
     dot.textContent = String(order)
+  } else if (spot.thumbnailUrl) {
+    const photo = document.createElement('img')
+    photo.className = styles.pinPhoto
+    photo.src = spot.thumbnailUrl
+    photo.alt = ''
+    // 링크가 죽으면 빈 원이 남습니다. 아이콘으로 되돌립니다.
+    photo.addEventListener('error', () => {
+      dot.innerHTML = themeIconSvg(spot.theme)
+    })
+    dot.append(photo)
   } else {
-    dot.innerHTML =
-      `<svg width="${MARKER_SIZE}" height="${MARKER_SIZE}" viewBox="0 0 28 28" aria-hidden="true">` +
-      `<path d="${ICON_PATHS[spot.theme] ?? ICON_PATHS.VIEW}" fill="none" stroke="currentColor"` +
-      ' stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    dot.innerHTML = themeIconSvg(spot.theme)
   }
 
   const label = document.createElement('span')

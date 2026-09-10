@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
 import Button from './Button'
 import { t } from '../i18n'
-import { courseImage } from '../lib/courseImage'
+import { courseImage, onImageError } from '../lib/courseImage'
 import styles from './CourseStrip.module.css'
 
 /**
@@ -18,7 +18,7 @@ function OrderStop({ spot, index, last, lastBus }) {
   return (
     <span className={styles.stop}>
       <span className={styles.thumb}>
-        <img className={styles.thumbImg} src={courseImage(spot)} alt="" />
+        <img className={styles.thumbImg} src={courseImage(spot)} alt="" onError={onImageError(spot)} />
         <span className={styles.num}>{index + 1}</span>
       </span>
       <span className={styles.stopName}>{spot.shortName ?? spot.name}</span>

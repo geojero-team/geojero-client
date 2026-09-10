@@ -33,3 +33,14 @@ export function courseImage(course) {
 export function courseImageFallback(course) {
   return placeholderFor(course.theme)
 }
+
+/**
+ * `<img onError={...}>`용. TourAPI 사진 링크가 죽으면 자리 그림으로 되돌립니다.
+ * 자리 그림은 data URI라 다시 실패하지 않지만, 같은 src로 바꾸면 무한 루프가 되므로 한 번 막습니다.
+ */
+export function onImageError(course) {
+  return (event) => {
+    const fallback = placeholderFor(course.theme)
+    if (event.currentTarget.src !== fallback) event.currentTarget.src = fallback
+  }
+}

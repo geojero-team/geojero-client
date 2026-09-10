@@ -50,6 +50,18 @@
   color: var(--brand-strong);
 }
 
+/**
+ * 핀 안의 사진. 테두리는 .pinDot이 그리므로 사진은 그 안쪽을 꽉 채웁니다.
+ * 사진이 없거나 링크가 죽으면 이 요소가 아예 안 만들어지고 아이콘이 남습니다.
+ */
+.pinPhoto {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+  display: block;
+}
+
 /* StopMarker default — 코스에 든 정류소. brand 면 + 흰 번호 13px 700.
    13px/700은 텍스트 스타일 8종에 없는 로컬 값입니다(Figma 12:17). */
 .pinStop .pinDot {
