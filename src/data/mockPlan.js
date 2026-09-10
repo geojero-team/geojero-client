@@ -414,10 +414,8 @@ const COURSES = [
     region: '남부권',
     thumbnailUrl: null,
     spotIds: [1],
-    verdict: 'YES',
-    reason: null,
     summary: '07:00 → 22:30 · 막차 21:20',
-    spots: [{ spotId: 1, shortName: '해금강', verdict: 'YES' }],
+    spots: [{ spotId: 1, shortName: '해금강' }],
   },
   {
     courseId: 2,
@@ -427,12 +425,10 @@ const COURSES = [
     region: '남부권',
     thumbnailUrl: null,
     spotIds: [2, 8],
-    verdict: 'YES',
-    reason: null,
     summary: '07:00 → 22:10 · 막차 21:20',
     spots: [
-      { spotId: 2, shortName: '바람의언덕', verdict: 'YES' },
-      { spotId: 8, shortName: '도장포', verdict: 'YES' },
+      { spotId: 2, shortName: '바람의언덕' },
+      { spotId: 8, shortName: '도장포' },
     ],
   },
   {
@@ -443,12 +439,10 @@ const COURSES = [
     region: '중부권',
     thumbnailUrl: null,
     spotIds: [5, 2],
-    verdict: 'YES',
-    reason: null,
     summary: '07:00 → 21:40 · 막차 21:20',
     spots: [
-      { spotId: 5, shortName: '거제식물원', verdict: 'YES' },
-      { spotId: 2, shortName: '바람의언덕', verdict: 'YES' },
+      { spotId: 5, shortName: '거제식물원' },
+      { spotId: 2, shortName: '바람의언덕' },
     ],
   },
   {
@@ -459,15 +453,32 @@ const COURSES = [
     region: '동부권',
     thumbnailUrl: null,
     spotIds: [4, 5],
-    verdict: 'YES',
-    reason: null,
     summary: '07:30 → 21:50 · 막차 21:20',
     spots: [
-      { spotId: 4, shortName: '매미성', verdict: 'YES' },
-      { spotId: 5, shortName: '거제식물원', verdict: 'YES' },
+      { spotId: 4, shortName: '매미성' },
+      { spotId: 5, shortName: '거제식물원' },
     ],
   },
 ]
+
+/**
+ * 큐레이션 코스의 판정은 스팟 판정에서 끌어옵니다.
+ * 코스 쪽에 verdict를 따로 적어두면 SPOT_VERDICTS와 갈라지고, 실제로 갈라져서
+ * 매미성·거제식물원(기준문서 §9 미확인)이 홈에서 '성립'으로 보였습니다.
+ * 출처는 하나여야 합니다 — 미확인은 코스 전체를 미확인으로 끌어내립니다.
+ */
+function judgeCourse(course) {
+  const spots = course.spots.map((spot) => ({
+    ...spot,
+    verdict: SPOT_VERDICTS[spot.spotId]?.verdict ?? 'UNKNOWN',
+  }))
+  return {
+    ...course,
+    spots,
+    verdict: worst(...spots.map((spot) => spot.verdict)),
+    reason: course.spotIds.map((id) => SPOT_VERDICTS[id]?.reason).find(Boolean) ?? null,
+  }
+}
 
 const MOCK_DELAY_MS = 250
 const SOURCE = { source: '거제시 BIS 원문', baseDate: '2026-08-18' }
@@ -596,5 +607,5 @@ export async function fetchCourses({ origin, date, departTime, returnBy, limit =
   // return res.json()
 
   await delay()
-  return { courses: COURSES.slice(0, limit), ...SOURCE }
+  return { courses: COURSES.slice(0, limit).map(judgeCourse), ...SOURCE }
 }
