@@ -82,7 +82,7 @@ function PickCard({ spot, selected, onToggle, onOpen }) {
 export default function SpotPickPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [hasConditions, setHasConditions] = useState(() => searchParams.has('origin'))
   const [trip, setTrip] = useState(() =>
@@ -109,6 +109,24 @@ export default function SpotPickPage() {
     }
   }, [])
 
+  /*
+   * 체크와 조건을 URL에 되씁니다.
+   *
+   * 이 화면의 기억은 URL 하나뿐입니다 — 고른 스팟을 담아둘 저장소도 Context도 없습니다.
+   * state에만 두면 새로고침하면 체크가 날아가고, 일정 고르기에서 브라우저 뒤로가기로
+   * 돌아와도 빈 화면이 됩니다. 조건 시트로 정한 조건도 마찬가지입니다.
+   *
+   * replace라서 체크할 때마다 뒤로가기 스택이 쌓이지는 않습니다.
+   * 쿼리가 이미 같으면 쓰지 않습니다 — 안 그러면 되쓰기가 스스로를 다시 불러 무한 루프가 됩니다.
+   */
+  const canonicalSearch = carrySearch({ trip, hasConditions, selectedIds: selected })
+
+  useEffect(() => {
+    if (canonicalSearch !== searchParams.toString()) {
+      setSearchParams(canonicalSearch, { replace: true })
+    }
+  }, [canonicalSearch, searchParams, setSearchParams])
+
   const goBack = () =>
     location.key === 'default' ? navigate('/', { replace: true }) : navigate(-1)
 
@@ -119,13 +137,7 @@ export default function SpotPickPage() {
 
   // 상세를 다녀와도 조건과 고른 스팟이 남아야 합니다 — 상세의 '일정에 담기'가 이걸 그대로
   // 되돌려줍니다. 안 실어 보내면 돌아올 때 조건이 없는 화면이 되고 선택도 사라집니다.
-  const openDetail = ({ spotId }) =>
-    navigate(
-      withSearch(
-        `/spots/${spotId}`,
-        carrySearch({ trip, hasConditions, selectedIds: selected }),
-      ),
-    )
+  const openDetail = ({ spotId }) => navigate(withSearch(`/spots/${spotId}`, canonicalSearch))
 
   const ordered = PICK_ORDER.map((id) => result.spots.find((spot) => spot.spotId === id))
     .filter(Boolean)
