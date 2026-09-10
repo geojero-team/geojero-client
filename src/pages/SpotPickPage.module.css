@@ -74,17 +74,20 @@
   color: var(--text-secondary);
 }
 
+/* 카드 폭을 169px로 못 박으면 화면이 390보다 조금만 좁아도 한 줄에 하나만 들어가
+   왼쪽에 몰립니다(폰은 360폭이 흔합니다). 2열을 고정하고 폭은 나눠 갖게 합니다 —
+   390에서는 (350 - 12) / 2 = 169로 Figma 값과 정확히 같습니다. */
 .grid {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 12px;
 }
 
 /* 카드 169×160: 사진 104 + info 56. 테두리는 겹침(1px / 선택 2px brand) */
 .card {
   position: relative;
-  width: 169px;
+  width: 100%;
   overflow: hidden;
   border-radius: var(--radius-md);
   background: var(--bg-page);

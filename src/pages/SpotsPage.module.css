@@ -34,10 +34,13 @@
 }
 
 /* grid(233:407): 2열, gap 12, 카드 169 고정 */
+/* 카드 폭을 169px로 못 박으면 화면이 390보다 조금만 좁아도 한 줄에 하나만 들어가
+   왼쪽에 몰립니다(폰은 360폭이 흔합니다). 2열을 고정하고 폭은 나눠 갖게 합니다 —
+   390에서는 (350 - 12) / 2 = 169로 Figma 값과 정확히 같습니다. */
 .grid {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 12px;
 }
 
@@ -46,7 +49,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  width: 169px;
+  width: 100%;
   padding: 0;
   overflow: hidden;
   border: 0;

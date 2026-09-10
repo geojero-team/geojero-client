@@ -4,11 +4,14 @@
   /* Figma 02-1 프레임 390×844 그대로.
      폭만 잠그고 높이를 창에 맡기면, 세로로 긴 데스크톱 창에서 화면이 늘어나
      Figma와 비율이 달라집니다 — 특히 남는 높이를 전부 먹는 지도가 그렇습니다.
-     그래서 높이도 844로 잠급니다. 폰에서는 뷰포트가 844보다 작아 그대로 꽉 찹니다. */
+     그래서 높이도 844로 잠급니다. 폰에서는 뷰포트가 844보다 작아 그대로 꽉 찹니다.
+     큰 모니터에서 손톱만 해지는 건 lib/frameZoom.js가 배율을 올려 해결합니다
+     — 비율은 그대로 두고 크기만 키웁니다. */
   max-width: 390px;
   height: 100dvh;
   max-height: 844px;
   margin: 0 auto;
+  zoom: var(--frame-zoom, 1);
   display: flex;
   flex-direction: column;
   overflow: hidden;

@@ -32,12 +32,6 @@ const REJUDGE_DEBOUNCE_MS = 200
 const TOP_RESERVED_BROWSE = 16
 const TOP_RESERVED_PLANNED = 56
 
-/**
- * 지도 아래쪽에서 비워둬야 하는 높이 = 둘러보기 안내 카드가 가리는 자리.
- * 카드 높이(약 100) + 아래 여백 32. 이걸 비워두지 않으면 남쪽 스팟(해금강·도장포)이
- * 카드 뒤로 들어갑니다. 판정 상태에서는 시트가 지도를 밀어내므로 0입니다.
- */
-const BOTTOM_RESERVED_BROWSE = 132
 
 /**
  * 지도 화면 — Figma 285:208(코스 선택) · 240:164(핀 요약).
@@ -189,7 +183,6 @@ export default function MapPage() {
           showVerdict={planned}
           orderBySpotId={orderBySpotId}
           topReserved={planned ? TOP_RESERVED_PLANNED : TOP_RESERVED_BROWSE}
-          bottomReserved={showBrowseNotice ? BOTTOM_RESERVED_BROWSE : 0}
         />
 
         {/* 조건을 안 고른 상태에서는 알약을 띄우지 않습니다. 보여줄 조건이 없습니다. */}

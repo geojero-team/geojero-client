@@ -12,12 +12,6 @@ const INITIAL_LEVEL = 9
 const MIN_FIT_LEVEL = 6
 const MAX_FIT_LEVEL = 10
 
-/**
- * 스팟만 딱 맞추면 남쪽에 빈 바다가 넓게 남고 거제 북쪽이 잘립니다.
- * 맞춘 뒤 시야를 이만큼 북쪽으로 밀어 섬이 화면을 채우게 합니다.
- */
-const NORTH_NUDGE_PX = 76
-
 /** 라벨 사이 최소 간격(px). 이보다 가까우면 뒤 순위 라벨을 숨깁니다. */
 const LABEL_GAP = 4
 
@@ -38,6 +32,16 @@ const LABEL_HEIGHT = 18
 const LABEL_TOP_INSET = 5
 const LABEL_RIGHT_GAP = 30
 const LABEL_LEFT_GAP = 4
+
+/**
+ * 화면 맞추기 여백(px). 38e0255의 배율을 그대로 씁니다.
+ *
+ * 마커 기하에서 나온 값이 아니라 "이만큼 띄워야 거제가 제일 잘 읽힌다"는 프레이밍
+ * 값입니다. 마커를 28px 원으로 바꾸면서 이걸 마커 높이로 다시 계산했더니 지도가
+ * 당겨져서 남쪽 스팟이 안내 카드에 가렸습니다. 마커 모양이 바뀌어도 이 값은 둡니다.
+ */
+const FIT_TOP_EXTRA = 60
+const FIT_PADDING = 56
 
 /** 코스 경로 선 — Figma route-line(285:234) 2.5px 단선. 흰 casing 없음. */
 const ROUTE_LINE_WEIGHT = 2.5
@@ -95,7 +99,7 @@ function createPinElement(spot, { order, tone }) {
  * Figma 기본 배치는 마커 오른쪽이고, 막히면 왼쪽으로 뒤집습니다(바람의언덕이 그 예).
  * 양쪽 다 막히면 그 이름표만 숨깁니다 — 점 자체는 항상 보입니다.
  */
-function updateLabelVisibility(map, pins, selectedId, topReserved = 0, bottomReserved = 0) {
+function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
   let projection
   try {
     projection = map.getProjection()
@@ -161,7 +165,7 @@ function updateLabelVisibility(map, pins, selectedId, topReserved = 0, bottomRes
       box.left >= 0 &&
       box.right <= viewWidth &&
       box.top >= topReserved &&
-      box.bottom <= viewHeight - bottomReserved
+      box.bottom <= viewHeight
 
     // 오른쪽 → 왼쪽 순으로 시도합니다.
     // 방금 탭한 스팟의 이름표는 자리가 없어도 보여줍니다. 숨겨버리면
@@ -180,10 +184,12 @@ function updateLabelVisibility(map, pins, selectedId, topReserved = 0, bottomRes
 /**
  * 모든 스팟이 한 화면에 들어오도록 맞춥니다.
  *
- * nudgeNorth는 섬 전체를 볼 때만 켭니다. 코스를 골라 몇 개만 볼 때 켜면
- * 딱 맞게 잡아둔 화면을 위로 밀어서 마지막 스팟이 밖으로 떨어집니다.
+ * 예전에는 맞춘 뒤 시야를 76px 남쪽으로 밀었습니다(NORTH_NUDGE). 창 높이를 그대로
+ * 쓰던 시절엔 아래에 여유가 있어 괜찮았지만, 프레임을 844로 잠근 뒤로는 그 보정 때문에
+ * 남쪽 스팟(해금강·도장포)이 둘러보기 안내 카드 뒤로 들어갔습니다.
+ * 배율은 38e0255 그대로 두고 보정만 뺐습니다.
  */
-function fitToSpots(kakao, map, spots, topReserved, bottomReserved, nudgeNorth) {
+function fitToSpots(kakao, map, spots, topReserved) {
   const points = spots.filter(
     (spot) => Number.isFinite(spot.lat) && Number.isFinite(spot.lng),
   )
@@ -194,32 +200,12 @@ function fitToSpots(kakao, map, spots, topReserved, bottomReserved, nudgeNorth) 
     bounds.extend(new kakao.maps.LatLng(spot.lat, spot.lng))
   })
 
-  // setBounds의 여백은 "좌표" 기준입니다. 마커는 좌표를 중심으로 위아래 14px씩
-  // 차지하므로 그만큼 + 숨 쉴 틈을 더해야 조건 칩 아래로 파고들지 않습니다.
-  const topPadding = topReserved + MARKER_HALF + 12
-  const bottomPadding = bottomReserved + MARKER_HALF + 12
-
   // (bounds, top, right, bottom, left)
-  map.setBounds(bounds, topPadding, 56, bottomPadding, 56)
+  map.setBounds(bounds, topReserved + FIT_TOP_EXTRA, FIT_PADDING, FIT_PADDING, FIT_PADDING)
 
   const level = map.getLevel()
   if (level < MIN_FIT_LEVEL) map.setLevel(MIN_FIT_LEVEL)
   if (level > MAX_FIT_LEVEL) map.setLevel(MAX_FIT_LEVEL)
-
-  if (!nudgeNorth) return
-
-  // 화면 중심을 위로 옮긴 지점의 좌표 = 조금 더 북쪽. 줌은 건드리지 않습니다.
-  try {
-    const projection = map.getProjection()
-    const center = projection.containerPointFromCoords(map.getCenter())
-    map.setCenter(
-      projection.coordsFromContainerPoint(
-        new kakao.maps.Point(center.x, center.y - NORTH_NUDGE_PX),
-      ),
-    )
-  } catch {
-    // projection API가 없으면 맞춘 그대로 둡니다.
-  }
 }
 
 export default function MapView({
@@ -231,20 +217,13 @@ export default function MapView({
   showVerdict = true,
   orderBySpotId = null,
   topReserved = 16,
-  /**
-   * 지도 아래쪽에서 비워둬야 하는 높이 = 지도 위에 떠 있는 것이 가리는 자리.
-   * 둘러보기 안내 카드가 그것입니다. 여기를 비워두지 않으면 남쪽 스팟(해금강·도장포)이
-   * 카드 뒤로 들어가 안 보입니다. 지도를 밀어내는 시트는 지도 높이가 이미 줄어드므로
-   * 여기 넣지 않습니다.
-   */
-  bottomReserved = 0,
   compact = false, // 판정 결과의 200px 미리보기 — 줌 버튼을 숨깁니다
 }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const pinsRef = useRef([]) // [{ spotId, isStop, overlay, element, label }]
   const linesRef = useRef([])
-  const liveRef = useRef({ onSelectSpot, onDeselect, selectedSpotId, topReserved, bottomReserved, routePath })
+  const liveRef = useRef({ onSelectSpot, onDeselect, selectedSpotId, topReserved })
 
   const [phase, setPhase] = useState('loading') // 'loading' | 'ready' | 'error'
   const [errorMessage, setErrorMessage] = useState('')
@@ -252,7 +231,7 @@ export default function MapView({
 
   // 지도 이벤트 리스너는 한 번만 붙이므로, 최신 값은 ref로 넘겨줍니다.
   useEffect(() => {
-    liveRef.current = { onSelectSpot, onDeselect, selectedSpotId, topReserved, bottomReserved, routePath }
+    liveRef.current = { onSelectSpot, onDeselect, selectedSpotId, topReserved }
   })
 
   // ── SDK 로드 + 지도 생성 ────────────────────────────────────────────────
@@ -282,7 +261,6 @@ export default function MapView({
             pinsRef.current,
             liveRef.current.selectedSpotId,
             liveRef.current.topReserved,
-            liveRef.current.bottomReserved,
           )
         })
 
@@ -357,7 +335,6 @@ export default function MapView({
         pinsRef.current,
         liveRef.current.selectedSpotId,
         liveRef.current.topReserved,
-        liveRef.current.bottomReserved,
       ),
     )
 
@@ -411,23 +388,15 @@ export default function MapView({
 
     map.relayout()
     if (liveRef.current.selectedSpotId == null) {
-      fitToSpots(
-        window.kakao,
-        map,
-        spots,
-        topReserved,
-        bottomReserved,
-        liveRef.current.routePath === null,
-      )
+      fitToSpots(window.kakao, map, spots, topReserved)
     }
     updateLabelVisibility(
       map,
       pinsRef.current,
       liveRef.current.selectedSpotId,
       topReserved,
-      bottomReserved,
     )
-  }, [spots, topReserved, bottomReserved, phase])
+  }, [spots, topReserved, phase])
 
   // ── 선택 상태를 마커에 반영 + 선택한 핀으로 이동 ────────────────────────
   useEffect(() => {
@@ -439,13 +408,13 @@ export default function MapView({
     })
 
     // z축과 이름표 배치는 여기서 한꺼번에 다시 계산합니다.
-    updateLabelVisibility(map, pinsRef.current, selectedSpotId, topReserved, bottomReserved)
+    updateLabelVisibility(map, pinsRef.current, selectedSpotId, topReserved)
 
     if (selectedSpotId == null) return
     const selected = pinsRef.current.find((pin) => pin.spotId === selectedSpotId)
     // 지도 영역이 시트만큼 줄어 있으므로 그냥 가운데로 보내면 됩니다.
     if (selected) map.panTo(selected.overlay.getPosition())
-  }, [selectedSpotId, spots, phase, topReserved, bottomReserved])
+  }, [selectedSpotId, spots, phase, topReserved])
 
   const zoom = useCallback((delta) => {
     const map = mapRef.current
