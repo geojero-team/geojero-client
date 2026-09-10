@@ -12,6 +12,13 @@ body,
   height: 100%;
 }
 
+/* 창이 844보다 길면 프레임이 위에 붙지 않고 가운데 놓이게 합니다. */
+#root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 body {
   margin: 0;
   font: var(--type-body);

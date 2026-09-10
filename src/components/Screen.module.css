@@ -1,11 +1,13 @@
 .screen {
   position: relative;
   width: 100%;
-  /* Figma 02-1 프레임 폭 그대로. 이보다 넓어지면 타이포는 그대로인 채
-     가로만 늘어나 비율이 무너집니다. 데스크톱 프레임은 Figma에 없으므로
-     390 컬럼을 가운데 두고 바깥은 body 바닥색으로 둡니다. */
+  /* Figma 02-1 프레임 390×844 그대로.
+     폭만 잠그고 높이를 창에 맡기면, 세로로 긴 데스크톱 창에서 화면이 늘어나
+     Figma와 비율이 달라집니다 — 특히 남는 높이를 전부 먹는 지도가 그렇습니다.
+     그래서 높이도 844로 잠급니다. 폰에서는 뷰포트가 844보다 작아 그대로 꽉 찹니다. */
   max-width: 390px;
   height: 100dvh;
+  max-height: 844px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
