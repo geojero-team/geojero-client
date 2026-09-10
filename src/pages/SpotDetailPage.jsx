@@ -33,6 +33,9 @@ import styles from './SpotDetailPage.module.css'
  * 박스는 12×10인데 stroke가 사방으로 0.7px씩 넘칩니다(원본의 inset -7% / -5.83%).
  * 그래서 바깥 상자와 그림을 따로 두고 그림만 -0.7px 밀어 원본 기하를 지킵니다.
  */
+/** 한 장 너비의 몇 %를 끌어야 다음 장으로 넘길지. */
+const DRAG_STEP = 0.15
+
 function PhotoCountIcon() {
   return (
     <span className={styles.countIcon} aria-hidden="true">
@@ -108,11 +111,16 @@ export default function SpotDetailPage() {
     track.scrollTo({ left: clamped * track.clientWidth, behavior: 'smooth' })
   }
 
-  /* 손을 뗀 자리에서 가장 가까운 장으로 붙입니다. 끄는 동안 스냅을 꺼두므로
-     브라우저가 알아서 맞춰주지 않습니다. */
-  const dragHandlers = useDragScroll(trackRef, () => {
+  /* 한 번 끌면 **한 장만** 넘어갑니다.
+     끌린 거리를 그대로 스크롤에 주기 때문에, 세 장 너비를 끌면 세 장이 지나갑니다.
+     그래서 멈출 자리를 거리가 아니라 방향으로 정합니다 — 문턱을 넘겨 끌었으면 그쪽으로
+     한 장, 아니면 제자리. 끄는 동안 스냅을 꺼두므로 브라우저가 맞춰주지 않습니다. */
+  const dragHandlers = useDragScroll(trackRef, ({ startLeft, delta }) => {
     const track = trackRef.current
-    if (track) goTo(Math.round(track.scrollLeft / track.clientWidth))
+    if (!track || track.clientWidth === 0) return
+    const from = Math.round(startLeft / track.clientWidth)
+    const past = Math.abs(delta) > track.clientWidth * DRAG_STEP
+    goTo(from + (past ? (delta < 0 ? 1 : -1) : 0))
   })
 
   const onKeyDown = (event) => {
