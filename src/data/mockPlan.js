@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { api } from '../lib/api'
 import { formatDuration } from '../lib/format'
 import { ORIGIN_LABELS, toHHMM, toMinutes } from '../lib/tripParams'
@@ -99,6 +100,9 @@ const SPOT_VERDICTS = {
 const UNKNOWN = '[미확인]'
 const TIME_RE = /^\d{2}:\d{2}$/
 const isTime = (value) => TIME_RE.test(value ?? '')
+/** 거제 안쪽 여정의 기점. 시외버스는 전부 여기에 서고, 서버 판정도 이 지점을 앵커로 쓴다. */
+const HUB = '고현'
+
 const addMin = (hhmm, minutes) => toHHMM(toMinutes(hhmm) + minutes)
 const diffMin = (from, to) => toMinutes(to) - toMinutes(from)
 
@@ -731,7 +735,7 @@ export async function fetchVerdict({ routeId, spotIds, ...trip }) {
     },
     directions: { out, back },
     arrival: { time: info.returnArrive ?? null, originLabel },
-    save: buildSave(spots, shipSpot, lastAccess, trip, info),
+    save: buildSave({ spots, trip, info, route, originLabel }),
     ...SOURCE,
   }
 }
@@ -739,37 +743,45 @@ export async function fetchVerdict({ routeId, spotIds, ...trip }) {
 /**
  * 이 여정을 서버에 저장할 수 있는가 — 있으면 POST /api/saved-trips 본문을, 없으면 null.
  *
- * **아무 id나 보내면 안 된다.** POST는 courseId를 요구하는데 서버가 아는 코스는 §3 검증
- * 코스 3종뿐이다(CourseJudgeService.COURSE_LEGS). 화면의 코스는 스팟 조합으로 만들어져
- * 그 3종과 대개 다르고, 화면 courseId와 서버 courseId는 아예 다른 것을 가리킨다.
- * 매칭을 대충 하면 **바람의언덕을 저장했는데 '서울발 무박 일출'이 저장된다.**
+ * 서버는 2026-09-11(V10)부터 **구간 목록(legs)을 그대로** 받는다. 그전에는 검증 코스
+ * 3종의 courseId만 받아서, 사용자가 고른 조합에는 붙일 이름표가 없었다.
  *
- * 그래서 여정이 서버 코스와 실제로 같을 때만 저장을 연다:
- *   1 부산발 당일치기  고현 → 해금강 → 고현
- *   3 외도 풀코스      고현 → 해금강 → (해금강 18:20 복귀) → 고현
+ * 구간은 고현을 기점으로 세운다 — 서버가 '거제 도착(고현)'을 앵커로 판정하기 때문이다
+ * (CourseJudgeService.judgeLegs). 시외버스 구간은 보내지 않는다: 서버 스냅샷은 시내버스
+ * 시간표라 시외 구간을 판정할 수 없고, 귀환 검사는 returnTime으로 따로 한다.
  *
- * 나머지 조합은 서버가 판정할 수 없으므로 화면이 저장 버튼을 비활성으로 두고 사유를 적는다.
- * (Phase 6에서 클라이언트가 서버 코스를 직접 쓰게 되면 이 함수는 사라진다.)
+ * 정류소를 모르는 스팟이 하나라도 끼면 저장하지 않는다. 판정할 수 없는 구간을 저장하면
+ * '오늘 기준 재판정'이 영원히 실패한다.
  */
-function buildSave(spots, shipSpot, lastAccess, trip, info) {
+function buildSave({ spots, trip, info, route, originLabel }) {
   // 서버는 '고현 도착'과 '고현 복귀 기한'으로 판정한다. 둘 중 하나라도 모르면 저장하지 않는다.
   if (info.rideMin == null || !info.returnDepart) return null
 
-  const courseId =
-    shipSpot && lastAccess.stop === '해금강'
-      ? 3
-      : !shipSpot && spots.length === 1 && spots[0].spotId === 1
-        ? 1
-        : null
-  if (!courseId) return null
+  const legs = []
+  const stops = []
+  let cur = HUB
+  for (const spot of spots) {
+    const access = ACCESS[spot.spotId]
+    if (!access || access.unknown || !access.stop) return null
+    if (access.stop !== cur) legs.push({ type: 'BUS', from: cur, to: access.stop })
+    stops.push(access.stop)
+    cur = access.stop
+  }
+  if (cur !== HUB) legs.push({ type: 'BUS', from: cur, to: HUB })
+  if (legs.length === 0) return null
 
   return {
-    courseId,
+    legs,
+    // 카드에 그대로 나갈 문자열입니다. 저장 시점의 화면을 스냅샷으로 남깁니다 —
+    // 코스 이름이 나중에 바뀌어도 "내가 저장한 그것"이 남아야 합니다.
+    title: t('verdict.headerTitleWithRoute', { origin: originLabel, route: route.name }),
+    chain: [originLabel, HUB, ...stops, HUB, originLabel].join(' → '),
     travelDate: trip.date,
     arrivalTime: addMin(trip.departTime, info.rideMin),
     returnTime: info.returnDepart,
   }
 }
+
 
 /** 자리표시자 화면들이 이름 정도는 보여줄 수 있게 열어둔 조회용 헬퍼입니다. */
 /**

@@ -31,11 +31,12 @@ import styles from './MyPlansPage.module.css'
  * "'저장 땐 성립/지금은 불성립' 비교 표시는 컷 1순위라 UI 미포함(컬럼 verdict_at_save만 유지)".
  * 서버는 verdictAtSave·verdictNow를 둘 다 내려주지만 화면에 그리지 않습니다.
  */
-function SavedTripCard({ trip, course, busy, onDelete, onRejudge }) {
-  const title = course?.name ?? t('myPlans.unknownCourse')
-  // 경로 줄은 코스 summary를 씁니다 — 저장된 판정의 legs에는 정류소 이름이 없습니다
-  // (LegRes = ok·depart·arrive·reason). 없는 값을 지어내지 않습니다.
-  const chain = course?.summary ?? null
+function SavedTripCard({ trip, busy, onDelete, onRejudge }) {
+  // 제목·경로는 **저장 시점에 서버가 함께 저장한 값**입니다(V10). 저장된 판정의 legs에는
+  // 정류소 이름이 없어서(LegRes = ok·depart·arrive·reason) 여기서 만들 수 없고,
+  // 코스 이름이 나중에 바뀌어도 "내가 저장한 그것"이 남아야 합니다.
+  const title = trip.title ?? t('myPlans.unknownCourse')
+  const chain = trip.chain ?? null
   const legs = (trip.verdictNow ?? trip.verdictAtSave)?.legs?.length ?? null
   const date = formatMonthDay(trip.travelDate)
   const meta = legs
@@ -78,8 +79,6 @@ export default function MyPlansPage() {
   const navigate = useNavigate()
   const [loggedIn, setLoggedIn] = useState(() => Boolean(getToken()))
   const [result, setResult] = useState({ status: 'loading', trips: [], error: '' })
-  // 코스 이름·경로 줄의 출처. 저장 응답에는 courseId만 있습니다.
-  const [courses, setCourses] = useState(() => new Map())
   const [busy, setBusy] = useState(false)
 
   /* 상태를 콜백에서만 건드립니다 — 이펙트 본문에서 곧바로 setState를 부르면
@@ -103,21 +102,9 @@ export default function MyPlansPage() {
   }, [])
 
   useEffect(() => {
-    if (!loggedIn) return undefined
-    let cancelled = false
+    if (!loggedIn) return
 
     load()
-    // 이름은 있으면 좋은 것입니다 — 못 가져와도 목록은 그려야 합니다.
-    api
-      .courses()
-      .then(({ courses: list }) => {
-        if (!cancelled) setCourses(new Map((list ?? []).map((c) => [c.courseId, c])))
-      })
-      .catch(() => {})
-
-    return () => {
-      cancelled = true
-    }
   }, [loggedIn, load])
 
   const logout = () => {
@@ -199,7 +186,6 @@ export default function MyPlansPage() {
               <SavedTripCard
                 key={trip.savedTripId}
                 trip={trip}
-                course={courses.get(trip.courseId)}
                 busy={busy}
                 onDelete={remove}
                 onRejudge={rejudge}
