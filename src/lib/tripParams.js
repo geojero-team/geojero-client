@@ -96,12 +96,29 @@ export function tripFromSearch(params) {
   }
 }
 
-/** "?spots=5,2,7" → [5, 2, 7]. 없거나 깨졌으면 빈 배열. */
-export function spotIdsFromSearch(params) {
-  return (params.get('spots') ?? '')
+/** "?spots=5,2,7" → [5, 2, 7]. 없거나 깨졌으면 빈 배열. 고르기 화면은 key='selected'. */
+export function spotIdsFromSearch(params, key = 'spots') {
+  return (params.get(key) ?? '')
     .split(',')
     .map((part) => Number(part.trim()))
     .filter((id) => Number.isInteger(id) && id > 0)
+}
+
+/**
+ * 스팟 상세를 다녀올 때 잃지 말아야 하는 것 — 조건과 지금까지 고른 스팟.
+ *
+ * 조건을 아직 안 정한 진입(스팟 탭에서 바로 들어온 경우)에서는 origin을 **아예 쓰지
+ * 않습니다**. `origin=null`이라고라도 적어 보내면 받는 쪽의 `searchParams.has('origin')`이
+ * 참이 되어 "조건 있음"으로 읽고, 조건을 정하라는 점선 pill이 사라져 버립니다.
+ */
+export function carrySearch({ trip, hasConditions, selectedIds = [] }) {
+  const extra = selectedIds.length > 0 ? { selected: selectedIds.join(',') } : {}
+  return hasConditions ? tripToSearch(trip, extra) : new URLSearchParams(extra).toString()
+}
+
+/** 넘길 게 없으면 '?'를 붙이지 않습니다. */
+export function withSearch(path, search) {
+  return search ? `${path}?${search}` : path
 }
 
 /* ── 시각 조정 ─────────────────────────────────────────────────────────────

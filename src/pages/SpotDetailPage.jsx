@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Button from '../components/Button'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { fetchSpotDetail } from '../data/mockPlan'
 import { courseImage } from '../lib/courseImage'
+import {
+  carrySearch,
+  spotIdsFromSearch,
+  tripFromSearch,
+  withSearch,
+} from '../lib/tripParams'
 import styles from './SpotDetailPage.module.css'
 
 /**
@@ -23,6 +29,7 @@ export default function SpotDetailPage() {
   const { spotId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   const [spot, setSpot] = useState(null)
   const [expanded, setExpanded] = useState(false)
 
@@ -39,6 +46,33 @@ export default function SpotDetailPage() {
   // 새 탭으로 바로 열었을 때 뒤로 갈 곳이 없으면 홈으로 보냅니다.
   const goBack = () =>
     location.key === 'default' ? navigate('/', { replace: true }) : navigate(-1)
+
+  /*
+   * '일정에 담기'는 **덮어쓰기가 아니라 더하기**입니다.
+   *
+   * 스팟 고르기에서 넘어왔으면 조건과 이미 고른 스팟이 쿼리에 실려 옵니다. 그걸 그대로
+   * 되돌려주고 이 스팟만 뒤에 붙입니다. 전에는 `?selected=이스팟`만 보내서, 바람의언덕을
+   * 골라둔 사람이 외도를 담으면 바람의언덕이 사라지고 조건까지 날아갔습니다.
+   *
+   * 스팟 탭에서 바로 들어온 경우엔 쿼리가 비어 있고, 그때는 조건을 정하라는 화면
+   * (Figma 285:419)으로 가는 게 맞습니다.
+   */
+  const hasConditions = searchParams.has('origin')
+  const carriedIds = spotIdsFromSearch(searchParams, 'selected')
+
+  const addToPlan = () => {
+    const ids = carriedIds.includes(spot.spotId) ? carriedIds : [...carriedIds, spot.spotId]
+    navigate(
+      withSearch(
+        '/spots/pick',
+        carrySearch({
+          trip: hasConditions ? tripFromSearch(searchParams) : null,
+          hasConditions,
+          selectedIds: ids,
+        }),
+      ),
+    )
+  }
 
   if (!spot) {
     return (
@@ -102,7 +136,7 @@ export default function SpotDetailPage() {
           </div>
 
           <Button
-            onClick={() => navigate(`/spots/pick?selected=${spot.spotId}`)}
+            onClick={addToPlan}
             data-api="GET /api/spots"
           >
             {t('spotDetail.addToPlan')}

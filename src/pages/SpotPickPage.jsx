@@ -7,7 +7,14 @@ import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { fetchSpots } from '../data/mockPlan'
 import { courseImage } from '../lib/courseImage'
-import { defaultTripParams, tripFromSearch, tripToSearch } from '../lib/tripParams'
+import {
+  carrySearch,
+  defaultTripParams,
+  spotIdsFromSearch,
+  tripFromSearch,
+  tripToSearch,
+  withSearch,
+} from '../lib/tripParams'
 import styles from './SpotPickPage.module.css'
 
 /**
@@ -72,11 +79,6 @@ function PickCard({ spot, selected, onToggle, onOpen }) {
   )
 }
 
-function parseIds(value) {
-  if (!value) return []
-  return value.split(',').map(Number).filter(Number.isInteger)
-}
-
 export default function SpotPickPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -90,7 +92,7 @@ export default function SpotPickPage() {
   )
   const [sheetOpen, setSheetOpen] = useState(false)
   const [theme, setTheme] = useState(null)
-  const [selected, setSelected] = useState(() => parseIds(searchParams.get('selected')))
+  const [selected, setSelected] = useState(() => spotIdsFromSearch(searchParams, 'selected'))
   const [result, setResult] = useState({ status: 'loading', spots: [], error: '' })
 
   useEffect(() => {
@@ -113,6 +115,16 @@ export default function SpotPickPage() {
   const toggle = (spotId) =>
     setSelected((prev) =>
       prev.includes(spotId) ? prev.filter((id) => id !== spotId) : [...prev, spotId],
+    )
+
+  // 상세를 다녀와도 조건과 고른 스팟이 남아야 합니다 — 상세의 '일정에 담기'가 이걸 그대로
+  // 되돌려줍니다. 안 실어 보내면 돌아올 때 조건이 없는 화면이 되고 선택도 사라집니다.
+  const openDetail = ({ spotId }) =>
+    navigate(
+      withSearch(
+        `/spots/${spotId}`,
+        carrySearch({ trip, hasConditions, selectedIds: selected }),
+      ),
     )
 
   const ordered = PICK_ORDER.map((id) => result.spots.find((spot) => spot.spotId === id))
@@ -168,7 +180,7 @@ export default function SpotPickPage() {
                 spot={spot}
                 selected={selected.includes(spot.spotId)}
                 onToggle={() => toggle(spot.spotId)}
-                onOpen={({ spotId }) => navigate(`/spots/${spotId}`)}
+                onOpen={openDetail}
               />
             ))}
           </div>

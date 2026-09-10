@@ -11,10 +11,12 @@ import { t } from '../i18n'
 import { fetchPlan, fetchSpots } from '../data/mockPlan'
 import { formatDuration } from '../lib/format'
 import {
+  carrySearch,
   saveOrigin,
   spotIdsFromSearch,
   tripFromSearch,
   tripToSearch,
+  withSearch,
 } from '../lib/tripParams'
 import styles from './MapPage.module.css'
 
@@ -225,7 +227,17 @@ export default function MapPage() {
           onOpen={() =>
             selectedIsStop
               ? openVerdict(activeRoute)
-              : navigate(`/spots/${selectedSpot.spotId}`)
+              : navigate(
+                  withSearch(
+                    `/spots/${selectedSpot.spotId}`,
+                    // 판정 상태에서만 조건이 있습니다. 둘러보기에서는 실어 보낼 조건이 없습니다.
+                    carrySearch({
+                      trip,
+                      hasConditions: planned,
+                      selectedIds: requestedSpotIds,
+                    }),
+                  ),
+                )
           }
         />
       ) : planned && result.status === 'ready' && routes.length === 0 ? (
