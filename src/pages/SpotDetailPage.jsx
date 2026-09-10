@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import Button from '../components/Button'
 import Screen from '../components/Screen'
+import { t } from '../i18n'
 import { fetchSpotDetail } from '../data/mockPlan'
 import { courseImage } from '../lib/courseImage'
 import styles from './SpotDetailPage.module.css'
@@ -42,7 +43,7 @@ export default function SpotDetailPage() {
   if (!spot) {
     return (
       <Screen data-api="GET /api/pois/{poiId}">
-        <p className={styles.pending}>불러오는 중</p>
+        <p className={styles.pending}>{t('spotDetail.loading')}</p>
       </Screen>
     )
   }
@@ -68,7 +69,7 @@ export default function SpotDetailPage() {
             type="button"
             className={styles.back}
             onClick={goBack}
-            aria-label="뒤로"
+            aria-label={t('common.back')}
           >
             ‹
           </button>
@@ -88,7 +89,7 @@ export default function SpotDetailPage() {
           )}
 
           {hasPhotos && fromTourApi && (
-            <span className={styles.creditChip}>출처 TourAPI</span>
+            <span className={styles.creditChip}>{t('spotDetail.credit')}</span>
           )}
         </div>
 
@@ -104,14 +105,14 @@ export default function SpotDetailPage() {
             onClick={() => navigate(`/spots/pick?selected=${spot.spotId}`)}
             data-api="GET /api/spots"
           >
-            일정에 담기
+            {t('spotDetail.addToPlan')}
           </Button>
 
           {/* 소개는 TourAPI overview 원문입니다. 수정·요약하지 않습니다(저작권).
               서버가 안 떠 있으면 이 덩어리 자체를 그리지 않습니다. */}
           {spot.overview && (
             <section className={styles.intro}>
-              <h2 className={styles.introHead}>소개</h2>
+              <h2 className={styles.introHead}>{t('spotDetail.introHead')}</h2>
               <p className={expanded ? styles.overviewFull : styles.overview}>
                 {spot.overview}
               </p>
@@ -121,7 +122,7 @@ export default function SpotDetailPage() {
                   className={styles.more}
                   onClick={() => setExpanded(true)}
                 >
-                  더보기
+                  {t('common.more')}
                 </button>
               )}
             </section>

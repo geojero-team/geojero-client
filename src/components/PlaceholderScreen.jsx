@@ -1,5 +1,6 @@
 import { ArrowLeft } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { t } from '../i18n'
 import BottomNav from './BottomNav'
 import Screen from './Screen'
 import styles from './PlaceholderScreen.module.css'
@@ -32,7 +33,7 @@ export default function PlaceholderScreen({
             type="button"
             className={styles.back}
             onClick={goBack}
-            aria-label="뒤로"
+            aria-label={t('common.back')}
           >
             <ArrowLeft size={20} aria-hidden="true" />
           </button>

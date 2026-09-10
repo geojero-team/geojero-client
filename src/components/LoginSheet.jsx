@@ -1,4 +1,5 @@
 import Button from './Button'
+import { t } from '../i18n'
 import KakaoLoginButton from './KakaoLoginButton'
 import styles from './LoginSheet.module.css'
 
@@ -23,20 +24,20 @@ export default function LoginSheet({ open, onClose, onLogin }) {
         type="button"
         className={styles.backdrop}
         onClick={onClose}
-        aria-label="닫기"
+        aria-label={t('common.close')}
       />
 
-      <section className={styles.sheet} aria-label="로그인">
+      <section className={styles.sheet} aria-label={t('login.sheetAria')}>
         <div className={styles.handleRow}>
           <span className={styles.handle} aria-hidden="true" />
         </div>
 
-        <h2 className={styles.title}>코스를 저장하려면 로그인 해주세요</h2>
+        <h2 className={styles.title}>{t('login.title')}</h2>
 
         <KakaoLoginButton onClick={onLogin} data-api="GET /api/auth/kakao" />
 
         <Button variant="ghost" onClick={onClose}>
-          나중에
+          {t('login.later')}
         </Button>
       </section>
     </>

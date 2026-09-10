@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
 import Button from './Button'
+import { t } from '../i18n'
 import { courseImage } from '../lib/courseImage'
 import styles from './CourseStrip.module.css'
 
@@ -21,7 +22,9 @@ function OrderStop({ spot, index, last, lastBus }) {
         <span className={styles.num}>{index + 1}</span>
       </span>
       <span className={styles.stopName}>{spot.shortName ?? spot.name}</span>
-      {last && lastBus && <span className={styles.lastBus}>막차 {lastBus}</span>}
+      {last && lastBus && (
+        <span className={styles.lastBus}>{t('course.lastBus', { time: lastBus })}</span>
+      )}
     </span>
   )
 }
@@ -41,7 +44,7 @@ function OrderCard({ route, spotsById, selected, onSelect, onOpenVerdict }) {
           <span className={styles.time}>
             {route.departTime} → {route.arriveTime}
           </span>
-          {route.recommended && <span className={styles.tag}>추천</span>}
+          {route.recommended && <span className={styles.tag}>{t('course.recommended')}</span>}
         </span>
 
         <span className={styles.order}>
@@ -69,7 +72,7 @@ function OrderCard({ route, spotsById, selected, onSelect, onOpenVerdict }) {
           onClick={() => onOpenVerdict(route)}
           data-api="POST /api/courses/{courseId}/judge"
         >
-          코스 상세보기 ›
+          {t('course.openVerdict')}
         </Button>
       )}
     </div>
@@ -86,7 +89,7 @@ export default function CourseStrip({
   if (routes.length === 0) return null
 
   return (
-    <section className={styles.sheet} aria-label="추천 코스">
+    <section className={styles.sheet} aria-label={t('course.sheetAria')}>
       <div className={styles.handleRow}>
         <span className={styles.handle} aria-hidden="true" />
       </div>

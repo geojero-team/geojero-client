@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { RotateCw, TriangleAlert } from 'lucide-react'
+import { t } from '../i18n'
 import { loadKakaoMaps } from '../lib/kakaoLoader'
 import { ICON_PATHS } from '../lib/spotIcons'
 import styles from './MapView.module.css'
@@ -46,6 +47,13 @@ const FIT_PADDING = 56
 /** 코스 경로 선 — Figma route-line(285:234) 2.5px 단선. 흰 casing 없음. */
 const ROUTE_LINE_WEIGHT = 2.5
 
+/** 마커 이름표에 붙는 판정 말. 모르는 값이 오면 '미확인'으로 읽습니다. */
+const VERDICT_KEYS = {
+  YES: 'status.YES',
+  NO: 'status.NO',
+  UNKNOWN: 'status.UNKNOWN',
+}
+
 /** 코스 정류소 마커의 판정 톤. 성립은 기본(브랜드) — Figma StopMarker default. */
 function toneClassOf(spot, isStop, showVerdict) {
   if (!isStop || !showVerdict) return null
@@ -70,8 +78,10 @@ function createPinElement(spot, { order, tone }) {
     .join(' ')
 
   // 판정 3분법 — 미확인을 성립으로 읽지 않는다.
-  const VERDICT_LABEL = { YES: '성립', NO: '불성립', UNKNOWN: '미확인' }
-  const state = isStop && spot.verdict ? ` · ${VERDICT_LABEL[spot.verdict] ?? '미확인'}` : ''
+  const state =
+    isStop && spot.verdict
+      ? ` · ${t(VERDICT_KEYS[spot.verdict] ?? 'status.UNKNOWN')}`
+      : ''
   element.setAttribute('aria-label', `${spot.shortName ?? spot.name}${state}`)
 
   const dot = document.createElement('span')
@@ -439,7 +449,7 @@ export default function MapView({
             type="button"
             className={styles.zoomButton}
             onClick={() => zoom(-1)}
-            aria-label="확대"
+            aria-label={t('map.zoomIn')}
           >
             +
           </button>
@@ -447,7 +457,7 @@ export default function MapView({
             type="button"
             className={styles.zoomButton}
             onClick={() => zoom(1)}
-            aria-label="축소"
+            aria-label={t('map.zoomOut')}
           >
             −
           </button>
@@ -457,7 +467,7 @@ export default function MapView({
       {phase === 'loading' && (
         <div className={`${styles.overlayState} ${styles.stateLoading}`}>
           <span className={styles.spinner} aria-hidden="true" />
-          <p className={styles.stateText}>지도를 불러오는 중</p>
+          <p className={styles.stateText}>{t('map.loading')}</p>
         </div>
       )}
 
@@ -468,11 +478,11 @@ export default function MapView({
             className={styles.errorIcon}
             aria-hidden="true"
           />
-          <p className={styles.stateTitle}>지도를 표시할 수 없습니다</p>
+          <p className={styles.stateTitle}>{t('map.errorTitle')}</p>
           <p className={styles.stateText}>{errorMessage}</p>
           <button type="button" className={styles.retryButton} onClick={retry}>
             <RotateCw size={16} aria-hidden="true" />
-            다시 시도
+            {t('map.retry')}
           </button>
         </div>
       )}

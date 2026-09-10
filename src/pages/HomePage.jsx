@@ -5,6 +5,7 @@ import Button from '../components/Button'
 import ConditionSheet from '../components/ConditionSheet'
 import Screen from '../components/Screen'
 import StatusBadge from '../components/StatusBadge'
+import { t } from '../i18n'
 import { fetchCourses } from '../data/mockPlan'
 import { courseImage } from '../lib/courseImage'
 import { THEME_LABELS, formatDateLong } from '../lib/format'
@@ -133,12 +134,12 @@ export default function HomePage() {
 
   const rows = [
     // 터미널 목록은 서버만 압니다 — "여기 있는 곳 = 판정 가능한 곳"이라서.
-    { label: '출발지', value: originLabel, api: 'GET /api/origins' },
-    { label: '날짜', value: formatDateLong(trip.date) },
-    { label: '출발 시간', value: trip.departTime },
+    { label: t('home.rowOrigin'), value: originLabel, api: 'GET /api/origins' },
+    { label: t('home.rowDate'), value: formatDateLong(trip.date) },
+    { label: t('home.rowDepart'), value: trip.departTime },
     {
-      label: `복귀 시간 · ${originLabel} 도착`,
-      value: trip.returnBy ?? '막차까지',
+      label: t('home.rowReturn', { origin: originLabel }),
+      value: trip.returnBy ?? t('condition.untilLastBus'),
     },
   ]
 
@@ -146,12 +147,12 @@ export default function HomePage() {
     <Screen data-api="GET /api/courses">
       <div className={styles.page}>
         <div className={styles.body}>
-          <p className={styles.wordmark}>거제로</p>
+          <p className={styles.wordmark}>{t('home.wordmark')}</p>
 
           <h1 className={styles.headline}>
-            스케줄만 고르세요.
+            {t('home.headline1')}
             <br />
-            코스는 맡기세요
+            {t('home.headline2')}
           </h1>
 
           <div className={styles.inputCard}>
@@ -161,7 +162,7 @@ export default function HomePage() {
                 type="button"
                 className={index === 0 ? styles.row : `${styles.row} ${styles.rowRuled}`}
                 onClick={() => setSheetOpen(true)}
-                aria-label={`${label} ${value}, 바꾸기`}
+                aria-label={t('home.rowAria', { label, value })}
                 data-api={api}
               >
                 <span className={styles.rowDot} aria-hidden="true" />
@@ -178,32 +179,29 @@ export default function HomePage() {
               onClick={() => navigate(`/spots/pick?${tripToSearch(trip)}`)}
               data-api="GET /api/spots"
             >
-              가고 싶은 곳 고르기
+              {t('home.cta')}
             </Button>
           </div>
 
           <section className={styles.today}>
             <div className={styles.todayHead}>
-              <h2 className={styles.sectionTitle}>오늘 버스로 되는 코스</h2>
+              <h2 className={styles.sectionTitle}>{t('home.todayTitle')}</h2>
               <button
                 type="button"
                 className={styles.more}
                 onClick={() => navigate('/spots')}
                 data-api="GET /api/spots"
               >
-                더보기
+                {t('common.more')}
               </button>
             </div>
 
             {result.status === 'error' ? (
-              <p className={styles.notice}>불러오지 못했습니다 — {result.error}</p>
+              <p className={styles.notice}>{t('common.loadFailed', { error: result.error })}</p>
             ) : result.status === 'loading' && courses.length === 0 ? (
-              <p className={styles.notice}>코스를 찾는 중</p>
+              <p className={styles.notice}>{t('home.loading')}</p>
             ) : courses.length === 0 ? (
-              <p className={styles.notice}>
-                이 조건으로 당일에 다녀올 수 있는 코스가 없습니다. 출발 시간을 앞당기거나
-                복귀 시간을 늦춰보세요.
-              </p>
+              <p className={styles.notice}>{t('home.empty')}</p>
             ) : (
               <div className={styles.cards}>
                 {courses.map((course) => (

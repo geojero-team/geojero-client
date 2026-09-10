@@ -9,6 +9,7 @@ import {
   SearchX,
   X,
 } from 'lucide-react'
+import { t } from '../i18n'
 import { WEEKDAYS, formatDateLong, isWeekend } from '../lib/format'
 import {
   DEPART_RANGE,
@@ -22,9 +23,9 @@ import {
 import styles from './ConditionEditor.module.css'
 
 const TITLES = {
-  origin: '어디서 출발하세요?',
-  date: '언제 가세요?',
-  time: '몇 시에 오가세요?',
+  origin: t('condition.titleOrigin'),
+  date: t('condition.titleDate'),
+  time: t('condition.titleTime'),
 }
 
 /* ── 출발지 ───────────────────────────────────────────────────────────────*/
@@ -50,15 +51,15 @@ function OriginContent({ trip, onChange, onClose }) {
           className={styles.searchInput}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="터미널·지역명 검색"
-          aria-label="터미널 검색"
+          placeholder={t('condition.searchPlaceholder')}
+          aria-label={t('condition.searchAria')}
         />
         {keyword && (
           <button
             type="button"
             className={styles.searchClear}
             onClick={() => setQuery('')}
-            aria-label="검색어 지우기"
+            aria-label={t('condition.searchClear')}
           >
             <X size={16} aria-hidden="true" />
           </button>
@@ -66,16 +67,14 @@ function OriginContent({ trip, onChange, onClose }) {
       </div>
 
       <p className={styles.sectionLabel}>
-        시간표 확인된 터미널 {ORIGINS.length}곳
+        {t('condition.originCount', { count: ORIGINS.length })}
       </p>
 
       {matches.length === 0 ? (
         <div className={styles.empty}>
           <SearchX className={styles.emptyIcon} size={26} aria-hidden="true" />
-          <p className={styles.emptyTitle}>&lsquo;{keyword}&rsquo; 은 없습니다</p>
-          <p className={styles.emptyText}>
-            아직 안 만든 게 아니라 시간표를 확인하지 못한 터미널입니다.
-          </p>
+          <p className={styles.emptyTitle}>{t('condition.originEmptyTitle', { keyword })}</p>
+          <p className={styles.emptyText}>{t('condition.originEmptyText')}</p>
         </div>
       ) : (
         <ul className={styles.list}>
@@ -94,7 +93,7 @@ function OriginContent({ trip, onChange, onClose }) {
                   <span className={styles.rowBody}>
                     <span className={styles.rowLabel}>{label}</span>
                     <span className={styles.badge}>
-                      시간표 있음 · 판정에 포함
+                      {t('condition.originBadge')}
                     </span>
                   </span>
                   {selected && (
@@ -113,10 +112,7 @@ function OriginContent({ trip, onChange, onClose }) {
 
       {/* 목록이 짧은 게 미완성이 아니라 판단이라는 걸 여기서 말해줍니다.
           "다 된다고 하지 않는 앱"이 이 서비스의 신뢰 근거입니다. */}
-      <p className={styles.trustNote}>
-        시간표를 확인한 터미널만 판정에 넣습니다. 추정 시간표로 판정하면 막차를
-        놓칩니다.
-      </p>
+      <p className={styles.trustNote}>{t('condition.trustNote')}</p>
     </>
   )
 }
@@ -183,19 +179,19 @@ function DateContent({ trip, onChange, onClose }) {
           className={styles.monthButton}
           onClick={() => shiftMonth(-1)}
           disabled={atFirstMonth}
-          aria-label="이전 달"
+          aria-label={t('condition.prevMonth')}
         >
           <ChevronLeft size={18} aria-hidden="true" />
         </button>
         <span className={styles.monthLabel}>
-          {cursor.year}년 {cursor.month}월
+          {t('condition.monthLabel', { year: cursor.year, month: cursor.month })}
         </span>
         <button
           type="button"
           className={styles.monthButton}
           onClick={() => shiftMonth(1)}
           disabled={atLastMonth}
-          aria-label="다음 달"
+          aria-label={t('condition.nextMonth')}
         >
           <ChevronRight size={18} aria-hidden="true" />
         </button>
@@ -267,7 +263,7 @@ function Stepper({ label, hint, value, range, onStep }) {
           className={styles.stepButton}
           onClick={() => onStep(-TIME_STEP_MIN)}
           disabled={TIME_RE.test(value) && atLimit(value, -1, range)}
-          aria-label={`${label} 30분 앞당기기`}
+          aria-label={t('condition.stepEarlier', { label })}
         >
           <Minus size={18} aria-hidden="true" />
         </button>
@@ -277,7 +273,7 @@ function Stepper({ label, hint, value, range, onStep }) {
           className={styles.stepButton}
           onClick={() => onStep(TIME_STEP_MIN)}
           disabled={TIME_RE.test(value) && atLimit(value, 1, range)}
-          aria-label={`${label} 30분 미루기`}
+          aria-label={t('condition.stepLater', { label })}
         >
           <Plus size={18} aria-hidden="true" />
         </button>
@@ -293,8 +289,8 @@ function TimeContent({ trip, onChange }) {
   return (
     <div className={styles.steppers}>
       <Stepper
-        label="출발 시각"
-        hint="터미널에서 버스 타는 시각"
+        label={t('condition.departLabel')}
+        hint={t('condition.departHint')}
         value={trip.departTime}
         range={DEPART_RANGE}
         onStep={(delta) =>
@@ -302,9 +298,9 @@ function TimeContent({ trip, onChange }) {
         }
       />
       <Stepper
-        label="귀가 시각"
-        hint="이 시각까지는 돌아와야 합니다"
-        value={trip.returnBy === null ? '막차까지' : returnBy}
+        label={t('condition.returnLabel')}
+        hint={t('condition.returnHint')}
+        value={trip.returnBy === null ? t('condition.untilLastBus') : returnBy}
         range={RETURN_RANGE}
         onStep={(delta) => onChange({ returnBy: shiftTime(returnBy, delta, RETURN_RANGE) })}
       />
@@ -327,7 +323,7 @@ export default function ConditionEditor({ field, trip, onChange, onClose }) {
         type="button"
         className={styles.backdrop}
         onClick={onClose}
-        aria-label="닫기"
+        aria-label={t('common.close')}
       />
 
       <section className={styles.sheet} aria-label={TITLES[field]}>
@@ -339,7 +335,7 @@ export default function ConditionEditor({ field, trip, onChange, onClose }) {
             type="button"
             className={styles.close}
             onClick={onClose}
-            aria-label="닫기"
+            aria-label={t('common.close')}
           >
             <X size={18} aria-hidden="true" />
           </button>
@@ -355,7 +351,7 @@ export default function ConditionEditor({ field, trip, onChange, onClose }) {
 
         {field === 'time' && (
           <button type="button" className={styles.done} onClick={onClose}>
-            이 시간으로 볼게요
+            {t('condition.done')}
           </button>
         )}
       </section>

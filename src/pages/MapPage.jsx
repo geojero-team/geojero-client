@@ -7,6 +7,7 @@ import CourseStrip from '../components/CourseStrip'
 import MapView from '../components/MapView'
 import PinSheet from '../components/PinSheet'
 import Screen from '../components/Screen'
+import { t } from '../i18n'
 import { fetchPlan, fetchSpots } from '../data/mockPlan'
 import { formatDuration } from '../lib/format'
 import {
@@ -180,7 +181,10 @@ export default function MapPage() {
             백엔드 stops 테이블에 좌표가 들어오면 Figma대로 '1 고현' 마커로 옮깁니다. */}
         {planned && entry?.rideMin != null && (
           <span className={styles.entryTag}>
-            ⚑ {entry.originLabel}에서 {formatDuration(entry.rideMin)}
+            {t('map.entryTag', {
+              origin: entry.originLabel,
+              duration: formatDuration(entry.rideMin),
+            })}
           </span>
         )}
 
@@ -189,7 +193,7 @@ export default function MapPage() {
             className={styles.pending}
             style={{ '--top-offset': planned ? '62px' : '16px' }}
           >
-            다시 판정하는 중
+            {t('map.rejudging')}
           </p>
         )}
 
@@ -198,16 +202,14 @@ export default function MapPage() {
             className={styles.error}
             style={{ '--top-offset': planned ? '62px' : '16px' }}
           >
-            불러오지 못했습니다 — {result.error}
+            {t('common.loadFailed', { error: result.error })}
           </p>
         )}
 
         {showBrowseNotice && (
           <div className={styles.browseNotice}>
-            <p className={styles.browseTitle}>거제 주요 스팟입니다.</p>
-            <p className={styles.browseText}>
-              가고 싶은 곳과 시간을 홈을 통해 정하면, 코스를 안내해드려요.
-            </p>
+            <p className={styles.browseTitle}>{t('map.browseTitle')}</p>
+            <p className={styles.browseText}>{t('map.browseText')}</p>
           </div>
         )}
       </div>
@@ -230,10 +232,8 @@ export default function MapPage() {
         /* 성립한 코스가 없으면 카드 스트립 자리에 이유를 적습니다.
            지도는 그대로 두어 고른 스팟이 어디인지는 계속 보이게 합니다. */
         <section className={styles.noRoutes}>
-          <p className={styles.noRoutesTitle}>이 조건으로 안내할 코스가 없어요</p>
-          <p className={styles.noRoutesText}>
-            출발 시각이나 스팟을 바꾸면 짤 수 있는 조합이 생길 수 있어요.
-          </p>
+          <p className={styles.noRoutesTitle}>{t('noRoutes.title')}</p>
+          <p className={styles.noRoutesText}>{t('noRoutes.text')}</p>
         </section>
       ) : (
         planned && (

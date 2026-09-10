@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import { formatDateWeekday } from '../lib/format'
 import { ORIGIN_LABELS } from '../lib/tripParams'
 import styles from './ConditionPill.module.css'
@@ -11,14 +12,19 @@ import styles from './ConditionPill.module.css'
  */
 export default function ConditionPill({ trip, onEdit }) {
   const originLabel = ORIGIN_LABELS[trip.origin] ?? trip.origin
-  const text = `${originLabel} · ${formatDateWeekday(trip.date)} · ${trip.departTime} → ${trip.returnBy ?? '막차까지'}`
+  const text = t('condition.pillText', {
+    origin: originLabel,
+    date: formatDateWeekday(trip.date),
+    depart: trip.departTime,
+    returnBy: trip.returnBy ?? t('condition.untilLastBus'),
+  })
 
   return (
     <button
       type="button"
       className={styles.pill}
       onClick={onEdit}
-      aria-label={`판정 조건 ${text}, 바꾸기`}
+      aria-label={t('condition.pillAria', { text })}
     >
       {text}
     </button>

@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { t } from '../i18n'
 import styles from './BottomNav.module.css'
 
 /**
@@ -47,15 +48,15 @@ const PlansIcon = () => (
 )
 
 const TABS = [
-  { path: '/', label: '홈', Icon: HomeIcon },
-  { path: '/spots', label: '스팟', Icon: SpotIcon },
-  { path: MAP_PATH, label: '지도', Icon: MapIcon },
-  { path: '/my', label: '내 일정', Icon: PlansIcon },
+  { path: '/', label: t('nav.home'), Icon: HomeIcon },
+  { path: '/spots', label: t('nav.spots'), Icon: SpotIcon },
+  { path: MAP_PATH, label: t('nav.map'), Icon: MapIcon },
+  { path: '/my', label: t('nav.myPlans'), Icon: PlansIcon },
 ]
 
 export default function BottomNav() {
   return (
-    <nav className={styles.nav} aria-label="주요 화면">
+    <nav className={styles.nav} aria-label={t('nav.aria')}>
       {TABS.map(({ path, label, Icon }) => (
         <NavLink
           key={path}

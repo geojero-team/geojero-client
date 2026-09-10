@@ -1,5 +1,6 @@
 import BottomNav from '../components/BottomNav'
 import KakaoLoginButton from '../components/KakaoLoginButton'
+import { t } from '../i18n'
 import Screen from '../components/Screen'
 import styles from './MyPlansPage.module.css'
 
@@ -17,16 +18,16 @@ export default function MyPlansPage() {
   return (
     <Screen data-api="GET /api/saved-trips">
       <header className={styles.header}>
-        <h1 className={styles.title}>내 일정</h1>
+        <h1 className={styles.title}>{t('myPlans.title')}</h1>
       </header>
 
       <div className={styles.body}>
         <section className={styles.empty}>
-          <p className={styles.emptyTitle}>코스를 저장하려면 로그인이 필요해요</p>
+          <p className={styles.emptyTitle}>{t('myPlans.emptyTitle')}</p>
           <p className={styles.emptyText}>
-            성립한 코스를 저장할 수 있어요.
+            {t('myPlans.emptyText1')}
             <br />
-            코스 추천은 로그인 없이 가능해요.
+            {t('myPlans.emptyText2')}
           </p>
           <KakaoLoginButton data-api="GET /api/auth/kakao" />
         </section>

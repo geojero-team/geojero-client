@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import StatusBadge from './StatusBadge'
 import styles from './DirTabs.module.css'
 
@@ -7,8 +8,8 @@ import styles from './DirTabs.module.css'
  * 컴포넌트 설명대로 "판정이 나쁜 쪽"이 기본입니다(lib/verdict.js worseDirection).
  */
 const TABS = [
-  { key: 'out', label: '가는 편' },
-  { key: 'back', label: '오는 편' },
+  { key: 'out', label: t('verdict.dirOut') },
+  { key: 'back', label: t('verdict.dirBack') },
 ]
 
 export default function DirTabs({ value, verdicts, onChange }) {

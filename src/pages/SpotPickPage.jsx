@@ -4,6 +4,7 @@ import Button from '../components/Button'
 import CategoryBar from '../components/CategoryBar'
 import ConditionSheet from '../components/ConditionSheet'
 import Screen from '../components/Screen'
+import { t } from '../i18n'
 import { fetchSpots } from '../data/mockPlan'
 import { courseImage } from '../lib/courseImage'
 import { defaultTripParams, tripFromSearch, tripToSearch } from '../lib/tripParams'
@@ -29,7 +30,7 @@ function CheckMark({ selected, onToggle, name }) {
       className={selected ? `${styles.check} ${styles.checkOn}` : styles.check}
       onClick={onToggle}
       aria-pressed={selected}
-      aria-label={`${name} ${selected ? '선택 해제' : '선택'}`}
+      aria-label={t(selected ? 'pick.deselectAria' : 'pick.selectAria', { name })}
     >
       {selected && (
         <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
@@ -133,22 +134,22 @@ export default function SpotPickPage() {
     <Screen data-api="GET /api/spots">
       <div className={styles.body}>
         <header className={styles.header}>
-          <button type="button" className={styles.back} onClick={goBack} aria-label="뒤로">
+          <button type="button" className={styles.back} onClick={goBack} aria-label={t('common.back')}>
             ‹
           </button>
-          <h1 className={styles.title}>스팟 고르기</h1>
+          <h1 className={styles.title}>{t('pick.title')}</h1>
         </header>
 
         <h2 className={styles.headline}>
-          방문하시고 싶은 곳을
+          {t('pick.headline1')}
           <br />
-          선택해주세요.
+          {t('pick.headline2')}
         </h2>
-        <p className={styles.sub}>여러 곳도 가능해요</p>
+        <p className={styles.sub}>{t('pick.sub')}</p>
 
         {!hasConditions && (
           <button type="button" className={styles.pill} onClick={() => setSheetOpen(true)}>
-            <span className={styles.pillText}>출발지 · 출발 시간을 정해주세요</span>
+            <span className={styles.pillText}>{t('pick.needConditions')}</span>
             <span aria-hidden="true">›</span>
           </button>
         )}
@@ -156,9 +157,9 @@ export default function SpotPickPage() {
         <CategoryBar value={theme} onChange={setTheme} />
 
         {result.status === 'error' ? (
-          <p className={styles.notice}>불러오지 못했습니다 — {result.error}</p>
+          <p className={styles.notice}>{t('common.loadFailed', { error: result.error })}</p>
         ) : result.status === 'loading' ? (
-          <p className={styles.notice}>스팟을 불러오는 중</p>
+          <p className={styles.notice}>{t('spots.loading')}</p>
         ) : (
           <div className={styles.grid}>
             {ordered.map((spot) => (
@@ -183,7 +184,7 @@ export default function SpotPickPage() {
               type="button"
               className={styles.chip}
               onClick={() => toggle(spot.spotId)}
-              aria-label={`${spot.name} 빼기`}
+              aria-label={t('pick.chipRemoveAria', { name: spot.name })}
             >
               <span className={styles.chipName}>{spot.name}</span>
               <span className={styles.chipX} aria-hidden="true">
@@ -194,7 +195,9 @@ export default function SpotPickPage() {
         </div>
         {/* 0곳 상태 문구는 Figma에 없음([미확인]) */}
         <Button onClick={submit} disabled={selected.length === 0}>
-          {selected.length > 0 ? `${selected.length}곳으로 코스짜기` : '스팟을 골라주세요'}
+          {selected.length > 0
+            ? t('pick.submit', { count: selected.length })
+            : t('pick.submitEmpty')}
         </Button>
       </div>
 

@@ -1,10 +1,11 @@
+import { t } from '../i18n'
 import { THEME_LABELS } from '../lib/format'
 import SpotMarkerIcon from './SpotMarkerIcon'
 import styles from './CategoryBar.module.css'
 
 /** Figma category(233:387) — 6칸 균등, 아이콘 28 + 라벨. value=null이 '전체'. */
 const ITEMS = [
-  { theme: null, label: '전체', icon: 'ALL' },
+  { theme: null, label: t('category.all'), icon: 'ALL' },
   ...['VIEW', 'CRUISE', 'BEACH', 'GARDEN', 'CASTLE'].map((theme) => ({
     theme,
     label: THEME_LABELS[theme],
@@ -14,7 +15,7 @@ const ITEMS = [
 
 export default function CategoryBar({ value, onChange }) {
   return (
-    <div className={styles.bar} role="tablist" aria-label="분류">
+    <div className={styles.bar} role="tablist" aria-label={t('category.aria')}>
       {ITEMS.map(({ theme, label, icon }) => {
         const selected = theme === value
         return (

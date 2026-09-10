@@ -5,6 +5,7 @@
  * autoload=false 로 받아서 kakao.maps.load() 콜백이 끝난 뒤에야 resolve 합니다.
  * (autoload=true면 script.onload 시점에 kakao.maps.Map이 아직 없을 수 있습니다)
  */
+import { t } from '../i18n'
 
 const SDK_SRC = 'https://dapi.kakao.com/v2/maps/sdk.js'
 
@@ -21,11 +22,7 @@ export function loadKakaoMaps() {
 
     const appKey = import.meta.env.VITE_KAKAO_MAP_KEY
     if (!appKey) {
-      reject(
-        new Error(
-          '카카오 JavaScript 키가 없습니다. 프로젝트 루트의 .env.local에 VITE_KAKAO_MAP_KEY를 채우고 dev 서버를 재시작하세요.',
-        ),
-      )
+      reject(new Error(t('map.errorNoKey')))
       return
     }
 
@@ -42,7 +39,7 @@ export function loadKakaoMaps() {
       script.remove()
       reject(
         new Error(
-          'SDK를 불러오지 못했습니다. 카카오 개발자 콘솔에서 ① 제품 설정 > 카카오맵이 ON인지, ② 플랫폼 > Web에 현재 도메인이 등록됐는지, ③ 앱키가 JavaScript 키가 맞는지 순서로 확인하세요.',
+          t('map.errorSdk'),
         ),
       )
     }

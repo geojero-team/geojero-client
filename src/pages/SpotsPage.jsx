@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import CategoryBar from '../components/CategoryBar'
 import Screen from '../components/Screen'
+import { t } from '../i18n'
 import { fetchSpots } from '../data/mockPlan'
 import { courseImage } from '../lib/courseImage'
 import styles from './SpotsPage.module.css'
@@ -61,16 +62,16 @@ export default function SpotsPage() {
   return (
     <Screen data-api="GET /api/spots">
       <header className={styles.header}>
-        <h1 className={styles.title}>스팟</h1>
+        <h1 className={styles.title}>{t('spots.title')}</h1>
       </header>
 
       <div className={styles.body}>
         <CategoryBar value={theme} onChange={setTheme} />
 
         {result.status === 'error' ? (
-          <p className={styles.notice}>불러오지 못했습니다 — {result.error}</p>
+          <p className={styles.notice}>{t('common.loadFailed', { error: result.error })}</p>
         ) : result.status === 'loading' ? (
-          <p className={styles.notice}>스팟을 불러오는 중</p>
+          <p className={styles.notice}>{t('spots.loading')}</p>
         ) : (
           <div className={styles.grid}>
             {spots.map((spot) => (

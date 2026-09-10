@@ -12,6 +12,7 @@ import {
   NodeShipIcon,
   NodeStartIcon,
 } from '../components/TimelineIcons'
+import { t } from '../i18n'
 import { fetchVerdict } from '../data/mockPlan'
 import { formatDateLong, formatDuration } from '../lib/format'
 import { ORIGIN_LABELS, spotIdsFromSearch, tripFromSearch } from '../lib/tripParams'
@@ -56,7 +57,9 @@ function TripsCard({ trips }) {
           onClick={() => setExpanded((prev) => !prev)}
           data-api="GET /api/routes/{routeNo}/timetable"
         >
-          {expanded ? `${trips.routeNo}번 시간표 접기` : `${trips.routeNo}번 시간표 더보기`}
+          {t(expanded ? 'verdict.timetableCollapse' : 'verdict.timetableMore', {
+            routeNo: trips.routeNo,
+          })}
           <span className={styles.moreChevron} aria-hidden="true">
             {expanded ? '⌃' : '›'}
           </span>
@@ -211,20 +214,25 @@ export default function VerdictPage() {
   return (
     <Screen data-api="POST /api/courses/{courseId}/judge">
       <header className={styles.header}>
-        <button type="button" className={styles.back} onClick={goBack} aria-label="뒤로">
+        <button type="button" className={styles.back} onClick={goBack} aria-label={t('common.back')}>
           ←
         </button>
         <h1 className={styles.title}>
-          {originLabel} → 거제{data ? ` · ${data.route.name}` : ''}
+          {data
+            ? t('verdict.headerTitleWithRoute', {
+                origin: originLabel,
+                route: data.route.name,
+              })
+            : t('verdict.headerTitle', { origin: originLabel })}
         </h1>
         <span className={styles.datePill}>{formatDateLong(trip.date)}</span>
       </header>
 
       <div className={styles.scroll}>
         {result.status === 'error' && (
-          <p className={styles.notice}>불러오지 못했습니다 — {result.error}</p>
+          <p className={styles.notice}>{t('common.loadFailed', { error: result.error })}</p>
         )}
-        {result.status === 'loading' && <p className={styles.notice}>판정하는 중</p>}
+        {result.status === 'loading' && <p className={styles.notice}>{t('verdict.loading')}</p>}
 
         {data && (
           <>
@@ -245,8 +253,12 @@ export default function VerdictPage() {
                 {formatDuration(data.summary.totalMin)}
               </p>
               <p className={styles.range}>
-                {data.summary.departTime} - {data.summary.arriveTime} ·{' '}
-                {data.summary.legCount}구간 · 돌아오는 막차 {data.summary.lastReturnBus}
+                {t('verdict.summaryRange', {
+                  depart: data.summary.departTime,
+                  arrive: data.summary.arriveTime,
+                  legs: data.summary.legCount,
+                  lastBus: data.summary.lastReturnBus,
+                })}
               </p>
               <div className={styles.modes}>
                 {data.summary.modes.map((mode, index) => {
@@ -311,7 +323,7 @@ export default function VerdictPage() {
               </div>
 
               <p className={styles.source}>
-                출처 {data.source} · {data.baseDate}
+                {t('verdict.source', { source: data.source, date: data.baseDate })}
               </p>
             </div>
           </>
@@ -323,9 +335,14 @@ export default function VerdictPage() {
       <div className={styles.bottomBar}>
         <div className={styles.barCol}>
           <p className={styles.arrivalLine}>
-            {data ? `${data.arrival.time} ${data.arrival.originLabel} 도착` : '판정하는 중'}
+            {data
+              ? t('verdict.arrival', {
+                  time: data.arrival.time,
+                  origin: data.arrival.originLabel,
+                })
+              : t('verdict.loading')}
           </p>
-          <p className={styles.saveHint}>일정을 저장하실 수 있어요</p>
+          <p className={styles.saveHint}>{t('verdict.saveHint')}</p>
         </div>
         <Button
           variant="disabled"
@@ -334,7 +351,7 @@ export default function VerdictPage() {
           disabled={!data}
           data-api="POST /api/saved-trips"
         >
-          저장
+          {t('verdict.save')}
         </Button>
       </div>
 

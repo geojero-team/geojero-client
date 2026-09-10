@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import Button from './Button'
 import StatusBadge from './StatusBadge'
 import styles from './PinSheet.module.css'
@@ -20,14 +21,14 @@ export default function PinSheet({ kind, spot, route, showVerdict, onClose, onOp
   const reason = isCourse ? route.reason : spot.reason
 
   return (
-    <section className={styles.sheet} aria-label={isCourse ? '선택한 코스' : '선택한 스팟'}>
+    <section className={styles.sheet} aria-label={t(isCourse ? 'map.pinCourseAria' : 'map.pinSpotAria')}>
       <div className={styles.handleRow}>
         <span className={styles.handle} aria-hidden="true" />
       </div>
 
       <div className={styles.row}>
         {showVerdict && <StatusBadge status={verdict} />}
-        <button type="button" className={styles.close} onClick={onClose} aria-label="닫기">
+        <button type="button" className={styles.close} onClick={onClose} aria-label={t('common.close')}>
           ✕
         </button>
       </div>
@@ -41,15 +42,15 @@ export default function PinSheet({ kind, spot, route, showVerdict, onClose, onOp
       {isCourse && (
         <div className={styles.facts}>
           <div className={styles.fact}>
-            <span className={styles.factLabel}>출발 → 도착</span>
+            <span className={styles.factLabel}>{t('map.factDepartArrive')}</span>
             <span className={styles.factValue}>
               {route.departTime} → {route.arriveTime}
             </span>
           </div>
           <div className={styles.fact}>
-            <span className={styles.factLabel}>돌아오는 막차</span>
+            <span className={styles.factLabel}>{t('map.factLastBus')}</span>
             <span className={styles.factValue}>
-              {route.lastBus} {route.lastStopName}발
+              {t('map.lastStop', { time: route.lastBus, stop: route.lastStopName })}
             </span>
           </div>
         </div>
@@ -77,7 +78,7 @@ export default function PinSheet({ kind, spot, route, showVerdict, onClose, onOp
         onClick={onOpen}
         data-api={isCourse ? 'POST /api/courses/{courseId}/judge' : 'GET /api/pois/{poiId}'}
       >
-        자세히 보기 ›
+        {t('map.openDetail')}
       </Button>
     </section>
   )

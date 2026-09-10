@@ -1,8 +1,9 @@
+import { t } from '../i18n'
 import styles from './StatusBadge.module.css'
 
-const LABELS = {
-  YES: ['✓', '성립'],
-  NO: ['✕', '불성립'],
+const MARKS = {
+  YES: '✓',
+  NO: '✕',
 }
 
 /**
@@ -14,16 +15,16 @@ const LABELS = {
  * 아무것도 그리지 않습니다. 미확인을 성립으로 접어 넣지 않기 위해서입니다.
  */
 export default function StatusBadge({ status, className = '' }) {
-  if (!Object.hasOwn(LABELS, status)) return null
+  if (!Object.hasOwn(MARKS, status)) return null
   const key = status
-  const [mark, label] = LABELS[key]
+  const mark = MARKS[key]
 
   return (
     <span className={`${styles.badge} ${styles[key.toLowerCase()]} ${className}`}>
       <span className={styles.mark} aria-hidden="true">
         {mark}
       </span>
-      {label}
+      {t(`status.${key}`)}
     </span>
   )
 }

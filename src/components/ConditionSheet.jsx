@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Search } from 'lucide-react'
+import { t } from '../i18n'
 import { formatDateLong } from '../lib/format'
 import { ORIGINS, ORIGIN_LABELS } from '../lib/tripParams'
 import Button from './Button'
@@ -33,16 +34,16 @@ function SheetBody({ trip, onClose, onSubmit }) {
         type="button"
         className={styles.backdrop}
         onClick={onClose}
-        aria-label="닫기"
+        aria-label={t('common.close')}
       />
 
-      <section className={styles.sheet} aria-label="조건">
+      <section className={styles.sheet} aria-label={t('condition.sheetAria')}>
         <div className={styles.handle} aria-hidden="true" />
-        <h2 className={styles.title}>조건</h2>
+        <h2 className={styles.title}>{t('condition.sheetTitle')}</h2>
 
         {/* ── 출발지 (Figma 274:576) ── */}
         <div className={styles.group}>
-          <span className={styles.label}>출발지</span>
+          <span className={styles.label}>{t('condition.originLabel')}</span>
 
           <div
             className={draft.origin ? `${styles.field} ${styles.fieldFilled}` : styles.field}
@@ -58,14 +59,14 @@ function SheetBody({ trip, onClose, onSubmit }) {
             <span
               className={draft.origin ? styles.fieldValue : styles.fieldPlaceholder}
             >
-              {draft.origin ? originLabel : '도시나 터미널 이름'}
+              {draft.origin ? originLabel : t('condition.originPlaceholder')}
             </span>
             {draft.origin && (
               <button
                 type="button"
                 className={styles.fieldClear}
                 onClick={() => patch({ origin: null })}
-                aria-label="출발지 지우기"
+                aria-label={t('condition.originClear')}
               >
                 ×
               </button>
@@ -86,15 +87,12 @@ function SheetBody({ trip, onClose, onSubmit }) {
             ))}
           </div>
 
-          <p className={styles.hint}>
-            시간표가 있는 곳은 판정에 들어가고, 그 밖은 가까운 터미널까지 카카오맵
-            길찾기로 안내해요
-          </p>
+          <p className={styles.hint}>{t('condition.originHint')}</p>
         </div>
 
         {/* ── 날짜 · 시간 (Figma 274:583) ── */}
         <div className={styles.group}>
-          <span className={styles.label}>날짜 · 시간</span>
+          <span className={styles.label}>{t('condition.dateTimeLabel')}</span>
 
           <div className={styles.pair}>
             <button
@@ -102,7 +100,7 @@ function SheetBody({ trip, onClose, onSubmit }) {
               className={`${styles.fieldRow} ${styles.fieldRowDate}`}
               onClick={() => setPicker('date')}
             >
-              <span className={styles.fieldRowLabel}>날짜</span>
+              <span className={styles.fieldRowLabel}>{t('condition.dateLabel')}</span>
               <span className={styles.fieldRowValue}>{formatDateLong(draft.date)}</span>
               <span className={styles.fieldRowChevron} aria-hidden="true">›</span>
             </button>
@@ -111,7 +109,7 @@ function SheetBody({ trip, onClose, onSubmit }) {
               className={`${styles.fieldRow} ${styles.fieldRowDepart}`}
               onClick={() => setPicker('time')}
             >
-              <span className={styles.fieldRowLabel}>출발</span>
+              <span className={styles.fieldRowLabel}>{t('condition.departShort')}</span>
               <span className={styles.fieldRowValue}>{draft.departTime}</span>
               <span className={styles.fieldRowChevron} aria-hidden="true">›</span>
             </button>
@@ -124,10 +122,12 @@ function SheetBody({ trip, onClose, onSubmit }) {
               onClick={() => setPicker('time')}
             >
               <span className={styles.fieldRowLabel}>
-                복귀{originLabel && ` (${originLabel} 도착)`}
+                {originLabel
+                  ? t('condition.returnRowWithOrigin', { origin: originLabel })
+                  : t('condition.returnRow')}
               </span>
               <span className={styles.fieldRowValue}>
-                {untilLastBus ? '막차까지' : draft.returnBy}
+                {untilLastBus ? t('condition.untilLastBus') : draft.returnBy}
               </span>
               <span className={styles.fieldRowChevron} aria-hidden="true">›</span>
             </button>
@@ -137,21 +137,19 @@ function SheetBody({ trip, onClose, onSubmit }) {
               onClick={() => patch({ returnBy: untilLastBus ? '23:00' : null })}
               aria-pressed={untilLastBus}
             >
-              막차까지
+              {t('condition.untilLastBus')}
             </button>
           </div>
 
-          <p className={styles.hintReturn}>
-            복귀를 안 정하면 막차 기준으로 판정해요 · 출발보다 이르면 다음 날 도착(+1)
-          </p>
+          <p className={styles.hintReturn}>{t('condition.returnHintLine')}</p>
         </div>
 
         {/* Button 컴포넌트 가이드(09-07): 비활성 사유는 옆 텍스트로. 이 문구는 Figma에 없음([미확인]). */}
         {!draft.origin && (
-          <p className={styles.hintReturn}>출발지를 고르면 코스를 추천해 드려요</p>
+          <p className={styles.hintReturn}>{t('condition.needOrigin')}</p>
         )}
         <Button onClick={() => onSubmit(draft)} disabled={!draft.origin}>
-          코스 추천 받기
+          {t('condition.submit')}
         </Button>
       </section>
 

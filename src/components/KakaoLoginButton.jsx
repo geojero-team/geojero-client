@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 import styles from './KakaoLoginButton.module.css'
 
 /**
@@ -24,7 +25,7 @@ export default function KakaoLoginButton({ className = '', ...props }) {
           fill="currentColor"
         />
       </svg>
-      카카오로 로그인
+      {t('login.kakao')}
     </button>
   )
 }

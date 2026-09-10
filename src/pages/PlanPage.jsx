@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { MAP_PATH } from '../components/BottomNav'
 import Button from '../components/Button'
 import Screen from '../components/Screen'
+import { t } from '../i18n'
 import { fetchPlan } from '../data/mockPlan'
 import { courseImage } from '../lib/courseImage'
 import { formatDateDay } from '../lib/format'
@@ -32,8 +33,12 @@ function ItineraryCard({ route, spotsById, selected, onSelect }) {
         <span className={styles.time}>
           {route.departTime} → {route.arriveTime}
         </span>
-        {route.recommended && <span className={styles.tag}>추천 · 막차 여유 가장 큼</span>}
-        {route.excludedName && <span className={styles.excluded}>{route.excludedName} 빼면</span>}
+        {route.recommended && <span className={styles.tag}>{t('plan.recommended')}</span>}
+        {route.excludedName && (
+          <span className={styles.excluded}>
+            {t('plan.excluded', { name: route.excludedName })}
+          </span>
+        )}
       </div>
 
       <div className={styles.order}>
@@ -51,7 +56,7 @@ function ItineraryCard({ route, spotsById, selected, onSelect }) {
               </span>
               <span className={styles.stopName}>{spot.shortName}</span>
               {index === spots.length - 1 && route.lastBus && (
-                <span className={styles.lastBus}>막차 {route.lastBus}</span>
+                <span className={styles.lastBus}>{t('course.lastBus', { time: route.lastBus })}</span>
               )}
             </span>
           </Fragment>
@@ -110,30 +115,37 @@ export default function PlanPage() {
   return (
     <Screen data-api="GET /api/routes">
       <header className={styles.header}>
-        <button type="button" className={styles.back} onClick={goBack} aria-label="뒤로">
+        <button type="button" className={styles.back} onClick={goBack} aria-label={t('common.back')}>
           ‹
         </button>
-        <h1 className={styles.title}>일정 고르기</h1>
+        <h1 className={styles.title}>{t('plan.title')}</h1>
       </header>
 
       <div className={styles.scroll}>
         <div className={styles.body}>
           <h2 className={styles.headline}>
-            사용자님의 일정에 맞춘 코스를
+            {t('plan.headline1')}
             <br />
-            추천해드려요
+            {t('plan.headline2')}
           </h2>
 
           {result.status === 'ready' && routes.length > 0 && (
             <p className={state === 'SUBSET' ? styles.stateWarn : styles.stateOk}>
               {state === 'SUBSET'
-                ? `${picked.length}곳을 다 넣으면 막차를 놓쳐요. ${picked.length - 1}곳으로 짜봤어요.`
-                : `총 코스 ${routes.length}가지`}
+                ? t('plan.stateSubset', {
+                    picked: picked.length,
+                    kept: picked.length - 1,
+                  })
+                : t('plan.stateAll', { count: routes.length })}
             </p>
           )}
 
           <p className={styles.condition}>
-            {originLabel} · {formatDateDay(trip.date)} · {trip.departTime} 출발
+            {t('plan.condition', {
+              origin: originLabel,
+              date: formatDateDay(trip.date),
+              depart: trip.departTime,
+            })}
           </p>
 
           {picked.length > 0 && (
@@ -148,18 +160,16 @@ export default function PlanPage() {
           )}
 
           {result.status === 'error' ? (
-            <p className={styles.notice}>불러오지 못했습니다 — {result.error}</p>
+            <p className={styles.notice}>{t('common.loadFailed', { error: result.error })}</p>
           ) : result.status === 'loading' ? (
-            <p className={styles.notice}>코스를 짜는 중</p>
+            <p className={styles.notice}>{t('plan.loading')}</p>
           ) : routes.length === 0 ? (
             /* 성립한 코스만 보여줍니다 — 짤 수 있는 조합이 없으면 비웁니다.
                "안 된다"가 아니라 "안내할 수 있는 게 없다"입니다. 없는 근거로
                불성립이라 단정하지 않기 위해 문구를 나눕니다. */
             <div className={styles.empty}>
-              <p className={styles.emptyTitle}>이 조건으로 안내할 코스가 없어요</p>
-              <p className={styles.emptyText}>
-                출발 시각이나 스팟을 바꾸면 짤 수 있는 조합이 생길 수 있어요.
-              </p>
+              <p className={styles.emptyTitle}>{t('noRoutes.title')}</p>
+              <p className={styles.emptyText}>{t('noRoutes.text')}</p>
             </div>
           ) : (
             routes.map((route) => (
@@ -176,15 +186,15 @@ export default function PlanPage() {
           <div className={styles.spacer} />
 
           {result.status === 'ready' && state === 'ALL' && routes.length > 0 && (
-            <p className={styles.caption}>순서와 머무는 시간은 버스 시간에 맞춰 정했어요</p>
+            <p className={styles.caption}>{t('plan.caption')}</p>
           )}
 
           <div className={styles.actions}>
             <Button variant="secondary" onClick={editSpots} data-api="GET /api/spots">
-              스팟 수정하기
+              {t('plan.editSpots')}
             </Button>
             <Button onClick={openMap} disabled={!selectedRoute}>
-              이 코스로 지도 확인
+              {t('plan.openMap')}
             </Button>
           </div>
         </div>
