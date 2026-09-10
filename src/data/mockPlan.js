@@ -48,11 +48,18 @@ const SPOTS = [
     kind: 'UNKNOWN',
     text: '당일 확인',
   }),
-  // 좌표는 TourAPI searchKeyword2 실측(2026-09-10, contentId 126577) — 서버 V6와 같은 값
-  spot(9, '명사해수욕장', 'BEACH', '해수욕장', '남부권', 34.7272514, 128.6047817, {
-    kind: 'NO',
-    text: '오늘 버스로 안 돼요',
-  }),
+  /*
+   * 거제 9경 중 유일하게 **고현(진입 관문)** 에 있는 스팟입니다.
+   *
+   * 나머지 일곱은 전부 남부·동부·북부·서부 외곽이라, 서울남부·부산사상에서 온 사람이
+   * 처음 밟는 땅에는 보여줄 스팟이 하나도 없었습니다. §2 기준 접근성 최상 티어입니다
+   * (고현 시내 · 평일 편도 130회+).
+   *
+   * 여기 있던 명사해수욕장은 뺐습니다 — 9경도 아니고, 방문객 통계도 없고, TourAPI
+   * 사진이 전 장 Type3라 쓸 수 없고, 53·53-1 도로 유실로 코스가 성립하지 않습니다.
+   * ACCESS·SPOT_VERDICTS의 9번은 남겨뒀습니다(우회 해제 시 되살리기 — 기준문서 §9).
+   */
+  spot(3, '포로수용소', 'HISTORY', '유적공원', '중부권', 34.8764184, 128.6253954),
   spot(4, '매미성', 'CASTLE', '성', '북부권', 34.9682131, 128.7050934),
   spot(5, '거제식물원', 'GARDEN', '식물원', '서부권', 34.8568211, 128.5780987),
 ]
@@ -68,6 +75,9 @@ function spot(spotId, name, theme, category, region, lat, lng, notice = null) {
 const SPOT_VERDICTS = {
   1: { verdict: 'YES', summary: '왕복 5시간 20분 · 머무는 시간 1시간 40분' },
   2: { verdict: 'YES', summary: '왕복 4시간 50분 · 머무는 시간 2시간' },
+  // 고현 시내라 §2 기준 접근성 최상 티어지만, 최인접 정류장이 [미확인]입니다(BIS 확인 대기).
+  // 값이 오면 ACCESS의 3번과 함께 채웁니다 — 그때 판정이 그대로 붙습니다.
+  3: { verdict: 'UNKNOWN', summary: null, reason: '포로수용소 하차 정류소 미확인 (BIS 확인 중)' },
   4: { verdict: 'UNKNOWN', summary: null, reason: '매미성 하차 정류소 미확인 (BIS 정류소검색 대금·시방)' },
   5: { verdict: 'UNKNOWN', summary: null, reason: '거제식물원 운영 재개 상태 미확인' },
   6: {
@@ -152,8 +162,13 @@ const ACCESS = {
       note: `${i + 1}회차`,
     })),
   },
-  // 53·53-1 — 도로 유실로 명사해수욕장앞 우회 중 (§2)
+  // 53·53-1 — 도로 유실로 명사해수욕장앞 우회 중 (§2).
+  // 명사는 화면 스팟에서 뺐지만 이 항목은 남겨둡니다 — 우회가 해제되면(§9) 되살립니다.
   9: { routeNo: '53', stop: '명사해수욕장앞', via: null, blocked: true },
+  // 포로수용소 — 고현 시내라 §2 기준 접근성 최상 티어지만, **최인접 정류장이
+  // [미확인]**입니다(BIS 확인 대기). 정류장 이름을 지어낼 수 없어 판정을 보류합니다.
+  // 값이 오면 routeNo·stop을 채우고 unknown을 지우면 그대로 판정이 붙습니다.
+  3: { routeNo: null, stop: null, via: null, unknown: true },
 }
 
 /* ── 출발 터미널 (기준문서 §3) ──────────────────────────────────────────── */
@@ -253,6 +268,18 @@ function buildOut(spots, trip) {
     return { verdict: 'NO', reason, rows }
   }
 
+  // 정류장을 아직 모르는 스팟(포로수용소)은 여기서 멈춥니다. 아래는 노선·시각을 전제로
+  // 계산하므로 그냥 두면 없는 시간표를 지어내거나 터집니다.
+  if (access.unknown) {
+    rows.push(legRow('dots', '가는 방법 확인 중'))
+    rows.push(stopRow('bus', spots[0].name, '도착', UNKNOWN, {
+      dim: true,
+      tone: 'unknown',
+      note: reason,
+    }))
+    return { verdict: 'UNKNOWN', reason, rows }
+  }
+
   const runs =
     access.routeNo === '55'
       ? BUS_55_OUT.map((r) => ({ run: r, time: r.고현, note: `${r.run}회차`, stopTime: r[access.stop] ?? null }))
@@ -331,8 +358,9 @@ function buildOut(spots, trip) {
       atStop = nextAccess.stop
       atTime = leg.arrive
     } else {
+      // 정류장을 모르는 스팟은 stop이 null이라 이름 없는 행이 됩니다 — 스팟 이름으로 대신합니다.
       rows.push(legRow('dots', '이동'))
-      rows.push(stopRow('bus', nextAccess.stop, '도착', UNKNOWN, { dim: true }))
+      rows.push(stopRow('bus', nextAccess.stop ?? next.name, '도착', UNKNOWN, { dim: true }))
       verdict = worst(verdict, 'UNKNOWN')
     }
 
@@ -353,7 +381,14 @@ function buildBack(spots, trip) {
   let reason = null
   let gohyeon = null
 
-  if (access.stop === '해금강' || access.stop === '학동') {
+  // 정류장을 아직 모르는 스팟(포로수용소)은 막차를 역산할 수가 없습니다.
+  // 그냥 두면 아래가 `null번 막차`처럼 없는 노선을 적습니다.
+  if (access.unknown) {
+    rows.push(stopRow('bus', last.name, '승차', UNKNOWN, { dim: true, note: '가는 방법 확인 중' }))
+    rows.push(legRow('dots', '이동'))
+    rows.push(stopRow('bus', '고현', '하차', UNKNOWN, { dim: true }))
+    verdict = 'UNKNOWN'
+  } else if (access.stop === '해금강' || access.stop === '학동') {
     const runs = BUS_55_BACK.map((r) => ({ time: r[access.stop], note: `${r.run}회차` }))
     const lastRun = runs[runs.length - 1]
     rows.push(
