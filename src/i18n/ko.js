@@ -49,6 +49,8 @@ export default {
   'format.date.short': '{month}/{day}',
   'format.date.long': '{month}/{day}({weekday}) · {dayType}',
   'format.date.weekday': '{month}/{day}({weekday})',
+  // 저장 목록 카드(Figma 380:259)는 '9월 14일(월)' 꼴을 씁니다 — 다른 화면의 '9/14(월)'과 다릅니다.
+  'format.date.monthDay': '{month}월 {day}일({weekday})',
   'format.date.day': '{month}/{day}({weekday}) {dayType}',
   'format.dayType.weekday': '평일',
   'format.dayType.weekend': '주말',
@@ -199,6 +201,9 @@ export default {
   'verdict.arrival': '{time} {origin} 도착',
   'verdict.saveHint': '일정을 저장하실 수 있어요',
   'verdict.save': '저장',
+  // 저장 직후 하단 바 — Figma 384:294
+  'verdict.saved': '내 일정에 저장했어요',
+  'verdict.openMyPlans': '내 일정 보기',
 
   /* ── 로그인 (240:209) ─────────────────────────────────────────────────── */
   'login.kakao': '카카오로 로그인',
@@ -215,6 +220,19 @@ export default {
   'myPlans.emptyTitle': '코스를 저장하려면 로그인이 필요해요',
   'myPlans.emptyText1': '성립한 코스를 저장할 수 있어요.',
   'myPlans.emptyText2': '코스 추천은 로그인 없이 가능해요.',
+  // 로그인 후 — Figma 379:246(저장 0건) · 380:259(저장 목록)
+  'myPlans.logout': '로그아웃',
+  'myPlans.loading': '불러오는 중…',
+  'myPlans.savedEmptyTitle': '아직 저장한 일정이 없어요',
+  'myPlans.savedEmptyText': '성립한 코스를 저장하면 여기에 모여요.',
+  'myPlans.getCourses': '코스 추천 받기',
+  'myPlans.delete': '삭제',
+  'myPlans.deleteAria': '{title} 삭제',
+  'myPlans.rejudge': '오늘 기준 재판정',
+  'myPlans.rejudging': '확인 중…',
+  'myPlans.meta': '{date} {time} 출발 · {legs}구간',
+  'myPlans.metaNoLegs': '{date} {time} 출발',
+  'myPlans.unknownCourse': '저장한 코스',
 
   /* ── 자리표시자 (/conditions — 아직 만들지 않은 화면) ─────────────────── */
   'placeholder.conditionsTitle': '판정 조건',

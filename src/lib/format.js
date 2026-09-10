@@ -59,6 +59,12 @@ export function formatDateLong(isoDate) {
   })
 }
 
+/** "2026-09-14" -> "9월 14일(월)" — 저장 목록 카드(Figma 380:259)만 이 꼴을 씁니다. */
+export function formatMonthDay(isoDate) {
+  const [, month, day] = isoDate.split('-').map(Number)
+  return t('format.date.monthDay', { month, day, weekday: WEEKDAYS[weekdayOf(isoDate)] })
+}
+
 /** "2026-09-07" -> "9/7(월)" — 지도 조건 pill(Figma 240:168)은 요일까지만 씁니다. */
 export function formatDateWeekday(isoDate) {
   const [, month, day] = isoDate.split('-').map(Number)

@@ -5,9 +5,21 @@
   flex: none;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   height: 56px;
   padding: 0 20px;
   background: var(--bg-page);
+}
+
+/* account(379:249) — 로그인 상태에서만. 링크형이라 면·테두리가 없습니다. */
+.logout {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: var(--type-caption);
+  color: var(--status-dim);
+  cursor: pointer;
 }
 
 .title {
@@ -23,6 +35,72 @@
   padding: var(--space-xs) 20px var(--space-lg);
   overflow-y: auto;
   background: var(--bg-page);
+}
+
+/* 저장 목록(380:265) — 카드 사이 12 */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* 저장 카드 — Figma CourseCard(49:51) kind=saved. 흰 면 + 테두리, p16, gap8 */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--bg-page);
+}
+
+.cardTitle {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.chain {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.meta {
+  margin: 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+/* actions(49:59) — [삭제] · 늘어나는 빈칸 · [오늘 기준 재판정] */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.action {
+  flex: none;
+  width: auto;
+}
+
+.spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 저장 0건(379:253)의 버튼만 180 고정 — 비로그인 카드의 카카오 버튼은 폭을 다 씁니다. */
+.getCourses {
+  width: 180px;
+}
+
+.notice {
+  margin: 0;
+  padding: var(--space-lg) 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 /* empty(233:566) — 350×208(hug), 좌우 패딩 0이라 버튼이 카드 끝까지 찹니다 */

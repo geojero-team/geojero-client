@@ -103,6 +103,24 @@ export const api = {
   logout: () => request('/api/auth/logout', { method: 'POST', session: true }),
 
   me: () => request('/api/me', { session: true }),
+
+  /** CoursesRes { courses: [{ courseId, name, theme, summary }] } — 저장 목록의 이름·경로 줄. */
+  courses: () => request('/api/courses'),
+
+  /**
+   * 저장 일정. 서버가 목록마다 verdictAtSave(저장 시점)와 verdictNow(지금 다시 판정)를
+   * 함께 내려줍니다 — 재판정이 서버에서 이미 돌고 있어 클라이언트가 다시 계산하지 않습니다.
+   * SavedTripRes { savedTripId, courseId, travelDate, arrivalTime, returnTime,
+   *                verdictAtSave, verdictNow }
+   */
+  savedTrips: () => request('/api/saved-trips', { session: true }),
+
+  /** body { courseId, travelDate, arrivalTime, returnTime } → 201 SavedTripRes */
+  saveTrip: (body) => request('/api/saved-trips', { method: 'POST', body, session: true }),
+
+  /** 204 No Content. request가 204를 null로 돌려줍니다. */
+  deleteTrip: (savedTripId) =>
+    request(`/api/saved-trips/${savedTripId}`, { method: 'DELETE', session: true }),
 }
 
 /**
