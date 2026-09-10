@@ -731,7 +731,43 @@ export async function fetchVerdict({ routeId, spotIds, ...trip }) {
     },
     directions: { out, back },
     arrival: { time: info.returnArrive ?? null, originLabel },
+    save: buildSave(spots, shipSpot, lastAccess, trip, info),
     ...SOURCE,
+  }
+}
+
+/**
+ * 이 여정을 서버에 저장할 수 있는가 — 있으면 POST /api/saved-trips 본문을, 없으면 null.
+ *
+ * **아무 id나 보내면 안 된다.** POST는 courseId를 요구하는데 서버가 아는 코스는 §3 검증
+ * 코스 3종뿐이다(CourseJudgeService.COURSE_LEGS). 화면의 코스는 스팟 조합으로 만들어져
+ * 그 3종과 대개 다르고, 화면 courseId와 서버 courseId는 아예 다른 것을 가리킨다.
+ * 매칭을 대충 하면 **바람의언덕을 저장했는데 '서울발 무박 일출'이 저장된다.**
+ *
+ * 그래서 여정이 서버 코스와 실제로 같을 때만 저장을 연다:
+ *   1 부산발 당일치기  고현 → 해금강 → 고현
+ *   3 외도 풀코스      고현 → 해금강 → (해금강 18:20 복귀) → 고현
+ *
+ * 나머지 조합은 서버가 판정할 수 없으므로 화면이 저장 버튼을 비활성으로 두고 사유를 적는다.
+ * (Phase 6에서 클라이언트가 서버 코스를 직접 쓰게 되면 이 함수는 사라진다.)
+ */
+function buildSave(spots, shipSpot, lastAccess, trip, info) {
+  // 서버는 '고현 도착'과 '고현 복귀 기한'으로 판정한다. 둘 중 하나라도 모르면 저장하지 않는다.
+  if (info.rideMin == null || !info.returnDepart) return null
+
+  const courseId =
+    shipSpot && lastAccess.stop === '해금강'
+      ? 3
+      : !shipSpot && spots.length === 1 && spots[0].spotId === 1
+        ? 1
+        : null
+  if (!courseId) return null
+
+  return {
+    courseId,
+    travelDate: trip.date,
+    arrivalTime: addMin(trip.departTime, info.rideMin),
+    returnTime: info.returnDepart,
   }
 }
 

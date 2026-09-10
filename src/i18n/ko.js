@@ -204,6 +204,7 @@ export default {
   // 저장 직후 하단 바 — Figma 384:294
   'verdict.saved': '내 일정에 저장했어요',
   'verdict.openMyPlans': '내 일정 보기',
+  'verdict.saveUnavailable': '이 조합은 아직 저장할 수 없어요',
 
   /* ── 로그인 (240:209) ─────────────────────────────────────────────────── */
   'login.kakao': '카카오로 로그인',

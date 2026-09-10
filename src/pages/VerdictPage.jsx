@@ -14,7 +14,8 @@ import {
 } from '../components/TimelineIcons'
 import { t } from '../i18n'
 import { fetchVerdict } from '../data/mockPlan'
-import { beginKakaoLogin } from '../lib/api'
+import { api, beginKakaoLogin } from '../lib/api'
+import { getToken } from '../lib/session'
 import { formatDateLong, formatDuration } from '../lib/format'
 import { ORIGIN_LABELS, spotIdsFromSearch, tripFromSearch } from '../lib/tripParams'
 import { worseDirection } from '../lib/verdict'
@@ -170,6 +171,8 @@ export default function VerdictPage() {
   const [dir, setDir] = useState(null) // 'out' | 'back' | null(= 판정이 나쁜 쪽)
   const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
   const [loginOpen, setLoginOpen] = useState(false)
+  // 저장 상태 — Figma 268:472(저장 전) / 384:294(저장 직후)가 같은 하단 바의 두 모습입니다.
+  const [save, setSave] = useState({ status: 'idle', error: '' })
 
   useEffect(() => {
     let cancelled = false
@@ -211,6 +214,43 @@ export default function VerdictPage() {
     ? (dir ?? worseDirection(data.directions.out.verdict, data.directions.back.verdict))
     : 'out'
   const rows = data?.directions[activeDir].rows ?? []
+
+  /* 저장 — 로그인 여부로 갈립니다.
+     비로그인이면 로그인 시트(240:209)를 엽니다. **로그인했는데도 시트를 열면**
+     카카오가 이미 동의한 사용자를 곧바로 돌려보내 같은 화면으로 되돌아오는 고리가 됩니다. */
+  const loggedIn = Boolean(getToken())
+
+  const onSave = () => {
+    if (!loggedIn) {
+      setLoginOpen(true)
+      return
+    }
+    if (!data?.save) return
+    setSave({ status: 'saving', error: '' })
+    api
+      .saveTrip(data.save)
+      .then(() => setSave({ status: 'done', error: '' }))
+      .catch((error) => {
+        // 토큰이 만료됐으면 다시 로그인해야 합니다 — 저장 실패로 끝내지 않습니다.
+        if (error.status === 401 || error.status === 403) {
+          setSave({ status: 'idle', error: '' })
+          setLoginOpen(true)
+          return
+        }
+        setSave({ status: 'idle', error: error.message })
+      })
+  }
+
+  /* 안내 줄 한 자리에 네 가지가 옵니다. 비활성 사유를 옆 텍스트로 설명하는 건
+     Figma Button 설명이 정해둔 방식입니다("비활성 사유는 옆 텍스트로 설명"). */
+  const saveHint =
+    save.status === 'done'
+      ? t('verdict.saved')
+      : save.error
+        ? save.error
+        : loggedIn && data && !data.save
+          ? t('verdict.saveUnavailable')
+          : t('verdict.saveHint')
 
   return (
     <Screen data-api="POST /api/courses/{courseId}/judge">
@@ -331,8 +371,8 @@ export default function VerdictPage() {
         )}
       </div>
 
-      {/* bottom-bar(268:472) — 고정. '저장'은 비로그인이라 disabled 외형이지만 눌리고,
-          누르면 로그인 시트(240:209)가 뜹니다. 판정 자체는 비로그인으로 다 됩니다. */}
+      {/* bottom-bar — 저장 전 268:472 / 저장 직후 384:294. 같은 바의 두 모습입니다.
+          판정 자체는 비로그인으로 다 됩니다(기준문서 §6) — 로그인은 저장에만 필요합니다. */}
       <div className={styles.bottomBar}>
         <div className={styles.barCol}>
           <p className={styles.arrivalLine}>
@@ -343,17 +383,28 @@ export default function VerdictPage() {
                 })
               : t('verdict.loading')}
           </p>
-          <p className={styles.saveHint}>{t('verdict.saveHint')}</p>
+          <p className={styles.saveHint}>{saveHint}</p>
         </div>
-        <Button
-          variant="disabled"
-          className={styles.save}
-          onClick={() => setLoginOpen(true)}
-          disabled={!data}
-          data-api="POST /api/saved-trips"
-        >
-          {t('verdict.save')}
-        </Button>
+
+        {save.status === 'done' ? (
+          <Button
+            variant="secondary"
+            className={styles.openPlans}
+            onClick={() => navigate('/my')}
+            data-api="GET /api/saved-trips"
+          >
+            {t('verdict.openMyPlans')}
+          </Button>
+        ) : (
+          <Button
+            className={styles.save}
+            onClick={onSave}
+            disabled={!data || save.status === 'saving' || (loggedIn && !data.save)}
+            data-api="POST /api/saved-trips"
+          >
+            {t('verdict.save')}
+          </Button>
+        )}
       </div>
 
       <LoginSheet

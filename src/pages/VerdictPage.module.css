@@ -452,3 +452,9 @@
   flex: none;
   width: 96px;
 }
+
+/* 저장 직후(384:294) — '내 일정 보기'는 글자가 길어 120 */
+.openPlans {
+  flex: none;
+  width: 120px;
+}
