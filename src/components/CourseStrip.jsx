@@ -1,7 +1,8 @@
-import { Fragment } from 'react'
+import { Fragment, useRef } from 'react'
 import Button from './Button'
 import { t } from '../i18n'
 import { courseImage, onImageError } from '../lib/courseImage'
+import { useDragScroll } from '../lib/useDragScroll'
 import styles from './CourseStrip.module.css'
 
 /**
@@ -86,6 +87,12 @@ export default function CourseStrip({
   onSelect,
   onOpenVerdict,
 }) {
+  /* 카드를 마우스로도 밀 수 있게 합니다. 다음 카드가 오른쪽에 살짝 보이는(peek) 배치라
+     PC에서 밀 방법이 없으면 "더 있다"만 알려주고 못 보게 됩니다. 끌다 손을 떼면 그
+     카드가 눌린 것으로 처리되던 것도 훅이 막습니다. */
+  const stripRef = useRef(null)
+  const stripDrag = useDragScroll(stripRef)
+
   if (routes.length === 0) return null
 
   return (
@@ -94,7 +101,7 @@ export default function CourseStrip({
         <span className={styles.handle} aria-hidden="true" />
       </div>
 
-      <div className={styles.strip}>
+      <div className={styles.strip} ref={stripRef} {...stripDrag}>
         <div className={styles.cards}>
           {routes.map((route) => (
             <OrderCard

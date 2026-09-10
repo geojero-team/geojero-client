@@ -116,11 +116,25 @@
   transform: translateX(-50%);
 }
 
+/* 모양은 Figma 그대로 두고 누를 수 있게만 합니다. 5px짜리를 그대로 두면 손가락으로
+   못 누르므로, 보이는 크기는 유지한 채 ::after로 손가락이 닿는 넓이만 넓힙니다.
+   가로는 옆 도트를 잘못 누르지 않을 만큼만 넓힙니다(중심 간격이 10~12px). */
 .dot,
 .dotOn {
+  position: relative;
   display: block;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
   background: #ffffff;
+  cursor: pointer;
+}
+
+.dot::after,
+.dotOn::after {
+  content: '';
+  position: absolute;
+  inset: -11px -2px;
 }
 
 .dot {

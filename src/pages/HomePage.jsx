@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNav, { MAP_PATH } from '../components/BottomNav'
 import Button from '../components/Button'
@@ -8,6 +8,7 @@ import StatusBadge from '../components/StatusBadge'
 import { t } from '../i18n'
 import { fetchCourses } from '../data/mockPlan'
 import { courseImage, onImageError } from '../lib/courseImage'
+import { useDragScroll } from '../lib/useDragScroll'
 import { THEME_LABELS, formatDateLong } from '../lib/format'
 import {
   ORIGIN_LABELS,
@@ -132,6 +133,11 @@ export default function HomePage() {
   const originLabel = ORIGIN_LABELS[trip.origin] ?? trip.origin
   const courses = result.data?.courses ?? []
 
+  /* 카드 스트립을 마우스로도 밀 수 있게 합니다. 두 번째 카드가 오른쪽에서 잘려 보이는 건
+     "더 있다"는 신호인데(Figma 233:333), PC에서 밀 방법이 없으면 신호만 남고 못 봅니다. */
+  const cardsRef = useRef(null)
+  const cardsDrag = useDragScroll(cardsRef)
+
   const rows = [
     // 터미널 목록은 서버만 압니다 — "여기 있는 곳 = 판정 가능한 곳"이라서.
     { label: t('home.rowOrigin'), value: originLabel, api: 'GET /api/origins' },
@@ -203,7 +209,7 @@ export default function HomePage() {
             ) : courses.length === 0 ? (
               <p className={styles.notice}>{t('home.empty')}</p>
             ) : (
-              <div className={styles.cards}>
+              <div className={styles.cards} ref={cardsRef} {...cardsDrag}>
                 {courses.map((course) => (
                   <CourseCard key={course.courseId} course={course} onOpen={openCourse} />
                 ))}

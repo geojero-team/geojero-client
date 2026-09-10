@@ -140,6 +140,7 @@ export default {
   'spotDetail.loading': '불러오는 중',
   'spotDetail.credit': '출처 TourAPI',
   'spotDetail.photosLabel': '사진 {count}장 — 좌우로 넘겨보세요',
+  'spotDetail.goToPhoto': '{n}번째 사진 보기',
   'spotDetail.addToPlan': '일정에 담기',
   'spotDetail.introHead': '소개',
 

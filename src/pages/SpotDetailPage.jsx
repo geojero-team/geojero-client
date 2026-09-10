@@ -5,6 +5,7 @@ import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { fetchSpotDetail } from '../data/mockPlan'
 import { courseImage, onImageError } from '../lib/courseImage'
+import { useDragScroll } from '../lib/useDragScroll'
 import {
   carrySearch,
   spotIdsFromSearch,
@@ -98,6 +99,28 @@ export default function SpotDetailPage() {
     )
   }
 
+  /* 몇 번째 장으로 보낼지. 장 수를 트랙의 자식에서 읽습니다 — 아래 slides보다 먼저
+     정의되어야 하기 때문입니다(훅은 조기 반환 앞에 와야 합니다). */
+  const goTo = (index) => {
+    const track = trackRef.current
+    if (!track) return
+    const clamped = Math.max(0, Math.min(index, track.children.length - 1))
+    track.scrollTo({ left: clamped * track.clientWidth, behavior: 'smooth' })
+  }
+
+  /* 손을 뗀 자리에서 가장 가까운 장으로 붙입니다. 끄는 동안 스냅을 꺼두므로
+     브라우저가 알아서 맞춰주지 않습니다. */
+  const dragHandlers = useDragScroll(trackRef, () => {
+    const track = trackRef.current
+    if (track) goTo(Math.round(track.scrollLeft / track.clientWidth))
+  })
+
+  const onKeyDown = (event) => {
+    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
+    event.preventDefault()
+    goTo(photoIndex + (event.key === 'ArrowRight' ? 1 : -1))
+  }
+
   if (!spot) {
     return (
       <Screen data-api="GET /api/pois/{poiId}">
@@ -134,6 +157,9 @@ export default function SpotDetailPage() {
             ref={trackRef}
             className={styles.track}
             onScroll={swipeable ? syncIndex : undefined}
+            {...dragHandlers}
+            onKeyDown={onKeyDown}
+            tabIndex={swipeable ? 0 : undefined}
             role={swipeable ? 'group' : undefined}
             aria-label={
               swipeable ? t('spotDetail.photosLabel', { count: photos.length }) : undefined
@@ -167,11 +193,17 @@ export default function SpotDetailPage() {
                 <PhotoCountIcon />
                 {photoIndex + 1} / {photos.length}
               </span>
-              <span className={styles.dots} aria-hidden="true">
+              {/* 모양은 Figma 264:231 그대로지만 누를 수 있게 했습니다 — 마우스만 쓰는
+                  사람에게는 이게 가장 눈에 띄는 조작 수단입니다. */}
+              <span className={styles.dots}>
                 {photos.map((url, index) => (
-                  <span
+                  <button
                     key={url}
+                    type="button"
                     className={index === photoIndex ? styles.dotOn : styles.dot}
+                    aria-label={t('spotDetail.goToPhoto', { n: index + 1 })}
+                    aria-current={index === photoIndex}
+                    onClick={() => goTo(index)}
                   />
                 ))}
               </span>
