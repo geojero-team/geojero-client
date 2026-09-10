@@ -686,14 +686,22 @@ export async function fetchSpotDetail(spotId) {
     const res = await fetch(url)
     if (!res.ok) throw new Error(String(res.status))
     const data = await res.json()
+    // PoiDetailRes { poiId, name, kind, tier, lang, langFallback,
+    //                detail: { source, overview, imageUrl }, checkUrl, lastDeparture }
+    // detail.source가 'TourAPI'가 아니면 자체 소개문(intro_text) 폴백입니다 —
+    // 그때는 '출처 TourAPI' 칩을 달면 안 됩니다.
+    const detail = data.detail ?? {}
     return {
       ...base,
-      overview: data.overview ?? null,
-      photos: Array.isArray(data.images) ? data.images : [],
+      overview: detail.overview ?? null,
+      overviewSource: detail.source ?? null,
+      photos: detail.imageUrl ? [detail.imageUrl] : [],
+      checkUrl: data.checkUrl ?? null,
+      lastDeparture: data.lastDeparture ?? null,
     }
   } catch {
     // 서버가 없거나 TourAPI가 실패해도 화면은 떠야 합니다(비로그인 판정과 같은 원칙).
-    return { ...base, overview: null, photos: [] }
+    return { ...base, overview: null, overviewSource: null, photos: [], checkUrl: null, lastDeparture: null }
   }
 }
 

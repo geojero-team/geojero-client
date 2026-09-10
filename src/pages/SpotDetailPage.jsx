@@ -47,10 +47,12 @@ export default function SpotDetailPage() {
     )
   }
 
-  // 사진은 TourAPI 런타임 호출값입니다. 아직 없으면 자리 그림 한 장만 두고
-  // 장수 칩·인디케이터·출처 칩은 띄우지 않습니다 — 없는 장수를 적을 수 없습니다.
+  // 사진은 TourAPI 런타임 호출값입니다. 서버는 대표 이미지 한 장(detail.imageUrl)만
+  // 내려주므로 장수 칩·인디케이터는 두 장 이상일 때만 띄웁니다 — 없는 장수를 적지 않습니다.
+  // 출처 칩도 실제 TourAPI 응답일 때만 답니다(자체 소개문 폴백이면 출처가 다릅니다).
   const photos = spot.photos ?? []
   const hasPhotos = photos.length > 0
+  const fromTourApi = spot.overviewSource === 'TourAPI'
 
   return (
     <Screen data-api="GET /api/pois/{poiId}">
@@ -71,10 +73,9 @@ export default function SpotDetailPage() {
             ‹
           </button>
 
-          {hasPhotos && (
+          {photos.length > 1 && (
             <>
               <span className={styles.countChip}>1 / {photos.length}</span>
-              <span className={styles.creditChip}>출처 TourAPI</span>
               <span className={styles.dots} aria-hidden="true">
                 {photos.map((url, index) => (
                   <span
@@ -84,6 +85,10 @@ export default function SpotDetailPage() {
                 ))}
               </span>
             </>
+          )}
+
+          {hasPhotos && fromTourApi && (
+            <span className={styles.creditChip}>출처 TourAPI</span>
           )}
         </div>
 
