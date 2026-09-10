@@ -607,5 +607,8 @@ export async function fetchCourses({ origin, date, departTime, returnBy, limit =
   // return res.json()
 
   await delay()
-  return { courses: COURSES.slice(0, limit).map(judgeCourse), ...SOURCE }
+  // 성립만 내보냅니다(2026-09-10 결정). 미확인 코스는 목록에서 뺍니다 —
+  // 매미성 하차 정류소·거제식물원 운영 재개는 기준문서 §9 미해결이라, 확인되면 다시 나타납니다.
+  const courses = COURSES.map(judgeCourse).filter((course) => course.verdict === 'YES')
+  return { courses: courses.slice(0, limit), ...SOURCE }
 }

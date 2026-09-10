@@ -7,7 +7,7 @@ import Screen from '../components/Screen'
 import StatusBadge from '../components/StatusBadge'
 import { fetchCourses } from '../data/mockPlan'
 import { courseImage } from '../lib/courseImage'
-import { THEME_LABELS, formatDateLong, formatShortDate } from '../lib/format'
+import { THEME_LABELS, formatDateLong } from '../lib/format'
 import {
   hasRecommendation,
   loadRecentCourse,
@@ -89,29 +89,21 @@ function CourseCard({ course, onOpen }) {
   )
 }
 
-/** 최근에 본 코스 — Figma 233:364(빈 카드) / 274:556(채워진 카드) */
-function RecentCourse({ recent, onOpen, onBrowse }) {
-  if (!recent) {
-    return (
-      <button type="button" className={styles.recent} onClick={onBrowse}>
-        <span className={styles.recentCol}>
-          <span className={styles.recentLabel}>최근에 본 코스</span>
-          <span className={styles.recentEmpty}>
-            아직 본 코스가 없어요 · 스팟에서 골라보세요
-          </span>
-        </span>
-        <span className={styles.recentChevron} aria-hidden="true">›</span>
-      </button>
-    )
-  }
-
+/**
+ * 최근에 본 코스 — Figma 233:364(빈 카드).
+ *
+ * 채워진 카드는 지금 그리지 않습니다. 코스를 열어본 기록에는 그때의 판정이 붙는데,
+ * 미확인은 화면에 내보내지 않기로 했고(2026-09-10), 그럼 이 카드에 무엇을 적을지가
+ * 남습니다. 사용자가 그 상태를 직접 그려오기로 해서 그때까지 빈 카드로 둡니다.
+ * 기록 자체는 recentCourse.js가 계속 남기므로 화면만 붙이면 됩니다.
+ */
+function RecentCourse({ onBrowse }) {
   return (
-    <button type="button" className={styles.recent} onClick={() => onOpen(recent)}>
-      <StatusBadge status={recent.verdict} />
+    <button type="button" className={styles.recent} onClick={onBrowse}>
       <span className={styles.recentCol}>
         <span className={styles.recentLabel}>최근에 본 코스</span>
-        <span className={styles.recentName}>
-          {recent.name} · {formatShortDate(recent.date)}
+        <span className={styles.recentEmpty}>
+          아직 본 코스가 없어요 · 스팟에서 골라보세요
         </span>
       </span>
       <span className={styles.recentChevron} aria-hidden="true">›</span>
@@ -226,11 +218,7 @@ export default function HomePage() {
           </div>
 
           {recommended && (
-            <RecentCourse
-              recent={recent}
-              onOpen={openCourse}
-              onBrowse={() => navigate('/spots')}
-            />
+            <RecentCourse onBrowse={() => navigate('/spots')} />
           )}
 
           <section className={styles.today}>
