@@ -359,13 +359,24 @@ function buildItineraries(picked, trip) {
       ]
     : orderings(picked).map((spots) => ({ spots, excluded: null }))
   const info = ORIGIN_INFO[trip.origin] ?? {}
+  const originLabel = ORIGIN_LABELS[trip.origin] ?? trip.origin
 
   return {
     state: subset ? 'SUBSET' : 'ALL',
     routes: sets.map(({ spots, excluded }, index) => {
       const out = buildOut(spots, trip)
       const back = buildBack(spots, trip)
-      const lastBus = lastBusOf(spots[spots.length - 1])
+      const last = spots[spots.length - 1]
+      const lastBus = lastBusOf(last)
+      const lastStopName = ACCESS[last?.spotId]?.stop ?? null
+      // 지도 핀 요약의 막차 박스(Figma 240:191). 세 값이 다 있을 때만 — 지어내지 않습니다.
+      const lastRide =
+        lastBus && info.returnDepart && info.returnArrive
+          ? {
+              board: `${lastBus} ${lastStopName}발 고현행 탑승`,
+              arrive: `고현 ${BUS_55_BACK_LAST_ARRIVAL} 도착 · ${originLabel}행 ${info.returnDepart}~${info.returnArrive}`,
+            }
+          : null
       return {
         routeId: index + 1,
         rank: index + 1,
@@ -379,14 +390,8 @@ function buildItineraries(picked, trip) {
         departTime: trip.departTime,
         arriveTime: info.returnArrive ?? null,
         lastBus,
-        // 지도 코스 시트(CourseSheet)가 아직 읽는 필드 — Phase 4에서 Figma course-sheet로 바뀌면 정리
-        strategyLabel: null,
-        travelMin: null,
-        stayMin: null,
-        estimatedCost: null,
-        returnAnchorTime: null,
-        lastBusTime: lastBus,
-        bufferMin: null,
+        lastStopName,
+        lastRide,
       }
     }),
   }
@@ -500,7 +505,12 @@ export async function fetchPlan({ spotIds, ...trip }) {
   const info = ORIGIN_INFO[trip.origin] ?? {}
   return {
     arrivalTime: info.rideMin != null ? addMin(trip.departTime, info.rideMin) : null,
-    spots: picked.map((spot) => ({ ...spot, ...SPOT_VERDICTS[spot.spotId] })),
+    // 지도 진입 태그 '⚑ 부산서부에서 1시간 20분'. 소요 시간을 모르는 터미널은 태그를 띄우지 않습니다.
+    entry: { originLabel: ORIGIN_LABELS[trip.origin] ?? trip.origin, rideMin: info.rideMin ?? null },
+    // 지도는 고르지 않은 스팟도 아이콘 핀으로 계속 보여줍니다(Figma 285:208).
+    // 무엇을 골랐는지는 routes[].spotIds가 말합니다.
+    pickedSpotIds: picked.map((spot) => spot.spotId),
+    spots: SPOTS.map((spot) => ({ ...spot, ...SPOT_VERDICTS[spot.spotId] })),
     ...buildItineraries(picked, trip),
     ...SOURCE,
   }

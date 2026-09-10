@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Maximize2, Minus, Plus, RotateCw, TriangleAlert } from 'lucide-react'
-import { courseImage, courseImageFallback } from '../lib/courseImage'
+import { RotateCw, TriangleAlert } from 'lucide-react'
 import { loadKakaoMaps } from '../lib/kakaoLoader'
+import { ICON_PATHS } from '../lib/spotIcons'
 import styles from './MapView.module.css'
 
 /** 거제도 대략 중심. 스팟이 로드되면 setBounds로 자동 조정됩니다. */
@@ -22,83 +22,78 @@ const NORTH_NUDGE_PX = 76
 const LABEL_GAP = 4
 
 /**
- * 마커 기하 — 아래 값은 전부 "좌표(꼬리 끝)"에서 잰 거리입니다.
- * CustomOverlay를 yAnchor:1로 붙여서 꼬리 끝이 실제 지점에 꽂힙니다.
- * MapView.module.css의 .pin / .pinBody / .pinTail 치수와 맞물려 있습니다.
+ * 마커 기하 — Figma 285:208 실측.
+ * SpotMarker·StopMarker 모두 28×28이고 **원의 중심이 지리 좌표**입니다
+ * (CustomOverlay xAnchor 0.5 / yAnchor 0.5). 꼬리·사진 핀은 쓰지 않습니다.
+ *
+ * 라벨은 마커 박스 기준 오른쪽 +30 / 위 +5에 붙습니다. 오른쪽이 막히면 왼쪽으로
+ * 뒤집는데, 그때 간격은 Figma 실측대로 4px입니다(오른쪽 2px와 비대칭 — 원본 그대로).
+ *
+ * [주의] 아래 값을 바꾸면 MapView.module.css의 .pin / .pinLabel 치수도 같이 고쳐야
+ * 이름표 충돌 계산이 어긋나지 않습니다.
  */
-const MARKER_HALF_WIDTH = 22
-const MARKER_TOP_FROM_ANCHOR = 48
-const SELECTED_SCALE = 1.12
+const MARKER_SIZE = 28
+const MARKER_HALF = MARKER_SIZE / 2
+const LABEL_HEIGHT = 18
+const LABEL_TOP_INSET = 5
+const LABEL_RIGHT_GAP = 30
+const LABEL_LEFT_GAP = 4
 
-/** 이름표 위치. CSS의 top:58px(아래) / bottom:50px(위)과 맞물립니다. */
-const LABEL_BELOW_FROM_ANCHOR = 2
-const LABEL_ABOVE_FROM_ANCHOR = 50
+/** 코스 경로 선 — Figma route-line(285:234) 2.5px 단선. 흰 casing 없음. */
+const ROUTE_LINE_WEIGHT = 2.5
 
-/** 코스 경로 선. 흰 테두리를 깔아야 지도 위에서 선이 묻히지 않습니다. */
-const ROUTE_LINE_WEIGHT = 6
-const ROUTE_CASING_WEIGHT = 11
+/** 코스 정류소 마커의 판정 톤. 성립은 기본(브랜드) — Figma StopMarker default. */
+function toneClassOf(spot, isStop, showVerdict) {
+  if (!isStop || !showVerdict) return null
+  if (spot.verdict === 'NO') return styles.toneNo
+  if (spot.verdict === 'UNKNOWN') return styles.toneUnknown
+  return null
+}
 
-/** 마커 하나. CustomOverlay는 DOM 엘리먼트를 그대로 받으므로 직접 만들어 넣습니다. */
-function createPinElement(spot, { showVerdict, order }) {
+/**
+ * 마커 하나. CustomOverlay는 DOM 엘리먼트를 그대로 받으므로 직접 만들어 넣습니다.
+ *
+ *   코스 정류소  StopMarker — brand 면 + 흰 번호 (미확인·불성립이면 테두리 톤)
+ *   코스 밖 스팟 SpotMarker — 흰 면 + brand 테두리 + 카테고리 아이콘
+ */
+function createPinElement(spot, { order, tone }) {
+  const isStop = order != null
+
   const element = document.createElement('button')
   element.type = 'button'
-
-  // 조건이 정해지지 않았으면 판정도 없습니다. 그럴 땐 색으로 말하지 않습니다.
-  const tone = !showVerdict
-    ? styles.pinNeutral
-    : spot.verdict === 'NO'
-      ? styles.pinNo
-      : styles.pinYes
-  element.className = `${styles.pin} ${tone}`
+  element.className = [styles.pin, isStop ? styles.pinStop : styles.pinSpot, tone]
+    .filter(Boolean)
+    .join(' ')
 
   // 판정 3분법 — 미확인을 성립으로 읽지 않는다.
-  const VERDICT_LABEL = { YES: '성립', NO: '불성립' }
-  const state = !showVerdict ? '' : ` · ${VERDICT_LABEL[spot.verdict] ?? '미확인'}`
+  const VERDICT_LABEL = { YES: '성립', NO: '불성립', UNKNOWN: '미확인' }
+  const state = isStop && spot.verdict ? ` · ${VERDICT_LABEL[spot.verdict] ?? '미확인'}` : ''
   element.setAttribute('aria-label', `${spot.shortName ?? spot.name}${state}`)
 
-  const body = document.createElement('span')
-  body.className = styles.pinBody
-
-  const photo = document.createElement('img')
-  photo.src = courseImage(spot)
-  photo.alt = ''
-  photo.decoding = 'async'
-  // 백엔드 썸네일 링크가 깨져도 지도에 빈 칸이 생기지 않게 테마 그림으로 되돌립니다.
-  photo.addEventListener(
-    'error',
-    () => {
-      photo.src = courseImageFallback(spot)
-    },
-    { once: true },
-  )
-  body.append(photo)
-
-  // 꼬리 끝이 실제 좌표입니다. 몸통이 그 위에 떠 있어서 겹쳐도 층이 보입니다.
-  const tail = document.createElement('span')
-  tail.className = styles.pinTail
+  const dot = document.createElement('span')
+  dot.className = styles.pinDot
+  if (isStop) {
+    dot.textContent = String(order)
+  } else {
+    dot.innerHTML =
+      `<svg width="${MARKER_SIZE}" height="${MARKER_SIZE}" viewBox="0 0 28 28" aria-hidden="true">` +
+      `<path d="${ICON_PATHS[spot.theme] ?? ICON_PATHS.VIEW}" fill="none" stroke="currentColor"` +
+      ' stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  }
 
   const label = document.createElement('span')
   label.className = styles.pinLabel
   label.textContent = spot.shortName ?? spot.name
 
-  element.append(body, tail, label)
-
-  // 코스를 고른 상태에서만 방문 순서를 답니다. 선만으로는 어디가 시작인지 모릅니다.
-  if (order != null) {
-    const badge = document.createElement('span')
-    badge.className = styles.pinOrder
-    badge.textContent = String(order)
-    element.append(badge)
-  }
-
+  element.append(dot, label)
   return { element, label }
 }
 
 /**
  * 라벨 겹침 정리.
  * 거제 남부에 스팟이 몰려 있어서 라벨을 전부 그리면 서로 잘립니다.
- * 선택된 핀 > 성립 > 불성립 순으로 자리를 먼저 주고, 부딪히는 라벨만 숨깁니다.
- * (점 자체는 항상 보입니다 — 숨기는 건 이름표뿐입니다)
+ * Figma 기본 배치는 마커 오른쪽이고, 막히면 왼쪽으로 뒤집습니다(바람의언덕이 그 예).
+ * 양쪽 다 막히면 그 이름표만 숨깁니다 — 점 자체는 항상 보입니다.
  */
 function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
   let projection
@@ -117,49 +112,40 @@ function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
   const points = new Map()
   const occupied = []
 
-  // 1) 마커 몸통이 먼저 자리를 차지합니다. 이름표가 남의 마커에 걸치면 둘 다 못 읽습니다.
-  //    겸사겸사 z축도 여기서 정합니다 — 화면 아래(남쪽) 마커가 위로 올라오면
-  //    겹쳤을 때 카드가 포개진 것처럼 보여서 어느 게 앞인지 읽힙니다.
+  // 1) 마커가 먼저 자리를 차지합니다. 이름표가 남의 마커에 걸치면 둘 다 못 읽습니다.
+  //    z축도 여기서 정합니다 — 화면 아래(남쪽) 마커가 위로 올라와 층이 읽힙니다.
   pins.forEach((pin) => {
     const point = projection.containerPointFromCoords(pin.overlay.getPosition())
     points.set(pin.spotId, point)
 
     const isSelected = pin.spotId === selectedId
-    const scale = isSelected ? SELECTED_SCALE : 1
     pin.overlay.setZIndex(isSelected ? 9999 : 100 + Math.round(point.y))
 
     occupied.push({
       owner: pin.spotId,
-      left: point.x - MARKER_HALF_WIDTH * scale,
-      right: point.x + MARKER_HALF_WIDTH * scale,
-      top: point.y - MARKER_TOP_FROM_ANCHOR * scale,
-      bottom: point.y,
+      left: point.x - MARKER_HALF,
+      right: point.x + MARKER_HALF,
+      top: point.y - MARKER_HALF,
+      bottom: point.y + MARKER_HALF,
     })
   })
 
-  // 2) 이름표를 우선순위대로 놓습니다. 아래가 막히면 위로 뒤집고,
-  //    그래도 안 되면 그 이름표만 숨깁니다.
-  const rank = (pin) =>
-    pin.spotId === selectedId ? 0 : pin.verdict === 'NO' ? 2 : 1
+  // 2) 이름표를 우선순위대로 놓습니다. 코스 정류소가 코스 밖 스팟보다 먼저입니다.
+  const rank = (pin) => (pin.spotId === selectedId ? 0 : pin.isStop ? 1 : 2)
   const ordered = [...pins].sort((a, b) => rank(a) - rank(b))
 
   ordered.forEach((pin) => {
     // opacity는 레이아웃에 영향이 없어서 숨긴 상태에서도 폭을 잴 수 있습니다.
     const width = pin.label.offsetWidth
-    const height = pin.label.offsetHeight
     const point = points.get(pin.spotId)
     if (!point || width === 0) return
 
-    const boxAt = (above) => ({
-      left: point.x - width / 2,
-      right: point.x + width / 2,
-      top: above
-        ? point.y - LABEL_ABOVE_FROM_ANCHOR - height
-        : point.y + LABEL_BELOW_FROM_ANCHOR,
-      bottom: above
-        ? point.y - LABEL_ABOVE_FROM_ANCHOR
-        : point.y + LABEL_BELOW_FROM_ANCHOR + height,
-    })
+    const markerLeft = point.x - MARKER_HALF
+    const top = point.y - MARKER_HALF + LABEL_TOP_INSET
+    const boxAt = (left) => ({ left, right: left + width, top, bottom: top + LABEL_HEIGHT })
+
+    const right = boxAt(markerLeft + LABEL_RIGHT_GAP)
+    const left = boxAt(markerLeft - LABEL_LEFT_GAP - width)
 
     const fits = (box) =>
       !occupied.some(
@@ -177,17 +163,14 @@ function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
       box.top >= topReserved &&
       box.bottom <= viewHeight
 
-    const below = boxAt(false)
-    const above = boxAt(true)
-
-    // 아래 → 위 순으로 시도합니다.
+    // 오른쪽 → 왼쪽 순으로 시도합니다.
     // 방금 탭한 스팟의 이름표는 자리가 없어도 보여줍니다. 숨겨버리면
     // "내가 뭘 눌렀는지"가 사라집니다. 나머지가 이걸 피해 가면 됩니다.
     const placement =
-      [below, above].find((box) => within(box) && fits(box)) ??
-      (pin.spotId === selectedId ? (within(below) ? below : above) : null)
+      [right, left].find((box) => within(box) && fits(box)) ??
+      (pin.spotId === selectedId ? (within(right) ? right : left) : null)
 
-    pin.label.classList.toggle(styles.pinLabelAbove, placement === above)
+    pin.label.classList.toggle(styles.pinLabelLeft, placement === left)
     pin.label.style.opacity = placement ? '1' : '0'
     pin.label.style.pointerEvents = placement ? '' : 'none'
     if (placement) occupied.push({ ...placement, owner: pin.spotId })
@@ -211,10 +194,9 @@ function fitToSpots(kakao, map, spots, topReserved, nudgeNorth) {
     bounds.extend(new kakao.maps.LatLng(spot.lat, spot.lng))
   })
 
-  // setBounds의 여백은 "좌표"를 기준으로 잡힙니다. 그런데 마커 몸통은 좌표에서
-  // 위로 48px 솟아 있어서, 여백을 헤더 높이만큼만 주면 몸통이 헤더를 파고듭니다.
-  // 마커 높이 + 숨 쉴 틈까지 더해야 실제로 안 겹칩니다.
-  const topPadding = topReserved + MARKER_TOP_FROM_ANCHOR + 12
+  // setBounds의 여백은 "좌표" 기준입니다. 마커는 좌표를 중심으로 위아래 14px씩
+  // 차지하므로 그만큼 + 숨 쉴 틈을 더해야 조건 칩 아래로 파고들지 않습니다.
+  const topPadding = topReserved + MARKER_HALF + 12
 
   // (bounds, top, right, bottom, left)
   map.setBounds(bounds, topPadding, 56, 56, 56)
@@ -248,14 +230,13 @@ export default function MapView({
   showVerdict = true,
   orderBySpotId = null,
   topReserved = 16,
-  bottomInset = 0,
-  compact = false, // 판정 결과의 200px 미리보기 — 줌·전체 보기 버튼을 숨깁니다
+  compact = false, // 판정 결과의 200px 미리보기 — 줌 버튼을 숨깁니다
 }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
-  const pinsRef = useRef([]) // [{ spotId, verdict, overlay, element, label }]
+  const pinsRef = useRef([]) // [{ spotId, isStop, overlay, element, label }]
   const linesRef = useRef([])
-  const liveRef = useRef({ onSelectSpot, onDeselect, selectedSpotId, topReserved })
+  const liveRef = useRef({ onSelectSpot, onDeselect, selectedSpotId, topReserved, routePath })
 
   const [phase, setPhase] = useState('loading') // 'loading' | 'ready' | 'error'
   const [errorMessage, setErrorMessage] = useState('')
@@ -263,7 +244,7 @@ export default function MapView({
 
   // 지도 이벤트 리스너는 한 번만 붙이므로, 최신 값은 ref로 넘겨줍니다.
   useEffect(() => {
-    liveRef.current = { onSelectSpot, onDeselect, selectedSpotId, topReserved }
+    liveRef.current = { onSelectSpot, onDeselect, selectedSpotId, topReserved, routePath }
   })
 
   // ── SDK 로드 + 지도 생성 ────────────────────────────────────────────────
@@ -317,7 +298,7 @@ export default function MapView({
     }
   }, [retryToken])
 
-  // ── 컨테이너 크기가 바뀌면 지도 다시 그리기 (모바일 주소창 접힘 등) ─────
+  // ── 컨테이너 크기가 바뀌면 지도 다시 그리기 (시트가 열리며 지도가 줄 때 등) ──
   useEffect(() => {
     if (phase !== 'ready' || !containerRef.current) return
 
@@ -334,9 +315,11 @@ export default function MapView({
     const kakao = window.kakao
 
     pinsRef.current = spots.map((spot) => {
+      const order = orderBySpotId?.get(spot.spotId) ?? null
+      const isStop = order != null
       const { element, label } = createPinElement(spot, {
-        showVerdict,
-        order: orderBySpotId?.get(spot.spotId) ?? null,
+        order,
+        tone: toneClassOf(spot, isStop, showVerdict),
       })
       element.addEventListener('click', (event) => {
         event.stopPropagation()
@@ -347,22 +330,16 @@ export default function MapView({
         map,
         position: new kakao.maps.LatLng(spot.lat, spot.lng),
         content: element,
-        // 박스 아래 가운데(= 꼬리 끝)를 좌표에 맞춥니다.
+        // Figma: 28px 원의 중심이 지리 좌표입니다.
         xAnchor: 0.5,
-        yAnchor: 1,
+        yAnchor: 0.5,
         clickable: true,
       })
 
-      return {
-        spotId: spot.spotId,
-        verdict: spot.verdict,
-        overlay,
-        element,
-        label,
-      }
+      return { spotId: spot.spotId, isStop, overlay, element, label }
     })
 
-    // 화면 맞추기는 아래 전용 이펙트가 합니다 — 카드 높이가 정해진 뒤에 맞춰야 해서.
+    // 화면 맞추기는 아래 전용 이펙트가 합니다 — 시트 높이가 정해진 뒤에 맞춰야 해서.
 
     // 라벨이 실제로 그려진 다음에야 폭을 잴 수 있습니다.
     const frame = requestAnimationFrame(() =>
@@ -391,24 +368,16 @@ export default function MapView({
     const kakao = window.kakao
     const path = routePath.map(({ lat, lng }) => new kakao.maps.LatLng(lat, lng))
 
-    // 흰 선을 깔고 그 위에 브랜드색 선을 올립니다. 지도 위에서 선이 묻히지 않게.
-    const casing = new kakao.maps.Polyline({
-      map,
-      path,
-      strokeWeight: ROUTE_CASING_WEIGHT,
-      strokeColor: '#ffffff',
-      strokeOpacity: 0.95,
-      strokeStyle: 'solid',
-    })
+    // Figma는 흰 casing 없는 2.5px 단선입니다(285:234). 마커 중심끼리 잇습니다.
     const line = new kakao.maps.Polyline({
       map,
       path,
       strokeWeight: ROUTE_LINE_WEIGHT,
       strokeColor: '#0069b3',
-      strokeOpacity: 0.95,
+      strokeOpacity: 1,
       strokeStyle: 'solid',
     })
-    linesRef.current = [casing, line]
+    linesRef.current = [line]
 
     return () => {
       linesRef.current.forEach((item) => item.setMap(null))
@@ -418,20 +387,21 @@ export default function MapView({
 
   // ── 지도 영역이 바뀌면 다시 그리고, 필요하면 화면을 다시 맞춥니다 ───────
   //
-  // 카드가 지도를 덮으면 카카오 로고·축척이 가려지고 핀도 안 보입니다.
-  // 지도 컨테이너 자체를 줄이면 로고가 카드 위로 올라옵니다.
-  //
-  // 다시 맞추는 이유: 코스를 고르면 마커가 바뀌는 동시에 카드가 열립니다.
-  // 마커가 생길 때 맞춰버리면 그건 카드가 열리기 전의 큰 지도 기준이라,
+  // 다시 맞추는 이유: 코스를 고르면 마커가 바뀌는 동시에 시트가 열립니다.
+  // 마커가 생길 때 맞춰버리면 그건 시트가 열리기 전의 큰 지도 기준이라,
   // 곧이어 지도가 줄면서 아래쪽 마커들이 화면 밖으로 밀려납니다.
-  // 단, 스팟을 탭해서 카드가 열린 경우는 그 스팟으로 이동한 상태이므로 맞추지 않습니다.
+  // 단, 스팟을 탭해서 시트가 열린 경우는 그 스팟으로 이동한 상태이므로 맞추지 않습니다.
+  //
+  // routePath는 일부러 의존성에서 뺐습니다. fitToSpots는 코스가 아니라 **전체 스팟**에
+  // 맞추므로 코스를 바꿔도 결과 화면은 같습니다. 그런데 다시 맞추면 사용자가 손으로
+  // 옮겨둔 지도만 원위치로 튕깁니다 — 코스 카드를 넘길 때마다.
   useEffect(() => {
     const map = mapRef.current
     if (phase !== 'ready' || !map || spots.length === 0) return
 
     map.relayout()
     if (liveRef.current.selectedSpotId == null) {
-      fitToSpots(window.kakao, map, spots, topReserved, routePath === null)
+      fitToSpots(window.kakao, map, spots, topReserved, liveRef.current.routePath === null)
     }
     updateLabelVisibility(
       map,
@@ -439,7 +409,7 @@ export default function MapView({
       liveRef.current.selectedSpotId,
       topReserved,
     )
-  }, [spots, bottomInset, topReserved, phase, routePath])
+  }, [spots, topReserved, phase])
 
   // ── 선택 상태를 마커에 반영 + 선택한 핀으로 이동 ────────────────────────
   useEffect(() => {
@@ -455,7 +425,7 @@ export default function MapView({
 
     if (selectedSpotId == null) return
     const selected = pinsRef.current.find((pin) => pin.spotId === selectedSpotId)
-    // 지도 영역이 카드만큼 줄어 있으므로 그냥 가운데로 보내면 됩니다.
+    // 지도 영역이 시트만큼 줄어 있으므로 그냥 가운데로 보내면 됩니다.
     if (selected) map.panTo(selected.overlay.getPosition())
   }, [selectedSpotId, spots, phase, topReserved])
 
@@ -465,12 +435,6 @@ export default function MapView({
     map.setLevel(map.getLevel() + delta, { animate: true })
   }, [])
 
-  const fitAll = useCallback(() => {
-    const map = mapRef.current
-    if (!map) return
-    fitToSpots(window.kakao, map, spots, topReserved, routePath === null)
-  }, [spots, topReserved, routePath])
-
   const retry = useCallback(() => {
     setPhase('loading')
     setErrorMessage('')
@@ -479,40 +443,27 @@ export default function MapView({
 
   return (
     <div className={styles.root}>
-      <div
-        ref={containerRef}
-        className={styles.canvas}
-        style={{ bottom: bottomInset }}
-      />
+      <div ref={containerRef} className={styles.canvas} />
 
+      {/* Figma 240:169/171 — 테두리 없는 36px 버튼 두 개, 8px 간격, 우측 12px */}
       {phase === 'ready' && !compact && (
-        <div className={styles.controls} style={{ top: topReserved + 10 }}>
+        <div className={styles.controls} style={{ top: topReserved + 16 }}>
           <button
             type="button"
-            className={styles.controlButton}
-            onClick={fitAll}
-            aria-label="전체 보기"
+            className={styles.zoomButton}
+            onClick={() => zoom(-1)}
+            aria-label="확대"
           >
-            <Maximize2 size={18} aria-hidden="true" />
+            +
           </button>
-          <div className={styles.zoomGroup}>
-            <button
-              type="button"
-              className={styles.controlButton}
-              onClick={() => zoom(-1)}
-              aria-label="확대"
-            >
-              <Plus size={18} aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              className={styles.controlButton}
-              onClick={() => zoom(1)}
-              aria-label="축소"
-            >
-              <Minus size={18} aria-hidden="true" />
-            </button>
-          </div>
+          <button
+            type="button"
+            className={styles.zoomButton}
+            onClick={() => zoom(1)}
+            aria-label="축소"
+          >
+            −
+          </button>
         </div>
       )}
 

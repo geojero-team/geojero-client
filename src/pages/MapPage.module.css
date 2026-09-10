@@ -1,5 +1,30 @@
-/* 조건 칩 아래에 뜨는 상태 표시.
-   --top-offset은 인라인 스타일로 들어옵니다 (조건 칩이 있을 때와 없을 때가 달라서). */
+/* Figma에서 지도·시트·탭바는 형제입니다. 지도는 남는 자리를 전부 갖고,
+   시트가 열리면 그만큼 줄어듭니다(오버레이가 아닙니다). */
+.mapArea {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* entry-tag(285:249) — Figma는 진입점 '고현' 마커 왼쪽에 붙이지만 고현 터미널 좌표가
+   기준문서에 없어 지도 위 고정 칩으로 둡니다. 줌 버튼과 같은 높이(top 72). */
+.entryTag {
+  position: absolute;
+  z-index: 2;
+  top: 72px;
+  left: 20px;
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-pill);
+  background: var(--brand-tint);
+  font: var(--type-label);
+  color: var(--brand-strong);
+  white-space: nowrap;
+}
+
+/* 조건 알약 아래에 뜨는 상태 표시.
+   --top-offset은 인라인 스타일로 들어옵니다 (알약이 있을 때와 없을 때가 달라서). */
 .pending,
 .error {
   position: absolute;
@@ -40,7 +65,7 @@
   z-index: 4;
   left: var(--space-lg);
   right: var(--space-lg);
-  bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 32px);
+  bottom: 32px;
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-sheet);
   background: rgb(255 255 255 / 0.86);

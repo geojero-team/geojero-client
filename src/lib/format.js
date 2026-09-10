@@ -40,6 +40,12 @@ export function formatDateLong(isoDate) {
   return `${month}/${day}(${label}) · ${isWeekend(isoDate) ? '주말' : '평일'}`
 }
 
+/** "2026-09-07" -> "9/7(월)" — 지도 조건 pill(Figma 240:168)은 요일까지만 씁니다. */
+export function formatDateWeekday(isoDate) {
+  const [, month, day] = isoDate.split('-').map(Number)
+  return `${month}/${day}(${WEEKDAYS[weekdayOf(isoDate)]})`
+}
+
 /** "2026-09-07" -> "9/7(월) 평일" — 일정 고르기 조건 줄(Figma 285:74)은 가운뎃점이 없습니다. */
 export function formatDateDay(isoDate) {
   const [, month, day] = isoDate.split('-').map(Number)
