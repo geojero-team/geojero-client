@@ -271,3 +271,28 @@
   flex: 1;
   min-width: 0;
 }
+
+/* 성립한 코스가 없을 때 — 카드 자리를 대신합니다. */
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-xl) var(--space-lg);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--bg-surface);
+  text-align: center;
+}
+
+.emptyTitle {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.emptyText {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}

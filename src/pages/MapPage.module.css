@@ -87,3 +87,29 @@
   color: var(--text-secondary);
   word-break: keep-all;
 }
+
+/* 성립한 코스가 없을 때 — 코스 카드 스트립 자리 */
+.noRoutes {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-lg) 20px var(--space-xl);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--bg-page);
+  box-shadow: var(--elevation-sheet);
+  text-align: center;
+}
+
+.noRoutesTitle {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.noRoutesText {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}

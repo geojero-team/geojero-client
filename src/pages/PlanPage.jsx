@@ -124,7 +124,7 @@ export default function PlanPage() {
             추천해드려요
           </h2>
 
-          {result.status === 'ready' && (
+          {result.status === 'ready' && routes.length > 0 && (
             <p className={state === 'SUBSET' ? styles.stateWarn : styles.stateOk}>
               {state === 'SUBSET'
                 ? `${picked.length}곳을 다 넣으면 막차를 놓쳐요. ${picked.length - 1}곳으로 짜봤어요.`
@@ -151,6 +151,16 @@ export default function PlanPage() {
             <p className={styles.notice}>불러오지 못했습니다 — {result.error}</p>
           ) : result.status === 'loading' ? (
             <p className={styles.notice}>코스를 짜는 중</p>
+          ) : routes.length === 0 ? (
+            /* 성립한 코스만 보여줍니다 — 짤 수 있는 조합이 없으면 비웁니다.
+               "안 된다"가 아니라 "안내할 수 있는 게 없다"입니다. 없는 근거로
+               불성립이라 단정하지 않기 위해 문구를 나눕니다. */
+            <div className={styles.empty}>
+              <p className={styles.emptyTitle}>이 조건으로 안내할 코스가 없어요</p>
+              <p className={styles.emptyText}>
+                출발 시각이나 스팟을 바꾸면 짤 수 있는 조합이 생길 수 있어요.
+              </p>
+            </div>
           ) : (
             routes.map((route) => (
               <ItineraryCard
@@ -165,7 +175,7 @@ export default function PlanPage() {
 
           <div className={styles.spacer} />
 
-          {result.status === 'ready' && state === 'ALL' && (
+          {result.status === 'ready' && state === 'ALL' && routes.length > 0 && (
             <p className={styles.caption}>순서와 머무는 시간은 버스 시간에 맞춰 정했어요</p>
           )}
 

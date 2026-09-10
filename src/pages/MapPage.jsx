@@ -226,6 +226,15 @@ export default function MapPage() {
               : navigate(`/spots/${selectedSpot.spotId}`)
           }
         />
+      ) : planned && result.status === 'ready' && routes.length === 0 ? (
+        /* 성립한 코스가 없으면 카드 스트립 자리에 이유를 적습니다.
+           지도는 그대로 두어 고른 스팟이 어디인지는 계속 보이게 합니다. */
+        <section className={styles.noRoutes}>
+          <p className={styles.noRoutesTitle}>이 조건으로 안내할 코스가 없어요</p>
+          <p className={styles.noRoutesText}>
+            출발 시각이나 스팟을 바꾸면 짤 수 있는 조합이 생길 수 있어요.
+          </p>
+        </section>
       ) : (
         planned && (
           <CourseStrip

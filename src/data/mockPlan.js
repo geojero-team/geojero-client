@@ -175,6 +175,48 @@ function pushShipRows(rows, access, spotName) {
   rows.push(stopRow('ship', access.stop, '하선', UNKNOWN, { dim: true }))
 }
 
+/**
+ * 기준문서 §3 '성립 확인된 코스'가 확인해 준 스팟 사이 연결.
+ *
+ * 55번은 해금강을 지난 뒤에 바람의언덕에 서기 때문에(2회차 09:55 해금강 → 10:04
+ * 바람의언덕) 버스로는 바람의언덕 → 해금강이 이어지지 않습니다. §3의 부산발 당일치기와
+ * 외도 풀코스는 이 구간을 도장포 유람선으로 잇고 성립을 확인했습니다.
+ * 시각(막배 15:30 출항 · 2시간 50분 · 18:20 복귀)은 전부 §3 원문 값입니다.
+ */
+const CONFIRMED_SHIP_LEG = {
+  from: ['바람의언덕', '도장포'],
+  to: '해금강',
+  board: '15:30',
+  arrive: '18:20',
+  pier: '도장포',
+  boardNote: '도장포 유람선 막배 · 해금강 코스',
+  cruiseText: '해금강 유람 · 2시간 50분',
+}
+
+/**
+ * §2 55번 표에서 fromStop을 afterTime 이후에 지나 toStop에도 서는 첫 회차.
+ * 없으면 null — 그때는 시각을 지어내지 않습니다.
+ *
+ * 회차마다 경로가 달라서(55번은 6회 중 바람의언덕이 2회차 하나뿐) 노선만 보고
+ * 이으면 틀립니다. 회차 단위로 찾는 이유입니다.
+ */
+function nextLegOn55(fromStop, toStop, afterTime) {
+  if (!isTime(afterTime)) return null
+  for (const run of BUS_55_OUT) {
+    const board = run[fromStop]
+    const arrive = run[toStop]
+    if (
+      isTime(board) &&
+      isTime(arrive) &&
+      toMinutes(board) > toMinutes(afterTime) &&
+      toMinutes(arrive) > toMinutes(board)
+    ) {
+      return { board, arrive }
+    }
+  }
+  return null
+}
+
 /** 가는 편: 출발 터미널 → 고현 → 첫 스팟(→ 다음 스팟들). 시각을 모르는 행이 하나라도 있으면 미확인. */
 function buildOut(spots, trip) {
   const originLabel = ORIGIN_LABELS[trip.origin] ?? trip.origin
@@ -245,13 +287,43 @@ function buildOut(spots, trip) {
   if (!chosen.stopTime) verdict = worst(verdict, 'UNKNOWN')
   pushShipRows(rows, access, first.shortName)
 
-  // 다음 스팟들 — 스팟 사이 이동·머무는 시간은 기준문서에 없어 시각을 적지 않습니다.
+  // 다음 스팟 — 같은 55번 위라면 §2 표에서 다음 회차를 찾아 잇습니다.
+  // 못 찾으면(회차가 그 정류소를 안 서거나 노선이 다르면) 미확인으로 두고,
+  // 그 코스는 목록에서 빠집니다. 없는 시각을 지어내지 않습니다.
+  let atStop = access.stop
+  let atTime = chosen.stopTime
   for (const next of spots.slice(1)) {
     const nextAccess = ACCESS[next.spotId]
-    rows.push(legRow('dots', '이동'))
-    rows.push(stopRow('bus', nextAccess.stop, '도착', UNKNOWN, { dim: true }))
+    const leg = nextAccess.routeNo === '55' ? nextLegOn55(atStop, nextAccess.stop, atTime) : null
+    const ship =
+      CONFIRMED_SHIP_LEG.from.includes(atStop) &&
+      nextAccess.stop === CONFIRMED_SHIP_LEG.to &&
+      isTime(atTime) &&
+      toMinutes(atTime) <= toMinutes(CONFIRMED_SHIP_LEG.board)
+
+    if (ship) {
+      rows.push(legRow('dots', `${CONFIRMED_SHIP_LEG.pier} 선착장 이동`))
+      rows.push(
+        stopRow('ship', CONFIRMED_SHIP_LEG.pier, '승선', CONFIRMED_SHIP_LEG.board, {
+          note: CONFIRMED_SHIP_LEG.boardNote,
+        }),
+      )
+      rows.push(legRow('dots', CONFIRMED_SHIP_LEG.cruiseText))
+      rows.push(stopRow('ship', nextAccess.stop, '하선', CONFIRMED_SHIP_LEG.arrive))
+      atStop = nextAccess.stop
+      atTime = CONFIRMED_SHIP_LEG.arrive
+    } else if (leg) {
+      rows.push(legRow('bar', `55번 · ${atStop} ${leg.board} 승차`))
+      rows.push(stopRow('bus', nextAccess.stop, '하차', leg.arrive))
+      atStop = nextAccess.stop
+      atTime = leg.arrive
+    } else {
+      rows.push(legRow('dots', '이동'))
+      rows.push(stopRow('bus', nextAccess.stop, '도착', UNKNOWN, { dim: true }))
+      verdict = worst(verdict, 'UNKNOWN')
+    }
+
     pushShipRows(rows, nextAccess, next.shortName)
-    verdict = worst(verdict, 'UNKNOWN')
   }
 
   return { verdict, reason, rows }
@@ -361,9 +433,7 @@ function buildItineraries(picked, trip) {
   const info = ORIGIN_INFO[trip.origin] ?? {}
   const originLabel = ORIGIN_LABELS[trip.origin] ?? trip.origin
 
-  return {
-    state: subset ? 'SUBSET' : 'ALL',
-    routes: sets.map(({ spots, excluded }, index) => {
+  const judged = sets.map(({ spots, excluded }) => {
       const out = buildOut(spots, trip)
       const back = buildBack(spots, trip)
       const last = spots[spots.length - 1]
@@ -378,9 +448,6 @@ function buildItineraries(picked, trip) {
             }
           : null
       return {
-        routeId: index + 1,
-        rank: index + 1,
-        recommended: !subset && index === 0,
         excludedSpotId: excluded?.spotId ?? null,
         excludedName: excluded?.shortName ?? null,
         name: spots.map((s) => s.shortName).join(' · '),
@@ -393,7 +460,21 @@ function buildItineraries(picked, trip) {
         lastStopName,
         lastRide,
       }
-    }),
+  })
+
+  // 성립한 코스만 내보냅니다(2026-09-10 결정 — 사용자 경험).
+  // 미확인은 목록에서 빠지고, 남는 게 없으면 화면이 '안내할 코스가 없어요'를 띄웁니다.
+  // routeId는 거르고 난 뒤에 매깁니다 — 번호에 구멍이 생기면 /verdict/:routeId가 어긋납니다.
+  return {
+    state: subset ? 'SUBSET' : 'ALL',
+    routes: judged
+      .filter((route) => route.verdict === 'YES')
+      .map((route, index) => ({
+        ...route,
+        routeId: index + 1,
+        rank: index + 1,
+        recommended: !subset && index === 0,
+      })),
   }
 }
 
@@ -414,69 +495,68 @@ const COURSES = [
     region: '남부권',
     thumbnailUrl: null,
     spotIds: [1],
-    summary: '07:00 → 22:30 · 막차 21:20',
     spots: [{ spotId: 1, shortName: '해금강' }],
   },
   {
+    // 기준문서 §3 '성립 확인된 코스' 1번 — 이 서비스의 대표 사례입니다.
     courseId: 2,
-    name: '바람의언덕 · 도장포',
+    name: '바람의언덕 · 해금강',
     shortName: '바람의언덕',
     theme: 'VIEW',
     region: '남부권',
     thumbnailUrl: null,
-    spotIds: [2, 8],
-    summary: '07:00 → 22:10 · 막차 21:20',
+    spotIds: [2, 1],
     spots: [
       { spotId: 2, shortName: '바람의언덕' },
-      { spotId: 8, shortName: '도장포' },
+      { spotId: 1, shortName: '해금강' },
     ],
   },
   {
     courseId: 3,
-    name: '거제식물원 · 바람의언덕',
-    shortName: '거제식물원',
-    theme: 'GARDEN',
-    region: '중부권',
+    name: '학동 · 해금강',
+    shortName: '학동',
+    theme: 'BEACH',
+    region: '남부권',
     thumbnailUrl: null,
-    spotIds: [5, 2],
-    summary: '07:00 → 21:40 · 막차 21:20',
+    spotIds: [7, 1],
     spots: [
-      { spotId: 5, shortName: '거제식물원' },
-      { spotId: 2, shortName: '바람의언덕' },
+      { spotId: 7, shortName: '학동' },
+      { spotId: 1, shortName: '해금강' },
     ],
   },
   {
     courseId: 4,
-    name: '매미성 · 거제식물원',
-    shortName: '매미성',
-    theme: 'CASTLE',
-    region: '동부권',
+    name: '학동 흑진주몽돌',
+    shortName: '학동',
+    theme: 'BEACH',
+    region: '남부권',
     thumbnailUrl: null,
-    spotIds: [4, 5],
-    summary: '07:30 → 21:50 · 막차 21:20',
-    spots: [
-      { spotId: 4, shortName: '매미성' },
-      { spotId: 5, shortName: '거제식물원' },
-    ],
+    spotIds: [7],
+    spots: [{ spotId: 7, shortName: '학동' }],
   },
 ]
 
 /**
- * 큐레이션 코스의 판정은 스팟 판정에서 끌어옵니다.
- * 코스 쪽에 verdict를 따로 적어두면 SPOT_VERDICTS와 갈라지고, 실제로 갈라져서
- * 매미성·거제식물원(기준문서 §9 미확인)이 홈에서 '성립'으로 보였습니다.
- * 출처는 하나여야 합니다 — 미확인은 코스 전체를 미확인으로 끌어내립니다.
+ * 큐레이션 코스도 **일정 고르기와 같은 경로**로 판정합니다.
+ *
+ * 전에는 코스에 판정을 따로 적어두고 스팟 판정으로 계산했는데, 그러면 같은 조합에
+ * 홈은 성립 · 일정 고르기는 미확인이라는 서로 다른 답이 나왔습니다. 출처는 하나여야
+ * 합니다. 백엔드가 붙으면 이 자리는 POST /api/courses/{id}/judge로 바뀝니다.
  */
-function judgeCourse(course) {
-  const spots = course.spots.map((spot) => ({
-    ...spot,
-    verdict: SPOT_VERDICTS[spot.spotId]?.verdict ?? 'UNKNOWN',
-  }))
+function judgeCourse(course, trip) {
+  const spots = course.spotIds.map((id) => SPOTS.find((spot) => spot.spotId === id)).filter(Boolean)
+  const out = buildOut(spots, trip)
+  const back = buildBack(spots, trip)
+  const last = spots[spots.length - 1]
   return {
     ...course,
-    spots,
-    verdict: worst(...spots.map((spot) => spot.verdict)),
-    reason: course.spotIds.map((id) => SPOT_VERDICTS[id]?.reason).find(Boolean) ?? null,
+    spots: course.spots.map((entry) => ({
+      ...entry,
+      verdict: SPOT_VERDICTS[entry.spotId]?.verdict ?? 'UNKNOWN',
+    })),
+    verdict: worst(out.verdict, back.verdict),
+    reason: out.reason ?? back.reason ?? null,
+    summary: `${trip.departTime} 출발 · 돌아오는 막차 ${lastBusOf(last) ?? UNKNOWN}`,
   }
 }
 
@@ -599,7 +679,6 @@ export function findMockSpot(spotId) {
  * 홈 — 오늘 되는 코스. 스팟을 고르기 전이라 조건만으로 판정합니다.
  * 홈은 조건이 항상 기본값으로라도 있으므로 조건 없이 부르는 경우는 없습니다.
  */
-// eslint-disable-next-line no-unused-vars
 export async function fetchCourses({ origin, date, departTime, returnBy, limit = 6 } = {}) {
   // const query = new URLSearchParams({ origin, date, departTime, returnBy, limit })
   // const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/courses?${query}`)
@@ -609,6 +688,9 @@ export async function fetchCourses({ origin, date, departTime, returnBy, limit =
   await delay()
   // 성립만 내보냅니다(2026-09-10 결정). 미확인 코스는 목록에서 뺍니다 —
   // 매미성 하차 정류소·거제식물원 운영 재개는 기준문서 §9 미해결이라, 확인되면 다시 나타납니다.
-  const courses = COURSES.map(judgeCourse).filter((course) => course.verdict === 'YES')
+  const trip = { origin, date, departTime, returnBy }
+  const courses = COURSES.map((course) => judgeCourse(course, trip)).filter(
+    (course) => course.verdict === 'YES',
+  )
   return { courses: courses.slice(0, limit), ...SOURCE }
 }
