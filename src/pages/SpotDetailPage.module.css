@@ -15,11 +15,32 @@
   overflow: hidden;
 }
 
-.heroImg {
-  display: block;
+/* 사진 캐러셀 트랙 — 좌우 스와이프. 스크롤 스냅이라 관성이 브라우저 기본 그대로입니다.
+   스크롤바는 사진을 가리므로 숨깁니다(스와이프·트랙패드로는 그대로 움직입니다). */
+.track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior-x: contain;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.slide {
+  flex: 0 0 100%;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  user-select: none;
 }
 
 /* 264:229 — 36×36 원형. 그림자 없이 반투명 면으로만 대비를 냅니다. */
@@ -52,10 +73,29 @@
   white-space: nowrap;
 }
 
+/* 264:238 — 아이콘과 글자 사이 6px. 아이콘 상자는 12×10이고 stroke가 사방으로
+   0.7px 넘칩니다(264:239의 inset). 그래서 상자와 그림을 분리해 원본 기하를 지킵니다. */
 .countChip {
   left: var(--space-lg);
   bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 5px 10px;
+}
+
+.countIcon {
+  position: relative;
+  flex-shrink: 0;
+  width: 12px;
+  height: 10px;
+}
+
+.countIcon svg {
+  position: absolute;
+  left: -0.7px;
+  top: -0.7px;
+  display: block;
 }
 
 .creditChip {
@@ -64,11 +104,12 @@
   padding: 4px var(--space-sm);
 }
 
-/* 264:231 — 활성 지름 7 / 비활성 지름 5(흰색 55%), 가로 중앙 */
+/* 264:231 — 활성 지름 7 / 비활성 지름 5(흰색 55%), 가로 중앙.
+   bottom 11 = hero 260 − top 242 − 높이 7 (Figma 실측). */
 .dots {
   position: absolute;
   left: 50%;
-  bottom: 8px;
+  bottom: 11px;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -143,10 +184,12 @@
   word-break: keep-all;
 }
 
+/* 접었을 때 5줄. 피그마(264:258)는 2줄이지만 TourAPI overview 원문이 길어
+   2줄로는 첫 문장도 안 끝납니다 — 사용자 지시로 5줄입니다. */
 .overview {
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 5;
   overflow: hidden;
 }
 

@@ -35,6 +35,18 @@ const LABEL_RIGHT_GAP = 30
 const LABEL_LEFT_GAP = 4
 
 /**
+ * 마커 중심끼리 이보다 가까우면 한 덩어리로 봅니다.
+ *
+ * 바람의언덕과 도장포는 실제로 250m 거리라, 섬 전체가 보이는 배율에서는 10px 남짓
+ * 떨어져 있습니다 — 원 두 개가 그대로 포개집니다. 뒤 핀은 앞 핀에 가려 탭도 안 됩니다.
+ * 그래서 한 곳만 남기고 "+N"으로 몇 곳이 더 있는지 말한 뒤, 탭하면 확대해 풀어줍니다.
+ */
+const CLUSTER_GAP = MARKER_SIZE
+
+/** 겹친 핀을 탭했을 때 당길 배율 단계. 2단계면 250m가 40px 넘게 벌어집니다. */
+const CLUSTER_ZOOM_STEP = 2
+
+/**
  * 화면 맞추기 여백(px). 38e0255의 배율을 그대로 씁니다.
  *
  * 마커 기하에서 나온 값이 아니라 "이만큼 띄워야 거제가 제일 잘 읽힌다"는 프레이밍
@@ -91,7 +103,9 @@ function createPinElement(spot, { order, tone }) {
     isStop && spot.verdict
       ? ` · ${t(VERDICT_KEYS[spot.verdict] ?? 'status.UNKNOWN')}`
       : ''
-  element.setAttribute('aria-label', `${spot.shortName ?? spot.name}${state}`)
+  // 겹쳤을 때 "외 2곳"을 덧붙여야 해서 원본을 따로 들고 있습니다.
+  element.dataset.label = `${spot.shortName ?? spot.name}${state}`
+  element.setAttribute('aria-label', element.dataset.label)
 
   const dot = document.createElement('span')
   dot.className = styles.pinDot
@@ -115,8 +129,13 @@ function createPinElement(spot, { order, tone }) {
   label.className = styles.pinLabel
   label.textContent = spot.shortName ?? spot.name
 
-  element.append(dot, label)
-  return { element, label }
+  // 겹친 곳 수. 배율마다 달라지므로 여기서는 빈 채로 두고 updateLabelVisibility가 채웁니다.
+  const badge = document.createElement('span')
+  badge.className = styles.pinCluster
+  badge.hidden = true
+
+  element.append(dot, label, badge)
+  return { element, label, badge }
 }
 
 /**
@@ -140,9 +159,8 @@ function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
   const viewHeight = node?.offsetHeight ?? Infinity
 
   const points = new Map()
-  const occupied = []
 
-  // 1) 마커가 먼저 자리를 차지합니다. 이름표가 남의 마커에 걸치면 둘 다 못 읽습니다.
+  // 1) 픽셀 좌표를 먼저 구합니다.
   //    z축도 여기서 정합니다 — 화면 아래(남쪽) 마커가 위로 올라와 층이 읽힙니다.
   pins.forEach((pin) => {
     const point = projection.containerPointFromCoords(pin.overlay.getPosition())
@@ -150,7 +168,59 @@ function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
 
     const isSelected = pin.spotId === selectedId
     pin.overlay.setZIndex(isSelected ? 9999 : 100 + Math.round(point.y))
+  })
 
+  // 2) 우선순위 — 선택한 스팟, 코스 정류소, 나머지 순.
+  //    겹친 무리의 대표와 이름표 자리를 둘 다 이 순서로 정합니다.
+  const rank = (pin) => (pin.spotId === selectedId ? 0 : pin.isStop ? 1 : 2)
+  const ordered = [...pins].sort((a, b) => rank(a) - rank(b))
+
+  /* 3) 포개진 마커 정리.
+   *
+   * 배율을 당기면 저절로 풀리는 문제라 좌표는 건드리지 않습니다 — 핀을 밀어내면
+   * "이 서비스는 위치가 정확하다"는 전제가 깨집니다. 대신 대표 하나만 남기고
+   * 몇 곳이 더 있는지 배지로 말한 뒤, 탭하면 확대해서 실제로 갈라 보여줍니다. */
+  const heads = []
+  const hidden = new Set()
+
+  ordered.forEach((pin) => {
+    const point = points.get(pin.spotId)
+    if (!point) return
+    const head = heads.find((other) => {
+      const q = points.get(other.pin.spotId)
+      return Math.hypot(point.x - q.x, point.y - q.y) < CLUSTER_GAP
+    })
+    if (head) {
+      hidden.add(pin.spotId)
+      head.covered += 1
+    } else {
+      heads.push({ pin, covered: 0 })
+    }
+  })
+
+  pins.forEach((pin) => {
+    const isHidden = hidden.has(pin.spotId)
+    pin.element.style.display = isHidden ? 'none' : ''
+    if (isHidden) pin.badge.hidden = true
+  })
+
+  heads.forEach(({ pin, covered }) => {
+    pin.badge.hidden = covered === 0
+    pin.badge.textContent = covered > 0 ? `+${covered}` : ''
+    // 겹친 상태에서는 탭이 '고르기'가 아니라 '펼치기'입니다. 클릭 쪽에서 읽습니다.
+    pin.element.dataset.covered = String(covered)
+    const base = pin.element.dataset.label ?? ''
+    pin.element.setAttribute(
+      'aria-label',
+      covered > 0 ? t('map.clusterLabel', { name: base, count: covered }) : base,
+    )
+  })
+
+  // 4) 마커가 이름표보다 먼저 자리를 차지합니다. 이름표가 남의 마커에 걸치면 둘 다
+  //    못 읽습니다. 숨긴 마커는 자리를 차지하지 않습니다 — 그리지 않으니까요.
+  const occupied = []
+  heads.forEach(({ pin }) => {
+    const point = points.get(pin.spotId)
     occupied.push({
       owner: pin.spotId,
       left: point.x - MARKER_HALF,
@@ -160,11 +230,9 @@ function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
     })
   })
 
-  // 2) 이름표를 우선순위대로 놓습니다. 코스 정류소가 코스 밖 스팟보다 먼저입니다.
-  const rank = (pin) => (pin.spotId === selectedId ? 0 : pin.isStop ? 1 : 2)
-  const ordered = [...pins].sort((a, b) => rank(a) - rank(b))
-
-  ordered.forEach((pin) => {
+  // 5) 이름표를 우선순위대로 놓습니다. heads는 이미 그 순서이고, 가려진 핀은
+  //    빠져 있습니다 — 안 보이는 마커의 이름표를 위해 자리를 비워둘 이유가 없습니다.
+  heads.forEach(({ pin }) => {
     // opacity는 레이아웃에 영향이 없어서 숨긴 상태에서도 폭을 잴 수 있습니다.
     const width = pin.label.offsetWidth
     const point = points.get(pin.spotId)
@@ -330,18 +398,28 @@ export default function MapView({
     pinsRef.current = spots.map((spot) => {
       const order = orderBySpotId?.get(spot.spotId) ?? null
       const isStop = order != null
-      const { element, label } = createPinElement(spot, {
+      const { element, label, badge } = createPinElement(spot, {
         order,
         tone: toneClassOf(spot, isStop, showVerdict),
       })
+      const position = new kakao.maps.LatLng(spot.lat, spot.lng)
+
       element.addEventListener('click', (event) => {
         event.stopPropagation()
+        // 다른 스팟을 덮고 있으면 고르기 전에 갈라 보여줍니다. 가려진 쪽은 탭할
+        // 방법이 아예 없으므로, 여기서 확대하지 않으면 영영 닿지 못합니다.
+        if (Number(element.dataset.covered) > 0) {
+          map.setLevel(Math.max(1, map.getLevel() - CLUSTER_ZOOM_STEP), {
+            anchor: position,
+          })
+          return
+        }
         liveRef.current.onSelectSpot?.(spot)
       })
 
       const overlay = new kakao.maps.CustomOverlay({
         map,
-        position: new kakao.maps.LatLng(spot.lat, spot.lng),
+        position,
         content: element,
         // Figma: 28px 원의 중심이 지리 좌표입니다.
         xAnchor: 0.5,
@@ -349,7 +427,7 @@ export default function MapView({
         clickable: true,
       })
 
-      return { spotId: spot.spotId, isStop, overlay, element, label }
+      return { spotId: spot.spotId, isStop, overlay, element, label, badge }
     })
 
     // 화면 맞추기는 아래 전용 이펙트가 합니다 — 시트 높이가 정해진 뒤에 맞춰야 해서.

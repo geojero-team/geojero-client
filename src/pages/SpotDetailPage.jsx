@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Button from '../components/Button'
 import Screen from '../components/Screen'
@@ -25,6 +25,28 @@ import styles from './SpotDetailPage.module.css'
  * Figma의 '방문자 사진' 섹션은 넣지 않았습니다 — 노트가 스스로 v2라고 적고 있고,
  * '12장'과 사진 타일 3개는 지금 없는 것을 있는 것처럼 그리게 됩니다.
  */
+
+/**
+ * count-chip 사진 아이콘 — Figma 264:239 내보낸 자산 그대로입니다.
+ *
+ * 박스는 12×10인데 stroke가 사방으로 0.7px씩 넘칩니다(원본의 inset -7% / -5.83%).
+ * 그래서 바깥 상자와 그림을 따로 두고 그림만 -0.7px 밀어 원본 기하를 지킵니다.
+ */
+function PhotoCountIcon() {
+  return (
+    <span className={styles.countIcon} aria-hidden="true">
+      <svg width="13.4" height="11.4" viewBox="0 0 13.4 11.4" fill="none">
+        <path
+          d="M0.7 8.7L4.7 4.7L7.7 7.7L9.7 5.7L12.7 8.7M0.7 0.7H12.7V10.7H0.7V0.7ZM9.2 3.2C9.2 3.75 8.75 4.2 8.2 4.2C7.65 4.2 7.2 3.75 7.2 3.2C7.2 2.65 7.65 2.2 8.2 2.2C8.75 2.2 9.2 2.65 9.2 3.2Z"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  )
+}
+
 export default function SpotDetailPage() {
   const { spotId } = useParams()
   const navigate = useNavigate()
@@ -32,6 +54,8 @@ export default function SpotDetailPage() {
   const [searchParams] = useSearchParams()
   const [spot, setSpot] = useState(null)
   const [expanded, setExpanded] = useState(false)
+  const [photoIndex, setPhotoIndex] = useState(0)
+  const trackRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
@@ -82,23 +106,51 @@ export default function SpotDetailPage() {
     )
   }
 
-  // 사진은 TourAPI 런타임 호출값입니다. 서버는 대표 이미지 한 장(detail.imageUrl)만
-  // 내려주므로 장수 칩·인디케이터는 두 장 이상일 때만 띄웁니다 — 없는 장수를 적지 않습니다.
-  // 출처 칩도 실제 TourAPI 응답일 때만 답니다(자체 소개문 폴백이면 출처가 다릅니다).
+  // 사진은 TourAPI 런타임 호출값입니다(detail.images — 대표가 첫 장, 저작권은 서버가 거름).
+  // 장수 칩·인디케이터는 두 장 이상일 때만 띄웁니다 — 없는 장수를 적지 않습니다.
+  // 출처 칩은 실제 TourAPI 응답일 때만 답니다(자체 소개문 폴백이면 출처가 다릅니다).
   const photos = spot.photos ?? []
   const hasPhotos = photos.length > 0
   const fromTourApi = spot.overviewSource === 'TourAPI'
+  // 사진이 없으면 폴백 그림 한 장을 같은 트랙에 태웁니다 — 분기를 둘로 늘리지 않습니다.
+  const slides = hasPhotos ? photos : [courseImage(spot)]
+  // 한 장뿐이면 넘길 것도 셀 것도 없습니다. 안내를 붙이면 없는 동작을 약속하게 됩니다.
+  const swipeable = photos.length > 1
+
+  /* 스크롤 위치로 현재 장을 셉니다. 스크롤 이벤트마다 setState가 불리지만 값이 같으면
+     React가 리렌더를 걸러주므로, 장이 바뀌는 순간에만 실제로 다시 그려집니다. */
+  const syncIndex = () => {
+    const track = trackRef.current
+    if (!track || track.clientWidth === 0) return
+    setPhotoIndex(Math.round(track.scrollLeft / track.clientWidth))
+  }
 
   return (
     <Screen data-api="GET /api/pois/{poiId}">
       <div className={styles.scroll}>
         <div className={styles.hero}>
-          <img
-            className={styles.heroImg}
-            src={hasPhotos ? photos[0] : courseImage(spot)}
-            alt=""
-            onError={onImageError(spot)}
-          />
+          {/* 좌우 스와이프(264:228). 스냅이라 관성·고무줄이 브라우저 기본 그대로입니다. */}
+          <div
+            ref={trackRef}
+            className={styles.track}
+            onScroll={swipeable ? syncIndex : undefined}
+            role={swipeable ? 'group' : undefined}
+            aria-label={
+              swipeable ? t('spotDetail.photosLabel', { count: photos.length }) : undefined
+            }
+          >
+            {slides.map((url, index) => (
+              <img
+                key={url}
+                className={styles.slide}
+                src={url}
+                alt=""
+                draggable="false"
+                loading={index === 0 ? 'eager' : 'lazy'}
+                onError={onImageError(spot)}
+              />
+            ))}
+          </div>
 
           <button
             type="button"
@@ -109,14 +161,17 @@ export default function SpotDetailPage() {
             ‹
           </button>
 
-          {photos.length > 1 && (
+          {swipeable && (
             <>
-              <span className={styles.countChip}>1 / {photos.length}</span>
+              <span className={styles.countChip}>
+                <PhotoCountIcon />
+                {photoIndex + 1} / {photos.length}
+              </span>
               <span className={styles.dots} aria-hidden="true">
                 {photos.map((url, index) => (
                   <span
                     key={url}
-                    className={index === 0 ? styles.dotOn : styles.dot}
+                    className={index === photoIndex ? styles.dotOn : styles.dot}
                   />
                 ))}
               </span>

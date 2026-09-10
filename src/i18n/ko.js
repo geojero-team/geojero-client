@@ -139,6 +139,7 @@ export default {
   /* ── 스팟 상세 (264:227) ──────────────────────────────────────────────── */
   'spotDetail.loading': '불러오는 중',
   'spotDetail.credit': '출처 TourAPI',
+  'spotDetail.photosLabel': '사진 {count}장 — 좌우로 넘겨보세요',
   'spotDetail.addToPlan': '일정에 담기',
   'spotDetail.introHead': '소개',
 
@@ -171,6 +172,7 @@ export default {
   'map.browseTitle': '거제 주요 스팟입니다.',
   'map.browseText': '가고 싶은 곳과 시간을 홈을 통해 정하면, 코스를 안내해드려요.',
   'map.pinCourseAria': '선택한 코스',
+  'map.clusterLabel': '{name} 외 {count}곳 — 눌러서 확대',
   'map.pinSpotAria': '선택한 스팟',
   'map.factDepartArrive': '출발 → 도착',
   'map.factLastBus': '돌아오는 막차',

@@ -39,7 +39,9 @@ const SPOTS = [
   spot(1, '해금강', 'VIEW', '언덕·전망', '남부권', 34.7333, 128.6839),
   spot(7, '학동', 'BEACH', '해수욕장', '남부권', 34.774752, 128.641498),
   // Figma 내부 불일치: 목록(233:378)은 '식물원', 고르기(285:419)는 '식물원 · 유람선' — 최신 프레임을 따름
-  spot(6, '외도', 'GARDEN', '식물원 · 유람선', '동부권', 34.7694723, 128.7113921, {
+  // 지도에 '외도'로만 적으면 섬 이름으로 읽혀, 카카오 지도가 같은 자리에 찍는
+  // '외도보타니아'와 다른 곳처럼 보입니다. 공식 명칭(서버 poi_name)과 맞춥니다.
+  spot(6, '외도보타니아', 'GARDEN', '식물원 · 유람선', '동부권', 34.7694723, 128.7113921, {
     kind: 'UNKNOWN',
     text: '당일 확인',
   }),
@@ -726,11 +728,14 @@ export async function fetchSpotDetail(spotId) {
     // detail.source가 'TourAPI'가 아니면 자체 소개문(intro_text) 폴백입니다 —
     // 그때는 '출처 TourAPI' 칩을 달면 안 됩니다.
     const detail = data.detail ?? {}
+    // detail.images는 대표 사진이 첫 장이고 저작권(Type3)은 서버가 이미 걸렀습니다.
+    // imageUrl 폴백은 클라이언트가 서버보다 먼저 배포됐을 때를 위한 것입니다.
+    const images = Array.isArray(detail.images) ? detail.images.filter(Boolean) : []
     return {
       ...base,
       overview: detail.overview ?? null,
       overviewSource: detail.source ?? null,
-      photos: detail.imageUrl ? [detail.imageUrl] : [],
+      photos: images.length > 0 ? images : detail.imageUrl ? [detail.imageUrl] : [],
       checkUrl: data.checkUrl ?? null,
       lastDeparture: data.lastDeparture ?? null,
     }
