@@ -13,7 +13,6 @@ import {
 } from '../components/TimelineIcons'
 import { fetchVerdict } from '../data/mockPlan'
 import { formatDateLong, formatDuration } from '../lib/format'
-import { saveRecentCourse } from '../lib/recentCourse'
 import { ORIGIN_LABELS, spotIdsFromSearch, tripFromSearch } from '../lib/tripParams'
 import { worseDirection } from '../lib/verdict'
 import styles from './VerdictPage.module.css'
@@ -171,13 +170,6 @@ export default function VerdictPage() {
     fetchVerdict({ routeId, spotIds, ...trip })
       .then((data) => {
         if (cancelled) return
-        // 판정 결과를 열어봤다 = 홈 '최근에 본 코스'에 채워집니다.
-        saveRecentCourse({
-          name: data.route.name,
-          spotIds: data.route.spotIds,
-          verdict: data.route.verdict,
-          date: trip.date,
-        })
         setResult({ status: 'ready', data, error: '' })
       })
       .catch((error) => {

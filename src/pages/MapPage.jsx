@@ -9,7 +9,6 @@ import PinSheet from '../components/PinSheet'
 import Screen from '../components/Screen'
 import { fetchPlan, fetchSpots } from '../data/mockPlan'
 import { formatDuration } from '../lib/format'
-import { markRecommended, saveRecentCourse } from '../lib/recentCourse'
 import {
   saveOrigin,
   spotIdsFromSearch,
@@ -64,11 +63,6 @@ export default function MapPage() {
     () => Number(searchParams.get('route')) || null,
   )
   const [selectedSpotId, setSelectedSpotId] = useState(null)
-
-  // 판정 상태로 들어왔다 = 코스 추천을 받았다. 홈 '최근에 본 코스' 섹션이 열립니다.
-  useEffect(() => {
-    if (planned) markRecommended()
-  }, [planned])
 
   useEffect(() => {
     let cancelled = false
@@ -156,12 +150,6 @@ export default function MapPage() {
 
   const openVerdict = useCallback(
     (route) => {
-      saveRecentCourse({
-        name: route.name,
-        spotIds: route.spotIds,
-        verdict: route.verdict,
-        date: trip.date,
-      })
       navigate(
         `/verdict/${route.routeId}?${tripToSearch(trip, { spots: requestedSpotIds.join(',') })}`,
       )

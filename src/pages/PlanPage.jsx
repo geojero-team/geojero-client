@@ -6,7 +6,6 @@ import Screen from '../components/Screen'
 import { fetchPlan } from '../data/mockPlan'
 import { courseImage } from '../lib/courseImage'
 import { formatDateDay } from '../lib/format'
-import { markRecommended, saveRecentCourse } from '../lib/recentCourse'
 import { ORIGIN_LABELS, spotIdsFromSearch, tripFromSearch, tripToSearch } from '../lib/tripParams'
 import styles from './PlanPage.module.css'
 
@@ -74,7 +73,6 @@ export default function PlanPage() {
 
   useEffect(() => {
     let cancelled = false
-    markRecommended()
     fetchPlan({ spotIds, ...trip })
       .then((data) => {
         if (!cancelled) setResult({ status: 'ready', data, error: '' })
@@ -104,12 +102,6 @@ export default function PlanPage() {
   // 지도는 고른 스팟 전체를 받고, 이 코스를 처음부터 펼쳐 보여줍니다(?route=).
   const openMap = () => {
     if (!selectedRoute) return
-    saveRecentCourse({
-      name: selectedRoute.name,
-      spotIds: selectedRoute.spotIds,
-      verdict: selectedRoute.verdict,
-      date: trip.date,
-    })
     navigate(
       `${MAP_PATH}?${tripToSearch(trip, { spots: spotIds.join(','), route: selectedRoute.routeId })}`,
     )

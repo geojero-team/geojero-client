@@ -84,10 +84,6 @@
   --bg-pressed: var(--slate-100); /* 보드에 없어 추가 — 눌린 상태 */
 
   /* 조건 아이콘 전용 악센트 (스펙에 없어 추가) */
-  --accent-place: var(--indigo-500); /* 출발지 */
-  --accent-date: var(--amber-500); /* 날짜 */
-  --accent-depart: var(--amber-500); /* 출발 시각 — 해 뜨는 쪽 */
-  --accent-return: var(--indigo-500); /* 귀가 시각 — 해 지는 쪽 */
 
   /* map */
   --map-sea: var(--sea-100); /* 지도 바다 */

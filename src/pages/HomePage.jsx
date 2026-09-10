@@ -9,12 +9,6 @@ import { fetchCourses } from '../data/mockPlan'
 import { courseImage } from '../lib/courseImage'
 import { THEME_LABELS, formatDateLong } from '../lib/format'
 import {
-  hasRecommendation,
-  loadRecentCourse,
-  markRecommended,
-  saveRecentCourse,
-} from '../lib/recentCourse'
-import {
   ORIGIN_LABELS,
   defaultTripParams,
   saveOrigin,
@@ -23,11 +17,15 @@ import {
 import styles from './HomePage.module.css'
 
 /**
- * 홈 — Figma 233:296(A) · 233:337(B) · 274:529(조건 편집 시트) 기준.
+ * 홈 — Figma 233:296 · 274:529(조건 편집 시트) 기준.
  *
  * 조건을 먼저 정하고 스팟을 고르러 가는 화면입니다. 조건 카드가 주인공이고
  * '오늘 버스로 되는 코스'는 "이 조건이면 이런 게 된다"를 보여주는 미리보기입니다.
- * 최근에 본 코스 섹션은 추천을 받은 적이 있어야 나타납니다(lib/recentCourse).
+ * 홈은 이 두 덩어리로 끝입니다.
+ *
+ * '최근에 본 코스' 섹션은 2026-09-10 팀 논의로 없앴습니다 — 빈 상태 문구가 바로 위
+ * CTA와 같은 말을 하고, 열람 이력은 카카오 로그인 한 번이면 되는 '내 일정' 탭이
+ * 맡으며, 첫 방문자가 '없어요'부터 읽게 되기 때문입니다.
  */
 
 const DOT_CLASS = {
@@ -89,38 +87,12 @@ function CourseCard({ course, onOpen }) {
   )
 }
 
-/**
- * 최근에 본 코스 — Figma 233:364(빈 카드).
- *
- * 채워진 카드는 지금 그리지 않습니다. 코스를 열어본 기록에는 그때의 판정이 붙는데,
- * 미확인은 화면에 내보내지 않기로 했고(2026-09-10), 그럼 이 카드에 무엇을 적을지가
- * 남습니다. 사용자가 그 상태를 직접 그려오기로 해서 그때까지 빈 카드로 둡니다.
- * 기록 자체는 recentCourse.js가 계속 남기므로 화면만 붙이면 됩니다.
- */
-function RecentCourse({ onBrowse }) {
-  return (
-    <button type="button" className={styles.recent} onClick={onBrowse}>
-      <span className={styles.recentCol}>
-        <span className={styles.recentLabel}>최근에 본 코스</span>
-        <span className={styles.recentEmpty}>
-          아직 본 코스가 없어요 · 스팟에서 골라보세요
-        </span>
-      </span>
-      <span className={styles.recentChevron} aria-hidden="true">›</span>
-    </button>
-  )
-}
-
 export default function HomePage() {
   const navigate = useNavigate()
 
   const [trip, setTrip] = useState(defaultTripParams)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
-  const [recent, setRecent] = useState(loadRecentCourse)
-  const [recommended, setRecommended] = useState(
-    () => hasRecommendation() || recent !== null,
-  )
 
   useEffect(() => {
     let cancelled = false
@@ -138,24 +110,17 @@ export default function HomePage() {
     }
   }, [trip])
 
-  // '코스 추천 받기' — 조건을 확정하고 다시 판정합니다. 추천을 받은 순간부터
-  // 홈은 B 형태(최근 코스 섹션 표시)로 바뀝니다.
+  // '코스 추천 받기' — 조건을 확정하고 다시 판정합니다.
   const applyConditions = useCallback((next) => {
     if (next.origin) saveOrigin(next.origin)
     setResult((prev) => ({ ...prev, status: 'loading' }))
     setTrip(next)
-    markRecommended()
-    setRecommended(true)
     setSheetOpen(false)
   }, [])
 
-  // 코스를 열면 홈에서 확정한 조건(날짜·시각)을 지도에 그대로 넘깁니다. 최근 카드에서
-  // 다시 열 때는 그 카드에 적힌 날짜로 봅니다.
+  // 코스를 열면 홈에서 확정한 조건(날짜·시각)을 지도에 그대로 넘깁니다.
   const openCourse = useCallback(
-    ({ name, spotIds, verdict, date = trip.date }) => {
-      const entry = { name, spotIds, verdict, date }
-      saveRecentCourse(entry)
-      setRecent(entry)
+    ({ spotIds, date = trip.date }) => {
       navigate(
         `${MAP_PATH}?${tripToSearch({ ...trip, date }, { spots: spotIds.join(',') })}`,
       )
@@ -216,10 +181,6 @@ export default function HomePage() {
               가고 싶은 곳 고르기
             </Button>
           </div>
-
-          {recommended && (
-            <RecentCourse onBrowse={() => navigate('/spots')} />
-          )}
 
           <section className={styles.today}>
             <div className={styles.todayHead}>

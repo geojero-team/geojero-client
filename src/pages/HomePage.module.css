@@ -102,58 +102,6 @@
   margin-bottom: 8px;
 }
 
-/* ── 최근에 본 코스 (233:364 빈 / 274:556 채움) — py12 px14 gap10 radius 12 ── */
-
-.recent {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 12px 14px;
-  border: 0;
-  border-radius: var(--radius-md);
-  background: var(--bg-page);
-  text-align: left;
-  cursor: pointer;
-}
-
-.recent:active {
-  background: var(--bg-pressed);
-}
-
-.recentCol {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.recentLabel {
-  font: var(--type-label);
-  color: var(--text-secondary);
-}
-
-.recentEmpty {
-  font: var(--type-body);
-  color: var(--text-secondary);
-  word-break: keep-all;
-}
-
-.recentName {
-  font: var(--type-body-strong);
-  color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.recentChevron {
-  flex: none;
-  font: var(--type-title);
-  color: var(--text-secondary);
-}
-
 /* ── 오늘 버스로 되는 코스 (233:330) ─────────────────────────────────────── */
 
 .today {
