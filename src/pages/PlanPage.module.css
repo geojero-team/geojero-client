@@ -1,0 +1,273 @@
+/* 일정 고르기 — Figma 285:67 / 285:148 실측. 흰 페이지, 탭바 없음, 버튼은 본문 맨 아래(스페이서). */
+
+/* header(285:68): h56 px20 gap8, '‹'·제목 모두 title 20/28 */
+.header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: env(safe-area-inset-top, 0px) 20px 0;
+  background: var(--bg-page);
+}
+
+.back {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--type-title);
+  color: var(--text-primary);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-title);
+  color: var(--text-primary);
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--bg-page);
+}
+
+/* body(285:71): pt8 pb24 px20, gap 16. 내용이 짧으면 스페이서가 버튼을 바닥으로 밉니다. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100%;
+  padding: 8px 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
+}
+
+.headline {
+  margin: 0;
+  font: var(--type-display);
+  color: var(--text-primary);
+  text-align: right;
+}
+
+/* state-line: '총 코스 N가지' status/yes · '…막차를 놓쳐요' status/unknown */
+.stateOk,
+.stateWarn {
+  margin: 0;
+  font: var(--type-caption);
+  text-align: right;
+}
+
+.stateOk {
+  color: var(--status-yes);
+}
+
+.stateWarn {
+  color: var(--status-unknown);
+}
+
+.condition {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.notice {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* picked(285:75): justify-end gap8. 350을 넘으면 Figma는 잘리지만 여기서는 줄바꿈. */
+.picked {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* chip(285:76): surface pill, pl4 pr14 py4 gap8, 32px 원형 사진 + caption */
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px 4px 4px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+}
+
+.chipPhoto {
+  display: block;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+}
+
+.chipName {
+  font: var(--type-caption);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* itinerary(285:85/115): 흰 면, radius/card, px16 py14 gap12. 선택은 2px brand — 안쪽 여백을 1px 줄여 위치 유지 */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--bg-page);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cardOn {
+  padding: 13px 15px;
+  border: 2px solid var(--brand-strong);
+}
+
+.card:active {
+  background: var(--bg-pressed);
+}
+
+.cardRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.time {
+  flex: 1;
+  min-width: 0;
+  font: var(--type-time);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* tag-추천(285:88): status/yes-bg pill px8 py2 label */
+.tag {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--status-yes-bg);
+  font: var(--type-label);
+  color: var(--status-yes);
+  white-space: nowrap;
+}
+
+/* '○○ 빼면'(285:169): label secondary, 카드 우측 */
+.excluded {
+  flex: none;
+  font: var(--type-label);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* order(285:91): 가로 나열. 4곳 이상이면 카드 안에서 가로 스크롤 */
+.order {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.order::-webkit-scrollbar {
+  display: none;
+}
+
+/* stop(285:92): w84, 세로 gap6, 가운데 정렬 */
+.stop {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 84px;
+}
+
+.thumb {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+.thumbImg {
+  display: block;
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+}
+
+/* num(285:95): 22px 원, brand 면, 2px 흰 테두리, 좌상단 -5/-5, caption 흰 글자 */
+.num {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--text-on-brand);
+  border-radius: var(--radius-pill);
+  background: var(--brand-strong);
+  font: var(--type-caption);
+  color: var(--text-on-brand);
+}
+
+.stopName {
+  max-width: 100%;
+  font: var(--type-caption);
+  color: var(--text-primary);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* last-bus(285:112): brand/tint pill px8 py2 label brand */
+.lastBus {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-tint);
+  font: var(--type-label);
+  color: var(--brand-strong);
+  white-space: nowrap;
+}
+
+/* '→'(285:98): w33 h60 가운데, body text-disabled */
+.arrow {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 33px;
+  height: 60px;
+  font: var(--type-body);
+  color: var(--text-disabled);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.caption {
+  margin: 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* actions(285:145): 두 버튼 반반, gap 8 */
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actions > * {
+  flex: 1;
+  min-width: 0;
+}

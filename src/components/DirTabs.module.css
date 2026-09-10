@@ -1,0 +1,39 @@
+/* Figma DirTabs(63:55 / 268:334) — 트랙 bg-surface r8 p3 gap6, 탭 h36 r6, 선택 탭 흰 면 + 그림자 */
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+}
+
+.tab {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.tabOn {
+  background: var(--bg-page);
+  box-shadow: 0 1px 2px rgba(0, 60, 120, 0.12);
+}
+
+/* 라벨 Bold 14/20 — 선택 primary, 비선택 secondary */
+.label {
+  font: 700 14px/20px var(--font-sans);
+  color: var(--text-secondary);
+}
+
+.tabOn .label {
+  color: var(--text-primary);
+}

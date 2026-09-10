@@ -55,7 +55,8 @@ export default function CourseSheet({
           <StatusBadge status={route.verdict} />
           {/* 버튼에는 번호만 있어서, 그 번호가 무슨 기준인지는 여기서 알려줍니다. */}
           <span className={styles.strategy}>
-            맞춤 경로 {route.rank} · {route.strategyLabel}
+            맞춤 경로 {route.rank}
+            {route.strategyLabel ? ` · ${route.strategyLabel}` : ''}
           </span>
         </div>
         <button
@@ -73,39 +74,46 @@ export default function CourseSheet({
 
       {feasible ? (
         <>
-          <div className={styles.stats}>
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>이동</span>
-              <span className={styles.statValue}>
-                {formatDuration(route.travelMin)}
-              </span>
+          {route.travelMin != null && (
+            <div className={styles.stats}>
+              <div className={styles.stat}>
+                <span className={styles.statLabel}>이동</span>
+                <span className={styles.statValue}>
+                  {formatDuration(route.travelMin)}
+                </span>
+              </div>
+              <div className={styles.stat}>
+                <span className={styles.statLabel}>체류</span>
+                <span className={styles.statValue}>
+                  {formatDuration(route.stayMin)}
+                </span>
+              </div>
+              <div className={styles.stat}>
+                <span className={styles.statLabel}>예상 요금</span>
+                <span className={styles.statValue}>
+                  {formatCost(route.estimatedCost)}
+                </span>
+              </div>
             </div>
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>체류</span>
-              <span className={styles.statValue}>
-                {formatDuration(route.stayMin)}
-              </span>
-            </div>
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>예상 요금</span>
-              <span className={styles.statValue}>
-                {formatCost(route.estimatedCost)}
-              </span>
-            </div>
-          </div>
+          )}
 
           {/* 서비스 정체성이 걸린 줄입니다. 매력도가 아니라 막차에서 역산했다는 근거. */}
-          <div className={styles.anchor}>
-            <Bus size={16} className={styles.anchorIcon} aria-hidden="true" />
-            <div className={styles.anchorBody}>
-              <p className={styles.anchorTime}>
-                {route.returnAnchorTime} 부산행 탑승
-              </p>
-              <p className={styles.anchorNote}>
-                막차 {route.lastBusTime} · 여유 {route.bufferMin}분
-              </p>
+          {route.lastBusTime && (
+            <div className={styles.anchor}>
+              <Bus size={16} className={styles.anchorIcon} aria-hidden="true" />
+              <div className={styles.anchorBody}>
+                {route.returnAnchorTime && (
+                  <p className={styles.anchorTime}>
+                    {route.returnAnchorTime} 부산행 탑승
+                  </p>
+                )}
+                <p className={styles.anchorNote}>
+                  막차 {route.lastBusTime}
+                  {route.bufferMin != null ? ` · 여유 ${route.bufferMin}분` : ''}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           <Button
             className={styles.cta}

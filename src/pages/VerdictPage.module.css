@@ -1,0 +1,454 @@
+/* 판정 결과 — Figma 268:295 실측. 헤더·하단바 고정, 그 사이가 스크롤. */
+
+/* header(268:296): h56 px16 gap8, '←'·제목 title 20/28, 날짜 필 brand/tint */
+.header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: env(safe-area-inset-top, 0px) 16px 0;
+  background: var(--bg-page);
+}
+
+.back {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--type-title);
+  color: var(--text-primary);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: var(--type-title);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.datePill {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-tint);
+  font: var(--type-label);
+  color: var(--brand-strong);
+  white-space: nowrap;
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--bg-page);
+}
+
+.notice {
+  margin: 0;
+  padding: 18px 20px;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* map(268:301): 390×200. MapView 루트가 flex:1이라 세로 flex 컨테이너로 감쌉니다. */
+.map {
+  display: flex;
+  flex-direction: column;
+  height: 200px;
+  background: var(--map-sea);
+}
+
+/* summary(268:303): px20 pt18 pb16 gap6 */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px 16px;
+}
+
+.big {
+  margin: 0;
+  font: var(--type-display-lg);
+  color: var(--text-primary);
+}
+
+.range {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* mode-line(268:307): gap6, 수단 = 15px 아이콘 + body-strong, 구분자 caption */
+.modes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+/* 미확인 수단(외도유람선)은 라벨·아이콘 모두 secondary */
+.modeDim {
+  color: var(--text-secondary);
+}
+
+.modeIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  color: var(--brand-strong);
+}
+
+.modeDim .modeIcon {
+  color: var(--text-secondary);
+}
+
+.modeSep {
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* check-line(268:327): 14px '?' 원(1.2px status/unknown) + caption + 링크 */
+.check {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.checkMark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 1.2px solid var(--status-unknown);
+  border-radius: var(--radius-pill);
+  font: 500 10px/14px var(--font-sans);
+  color: var(--status-unknown);
+}
+
+.link {
+  font: var(--type-caption);
+  color: var(--brand-strong);
+  text-decoration: none;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border-default);
+}
+
+/* body(268:333): px20 pt14 pb20, 탭 아래 14px */
+.body {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 20px 20px;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  margin-top: 14px;
+}
+
+/* ── 타임라인 행: 44px 거터 + gap14 + content ───────────────────────────── */
+
+.row {
+  display: flex;
+  gap: 14px;
+}
+
+.gutter {
+  position: relative;
+  flex: none;
+  width: 44px;
+  align-self: stretch;
+}
+
+/* 차량 구간: 6px brand 막대(좌 19) */
+.bar,
+.barTop,
+.barBottom {
+  position: absolute;
+  left: 19px;
+  width: 6px;
+  background: var(--brand-strong);
+}
+
+.bar {
+  top: 0;
+  bottom: 0;
+}
+
+.barTop {
+  top: 0;
+  height: 24px;
+}
+
+.barBottom {
+  top: 24px;
+  bottom: 0;
+}
+
+/* 도보·대기: 4px 점(좌 20), 12px 간격, secondary 50% */
+.dots,
+.dotsBottom {
+  position: absolute;
+  left: 20px;
+  bottom: 0;
+  width: 4px;
+  background-image: radial-gradient(circle at 2px 2px, rgba(71, 84, 103, 0.5) 2px, transparent 2.5px);
+  background-size: 4px 12px;
+  background-repeat: repeat-y;
+}
+
+.dots {
+  top: 3px;
+}
+
+.dotsBottom {
+  top: 41px;
+}
+
+.dotTop {
+  position: absolute;
+  top: 0;
+  left: 20px;
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: rgba(71, 84, 103, 0.5);
+}
+
+/* 28px 노드 아이콘(좌 8, 상 10) — 색은 톤 클래스가 정합니다 */
+.node {
+  position: absolute;
+  top: 10px;
+  left: 8px;
+  width: 28px;
+  height: 28px;
+}
+
+.nodeBrand {
+  color: var(--brand-strong);
+}
+
+.nodeDim {
+  color: var(--text-secondary);
+}
+
+.nodeNo {
+  color: var(--status-no);
+}
+
+/* 구간 행 content: py8, caption secondary */
+.legContent {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+}
+
+.legText,
+.legToggle {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  text-align: left;
+}
+
+.legToggle {
+  cursor: pointer;
+}
+
+.passed {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.passedItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* 정류장 행 content: py10 gap4 */
+.stopContent {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 0;
+}
+
+.stopLine {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.stopName,
+.action,
+.actionDim {
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.actionDim {
+  color: var(--text-secondary);
+}
+
+.time,
+.timeDim,
+.timeNo {
+  margin-left: auto;
+  font: var(--type-caption);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.timeDim {
+  color: var(--text-secondary);
+}
+
+.timeNo {
+  color: var(--status-no);
+}
+
+.note,
+.noteNo {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.noteNo {
+  color: var(--status-no);
+}
+
+/* trips-card(268:397): 흰 면, 1px 테두리, radius 10 */
+.trips {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--bg-page);
+}
+
+.trip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  white-space: nowrap;
+}
+
+/* 노선 배지 '55 ›': brand 면, radius 4, pl7 pr5 py2, label on-brand */
+.routeBadge {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 5px 2px 7px;
+  border-radius: var(--radius-xs);
+  background: var(--brand-strong);
+  font: var(--type-label);
+  color: var(--text-on-brand);
+}
+
+.tripTime {
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.tripNote {
+  min-width: 0;
+  overflow: hidden;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+}
+
+.more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 9px 12px;
+  border: 0;
+  border-top: 1px solid var(--border-default);
+  background: transparent;
+  font: var(--type-caption);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.moreChevron {
+  color: var(--text-secondary);
+}
+
+.source {
+  margin: 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+/* bottom-bar(268:472): 흰 면, 위 1px 선, px20 pt12 pb20, gap12 */
+.bottomBar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px calc(env(safe-area-inset-bottom, 0px) + 20px);
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-page);
+}
+
+.barCol {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.arrivalLine {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.saveHint {
+  margin: 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+.save {
+  flex: none;
+  width: 96px;
+}

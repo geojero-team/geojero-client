@@ -249,6 +249,7 @@ export default function MapView({
   orderBySpotId = null,
   topReserved = 16,
   bottomInset = 0,
+  compact = false, // 판정 결과의 200px 미리보기 — 줌·전체 보기 버튼을 숨깁니다
 }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
@@ -484,7 +485,7 @@ export default function MapView({
         style={{ bottom: bottomInset }}
       />
 
-      {phase === 'ready' && (
+      {phase === 'ready' && !compact && (
         <div className={styles.controls} style={{ top: topReserved + 10 }}>
           <button
             type="button"

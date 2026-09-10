@@ -10,7 +10,7 @@ import Screen from '../components/Screen'
 import SpotSheet from '../components/SpotSheet'
 import { fetchPlan, fetchSpots } from '../data/mockPlan'
 import { markRecommended, saveRecentCourse } from '../lib/recentCourse'
-import { saveOrigin, tripFromSearch } from '../lib/tripParams'
+import { saveOrigin, tripFromSearch, tripToSearch } from '../lib/tripParams'
 import styles from './MapPage.module.css'
 
 /**
@@ -63,7 +63,10 @@ export default function MapPage() {
   const [editing, setEditing] = useState(null) // 'origin' | 'date' | 'time' | null
   const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
 
-  const [activeRouteId, setActiveRouteId] = useState(null)
+  // 일정 고르기에서 고른 코스(?route=)는 처음부터 펼쳐진 채로 시작합니다.
+  const [activeRouteId, setActiveRouteId] = useState(
+    () => Number(searchParams.get('route')) || null,
+  )
   const [selectedSpotId, setSelectedSpotId] = useState(null)
   const [sheetHeight, setSheetHeight] = useState(0)
   const [routeBarHeight, setRouteBarHeight] = useState(0)
@@ -230,7 +233,9 @@ export default function MapPage() {
               verdict: activeRoute.verdict,
               date: trip.date,
             })
-            navigate(`/verdict/${activeRoute.routeId}`)
+            navigate(
+              `/verdict/${activeRoute.routeId}?${tripToSearch(trip, { spots: requestedSpotIds.join(',') })}`,
+            )
           }}
           onHeightChange={setSheetHeight}
         />

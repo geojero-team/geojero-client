@@ -1,18 +1,26 @@
+import { formatDuration } from '../lib/format'
+import { ORIGIN_LABELS, toHHMM, toMinutes } from '../lib/tripParams'
+
 /**
- * 목 데이터 — 지도 화면이 쓰는 두 덩어리
+ * 목 데이터 — 화면이 쓰는 네 덩어리
  *
- *   spots[]   지도에 찍히는 관광지. 스팟 고르기에서 고른 것들
- *   routes[]  그 스팟들로 짤 수 있는 추천 코스 (최대 3개)
+ *   spots[]    지도·목록에 찍히는 관광지                       fetchSpots
+ *   courses[]  홈 '오늘 버스로 되는 코스'(큐레이션)            fetchCourses
+ *   routes[]   고른 스팟으로 짠 추천 코스 = 일정 고르기 카드     fetchPlan
+ *   verdict    코스 하나의 판정 결과(가는 편·오는 편 타임라인)   fetchVerdict
  *
- * 실제 API가 나오면 fetchSpots / fetchPlan 안의 주석만 풀면 됩니다.
+ * 실제 API가 나오면 fetch* 안의 주석만 풀면 됩니다.
  * 화면 코드는 이 파일 밖에서 목 데이터를 알지 못하게 유지하세요.
  *
+ * 숫자 규칙 — 기준문서(§2 55번 시간표 · §3 진입·해상)에 있는 값만 씁니다. 없는 값은
+ * '[미확인]'으로 내보내고 그 구간의 판정은 UNKNOWN으로 둡니다. 성립으로 추정하지 않습니다.
+ *
  * [백엔드와 맞출 것]
- *  1) 추천 코스 순위 — 팀 결정: 1순위 "많이 갈 수 있는 곳", 2순위 "최소 시간 동선",
- *     3순위 +α. 방문 순서만 다르면(A→B→C vs B→C→A) 서로 다른 코스로 칩니다.
- *  2) verdict — 지금은 YES/NO 둘만 씁니다. Figma에는 UNKNOWN(미확인)이 있는데
- *     API_DRAFT.md 5장 ②번이 정해지면 그때 3상태로 늘립니다.
- *  3) 좌표는 실제 위치 근사값입니다. 확정 좌표는 백엔드 POI 테이블 기준으로 교체.
+ *  1) 판정은 POST /api/courses/{id}/judge → JudgeRes { feasible, dayClass, legs[{ok, depart, arrive, reason}], alerts }.
+ *     정류장 출발편은 GET /api/stops/{stop}/departures?to=&date=&after=, 시간표는 GET /api/routes/{no}/timetable?date=.
+ *     아래 타임라인 rows는 그 셋을 엮은 화면용 형태입니다 — Phase 6 어댑터가 같은 형태로 변환합니다.
+ *  2) 추천 코스 순위·부분집합('○○ 빼면') 규칙은 서버가 정합니다. 여기 규칙은 화면 확인용입니다.
+ *  3) 좌표는 TourAPI 실측(geojero data/seed/pois.json). 확정 좌표는 백엔드 POI 테이블 기준으로 교체.
  */
 
 const SPOTS = [
@@ -40,12 +48,15 @@ function spot(spotId, name, theme, category, region, lat, lng, notice = null) {
   return { spotId, name, shortName: name, theme, category, region, thumbnailUrl: null, lat, lng, notice }
 }
 
-/** 스팟별 판정. 조건(출발지·날짜·시각)이 정해졌을 때만 붙습니다. */
+/**
+ * 스팟별 판정. 조건(출발지·날짜·시각)이 정해졌을 때만 붙습니다.
+ * 매미성·거제식물원은 기준문서 §9 미해결 항목(하차 정류소·운영 재개)이라 미확인입니다.
+ */
 const SPOT_VERDICTS = {
   1: { verdict: 'YES', summary: '왕복 5시간 20분 · 머무는 시간 1시간 40분' },
   2: { verdict: 'YES', summary: '왕복 4시간 50분 · 머무는 시간 2시간' },
-  4: { verdict: 'YES', summary: '왕복 3시간 30분 · 머무는 시간 2시간 20분' },
-  5: { verdict: 'YES', summary: '왕복 2시간 40분 · 머무는 시간 3시간' },
+  4: { verdict: 'UNKNOWN', summary: null, reason: '매미성 하차 정류소 미확인 (BIS 정류소검색 대금·시방)' },
+  5: { verdict: 'UNKNOWN', summary: null, reason: '거제식물원 운영 재개 상태 미확인' },
   6: {
     verdict: 'UNKNOWN',
     summary: null,
@@ -60,69 +71,334 @@ const SPOT_VERDICTS = {
   },
 }
 
-/**
- * 추천 코스 3개.
- * spotIds는 **방문 순서**입니다. 지도의 선도 이 순서대로 이어집니다.
- */
-const ROUTES = [
-  {
-    routeId: 1,
-    rank: 1,
-    strategy: 'MOST_SPOTS',
-    strategyLabel: '많이 도는',
-    name: '거제식물원 · 바람의언덕 · 학동 · 해금강',
-    spotIds: [5, 2, 7, 1],
-    verdict: 'YES',
-    reason: null,
-    travelMin: 195,
-    stayMin: 330,
-    returnAnchorTime: '20:00',
-    lastBusTime: '21:20',
-    bufferMin: 80,
-    estimatedCost: 43800,
-  },
-  {
-    routeId: 2,
-    rank: 2,
-    strategy: 'FASTEST',
-    strategyLabel: '빠른 동선',
-    name: '바람의언덕 · 해금강',
-    spotIds: [2, 1],
-    verdict: 'YES',
-    reason: null,
-    travelMin: 130,
-    stayMin: 390,
-    returnAnchorTime: '20:00',
-    lastBusTime: '21:20',
-    bufferMin: 80,
-    estimatedCost: 41200,
-  },
-  {
-    routeId: 3,
-    rank: 3,
-    strategy: 'RELAXED',
-    strategyLabel: '여유 있는',
-    name: '매미성 · 거제식물원 · 바람의언덕',
-    spotIds: [4, 5, 2],
-    verdict: 'YES',
-    reason: null,
-    travelMin: 165,
-    stayMin: 345,
-    returnAnchorTime: '19:40',
-    lastBusTime: '21:20',
-    bufferMin: 100,
-    estimatedCost: 40500,
-  },
+/* ── 시각 도우미 ─────────────────────────────────────────────────────────── */
+
+const UNKNOWN = '[미확인]'
+const TIME_RE = /^\d{2}:\d{2}$/
+const isTime = (value) => TIME_RE.test(value ?? '')
+const addMin = (hhmm, minutes) => toHHMM(toMinutes(hhmm) + minutes)
+const diffMin = (from, to) => toMinutes(to) - toMinutes(from)
+
+const SEVERITY = { NO: 0, UNKNOWN: 1, YES: 2 }
+/** 여러 판정 중 가장 나쁜 것. 미확인을 성립으로 올리지 않습니다. */
+const worst = (...verdicts) =>
+  verdicts.reduce((acc, v) => ((SEVERITY[v] ?? 1) < (SEVERITY[acc] ?? 1) ? v : acc), 'YES')
+
+/* ── 55번 (고현 ↔ 해금강) — 기준문서 §2. 1일 6회, 주말 동일 ──────────────── */
+
+const BUS_55_OUT = [
+  { run: 1, 고현: '06:25', 학동: '07:05', 해금강: '07:15' },
+  // 바람의언덕 10:04는 §3 '부산발 당일치기' 확인 코스에서 — 2회차에만 있습니다.
+  { run: 2, 고현: '09:05', 학동: '09:45', 해금강: '09:55', 바람의언덕: '10:04' },
+  { run: 3, 고현: '11:05', 학동: '11:45', 해금강: '11:55' },
+  { run: 4, 고현: '13:05', 학동: '13:45', 해금강: '13:55' },
+  { run: 5, 고현: '17:05', 학동: '17:45', 해금강: '17:55' },
+  { run: 6, 고현: '19:15', 학동: '19:55', 해금강: '20:05' },
 ]
 
+/* 복귀(해금강발) 6회, 학동 +10분. 고현 도착은 막차(20:55)만 기준문서에 있습니다. */
+const BUS_55_BACK = ['07:35', '12:48', '14:48', '16:38', '18:48', '20:05'].map((time, i) => ({
+  run: i + 1,
+  해금강: time,
+  학동: addMin(time, 10),
+}))
+const BUS_55_BACK_LAST_ARRIVAL = '20:55'
+
+/** 돌아오는 막차 — 버스 정류장 기준. 해금강 20:05, 학동 20:15(§2). 그 밖 정류장은 [미확인]. */
+const LAST_BUS_BY_STOP = { 해금강: '20:05', 학동: '20:15' }
+const lastBusOf = (spot) => (spot ? (LAST_BUS_BY_STOP[ACCESS[spot.spotId]?.stop] ?? null) : null)
+
+/** 남부 해안 순서(학동 → 바람의언덕 → 도장포 → 해금강). 이 안의 스팟만 순서를 정할 수 있습니다. */
+const SOUTH_ORDER = [7, 2, 8, 1]
+
 /**
- * 홈의 "오늘 버스로 되는 코스" — 미리 만들어둔 큐레이션 코스입니다 (API_DRAFT 4.6).
- * 사용자가 고른 스팟으로 짜는 ROUTES와 달리, 조건만 있으면 바로 보여줍니다.
+ * 스팟별 접근 — 어느 노선의 어느 정류장으로 가는지 (기준문서 §2 주요 노선).
+ *   trips  55번이 아닌 노선의 고현발 시각 (기준문서에 있는 것만)
+ *   ship   버스 하차 뒤 유람선 구간 (시간표 박제 금지 → 당일 확인 링크)
+ */
+const ACCESS = {
+  7: { routeNo: '55', stop: '학동', via: null },
+  1: { routeNo: '55', stop: '해금강', via: '학동 경유' },
+  2: { routeNo: '55', stop: '바람의언덕', via: '학동 · 해금강 경유' },
+  8: { routeNo: '55', stop: '도장포', via: '학동 · 해금강 경유' },
+  6: {
+    routeNo: '55',
+    stop: '해금강',
+    via: '학동 경유',
+    ship: { name: '외도유람선', note: '외도유람선 · 매일 달라요', href: 'https://oedocruise.com/cruiseinfo/course/' },
+  },
+  // 30번대 매미성 회랑 — 고현발 매시 :32, 약 17회 (§2)
+  4: { routeNo: '30', stop: '매미성', via: '장목 방면', trips: [{ time: '매시 :32', note: '고현발 · 약 17회' }] },
+  // 50-2 거제식물원 7회 — 고현발 07:35~19:35, 격 2시간 (§2)
+  5: {
+    routeNo: '50-2',
+    stop: '거제식물원',
+    via: null,
+    trips: ['07:35', '09:35', '11:35', '13:35', '15:35', '17:35', '19:35'].map((time, i) => ({
+      time,
+      note: `${i + 1}회차`,
+    })),
+  },
+  // 53·53-1 — 도로 유실로 명사해수욕장앞 우회 중 (§2)
+  9: { routeNo: '53', stop: '명사해수욕장앞', via: null, blocked: true },
+}
+
+/* ── 출발 터미널 (기준문서 §3) ──────────────────────────────────────────── */
+
+const ORIGIN_INFO = {
+  // 사상 07:00 → 고현 08:20 (1시간 20분) / 고현 → 부산서부 06:10부터 20분 간격, 21:10 → 22:30
+  BUSAN_SEOBU: { rideMin: 80, returnDepart: '21:10', returnNote: '20분 간격 · 티머니 예매', returnArrive: '22:30' },
+  // 고현 → 서울남부 20회 05:00~22:00. 소요 시간·도착 시각은 [미확인]
+  SEOUL_NAMBU: { rideMin: null, returnDepart: '22:00', returnNote: '상행 막차 · 버스타고 예매', returnArrive: null },
+  // 통영 ↔ 고현 진입 22회, 상행은 현장 발권 위주. 시각 [미확인]
+  TONGYEONG: { rideMin: null, returnDepart: null, returnNote: null, returnArrive: null },
+}
+
+/* ── 타임라인 행 ─────────────────────────────────────────────────────────
+   stop: { kind:'stop', node:'start'|'bus'|'ship', name, action, time, dim?, tone?, note?, link?, trips? }
+   leg : { kind:'leg', style:'bar'|'dots', text, stops? }   bar = 차량 구간, dots = 도보·대기 */
+
+const stopRow = (node, name, action, time, extra = {}) => ({ kind: 'stop', node, name, action, time, ...extra })
+const legRow = (style, text, extra = {}) => ({ kind: 'leg', style, text, ...extra })
+
+function pushShipRows(rows, access, spotName) {
+  if (!access.ship) return
+  rows.push(legRow('dots', '선착장 이동'))
+  rows.push(
+    stopRow('ship', access.stop, '승선', '출항 시각 미확인', {
+      dim: true,
+      note: access.ship.note,
+      link: { label: '운항 캘린더 ›', href: access.ship.href },
+    }),
+  )
+  rows.push(legRow('dots', `${spotName} 왕복`))
+  rows.push(stopRow('ship', access.stop, '하선', UNKNOWN, { dim: true }))
+}
+
+/** 가는 편: 출발 터미널 → 고현 → 첫 스팟(→ 다음 스팟들). 시각을 모르는 행이 하나라도 있으면 미확인. */
+function buildOut(spots, trip) {
+  const originLabel = ORIGIN_LABELS[trip.origin] ?? trip.origin
+  const info = ORIGIN_INFO[trip.origin] ?? {}
+  const rows = []
+  let verdict = worst(...spots.map((s) => SPOT_VERDICTS[s.spotId]?.verdict ?? 'UNKNOWN'))
+  let reason = spots.map((s) => SPOT_VERDICTS[s.spotId]?.reason).find(Boolean) ?? null
+
+  rows.push(stopRow('start', originLabel, '출발', trip.departTime))
+  const arrive = info.rideMin != null ? addMin(trip.departTime, info.rideMin) : null
+  rows.push(legRow('bar', `시외버스 · ${info.rideMin != null ? formatDuration(info.rideMin) : `소요 시간 ${UNKNOWN}`}`))
+  rows.push(stopRow('bus', '고현', '하차', arrive ?? UNKNOWN, { dim: !arrive }))
+  if (!arrive) verdict = worst(verdict, 'UNKNOWN')
+
+  const first = spots[0]
+  const access = ACCESS[first.spotId]
+
+  if (access.blocked) {
+    rows.push(legRow('dots', `${access.routeNo}·${access.routeNo}-1번 우회 중`))
+    rows.push(stopRow('bus', access.stop, '도착', '이용 불가', { dim: true, tone: 'no', note: reason }))
+    return { verdict: 'NO', reason, rows }
+  }
+
+  const runs =
+    access.routeNo === '55'
+      ? BUS_55_OUT.map((r) => ({ run: r, time: r.고현, note: `${r.run}회차`, stopTime: r[access.stop] ?? null }))
+      : access.trips.map((t) => ({ ...t, stopTime: null }))
+  const available = runs.filter((r) => !isTime(r.time) || !arrive || toMinutes(r.time) >= toMinutes(arrive))
+  const chosen = available[0] ?? null
+  const wait = arrive && chosen && isTime(chosen.time) ? diffMin(arrive, chosen.time) : null
+  rows.push(legRow('dots', wait != null ? `같은 터미널 · 대기 ${wait}분` : '같은 터미널'))
+
+  if (!chosen) {
+    const last = runs[runs.length - 1].time
+    reason = `${access.routeNo}번 막차(${last}) 이후 고현 도착`
+    rows.push(stopRow('bus', '고현', '승차', UNKNOWN, { dim: true, tone: 'no', note: reason }))
+    return { verdict: 'NO', reason, rows }
+  }
+
+  rows.push(
+    stopRow('bus', '고현', '승차', null, {
+      trips: {
+        routeNo: access.routeNo,
+        items: available.slice(0, 2).map((r, i) => ({
+          time: r.time,
+          note: i === 0 && access.routeNo === '55' ? `${r.note} · 해금강행` : r.note,
+        })),
+        all: runs.length > 2 ? runs.map((r) => ({ time: r.time, note: r.note })) : null,
+      },
+    }),
+  )
+
+  const duration = chosen.stopTime && isTime(chosen.time) ? diffMin(chosen.time, chosen.stopTime) : null
+  const passed =
+    access.routeNo === '55' && chosen.run
+      ? ['학동', '해금강']
+          .filter((name) => name !== access.stop && chosen.run[name])
+          .map((name) => ({ name, time: chosen.run[name] }))
+      : []
+  rows.push(
+    legRow(
+      'bar',
+      [access.via ?? `${access.routeNo}번`, duration != null ? formatDuration(duration) : `소요 시간 ${UNKNOWN}`].join(' · '),
+      { stops: duration != null && passed.length > 0 ? passed : null },
+    ),
+  )
+  rows.push(stopRow('bus', access.stop, '하차', chosen.stopTime ?? UNKNOWN, { dim: !chosen.stopTime }))
+  if (!chosen.stopTime) verdict = worst(verdict, 'UNKNOWN')
+  pushShipRows(rows, access, first.shortName)
+
+  // 다음 스팟들 — 스팟 사이 이동·머무는 시간은 기준문서에 없어 시각을 적지 않습니다.
+  for (const next of spots.slice(1)) {
+    const nextAccess = ACCESS[next.spotId]
+    rows.push(legRow('dots', '이동'))
+    rows.push(stopRow('bus', nextAccess.stop, '도착', UNKNOWN, { dim: true }))
+    pushShipRows(rows, nextAccess, next.shortName)
+    verdict = worst(verdict, 'UNKNOWN')
+  }
+
+  return { verdict, reason, rows }
+}
+
+/** 오는 편: 마지막 스팟 막차 → 고현 → 출발 터미널. 귀환 시각 검사는 서버(CourseJudgeService)와 같은 문구. */
+function buildBack(spots, trip) {
+  const originLabel = ORIGIN_LABELS[trip.origin] ?? trip.origin
+  const info = ORIGIN_INFO[trip.origin] ?? {}
+  const last = spots[spots.length - 1]
+  const access = ACCESS[last.spotId]
+  const rows = []
+  let verdict = 'YES'
+  let reason = null
+  let gohyeon = null
+
+  if (access.stop === '해금강' || access.stop === '학동') {
+    const runs = BUS_55_BACK.map((r) => ({ time: r[access.stop], note: `${r.run}회차` }))
+    const lastRun = runs[runs.length - 1]
+    rows.push(
+      stopRow('bus', access.stop, '승차', null, {
+        trips: {
+          routeNo: '55',
+          items: runs.slice(-2).map((r, i, arr) => ({ ...r, note: i === arr.length - 1 ? `${r.note} · 막차` : r.note })),
+          all: runs,
+        },
+      }),
+    )
+    gohyeon = BUS_55_BACK_LAST_ARRIVAL
+    rows.push(legRow('bar', `55번 · ${formatDuration(diffMin(lastRun.time, gohyeon))}`))
+    rows.push(stopRow('bus', '고현', '하차', gohyeon))
+  } else {
+    rows.push(stopRow('bus', access.stop, '승차', UNKNOWN, { dim: true, note: `${access.routeNo}번 막차 ${UNKNOWN}` }))
+    rows.push(legRow('dots', '이동'))
+    rows.push(stopRow('bus', '고현', '하차', UNKNOWN, { dim: true }))
+    verdict = 'UNKNOWN'
+  }
+
+  if (info.returnDepart) {
+    const wait = gohyeon ? diffMin(gohyeon, info.returnDepart) : null
+    rows.push(legRow('dots', wait != null ? `같은 터미널 · 대기 ${wait}분` : '같은 터미널'))
+    rows.push(
+      stopRow('bus', '고현', '승차', null, {
+        trips: { routeNo: '시외', items: [{ time: info.returnDepart, note: `${originLabel}행 · ${info.returnNote}` }], all: null },
+      }),
+    )
+  } else {
+    rows.push(legRow('dots', '같은 터미널'))
+    rows.push(stopRow('bus', '고현', '승차', UNKNOWN, { dim: true, note: `${originLabel}행 시간표 ${UNKNOWN}` }))
+    verdict = 'UNKNOWN'
+  }
+
+  rows.push(legRow('bar', `시외버스 · ${info.rideMin != null ? formatDuration(info.rideMin) : `소요 시간 ${UNKNOWN}`}`))
+  if (!info.returnArrive) verdict = worst(verdict, 'UNKNOWN')
+
+  // 귀환 검사: 조건의 복귀 시각(막차까지 = null)보다 늦게 도착하면 불성립
+  if (trip.returnBy && info.returnArrive && toMinutes(info.returnArrive) > toMinutes(trip.returnBy)) {
+    verdict = 'NO'
+    reason = `귀환 ${trip.returnBy} 이전 ${originLabel} 도착 불가 (도착 ${info.returnArrive})`
+  }
+  rows.push(
+    stopRow('start', originLabel, '도착', info.returnArrive ?? UNKNOWN, {
+      dim: !info.returnArrive,
+      tone: verdict === 'NO' ? 'no' : undefined,
+      note: reason,
+    }),
+  )
+
+  return { verdict, reason, rows }
+}
+
+/* ── 추천 코스(일정 고르기 카드) ─────────────────────────────────────────── */
+
+function pickSpots(spotIds) {
+  if (!spotIds?.length) return SPOTS
+  return spotIds.map((id) => SPOTS.find((s) => s.spotId === id)).filter(Boolean)
+}
+
+/**
+ * 같은 스팟의 방문 순서 후보 두 가지. 남부 해안 스팟끼리는 해안 순서, 그 밖은 고른 순서를 첫째로 두고,
+ * 둘째는 출발점을 한 칸 미룬 순서(Figma 285:67: 학동→바람의언덕→해금강 / 바람의언덕→해금강→학동).
+ */
+function orderings(spots) {
+  if (spots.length <= 1) return [spots]
+  const allSouth = spots.every((s) => SOUTH_ORDER.includes(s.spotId))
+  const forward = allSouth
+    ? [...spots].sort((a, b) => SOUTH_ORDER.indexOf(a.spotId) - SOUTH_ORDER.indexOf(b.spotId))
+    : spots
+  return [forward, [...forward.slice(1), forward[0]]]
+}
+
+/**
+ * 고른 스팟 → 추천 코스 카드.
+ *   ALL     전부 넣은 코스 N가지 (Figma 285:67)
+ *   SUBSET  전부는 못 감 → 한 곳씩 뺀 대안 2가지 (Figma 285:148)
+ * 목의 판단 규칙: 남부 55번 선상 밖 스팟이 섞인 3곳 이상은 하루에 다 못 돈다고 봅니다.
+ */
+function buildItineraries(picked, trip) {
+  const others = picked.filter((s) => !SOUTH_ORDER.includes(s.spotId))
+  const subset = picked.length >= 3 && others.length > 0
+  const sets = subset
+    ? [
+        { spots: picked.slice(1), excluded: picked[0] },
+        { spots: picked.slice(0, -1), excluded: picked[picked.length - 1] },
+      ]
+    : orderings(picked).map((spots) => ({ spots, excluded: null }))
+  const info = ORIGIN_INFO[trip.origin] ?? {}
+
+  return {
+    state: subset ? 'SUBSET' : 'ALL',
+    routes: sets.map(({ spots, excluded }, index) => {
+      const out = buildOut(spots, trip)
+      const back = buildBack(spots, trip)
+      const lastBus = lastBusOf(spots[spots.length - 1])
+      return {
+        routeId: index + 1,
+        rank: index + 1,
+        recommended: !subset && index === 0,
+        excludedSpotId: excluded?.spotId ?? null,
+        excludedName: excluded?.shortName ?? null,
+        name: spots.map((s) => s.shortName).join(' · '),
+        spotIds: spots.map((s) => s.spotId),
+        verdict: worst(out.verdict, back.verdict),
+        reason: out.reason ?? back.reason ?? null,
+        departTime: trip.departTime,
+        arriveTime: info.returnArrive ?? null,
+        lastBus,
+        // 지도 코스 시트(CourseSheet)가 아직 읽는 필드 — Phase 4에서 Figma course-sheet로 바뀌면 정리
+        strategyLabel: null,
+        travelMin: null,
+        stayMin: null,
+        estimatedCost: null,
+        returnAnchorTime: null,
+        lastBusTime: lastBus,
+        bufferMin: null,
+      }
+    }),
+  }
+}
+
+/**
+ * 홈의 "오늘 버스로 되는 코스" — 미리 만들어둔 큐레이션 코스입니다.
+ * 사용자가 고른 스팟으로 짜는 routes와 달리, 조건만 있으면 바로 보여줍니다.
  *
- * [백엔드와 맞출 것] 4.6 명세에 `spots[]`가 없습니다. Figma의 CourseCard2는 스팟이
- * 여러 개일 때 카드 둘째 줄에 "● 바람의언덕 · ● 학동몽돌해변"처럼 **스팟별 판정**을
- * 찍으라고 돼 있는데, 그러려면 코스 안 스팟의 이름과 verdict가 필요합니다.
- * 지금은 목에만 넣어뒀고, 명세에 추가해야 합니다.
+ * [백엔드와 맞출 것] Figma의 CourseCard2는 스팟이 여러 개일 때 카드 둘째 줄에
+ * "● 바람의언덕 · ● 학동몽돌해변"처럼 **스팟별 판정**을 찍으라고 돼 있어서,
+ * 코스 안 스팟의 이름과 verdict가 필요합니다. 지금은 목에만 넣어뒀고, 명세에 추가해야 합니다.
  */
 const COURSES = [
   {
@@ -190,6 +466,7 @@ const COURSES = [
 
 const MOCK_DELAY_MS = 250
 const SOURCE = { source: '거제시 BIS 원문', baseDate: '2026-08-18' }
+const delay = () => new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS))
 
 /**
  * 조건 없이 지도만 둘러보는 경우 — 스팟 목록만 돌려줍니다.
@@ -202,16 +479,15 @@ export async function fetchSpots({ theme, q } = {}) {
   // if (!res.ok) throw new Error(`스팟을 불러오지 못했습니다 (${res.status})`)
   // return res.json()
 
-  await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS))
+  await delay()
   return { spots: theme ? SPOTS.filter((spot) => spot.theme === theme) : SPOTS, ...SOURCE }
 }
 
 /**
- * 스팟을 고르고 넘어온 경우 — 고른 스팟 + 그 조합으로 만든 추천 코스.
+ * 스팟을 고르고 넘어온 경우 — 고른 스팟 + 그 조합으로 짠 추천 코스.
  * spotIds가 비어 있으면 전부 고른 것으로 칩니다.
  */
-// eslint-disable-next-line no-unused-vars
-export async function fetchPlan({ spotIds, origin, date, departTime, returnBy }) {
+export async function fetchPlan({ spotIds, ...trip }) {
   // const query = new URLSearchParams({
   //   origin, date, departTime, returnBy, spots: spotIds.join(','),
   // })
@@ -219,19 +495,75 @@ export async function fetchPlan({ spotIds, origin, date, departTime, returnBy })
   // if (!res.ok) throw new Error(`판정에 실패했습니다 (${res.status})`)
   // return res.json()
 
-  await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS))
+  await delay()
+  const picked = pickSpots(spotIds)
+  const info = ORIGIN_INFO[trip.origin] ?? {}
+  return {
+    arrivalTime: info.rideMin != null ? addMin(trip.departTime, info.rideMin) : null,
+    spots: picked.map((spot) => ({ ...spot, ...SPOT_VERDICTS[spot.spotId] })),
+    ...buildItineraries(picked, trip),
+    ...SOURCE,
+  }
+}
 
-  const picked = spotIds?.length
-    ? SPOTS.filter((spot) => spotIds.includes(spot.spotId))
-    : SPOTS
+/**
+ * 판정 결과 — 코스 하나의 가는 편·오는 편 타임라인. 코스 번호는 같은 스팟·조건이면 같습니다.
+ */
+export async function fetchVerdict({ routeId, spotIds, ...trip }) {
+  // const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/courses/${routeId}/judge`, {
+  //   method: 'POST', headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify({ date, arrivalTime, returnTime }),
+  // })
+  // if (!res.ok) throw new Error(`판정에 실패했습니다 (${res.status})`)
+  // return adaptJudgeRes(await res.json())
+
+  await delay()
+  const picked = pickSpots(spotIds)
+  const { routes } = buildItineraries(picked, trip)
+  const route = routes.find((r) => r.routeId === Number(routeId))
+  if (!route) throw new Error('코스를 찾을 수 없습니다')
+
+  const spots = route.spotIds.map((id) => ({ ...SPOTS.find((s) => s.spotId === id), ...SPOT_VERDICTS[id] }))
+  const out = buildOut(spots, trip)
+  const back = buildBack(spots, trip)
+  const info = ORIGIN_INFO[trip.origin] ?? {}
+  const originLabel = ORIGIN_LABELS[trip.origin] ?? trip.origin
+
+  const shipSpot = spots.find((s) => ACCESS[s.spotId].ship)
+  const firstAccess = ACCESS[spots[0].spotId]
+  const lastAccess = ACCESS[spots[spots.length - 1].spotId]
+  const modes = [
+    { kind: 'bus', label: '시외', dim: false },
+    { kind: 'bus', label: firstAccess.routeNo, dim: false },
+    ...(shipSpot ? [{ kind: 'ship', label: ACCESS[shipSpot.spotId].ship.name, dim: true }] : []),
+    { kind: 'bus', label: lastAccess.stop === '해금강' || lastAccess.stop === '학동' ? '55' : lastAccess.routeNo, dim: false },
+    { kind: 'bus', label: '시외', dim: false },
+  ]
+
+  const unknownReason = spots.map((s) => SPOT_VERDICTS[s.spotId]?.reason).find(Boolean) ?? null
+  const check = shipSpot
+    ? {
+        text: `${ACCESS[shipSpot.spotId].ship.name} 출항 시각은 당일 확인`,
+        link: { label: '운항 캘린더 ›', href: ACCESS[shipSpot.spotId].ship.href },
+      }
+    : worst(out.verdict, back.verdict) === 'UNKNOWN'
+      ? { text: unknownReason ?? '시각을 확인하지 못한 구간이 있어요', link: null }
+      : null
 
   return {
-    arrivalTime: '08:40',
-    spots: picked.map((spot) => ({ ...spot, ...SPOT_VERDICTS[spot.spotId] })),
-    // 고른 스팟으로 만들 수 있는 코스만 남깁니다.
-    routes: ROUTES.filter((route) =>
-      route.spotIds.every((id) => picked.some((spot) => spot.spotId === id)),
-    ),
+    route: { ...route, verdict: worst(out.verdict, back.verdict), reason: out.reason ?? back.reason ?? route.reason },
+    spots,
+    summary: {
+      totalMin: info.returnArrive ? diffMin(trip.departTime, info.returnArrive) : null,
+      departTime: trip.departTime,
+      arriveTime: info.returnArrive ?? null,
+      legCount: modes.length,
+      lastReturnBus: route.lastBus,
+      modes,
+      check,
+    },
+    directions: { out, back },
+    arrival: { time: info.returnArrive ?? null, originLabel },
     ...SOURCE,
   }
 }
@@ -240,10 +572,6 @@ export async function fetchPlan({ spotIds, origin, date, departTime, returnBy })
 export function findMockSpot(spotId) {
   const spot = SPOTS.find((item) => item.spotId === spotId)
   return spot ? { ...spot, ...SPOT_VERDICTS[spot.spotId] } : null
-}
-
-export function findMockRoute(routeId) {
-  return ROUTES.find((route) => route.routeId === routeId) ?? null
 }
 
 /**
@@ -257,6 +585,6 @@ export async function fetchCourses({ origin, date, departTime, returnBy, limit =
   // if (!res.ok) throw new Error(`코스를 불러오지 못했습니다 (${res.status})`)
   // return res.json()
 
-  await new Promise((resolve) => setTimeout(resolve, MOCK_DELAY_MS))
+  await delay()
   return { courses: COURSES.slice(0, limit), ...SOURCE }
 }

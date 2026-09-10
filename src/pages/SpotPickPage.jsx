@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { MAP_PATH } from '../components/BottomNav'
 import Button from '../components/Button'
 import CategoryBar from '../components/CategoryBar'
 import ConditionSheet from '../components/ConditionSheet'
@@ -16,7 +15,7 @@ import styles from './SpotPickPage.module.css'
  * 조건은 URL(?origin=&date=&departTime=&returnBy=)로 받습니다. 홈 CTA는 조건을 붙여 오고,
  * 스팟 상세 '일정에 담기'는 조건 없이 오므로 그때만 점선 pill이 뜹니다.
  * 체크 원 = 선택 토글, 사진·이름·'›' = 스팟 상세 (Figma '체크/사진 분리').
- * 'N곳으로 코스짜기'는 일정 고르기 화면이 생기기 전까지 지도(판정)로 갑니다.
+ * 'N곳으로 코스짜기' → 일정 고르기(/plan). 조건과 고른 스팟은 쿼리로 넘깁니다.
  */
 
 /* Figma 285:419 카드 순서 — 목록 화면(233:378)과 다르며 각 프레임 순서를 그대로 따릅니다. */
@@ -127,7 +126,7 @@ export default function SpotPickPage() {
       setSheetOpen(true)
       return
     }
-    navigate(`${MAP_PATH}?${tripToSearch(trip, { spots: selected.join(',') })}`)
+    navigate(`/plan?${tripToSearch(trip, { spots: selected.join(',') })}`)
   }
 
   return (

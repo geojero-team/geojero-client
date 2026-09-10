@@ -40,6 +40,12 @@ export function formatDateLong(isoDate) {
   return `${month}/${day}(${label}) · ${isWeekend(isoDate) ? '주말' : '평일'}`
 }
 
+/** "2026-09-07" -> "9/7(월) 평일" — 일정 고르기 조건 줄(Figma 285:74)은 가운뎃점이 없습니다. */
+export function formatDateDay(isoDate) {
+  const [, month, day] = isoDate.split('-').map(Number)
+  return `${month}/${day}(${WEEKDAYS[weekdayOf(isoDate)]}) ${isWeekend(isoDate) ? '주말' : '평일'}`
+}
+
 export { WEEKDAYS }
 
 /** 코스 테마 코드 -> 판정 조건 화면의 필터 라벨 */

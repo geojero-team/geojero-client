@@ -96,6 +96,14 @@ export function tripFromSearch(params) {
   }
 }
 
+/** "?spots=5,2,7" → [5, 2, 7]. 없거나 깨졌으면 빈 배열. */
+export function spotIdsFromSearch(params) {
+  return (params.get('spots') ?? '')
+    .split(',')
+    .map((part) => Number(part.trim()))
+    .filter((id) => Number.isInteger(id) && id > 0)
+}
+
 /* ── 시각 조정 ─────────────────────────────────────────────────────────────
    30분 단위로 올리고 내립니다. 시외버스 배차가 그보다 촘촘한 지역이 아니라
    10분 단위로 쪼개면 탭만 늘고 판정 결과는 거의 안 바뀝니다. */
