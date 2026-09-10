@@ -1,5 +1,7 @@
+import { api } from '../lib/api'
 import { formatDuration } from '../lib/format'
 import { ORIGIN_LABELS, toHHMM, toMinutes } from '../lib/tripParams'
+import { resolvePoiId } from './poiIndex'
 
 /**
  * 목 데이터 — 화면이 쓰는 네 덩어리
@@ -681,13 +683,22 @@ export async function fetchSpotDetail(spotId) {
   const base = findMockSpot(spotId)
   if (!base) return null
 
-  const url = `${import.meta.env.VITE_API_BASE_URL}/api/pois/${spotId}`
+  // 서버가 없거나 그 스팟을 모를 때 그리는 모양. 지어내지 않고 비웁니다.
+  const withoutServer = {
+    ...base,
+    overview: null,
+    overviewSource: null,
+    photos: [],
+    checkUrl: null,
+    lastDeparture: null,
+  }
+
   try {
-    const res = await fetch(url)
-    if (!res.ok) throw new Error(String(res.status))
-    const data = await res.json()
-    // PoiDetailRes { poiId, name, kind, tier, lang, langFallback,
-    //                detail: { source, overview, imageUrl }, checkUrl, lastDeparture }
+    // spotId를 poi_id로 넘기면 안 됩니다 — 두 번호는 서로 다릅니다(poiIndex 참고).
+    const poiId = await resolvePoiId(spotId)
+    if (poiId == null) return withoutServer
+
+    const data = await api.poi(poiId)
     // detail.source가 'TourAPI'가 아니면 자체 소개문(intro_text) 폴백입니다 —
     // 그때는 '출처 TourAPI' 칩을 달면 안 됩니다.
     const detail = data.detail ?? {}
@@ -701,7 +712,7 @@ export async function fetchSpotDetail(spotId) {
     }
   } catch {
     // 서버가 없거나 TourAPI가 실패해도 화면은 떠야 합니다(비로그인 판정과 같은 원칙).
-    return { ...base, overview: null, overviewSource: null, photos: [], checkUrl: null, lastDeparture: null }
+    return withoutServer
   }
 }
 
