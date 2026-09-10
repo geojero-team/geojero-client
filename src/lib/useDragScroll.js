@@ -26,7 +26,12 @@ export function useDragScroll(ref, onSettle) {
     // 터치는 브라우저 기본 동작이 더 낫습니다(관성·고무줄). 가로로 넘칠 게 없으면 잡지 않습니다.
     if (!el || event.pointerType === 'touch') return
     if (el.scrollWidth <= el.clientWidth) return
-    drag.current = { x: event.clientX, left: el.scrollLeft, dx: 0 }
+    /* 포인터 좌표는 뷰포트 기준인데 scrollLeft는 요소 로컬 기준이다. 이 앱은 데스크톱에서
+       프레임에 CSS zoom(최대 1.8)을 걸기 때문에 둘의 단위가 다르다 — 그대로 빼면 화면이
+       커서보다 배율만큼 빨리 움직인다. 실측: zoom 1.5에서 rect.width 585 / clientWidth 390.
+       비율을 재서 나눠주면 zoom이 없을 땐 1이라 아무것도 달라지지 않는다. */
+    const scale = el.clientWidth > 0 ? el.getBoundingClientRect().width / el.clientWidth : 1
+    drag.current = { x: event.clientX, left: el.scrollLeft, dx: 0, scale }
     moved.current = false
     // 끄는 동안 스냅을 꺼둡니다. mandatory인 채로 scrollLeft를 직접 만지면 매 프레임
     // 스냅이 걸려 손을 따라오지 못합니다.
@@ -37,7 +42,8 @@ export function useDragScroll(ref, onSettle) {
   const onPointerMove = (event) => {
     const el = ref.current
     if (!drag.current || !el) return
-    const dx = event.clientX - drag.current.x
+    // 로컬 좌표로 환산해서 들고 다닌다 — onSettle이 clientWidth와 비교하기 때문이다.
+    const dx = (event.clientX - drag.current.x) / drag.current.scale
     drag.current.dx = dx
     if (Math.abs(dx) > 3) moved.current = true
     el.scrollLeft = drag.current.left - dx
