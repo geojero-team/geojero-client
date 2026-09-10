@@ -202,6 +202,10 @@ export default {
   'login.sheetAria': '로그인',
   'login.title': '코스를 저장하려면 로그인 해주세요',
   'login.later': '나중에',
+  'login.connecting': '카카오와 연결하는 중이에요',
+  'login.failed': '로그인하지 못했어요',
+  'login.failedHint': '잠시 뒤 다시 시도해 주세요.\n코스 판정과 시간표는 로그인 없이도 볼 수 있어요.',
+  'login.goHome': '홈으로',
 
   /* ── 내 일정 (233:562) ────────────────────────────────────────────────── */
   'myPlans.title': '내 일정',

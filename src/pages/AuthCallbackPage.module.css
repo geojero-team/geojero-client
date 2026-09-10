@@ -1,0 +1,41 @@
+/* 머무는 화면이 아닙니다 — 성공하면 곧바로 떠나고, 실패했을 때만 보입니다. */
+.center {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  white-space: pre-line; /* 사전 문구의 줄바꿈을 살립니다 */
+}
+
+.home {
+  margin-top: var(--space-sm);
+  padding: 10px 20px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-control);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.home:active {
+  background: var(--bg-pressed);
+}

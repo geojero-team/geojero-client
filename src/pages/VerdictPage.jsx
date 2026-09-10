@@ -14,6 +14,7 @@ import {
 } from '../components/TimelineIcons'
 import { t } from '../i18n'
 import { fetchVerdict } from '../data/mockPlan'
+import { beginKakaoLogin } from '../lib/api'
 import { formatDateLong, formatDuration } from '../lib/format'
 import { ORIGIN_LABELS, spotIdsFromSearch, tripFromSearch } from '../lib/tripParams'
 import { worseDirection } from '../lib/verdict'
@@ -358,11 +359,9 @@ export default function VerdictPage() {
       <LoginSheet
         open={loginOpen}
         onClose={() => setLoginOpen(false)}
-        onLogin={() => {
-          // 카카오 인가는 서버가 시작합니다. 서버가 안 떠 있으면 실패하지만
-          // 판정 화면은 그대로 남습니다 — 인증 장애가 판정을 막지 않습니다.
-          window.location.assign(`${import.meta.env.VITE_API_BASE_URL}/api/auth/kakao`)
-        }}
+        // 카카오 인가는 서버가 시작합니다(REST 키가 서버에만 있어서). 서버가 안 떠 있으면
+        // 실패하지만 판정 화면은 그대로 남습니다 — 인증 장애가 판정을 막지 않습니다.
+        onLogin={beginKakaoLogin}
       />
     </Screen>
   )

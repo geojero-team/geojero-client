@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { MAP_PATH } from './components/BottomNav'
 import ApiOverlay from './dev/ApiOverlay'
+import AuthCallbackPage from './pages/AuthCallbackPage'
 import ConditionsPage from './pages/ConditionsPage'
 import HomePage from './pages/HomePage'
 import MapPage from './pages/MapPage'
@@ -44,6 +45,8 @@ export default function App() {
         <Route path="/verdict/:routeId" element={<VerdictPage />} />
         <Route path="/my" element={<MyPlansPage />} />
         <Route path="/conditions" element={<ConditionsPage />} />
+        {/* 카카오가 돌려보내는 자리. 이 경로가 카카오 콘솔의 Redirect URI와 같아야 합니다. */}
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 

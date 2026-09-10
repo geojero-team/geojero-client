@@ -34,7 +34,7 @@ export default function LoginSheet({ open, onClose, onLogin }) {
 
         <h2 className={styles.title}>{t('login.title')}</h2>
 
-        <KakaoLoginButton onClick={onLogin} data-api="GET /api/auth/kakao" />
+        <KakaoLoginButton onClick={onLogin} data-api="GET /api/auth/kakao/start" />
 
         <Button variant="ghost" onClick={onClose}>
           {t('login.later')}

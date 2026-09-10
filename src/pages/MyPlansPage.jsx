@@ -1,6 +1,7 @@
 import BottomNav from '../components/BottomNav'
 import KakaoLoginButton from '../components/KakaoLoginButton'
 import { t } from '../i18n'
+import { beginKakaoLogin } from '../lib/api'
 import Screen from '../components/Screen'
 import styles from './MyPlansPage.module.css'
 
@@ -29,7 +30,7 @@ export default function MyPlansPage() {
             <br />
             {t('myPlans.emptyText2')}
           </p>
-          <KakaoLoginButton data-api="GET /api/auth/kakao" />
+          <KakaoLoginButton onClick={beginKakaoLogin} data-api="GET /api/auth/kakao/start" />
         </section>
       </div>
 
