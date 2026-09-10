@@ -296,3 +296,12 @@
   color: var(--text-secondary);
   word-break: keep-all;
 }
+
+/* 고른 스팟이 막힌 이유. 안내가 아니라 답이므로 본문 색으로 씁니다.
+   02-1에 이 자리가 없어 새로 둔 클래스입니다(불성립 빨강은 쓰지 않습니다). */
+.emptyReason {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-primary);
+  word-break: keep-all;
+}

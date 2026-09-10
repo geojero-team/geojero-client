@@ -114,6 +114,15 @@ export default function MapPage() {
     [result.data],
   )
 
+  // 고른 스팟 중 '불성립'으로 **확인된** 것만 이유를 밝힙니다(2026-09-10 결정).
+  const blockedPicks = useMemo(
+    () =>
+      requestedSpotIds
+        .map((id) => spotsById.get(id))
+        .filter((spot) => spot?.verdict === 'NO' && spot.reason),
+    [requestedSpotIds, spotsById],
+  )
+
   // Figma는 코스가 항상 하나 골라져 있는 상태를 그립니다. 넘어온 코스가 없으면 첫 코스.
   const activeRoute =
     routes.find((route) => route.routeId === activeRouteId) ?? routes[0] ?? null
@@ -245,7 +254,17 @@ export default function MapPage() {
            지도는 그대로 두어 고른 스팟이 어디인지는 계속 보이게 합니다. */
         <section className={styles.noRoutes}>
           <p className={styles.noRoutesTitle}>{t('noRoutes.title')}</p>
-          <p className={styles.noRoutesText}>{t('noRoutes.text')}</p>
+          {blockedPicks.map((spot) => (
+            <p key={spot.spotId} className={styles.noRoutesReason}>
+              {t('noRoutes.blocked', {
+                name: spot.shortName ?? spot.name,
+                reason: spot.reason,
+              })}
+            </p>
+          ))}
+          <p className={styles.noRoutesText}>
+            {t(blockedPicks.length > 0 ? 'noRoutes.blockedHint' : 'noRoutes.text')}
+          </p>
         </section>
       ) : (
         planned && (

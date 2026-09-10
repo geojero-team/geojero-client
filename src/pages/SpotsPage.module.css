@@ -84,11 +84,6 @@
   object-fit: cover;
 }
 
-/* 명사(우회 중): 사진 40% */
-.photoDim {
-  opacity: 0.4;
-}
-
 /* info: pt8 pb10 px10, gap 2 */
 .info {
   display: flex;
@@ -100,10 +95,6 @@
 .name {
   font: var(--type-caption);
   color: var(--text-primary);
-}
-
-.nameDim {
-  color: var(--text-disabled);
 }
 
 .meta {

@@ -17,8 +17,11 @@ import styles from './PinSheet.module.css'
  */
 export default function PinSheet({ kind, spot, route, showVerdict, onClose, onOpen }) {
   const isCourse = kind === 'course'
-  const verdict = isCourse ? route.verdict : spot.verdict
-  const reason = isCourse ? route.reason : spot.reason
+
+  // 판정 말은 **사용자가 고른 것**에만 붙입니다(2026-09-10 결정). 코스 핀은 고른 스팟이니
+  // 배지와 이유를 달고, 코스 밖 스팟 핀은 고른 게 아니므로 둘 다 달지 않습니다.
+  const verdict = isCourse ? route.verdict : null
+  const reason = isCourse ? route.reason : null
 
   return (
     <section className={styles.sheet} aria-label={t(isCourse ? 'map.pinCourseAria' : 'map.pinSpotAria')}>
@@ -63,8 +66,7 @@ export default function PinSheet({ kind, spot, route, showVerdict, onClose, onOp
         </div>
       )}
 
-      {/* 미확인·불성립 사유는 성립이 아닐 때 항상 보여줍니다.
-          미확인을 성립처럼 조용히 넘기지 않기 위한 줄입니다. */}
+      {/* 고른 코스가 성립이 아닐 때만 이유를 답합니다. */}
       {showVerdict && verdict !== 'YES' && reason && (
         <p className={verdict === 'NO' ? styles.reasonNo : styles.reason}>{reason}</p>
       )}

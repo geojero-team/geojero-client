@@ -11,28 +11,26 @@ import styles from './SpotsPage.module.css'
 /**
  * 스팟 — Figma `스팟 — 배지 없음 · 검색 없음 (Q1 A안)` (233:378).
  * 열람 전용 목록. 판정 배지·체크·검색 없음. 카드 탭 → 스팟 상세.
- * 둘째 줄 안내(당일 확인 / 오늘 버스로 안 돼요)는 조건과 무관한 사실(기준문서)이라 여기서도 보입니다.
+ *
+ * **불성립 표현을 넣지 않습니다**(2026-09-10 결정: "고른 것만 이유를 준다").
+ * 아직 아무것도 고르지 않은 화면이라 "여긴 못 감"을 깔면 목록이 쓸모없어 보입니다.
+ * 못 가는 이유는 사용자가 그 스팟을 골라 코스가 안 나올 때 그 자리에서 답합니다
+ * (일정 고르기·지도의 빈 상태).
+ *
+ * 그래서 Figma 02-1이 그려둔 불성립 표현 세 가지(사진 40% · disabled 제목 ·
+ * 둘째 줄 '오늘 버스로 안 돼요')를 의도적으로 뺐습니다.
  */
 function SpotCard({ spot, onOpen }) {
-  const blocked = spot.notice?.kind === 'NO'
-
   return (
     <button type="button" className={styles.card} onClick={() => onOpen(spot)}>
       <div className={styles.photo}>
-        <img
-          className={blocked ? `${styles.photoImg} ${styles.photoDim}` : styles.photoImg}
-          src={courseImage(spot)}
-          alt=""
-        />
+        <img className={styles.photoImg} src={courseImage(spot)} alt="" />
       </div>
       <div className={styles.info}>
-        <span className={blocked ? `${styles.name} ${styles.nameDim}` : styles.name}>
-          {spot.name}
-        </span>
+        <span className={styles.name}>{spot.name}</span>
         <span className={styles.meta}>
           {spot.region} · {spot.category}
         </span>
-        {spot.notice && <span className={styles.meta}>{spot.notice.text}</span>}
       </div>
     </button>
   )

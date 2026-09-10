@@ -98,6 +98,9 @@ export default function PlanPage() {
   const state = result.data?.state ?? 'ALL'
   const spotsById = new Map((result.data?.spots ?? []).map((spot) => [spot.spotId, spot]))
   const picked = spotIds.map((id) => spotsById.get(id)).filter(Boolean)
+  // 고른 스팟 중 '불성립'으로 **확인된** 것만 이유를 밝힙니다. 고르지 않은 곳의
+  // 불성립은 화면에 내보내지 않습니다(2026-09-10 결정).
+  const blockedPicks = picked.filter((spot) => spot.verdict === 'NO' && spot.reason)
   const selectedId = selected ?? routes[0]?.routeId ?? null
   const selectedRoute = routes.find((route) => route.routeId === selectedId) ?? null
 
@@ -169,7 +172,17 @@ export default function PlanPage() {
                불성립이라 단정하지 않기 위해 문구를 나눕니다. */
             <div className={styles.empty}>
               <p className={styles.emptyTitle}>{t('noRoutes.title')}</p>
-              <p className={styles.emptyText}>{t('noRoutes.text')}</p>
+              {blockedPicks.map((spot) => (
+                <p key={spot.spotId} className={styles.emptyReason}>
+                  {t('noRoutes.blocked', {
+                    name: spot.shortName ?? spot.name,
+                    reason: spot.reason,
+                  })}
+                </p>
+              ))}
+              <p className={styles.emptyText}>
+                {t(blockedPicks.length > 0 ? 'noRoutes.blockedHint' : 'noRoutes.text')}
+              </p>
             </div>
           ) : (
             routes.map((route) => (
