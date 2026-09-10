@@ -192,7 +192,7 @@ export default function VerdictPage() {
   const data = result.data
   const originLabel = ORIGIN_LABELS[trip.origin] ?? trip.origin
 
-  // 지도: 좌표가 [미확인]인 스팟(명사)은 찍지 않고, 방문 순서대로 선을 잇습니다.
+  // 지도: 좌표가 [미확인]인 스팟은 찍지 않고, 방문 순서대로 선을 잇습니다.
   const mapSpots = useMemo(
     () =>
       (data?.spots ?? []).filter((spot) => Number.isFinite(spot.lat) && Number.isFinite(spot.lng)),

@@ -27,7 +27,7 @@ const SERVER_POI_NAME = {
   6: '외도보타니아',
   7: '학동흑진주몽돌해변',
   8: '도장포유람선',
-  9: null, // 명사해수욕장 — 시드에 없음(시드의 무좌표 항목은 덕포해수욕장입니다)
+  9: '명사해수욕장', // 서버 V6에서 추가 (TourAPI contentId 126577)
 }
 
 let indexPromise = null
@@ -69,8 +69,9 @@ export async function resolvePoiId(spotId) {
  * 화면 spotId → TourAPI 사진 URL.
  *
  * 서버가 죽었거나 사진이 없으면 그 스팟은 맵에 없습니다 — 호출부는 기존 자리 그림을
- * 그대로 쓰면 됩니다. 사진이 없는 경우는 세 가지입니다: 시드에 contentId가 없거나
- * (덕포해수욕장), TourAPI 호출이 실패했거나, 저작권 보류(도장포유람선·신선대)입니다.
+ * 그대로 쓰면 됩니다. 사진이 없는 경우는 두 가지입니다: 시드에 contentId가 없거나
+ * (덕포해수욕장), TourAPI 호출이 실패한 경우입니다. 저작권 보류는 이제 POI 통째가
+ * 아니라 사진 한 장 단위로 걸러지므로(서버 V5), 쓸 수 있는 장이 있으면 나옵니다.
  */
 export async function loadSpotImages() {
   try {

@@ -100,7 +100,8 @@ export default function MapPage() {
     setSheetOpen(false)
   }, [])
 
-  // 좌표가 [미확인]인 스팟(명사해수욕장)은 지도에 찍지 않습니다.
+  // 좌표가 [미확인]인 스팟은 지도에 찍지 않습니다 — 0,0으로 떨어지면 유령 핀이 됩니다.
+  // (명사해수욕장은 서버 V6에서 실측 좌표를 받아 이제 찍힙니다.)
   const spots = useMemo(
     () =>
       (result.data?.spots ?? []).filter(

@@ -45,8 +45,8 @@ const SPOTS = [
     kind: 'UNKNOWN',
     text: '당일 확인',
   }),
-  // 좌표 [미확인] — 지도에는 찍히지 않음
-  spot(9, '명사해수욕장', 'BEACH', '해수욕장', '남부권', null, null, {
+  // 좌표는 TourAPI searchKeyword2 실측(2026-09-10, contentId 126577) — 서버 V6와 같은 값
+  spot(9, '명사해수욕장', 'BEACH', '해수욕장', '남부권', 34.7272514, 128.6047817, {
     kind: 'NO',
     text: '오늘 버스로 안 돼요',
   }),
