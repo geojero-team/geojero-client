@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 import Button from '../components/Button'
 import DirTabs from '../components/DirTabs'
 import MapView from '../components/MapView'
+import LoginSheet from '../components/LoginSheet'
 import Screen from '../components/Screen'
 import {
   ModeBusIcon,
@@ -164,6 +165,7 @@ export default function VerdictPage() {
   const [spotIds] = useState(() => spotIdsFromSearch(searchParams))
   const [dir, setDir] = useState(null) // 'out' | 'back' | null(= 판정이 나쁜 쪽)
   const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
+  const [loginOpen, setLoginOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -240,11 +242,11 @@ export default function VerdictPage() {
             {/* summary(268:303) */}
             <section className={styles.summary}>
               <p className={styles.big}>
-                {data.summary.totalMin != null ? formatDuration(data.summary.totalMin) : '[미확인]'}
+                {formatDuration(data.summary.totalMin)}
               </p>
               <p className={styles.range}>
-                {data.summary.departTime} - {data.summary.arriveTime ?? '[미확인]'} ·{' '}
-                {data.summary.legCount}구간 · 돌아오는 막차 {data.summary.lastReturnBus ?? '[미확인]'}
+                {data.summary.departTime} - {data.summary.arriveTime} ·{' '}
+                {data.summary.legCount}구간 · 돌아오는 막차 {data.summary.lastReturnBus}
               </p>
               <div className={styles.modes}>
                 {data.summary.modes.map((mode, index) => {
@@ -316,24 +318,35 @@ export default function VerdictPage() {
         )}
       </div>
 
-      {/* bottom-bar(268:472) — 고정. '저장'은 비로그인이라 disabled 외형이지만 눌립니다(로그인 시트는 다음 단계). */}
+      {/* bottom-bar(268:472) — 고정. '저장'은 비로그인이라 disabled 외형이지만 눌리고,
+          누르면 로그인 시트(240:209)가 뜹니다. 판정 자체는 비로그인으로 다 됩니다. */}
       <div className={styles.bottomBar}>
         <div className={styles.barCol}>
           <p className={styles.arrivalLine}>
-            {data ? `${data.arrival.time ?? '[미확인]'} ${data.arrival.originLabel} 도착` : '판정하는 중'}
+            {data ? `${data.arrival.time} ${data.arrival.originLabel} 도착` : '판정하는 중'}
           </p>
           <p className={styles.saveHint}>일정을 저장하실 수 있어요</p>
         </div>
         <Button
           variant="disabled"
           className={styles.save}
-          onClick={() => navigate('/my')}
+          onClick={() => setLoginOpen(true)}
           disabled={!data}
           data-api="POST /api/saved-trips"
         >
           저장
         </Button>
       </div>
+
+      <LoginSheet
+        open={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        onLogin={() => {
+          // 카카오 인가는 서버가 시작합니다. 서버가 안 떠 있으면 실패하지만
+          // 판정 화면은 그대로 남습니다 — 인증 장애가 판정을 막지 않습니다.
+          window.location.assign(`${import.meta.env.VITE_API_BASE_URL}/api/auth/kakao`)
+        }}
+      />
     </Screen>
   )
 }

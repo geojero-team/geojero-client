@@ -1,0 +1,166 @@
+/* 스팟 상세 — Figma 264:227 실측. hero 260 + body(pt20 px20 pb28, gap 22).
+   프레임 높이 754에 탭바가 없습니다(push 화면). */
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--bg-page);
+}
+
+/* hero(264:228) — 390×260, 오버레이는 전부 absolute */
+.hero {
+  position: relative;
+  height: 260px;
+  overflow: hidden;
+}
+
+.heroImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 264:229 — 36×36 원형. 그림자 없이 반투명 면으로만 대비를 냅니다. */
+.back {
+  position: absolute;
+  left: var(--space-lg);
+  top: var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0 2px 2px 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  font: var(--type-title);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* 264:238 / 264:241 — 반투명 알약 두 개. 면 색은 text/primary의 55%입니다. */
+.countChip,
+.creditChip {
+  position: absolute;
+  border-radius: var(--radius-pill);
+  background: rgba(16, 24, 40, 0.55);
+  font: var(--type-label);
+  color: var(--text-on-brand);
+  white-space: nowrap;
+}
+
+.countChip {
+  left: var(--space-lg);
+  bottom: 16px;
+  padding: 5px 10px;
+}
+
+.creditChip {
+  right: var(--space-lg);
+  bottom: 16px;
+  padding: 4px var(--space-sm);
+}
+
+/* 264:231 — 활성 지름 7 / 비활성 지름 5(흰색 55%), 가로 중앙 */
+.dots {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transform: translateX(-50%);
+}
+
+.dot,
+.dotOn {
+  display: block;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.dot {
+  width: 5px;
+  height: 5px;
+  opacity: 0.55;
+}
+
+.dotOn {
+  width: 7px;
+  height: 7px;
+}
+
+/* body(264:243) — gap 22는 4pt 스케일 밖이라 토큰을 억지로 끼우지 않습니다. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 20px 20px 28px;
+}
+
+/* title(264:252) — gap 4 */
+.titleCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.name {
+  margin: 0;
+  font: var(--type-display);
+  color: var(--text-primary);
+}
+
+.category {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* intro(264:256) — gap 6, overview는 2줄에서 자르고 '더보기'로 폅니다. */
+.intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.introHead {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.overview,
+.overviewFull {
+  margin: 0;
+  width: 100%;
+  font: var(--type-body);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+.overview {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.more {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--type-caption);
+  color: var(--brand-strong);
+  cursor: pointer;
+}
+
+.pending {
+  margin: auto;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}

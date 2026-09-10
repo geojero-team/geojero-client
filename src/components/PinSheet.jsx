@@ -43,13 +43,13 @@ export default function PinSheet({ kind, spot, route, showVerdict, onClose, onOp
           <div className={styles.fact}>
             <span className={styles.factLabel}>출발 → 도착</span>
             <span className={styles.factValue}>
-              {route.departTime} → {route.arriveTime ?? '[미확인]'}
+              {route.departTime} → {route.arriveTime}
             </span>
           </div>
           <div className={styles.fact}>
             <span className={styles.factLabel}>돌아오는 막차</span>
             <span className={styles.factValue}>
-              {route.lastBus ? `${route.lastBus} ${route.lastStopName}발` : '[미확인]'}
+              {route.lastBus} {route.lastStopName}발
             </span>
           </div>
         </div>

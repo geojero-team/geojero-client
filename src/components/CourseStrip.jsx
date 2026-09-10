@@ -21,7 +21,7 @@ function OrderStop({ spot, index, last, lastBus }) {
         <span className={styles.num}>{index + 1}</span>
       </span>
       <span className={styles.stopName}>{spot.shortName ?? spot.name}</span>
-      {last && <span className={styles.lastBus}>막차 {lastBus ?? '[미확인]'}</span>}
+      {last && lastBus && <span className={styles.lastBus}>막차 {lastBus}</span>}
     </span>
   )
 }
@@ -39,7 +39,7 @@ function OrderCard({ route, spotsById, selected, onSelect, onOpenVerdict }) {
       >
         <span className={styles.row}>
           <span className={styles.time}>
-            {route.departTime} → {route.arriveTime ?? '[미확인]'}
+            {route.departTime} → {route.arriveTime}
           </span>
           {route.recommended && <span className={styles.tag}>추천</span>}
         </span>

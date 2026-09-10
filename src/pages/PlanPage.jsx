@@ -30,7 +30,7 @@ function ItineraryCard({ route, spotsById, selected, onSelect }) {
     >
       <div className={styles.cardRow}>
         <span className={styles.time}>
-          {route.departTime} → {route.arriveTime ?? '[미확인]'}
+          {route.departTime} → {route.arriveTime}
         </span>
         {route.recommended && <span className={styles.tag}>추천 · 막차 여유 가장 큼</span>}
         {route.excludedName && <span className={styles.excluded}>{route.excludedName} 빼면</span>}
@@ -50,8 +50,8 @@ function ItineraryCard({ route, spotsById, selected, onSelect }) {
                 <span className={styles.num}>{index + 1}</span>
               </span>
               <span className={styles.stopName}>{spot.shortName}</span>
-              {index === spots.length - 1 && (
-                <span className={styles.lastBus}>막차 {route.lastBus ?? '[미확인]'}</span>
+              {index === spots.length - 1 && route.lastBus && (
+                <span className={styles.lastBus}>막차 {route.lastBus}</span>
               )}
             </span>
           </Fragment>

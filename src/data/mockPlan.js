@@ -670,6 +670,33 @@ export async function fetchVerdict({ routeId, spotIds, ...trip }) {
 }
 
 /** 자리표시자 화면들이 이름 정도는 보여줄 수 있게 열어둔 조회용 헬퍼입니다. */
+/**
+ * 스팟 상세 — 이름·분류는 목에서, 소개(overview)와 사진은 **서버 실호출**로 받습니다.
+ *
+ * TourAPI overview는 런타임 호출값이라 목에 넣을 수 없습니다(원문 수정 금지 · 저작권).
+ * 서버가 아직 안 떠 있으면 소개·사진 없이 이름과 분류만 나옵니다 — 지어내지 않습니다.
+ * 서버 응답은 PoiController.PoiDetailRes 모양입니다.
+ */
+export async function fetchSpotDetail(spotId) {
+  const base = findMockSpot(spotId)
+  if (!base) return null
+
+  const url = `${import.meta.env.VITE_API_BASE_URL}/api/pois/${spotId}`
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(String(res.status))
+    const data = await res.json()
+    return {
+      ...base,
+      overview: data.overview ?? null,
+      photos: Array.isArray(data.images) ? data.images : [],
+    }
+  } catch {
+    // 서버가 없거나 TourAPI가 실패해도 화면은 떠야 합니다(비로그인 판정과 같은 원칙).
+    return { ...base, overview: null, photos: [] }
+  }
+}
+
 export function findMockSpot(spotId) {
   const spot = SPOTS.find((item) => item.spotId === spotId)
   return spot ? { ...spot, ...SPOT_VERDICTS[spot.spotId] } : null

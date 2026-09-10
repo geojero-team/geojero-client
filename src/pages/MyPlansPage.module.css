@@ -1,0 +1,53 @@
+/* 내 일정 — Figma 233:562 실측. header 56 / body flex / TabBar 64 */
+
+/* header(233:563) — px20, 구분선 없음 */
+.header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 20px;
+  background: var(--bg-page);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-title);
+  color: var(--text-primary);
+}
+
+/* body(233:565) — pt4 px20 pb16 */
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-xs) 20px var(--space-lg);
+  overflow-y: auto;
+  background: var(--bg-page);
+}
+
+/* empty(233:566) — 350×208(hug), 좌우 패딩 0이라 버튼이 카드 끝까지 찹니다 */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: 40px 0;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+
+.emptyTitle {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.emptyText {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  text-align: center;
+}
