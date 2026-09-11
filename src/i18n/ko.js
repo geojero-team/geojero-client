@@ -129,8 +129,7 @@ export default {
 
   /* ── 스팟 고르기 (233:417 / 285:419) ──────────────────────────────────── */
   'pick.title': '스팟 고르기',
-  'pick.headline1': '방문하시고 싶은 곳을',
-  'pick.headline2': '선택해주세요.',
+  'pick.headline': '방문하시고 싶은 곳을 선택해주세요.',
   'pick.sub': '여러 곳도 가능해요',
   'pick.needConditions': '출발지 · 출발 시간을 정해주세요',
   'pick.selectAria': '{name} 선택',

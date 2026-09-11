@@ -178,12 +178,11 @@ export default function SpotPickPage() {
           <h1 className={styles.title}>{t('pick.title')}</h1>
         </header>
 
-        <h2 className={styles.headline}>
-          {t('pick.headline1')}
-          <br />
-          {t('pick.headline2')}
-        </h2>
-        <p className={styles.sub}>{t('pick.sub')}</p>
+        {/* 제목과 보조 문구를 한 덩어리로 묶습니다 — 사이에 카드영역 gap(16)이 끼지 않게. */}
+        <div className={styles.lead}>
+          <h2 className={styles.headline}>{t('pick.headline')}</h2>
+          <p className={styles.sub}>{t('pick.sub')}</p>
+        </div>
 
         {!hasConditions && (
           <button type="button" className={styles.pill} onClick={() => setSheetOpen(true)}>
@@ -215,22 +214,27 @@ export default function SpotPickPage() {
 
       {/* selection-bar (고정) — Figma 285:515 */}
       <div className={styles.bar}>
-        <div className={styles.chips}>
-          {chips.map((spot) => (
-            <button
-              key={spot.spotId}
-              type="button"
-              className={styles.chip}
-              onClick={() => toggle(spot.spotId)}
-              aria-label={t('pick.chipRemoveAria', { name: spot.name })}
-            >
-              <span className={styles.chipName}>{spot.name}</span>
-              <span className={styles.chipX} aria-hidden="true">
-                ×
-              </span>
-            </button>
-          ))}
-        </div>
+        {/* 고른 것이 없으면 이 줄을 아예 그리지 않습니다. min-height 28에 gap 10까지
+            38px이 빈 채로 자리를 잡고 있었고, 그만큼 카드가 덜 보였습니다.
+            늘어날 때 카드가 밀리지는 않습니다 — 카드영역이 flex:1이라 아래에서 줄어듭니다. */}
+        {chips.length > 0 && (
+          <div className={styles.chips}>
+            {chips.map((spot) => (
+              <button
+                key={spot.spotId}
+                type="button"
+                className={styles.chip}
+                onClick={() => toggle(spot.spotId)}
+                aria-label={t('pick.chipRemoveAria', { name: spot.name })}
+              >
+                <span className={styles.chipName}>{spot.name}</span>
+                <span className={styles.chipX} aria-hidden="true">
+                  ×
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
         {/* 0곳 상태 문구는 Figma에 없음([미확인]) */}
         <Button onClick={submit} disabled={selected.length === 0}>
           {selected.length > 0

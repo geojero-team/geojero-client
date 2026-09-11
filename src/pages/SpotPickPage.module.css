@@ -34,9 +34,21 @@
   color: var(--text-primary);
 }
 
+/* 제목 + 보조 문구 한 덩어리. 카드가 빨리 보이도록 위쪽을 줄였습니다(2026-09-11).
+   전에는 제목이 두 줄(64)이고 보조 문구가 별개 블록이라 gap 16이 더 붙어 100px을 썼습니다. */
+.lead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .headline {
   margin: 0;
-  font: var(--type-display);
+  /* --type-display(24px)로는 한 줄에 355px이 되어 가용 폭 350을 5px 넘깁니다.
+     두 줄로 접히면 줄인 의미가 없어 22px로 내렸습니다(실측 326px).
+     프레임이 390으로 고정(lib/frameZoom.js)이라 더 좁아질 일은 없습니다.
+     토큰을 안 쓴 자리는 여기 하나 — 화면 제목(--type-title 20px)보다는 커야 합니다. */
+  font: 700 22px/30px var(--font-sans);
   color: var(--text-primary);
   text-align: right;
 }
