@@ -39,6 +39,7 @@ export default {
   'theme.BEACH': '해수욕장',
   'theme.GARDEN': '식물원',
   'theme.CASTLE': '성',
+  'theme.HISTORY': '유적',
 
   /* ── 서식 ─────────────────────────────────────────────────────────────── */
   'format.empty': '—',

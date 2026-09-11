@@ -96,12 +96,22 @@ export function tripFromSearch(params) {
   }
 }
 
-/** "?spots=5,2,7" → [5, 2, 7]. 없거나 깨졌으면 빈 배열. 고르기 화면은 key='selected'. */
-export function spotIdsFromSearch(params, key = 'spots') {
-  return (params.get(key) ?? '')
+/**
+ * "5,2,7" → [5, 2, 7]. 없거나 깨졌으면 빈 배열.
+ *
+ * 문자열을 직접 받는 쪽도 있습니다 — URLSearchParams 객체는 URL을 되쓸 때마다 새 참조가
+ * 되어서, useMemo 의존성에 그대로 두면 실제로 바뀐 게 없어도 다시 계산됩니다.
+ */
+export function parseSpotIds(value) {
+  return (value ?? '')
     .split(',')
     .map((part) => Number(part.trim()))
     .filter((id) => Number.isInteger(id) && id > 0)
+}
+
+/** "?spots=5,2,7" → [5, 2, 7]. 고르기 화면은 key='selected'. */
+export function spotIdsFromSearch(params, key = 'spots') {
+  return parseSpotIds(params.get(key))
 }
 
 /**

@@ -12,6 +12,7 @@ const PALETTES = {
   BEACH: { sky: '#DDEFF6', far: '#EFE3CB', near: '#D6C39C' },
   GARDEN: { sky: '#E0F0E5', far: '#A6D2B2', near: '#6BAA80' },
   CASTLE: { sky: '#E5EAEF', far: '#BAC5CE', near: '#8795A3' },
+  HISTORY: { sky: '#EDE8E0', far: '#CFC3B2', near: '#A8977F' },
 }
 
 /** 하늘 · 먼 능선 · 가까운 능선 세 겹짜리 미니 풍경. 40px 원 안에서 읽히는 정도면 됩니다. */

@@ -12,8 +12,8 @@ import { fetchPlan, fetchSpots } from '../data/mockPlan'
 import { formatDuration } from '../lib/format'
 import {
   carrySearch,
+  parseSpotIds,
   saveOrigin,
-  spotIdsFromSearch,
   tripFromSearch,
   tripToSearch,
   withSearch,
@@ -50,12 +50,12 @@ const TOP_RESERVED_PLANNED = 56
  */
 export default function MapPage() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const requestedSpotIds = useMemo(
-    () => spotIdsFromSearch(searchParams),
-    [searchParams],
-  )
+  /* 문자열로 기억합니다 — 아래에서 URL을 되쓰면 searchParams는 새 참조가 되는데,
+     고른 스팟이 그대로면 판정을 다시 부를 이유가 없습니다. */
+  const spotsParam = searchParams.get('spots') ?? ''
+  const requestedSpotIds = useMemo(() => parseSpotIds(spotsParam), [spotsParam])
   const planned = requestedSpotIds.length > 0
 
   // 일정 고르기에서 넘어온 조건과 코스를 그대로 이어받습니다.
@@ -99,6 +99,37 @@ export default function MapPage() {
     setTrip(next)
     setSheetOpen(false)
   }, [])
+
+  /*
+   * 조건과 고른 코스를 URL에 되씁니다.
+   *
+   * 이 화면의 기억도 URL 하나뿐입니다. 그동안 조건은 URL에서 **읽기만** 했기 때문에,
+   * 시트로 날짜를 바꾼 뒤 스팟 상세를 다녀오면 돌아올 때 URL에 남아 있던 예전 조건으로
+   * 판정이 다시 그려졌습니다 — 방금 바꾼 것이 사라집니다. 새로고침도, 링크 공유도
+   * 같은 이유로 어긋났습니다. 고른 코스(route)도 마찬가지입니다.
+   *
+   * 둘러보기(planned=false)에서는 쓰지 않습니다. 조건을 정한 적이 없는데 URL에 적어두면
+   * 받는 쪽이 '조건 있음'으로 읽습니다 — carrySearch의 hasConditions와 같은 이유입니다.
+   *
+   * replace라서 조건을 만질 때마다 뒤로가기 스택이 쌓이지 않습니다.
+   * 쿼리가 이미 같으면 쓰지 않습니다 — 안 그러면 되쓰기가 스스로를 다시 불러 무한 루프가 됩니다.
+   */
+  const canonicalSearch = useMemo(
+    () =>
+      planned
+        ? tripToSearch(trip, {
+            spots: requestedSpotIds.join(','),
+            ...(activeRouteId ? { route: String(activeRouteId) } : {}),
+          })
+        : '',
+    [planned, trip, requestedSpotIds, activeRouteId],
+  )
+
+  useEffect(() => {
+    if (planned && canonicalSearch !== searchParams.toString()) {
+      setSearchParams(canonicalSearch, { replace: true })
+    }
+  }, [planned, canonicalSearch, searchParams, setSearchParams])
 
   // 좌표가 [미확인]인 스팟은 지도에 찍지 않습니다 — 0,0으로 떨어지면 유령 핀이 됩니다.
   // 지금은 8곳 모두 실측 좌표가 있어 전부 찍힙니다.

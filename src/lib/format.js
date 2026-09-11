@@ -91,4 +91,5 @@ export const THEME_LABELS = {
   BEACH: t('theme.BEACH'),
   GARDEN: t('theme.GARDEN'),
   CASTLE: t('theme.CASTLE'),
+  HISTORY: t('theme.HISTORY'),
 }
