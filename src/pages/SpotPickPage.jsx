@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import Button from '../components/Button'
 import CategoryBar from '../components/CategoryBar'
@@ -10,7 +10,7 @@ import { courseImage, onImageError } from '../lib/courseImage'
 import {
   carrySearch,
   defaultTripParams,
-  spotIdsFromSearch,
+  parseSpotIds,
   tripFromSearch,
   tripToSearch,
   withSearch,
@@ -92,7 +92,12 @@ export default function SpotPickPage() {
   )
   const [sheetOpen, setSheetOpen] = useState(false)
   const [theme, setTheme] = useState(null)
-  const [selected, setSelected] = useState(() => spotIdsFromSearch(searchParams, 'selected'))
+  /* 고른 스팟은 state가 아니라 **URL에서 읽습니다**.
+     state로 들고 있으면 URL을 되쓰기만 하고 되읽지는 않게 되어, 뒤로가기로 이전 URL에
+     돌아와도 체크는 그대로 남고 오히려 URL이 현재 state로 덮어써집니다 — 뒤로가기를 눌러도
+     아무 일도 안 일어난 것처럼 보입니다. 기억이 URL 하나라면 읽기도 URL이어야 합니다. */
+  const selectedParam = searchParams.get('selected') ?? ''
+  const selected = useMemo(() => parseSpotIds(selectedParam), [selectedParam])
   const [result, setResult] = useState({ status: 'loading', spots: [], error: '' })
 
   useEffect(() => {
@@ -130,10 +135,13 @@ export default function SpotPickPage() {
   const goBack = () =>
     location.key === 'default' ? navigate('/', { replace: true }) : navigate(-1)
 
-  const toggle = (spotId) =>
-    setSelected((prev) =>
-      prev.includes(spotId) ? prev.filter((id) => id !== spotId) : [...prev, spotId],
-    )
+  /* 체크도 URL에 씁니다. replace라서 체크할 때마다 뒤로가기 스택이 쌓이지는 않습니다. */
+  const toggle = (spotId) => {
+    const next = selected.includes(spotId)
+      ? selected.filter((id) => id !== spotId)
+      : [...selected, spotId]
+    setSearchParams(carrySearch({ trip, hasConditions, selectedIds: next }), { replace: true })
+  }
 
   // 상세를 다녀와도 조건과 고른 스팟이 남아야 합니다 — 상세의 '일정에 담기'가 이걸 그대로
   // 되돌려줍니다. 안 실어 보내면 돌아올 때 조건이 없는 화면이 되고 선택도 사라집니다.
