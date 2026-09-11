@@ -26,8 +26,10 @@ import styles from './SpotPickPage.module.css'
  * 'N곳으로 코스짜기' → 일정 고르기(/plan). 조건과 고른 스팟은 쿼리로 넘깁니다.
  */
 
-/* Figma 285:419 카드 순서 — 목록 화면(233:378)과 다르며 각 프레임 순서를 그대로 따릅니다. */
-const PICK_ORDER = [2, 6, 1, 7, 8, 9, 4, 5]
+/* Figma 285:419 카드 순서 — 목록 화면(233:378)과 다르며 각 프레임 순서를 그대로 따릅니다.
+   6번째 자리는 원래 명사해수욕장(9)이었고, 그 자리를 포로수용소(3)가 이어받았습니다
+   (기준문서 §6 — 9경 기준으로 명사를 빼고 포로수용소를 넣었습니다). */
+const PICK_ORDER = [2, 6, 1, 7, 8, 3, 4, 5]
 
 /** Figma check(선택) — 42×42 내보내기에서 32px 원 기준으로 옮긴 패스 */
 function CheckMark({ selected, onToggle, name }) {
@@ -147,9 +149,13 @@ export default function SpotPickPage() {
   // 되돌려줍니다. 안 실어 보내면 돌아올 때 조건이 없는 화면이 되고 선택도 사라집니다.
   const openDetail = ({ spotId }) => navigate(withSearch(`/spots/${spotId}`, canonicalSearch))
 
-  const ordered = PICK_ORDER.map((id) => result.spots.find((spot) => spot.spotId === id))
-    .filter(Boolean)
-    .filter((spot) => !theme || spot.theme === theme)
+  /* PICK_ORDER에 없는 스팟도 반드시 보여줍니다. 순서 배열은 Figma 프레임을 베낀 것이라
+     데이터가 바뀌어도 따라오지 않습니다 — 실제로 포로수용소가 들어왔을 때 이 배열이
+     옛 id를 들고 있어서 화면에서 통째로 사라졌습니다. 빠뜨리느니 뒤에 붙입니다. */
+  const ordered = [
+    ...PICK_ORDER.map((id) => result.spots.find((spot) => spot.spotId === id)).filter(Boolean),
+    ...result.spots.filter((spot) => !PICK_ORDER.includes(spot.spotId)),
+  ].filter((spot) => !theme || spot.theme === theme)
   const chips = selected
     .map((id) => result.spots.find((spot) => spot.spotId === id))
     .filter(Boolean)
