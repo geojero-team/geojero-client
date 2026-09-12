@@ -301,6 +301,14 @@ export default function MapView({
   onDeselect,
   routePath = null,
   orderBySpotId = null,
+  /**
+   * 화면을 맞출 때 기준이 되는 스팟. 생략하면 `spots` 전체입니다.
+   *
+   * 코스 지도에서 갈라집니다 — 핀은 **17곳 전부** 찍고(코스 밖도 보여야 합니다) 화면은
+   * **코스 스팟에만** 맞춥니다. 둘을 같이 쓰면 섬 전체로 줌아웃돼 정작 보려던 코스가
+   * 손톱만 해집니다. 코스가 주제고 나머지는 배경입니다.
+   */
+  fitSpots = null,
   topReserved = 16,
   compact = false, // 판정 결과의 200px 미리보기 — 줌 버튼을 숨깁니다
 }) {
@@ -480,7 +488,7 @@ export default function MapView({
 
     map.relayout()
     if (liveRef.current.selectedSpotId == null) {
-      fitToSpots(window.kakao, map, spots, topReserved)
+      fitToSpots(window.kakao, map, fitSpots ?? spots, topReserved)
     }
     updateLabelVisibility(
       map,
@@ -488,7 +496,7 @@ export default function MapView({
       liveRef.current.selectedSpotId,
       topReserved,
     )
-  }, [spots, topReserved, phase])
+  }, [spots, fitSpots, topReserved, phase])
 
   // ── 선택 상태를 마커에 반영 + 선택한 핀으로 이동 ────────────────────────
   useEffect(() => {

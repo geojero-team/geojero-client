@@ -7,7 +7,7 @@ import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { api } from '../lib/api'
 import { courseImage, onImageError } from '../lib/courseImage'
-import { loadSpotPhotos, withPhotos } from '../lib/spots'
+import { loadSpotPhotos, loadVisibleSpots, withPhotos } from '../lib/spots'
 import styles from './CourseMapPage.module.css'
 
 /**
@@ -33,21 +33,22 @@ export default function CourseMapPage() {
     [idsParam],
   )
 
-  const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
+  const [result, setResult] = useState({ status: 'loading', data: null, all: [], error: '' })
   const [activeId, setActiveId] = useState(null)
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([api.courses(), loadSpotPhotos()])
-      .then(([data, photos]) => {
+    // loadVisibleSpots·loadSpotPhotos는 같은 `/api/pois` 캐시를 씁니다 — 호출은 한 번입니다.
+    Promise.all([api.courses(), loadSpotPhotos(), loadVisibleSpots()])
+      .then(([data, photos, all]) => {
         if (cancelled) return
         const picked = (data.courses ?? [])
           .filter((course) => ids.includes(course.courseId))
           .map((course) => ({ ...course, spots: withPhotos(course.spots, photos) }))
-        setResult({ status: 'ready', data: picked, error: '' })
+        setResult({ status: 'ready', data: picked, all, error: '' })
       })
       .catch((error) => {
-        if (!cancelled) setResult({ status: 'error', data: null, error: error.message })
+        if (!cancelled) setResult({ status: 'error', data: null, all: [], error: error.message })
       })
     return () => {
       cancelled = true
@@ -57,8 +58,19 @@ export default function CourseMapPage() {
   const courses = result.data ?? []
   const active = courses.find((c) => c.courseId === activeId) ?? courses[0] ?? null
 
-  // MapView는 `spotId`로 핀을 식별합니다. 우리 데이터의 poiId를 그 자리에 넣습니다.
-  const spots = useMemo(
+  /* 핀은 **17곳 전부** 찍습니다. 코스가 떴다고 나머지 스팟이 사라지면, 근처에 뭐가 더
+     있는지 볼 수 없어 코스를 고를 근거가 줄어듭니다. 코스에 든 곳은 번호 정류소 마커로,
+     나머지는 사진 마커로 나뉩니다(orderBySpotId가 그 구분을 만듭니다).
+     MapView는 `spotId`로 핀을 식별하므로 poiId를 그 자리에 넣습니다. */
+  const spots = useMemo(() => {
+    const course = active?.spots ?? []
+    const inCourse = new Set(course.map((spot) => spot.poiId))
+    const rest = (result.all ?? []).filter((spot) => !inCourse.has(spot.poiId))
+    return [...course, ...rest].map((spot) => ({ ...spot, spotId: spot.poiId }))
+  }, [active, result.all])
+
+  // 화면은 코스에만 맞춥니다 — 17곳에 맞추면 섬 전체로 밀려나 코스가 안 읽힙니다.
+  const fitSpots = useMemo(
     () => (active?.spots ?? []).map((spot) => ({ ...spot, spotId: spot.poiId })),
     [active],
   )
@@ -87,6 +99,7 @@ export default function CourseMapPage() {
         {/* 핀을 누르면 그 스팟 상세로 갑니다(홈과 같은 동작). */}
         <MapView
           spots={spots}
+          fitSpots={fitSpots}
           onSelectSpot={(spot) => navigate(`/spots/${spot.poiId}`)}
           routePath={routePath}
           orderBySpotId={orderBySpotId}
