@@ -150,6 +150,35 @@ export default {
   'spotDetail.introHead': '소개',
 
   /* ── 일정 고르기 (285:67 / 285:148) ───────────────────────────────────── */
+  // ── 스팟 시간표 (02-2 · Figma 453:210 · 453:288 · 453:415) ───────────────
+  'spotTime.board': '{stop}에서 타요.',
+  // 내리는 정류장과 시간표를 읽는 정류장이 다를 때. 숨기면 "지세포 시간표"를
+  // "신촌 시간표"라고 거짓말하는 것이 됩니다.
+  'spotTime.boardDiffers': '{alight}에서 내려요. 시간표는 {stop} 정류장 기준이에요.',
+  'spotTime.toOrigin': '{spot} → {origin}',
+  'spotTime.fromOrigin': '{origin} → {spot}',
+  'spotTime.toSpot': '{spot} → {to}',
+  'spotTime.next': '다음 버스 {time} · {route}번',
+  'spotTime.noNext': '오늘 남은 버스가 없어요',
+  'spotTime.duration': '{to}까지 {min}',
+  'spotTime.durationMore': '{route}번은 {min}',
+  'spotTime.min': '약 {min}분',
+  // 같은 노선·방향인데도 소요시간이 흔들립니다(같은 회차가 두 시트에 2~5분 다르게 실림).
+  // 한 값으로 뭉개지 않고 폭을 적습니다 — 늦은 쪽을 믿어야 버스를 놓치지 않습니다.
+  'spotTime.minRange': '약 {low}~{high}분',
+  'spotTime.tableTitle': '{day} 시간표',
+  'spotTime.summary': '첫차 {first} · 막차 {last} · 하루 {count}회',
+  'spotTime.hour': '{h}시',
+  'spotTime.nextTag': '다음',
+  'spotTime.source': '출처 {source} · {date} · {day} 기준',
+  'spotTime.loading': '시간표를 불러오는 중',
+  // ★ 세 갈래. 빈 목록에 이유를 붙이지 않으면 §4에서 비판한 '이유 없는 빈칸'입니다.
+  'spotTime.emptyUnknown': '{routes} 버스가 이 정류장에 서지만, 원문 시간표에 이 정류장의 시각 칸이 없어요.',
+  'spotTime.emptyUnknownHint': '시각은 BIS에서 확인해 주세요 — 없는 시각을 지어내지 않습니다.',
+  'spotTime.emptyNoService': '이 날은 이 구간을 가는 버스가 없어요.',
+  'spotTime.emptyNoStop': '원문 시간표에 이 스팟의 정류장 칸이 없어요.',
+  'spotTime.emptyNoStopHint': '버스가 지나가더라도 몇 시에 닿는지는 원문에 적혀 있지 않습니다.',
+
   // ── 코스 상세 (02-2 · Figma 446:929) ─────────────────────────────────────
   'courseDetail.title': '코스 {n} · {count}곳',
   'courseDetail.range': '{origin}에서 출발해 {origin}로 돌아와요 · {legs}구간',

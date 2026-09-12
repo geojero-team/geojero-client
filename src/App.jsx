@@ -12,6 +12,7 @@ import PlanPage from './pages/PlanPage'
 import SpotDetailPage from './pages/SpotDetailPage'
 import SpotPickPage from './pages/SpotPickPage'
 import SpotsPage from './pages/SpotsPage'
+import SpotTimetablePage from './pages/SpotTimetablePage'
 import VerdictPage from './pages/VerdictPage'
 
 /**
@@ -27,6 +28,7 @@ import VerdictPage from './pages/VerdictPage'
  *   /spots/pick           스팟 고르기 (조건은 쿼리로; 없으면 시트에서 정함)
  *   /courses?spots=3      코스 추천 — 개수를 고르면 우리가 짠 코스 (02-2 · 446:559)
  *   /courses/:id?no=1     코스 상세 — 구간별 노선·이동시간·추정 (02-2 · 446:929)
+ *   /timetable/:poiId     스팟 시간표 — 방향 칩·다음 버스 (02-2 · 453:288)
  *   /plan?spots=…         일정 고르기 — 판정 유물. /courses 로 대체됨
  *   /spots/:spotId        스팟 상세
  *   /verdict/:routeId     판정 결과 (가는 편·오는 편 타임라인; 조건·스팟은 쿼리로)
@@ -47,6 +49,7 @@ export default function App() {
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/courses/:courseId" element={<CourseDetailPage />} />
         <Route path="/plan" element={<PlanPage />} />
+        <Route path="/timetable/:poiId" element={<SpotTimetablePage />} />
         <Route path="/spots/:spotId" element={<SpotDetailPage />} />
         <Route path="/verdict/:routeId" element={<VerdictPage />} />
         <Route path="/my" element={<MyPlansPage />} />

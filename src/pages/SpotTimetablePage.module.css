@@ -1,0 +1,248 @@
+/* 스팟 시간표 — Figma 02-2 453:210 / 453:288 / 453:415.
+   코스가 "요약"이면 이 화면이 "근거"입니다. 그래서 시각을 원문 모양(시간대별 묶음 +
+   노선 배지)에 가깝게 그립니다 — 사용자가 BIS 표와 맞춰 볼 수 있어야 합니다. */
+
+.header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: env(safe-area-inset-top, 0px) 20px 0;
+  background: var(--bg-page);
+}
+
+.back {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--type-title);
+  color: var(--text-primary);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: var(--type-title);
+  color: var(--text-primary);
+}
+
+.dayPill {
+  flex: none;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-tint);
+  font: var(--type-label);
+  color: var(--brand-strong);
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--bg-page);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 8px 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
+}
+
+.notice {
+  margin: 0;
+  padding: 20px;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* "학동 정류장에서 타요." — 스팟이 아니라 정류장에서 탑니다.
+   내리는 곳과 시간표 기준이 다르면 두 문장이 됩니다(신촌에서 내리고 지세포 기준). */
+.board {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+/* 방향 칩(453:291): 가로 스크롤. 칩이 길어 두 개도 390px를 넘습니다. */
+.dirs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -20px;
+  padding: 0 20px;
+}
+
+.dirs::-webkit-scrollbar {
+  display: none;
+}
+
+.dirChip {
+  flex: none;
+  padding: 9px 16px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+  font: var(--type-caption);
+  color: var(--text-primary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.dirOn {
+  border-color: var(--brand-strong);
+  background: var(--brand-tint);
+  font: var(--type-body-strong);
+  color: var(--brand-strong);
+}
+
+/* 다음 버스 카드(453:297): brand tint 면 */
+.nextCard {
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  background: var(--brand-tint);
+}
+
+.nextLine {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--brand-strong);
+}
+
+.durLine {
+  margin: 4px 0 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+.tableHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.tableTitle {
+  flex: none;
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.tableSummary {
+  flex: 1;
+  margin: 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+/* 시간대 행 — 왼쪽에 '07시', 오른쪽에 그 시간대 출발들 */
+.hours {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hourRow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.hourLabel {
+  flex: none;
+  width: 34px;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.hourItems {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+}
+
+.dep {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* 노선 배지. 지난 차는 흐리게 — 지나간 것과 남은 것은 다른 정보입니다. */
+.badge,
+.badgeDim {
+  padding: 2px 7px;
+  border-radius: 6px;
+  font: var(--type-label);
+}
+
+.badge {
+  background: var(--brand-strong);
+  color: var(--text-on-brand);
+}
+
+.badgeDim {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
+
+.time {
+  font: var(--type-time);
+  color: var(--text-primary);
+}
+
+.timeDim {
+  font: var(--type-time);
+  color: var(--text-disabled);
+}
+
+.nextTag {
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-tint);
+  font: var(--type-label);
+  color: var(--brand-strong);
+}
+
+/* ★ 빈 결과 — 이유를 적습니다. 운행 없음 / 시각 미상 / 정류장 칸 없음은 다른 답입니다. */
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-lg);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--bg-surface);
+}
+
+.emptyTitle {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+.emptyText {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+.source {
+  margin: 4px 0 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
