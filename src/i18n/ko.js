@@ -152,7 +152,9 @@ export default {
   'spotDetail.credit': '출처 TourAPI',
   'spotDetail.photosLabel': '사진 {count}장 — 좌우로 넘겨보세요',
   'spotDetail.goToPhoto': '{n}번째 사진 보기',
-  'spotDetail.addToPlan': '일정에 담기',
+  // 02-1에서는 '일정에 담기'였고 스팟 고르기로 보냈습니다. 판정을 빼면서 그 화면이
+  // 없어져 버튼이 홈으로 떨어졌습니다 — 새 흐름에 맞는 행동은 시간표 보기입니다.
+  'spotDetail.openTimetable': '버스 시간표 보기',
   'spotDetail.introHead': '소개',
 
   /* ── 일정 고르기 (285:67 / 285:148) ───────────────────────────────────── */

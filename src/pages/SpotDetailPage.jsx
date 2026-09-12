@@ -1,27 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import Button from '../components/Button'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { fetchSpotDetail } from '../data/mockPlan'
 import { courseImage, onImageError } from '../lib/courseImage'
 import { useDragScroll } from '../lib/useDragScroll'
-import {
-  carrySearch,
-  spotIdsFromSearch,
-  tripFromSearch,
-  withSearch,
-} from '../lib/tripParams'
 import styles from './SpotDetailPage.module.css'
 
 /**
- * 스팟 상세 — Figma 264:227 "스팟 상세 (버튼 '일정에 담기' → 스팟 고르기 · 어디서 열든 같은 판)".
+ * 스팟 상세 — Figma 02-2 446:1160 (02-1 264:227과 기능 같음 · v2 방문자 사진 뺌).
+ *
+ * ⚠️ 02-1의 버튼은 '일정에 담기'였고 스팟 고르기로 보냈습니다. 판정을 빼며 그 화면이
+ * 없어져(2026-09-12) 버튼이 조용히 홈으로 떨어지고 있었습니다 — '버스 시간표 보기'로
+ * 바꿨습니다. 조건(출발지·날짜)을 쿼리로 이어받던 코드도 함께 없앴습니다.
  *
  * 390×754, 탭바 없음(push 화면). hero 260 + body 두 덩어리입니다.
  *
- * 판정 요소가 **없습니다** — 배지도 막차도 소요시간도 근거도 이 프레임엔 그려져 있지
- * 않습니다. 프레임 이름이 이유를 말합니다: 판정은 '일정에 담기'로 스팟 고르기에 보내서
- * 코스 단위로 합니다. 스팟 하나만 두고 성립을 말할 수 없으니 맞는 설계입니다.
+ * 판정 요소가 **없습니다** — 배지도 막차도 소요시간도 이 프레임엔 그려져 있지 않습니다.
+ * 판정 자체가 제품에서 빠졌고(기준문서 §9), 시각은 '버스 시간표 보기'가 여는 화면이
+ * 노선별로 말합니다. 스팟 하나만 두고 이동시간을 말할 수 없으니 맞는 분담입니다.
  *
  * Figma의 '방문자 사진' 섹션은 넣지 않았습니다 — 노트가 스스로 v2라고 적고 있고,
  * '12장'과 사진 타일 3개는 지금 없는 것을 있는 것처럼 그리게 됩니다.
@@ -55,7 +53,6 @@ export default function SpotDetailPage() {
   const { spotId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const [searchParams] = useSearchParams()
   const [spot, setSpot] = useState(null)
   const [expanded, setExpanded] = useState(false)
   const [photoIndex, setPhotoIndex] = useState(0)
@@ -75,37 +72,17 @@ export default function SpotDetailPage() {
   const goBack = () =>
     location.key === 'default' ? navigate('/', { replace: true }) : navigate(-1)
 
-  /*
-   * '일정에 담기'는 **덮어쓰기가 아니라 더하기**입니다.
+  /**
+   * '버스 시간표 보기' — 02-1에서는 '일정에 담기'였고 스팟 고르기(/spots/pick)로 보냈습니다.
+   * 판정을 빼면서 그 화면이 없어졌고(2026-09-12) 버튼이 조용히 홈으로 떨어지고 있었습니다.
+   * 새 흐름에서 스팟 상세가 할 수 있는 일은 그 스팟의 버스 시간표를 여는 것입니다.
    *
-   * 스팟 고르기에서 넘어왔으면 조건과 이미 고른 스팟이 쿼리에 실려 옵니다. 그걸 그대로
-   * 되돌려주고 이 스팟만 뒤에 붙입니다. 전에는 `?selected=이스팟`만 보내서, 바람의언덕을
-   * 골라둔 사람이 외도를 담으면 바람의언덕이 사라지고 조건까지 날아갔습니다.
-   *
-   * 스팟 탭에서 바로 들어온 경우엔 쿼리가 비어 있고, 그때는 조건을 정하라는 화면
-   * (Figma 285:419)으로 가는 게 맞습니다.
+   * 시간표는 **서버 poi_id**로 조회하므로 목의 spotId를 쓸 수 없습니다. 서버를 못 붙으면
+   * poiId가 null이라 버튼 자체를 감춥니다 — 누르면 안 되는 버튼을 보여주지 않습니다.
    */
-  const hasConditions = searchParams.has('origin')
-  const carriedIds = spotIdsFromSearch(searchParams, 'selected')
-
-  const addToPlan = () => {
-    const ids = carriedIds.includes(spot.spotId) ? carriedIds : [...carriedIds, spot.spotId]
-    navigate(
-      withSearch(
-        '/spots/pick',
-        carrySearch({
-          trip: hasConditions ? tripFromSearch(searchParams) : null,
-          hasConditions,
-          selectedIds: ids,
-        }),
-      ),
-      /* 이 상세 화면을 히스토리에서 **대체**합니다. 담고 나면 이 화면은 볼 일이 끝났습니다.
-         push로 쌓으면 담을 때마다 상세가 히스토리에 남아, 뒤로가기가 고르기 화면이 아니라
-         **아까 본 스팟들을 거꾸로 되짚습니다**(바람의언덕→해금강→학동 순으로 봤다면
-         뒤로가기가 학동→고르기→해금강→고르기→바람의언덕). 사용자가 겪은 그대로입니다.
-         대체하면 뒤로가기는 '방금 담은 것 하나 취소'가 되고, 계속 누르면 목록으로 나갑니다. */
-      { replace: true },
-    )
+  const openTimetable = () => {
+    if (!spot?.poiId) return
+    navigate(`/timetable/${spot.poiId}`)
   }
 
   /* 몇 번째 장으로 보낼지. 장 수를 트랙의 자식에서 읽습니다 — 아래 slides보다 먼저
@@ -238,10 +215,10 @@ export default function SpotDetailPage() {
           </div>
 
           <Button
-            onClick={addToPlan}
+            onClick={openTimetable}
             data-api="GET /api/spots"
           >
-            {t('spotDetail.addToPlan')}
+            {t('spotDetail.openTimetable')}
           </Button>
 
           {/* 소개는 TourAPI overview 원문입니다. 수정·요약하지 않습니다(저작권).
