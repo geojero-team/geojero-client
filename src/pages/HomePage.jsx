@@ -4,6 +4,7 @@ import BottomNav from '../components/BottomNav'
 import Button from '../components/Button'
 import MapView from '../components/MapView'
 import Screen from '../components/Screen'
+import SpotSheet, { PEEK_HEIGHT } from '../components/SpotSheet'
 import { t } from '../i18n'
 import { api } from '../lib/api'
 import styles from './HomePage.module.css'
@@ -24,6 +25,8 @@ import styles from './HomePage.module.css'
 export default function HomePage() {
   const navigate = useNavigate()
   const [result, setResult] = useState({ status: 'loading', spots: [], error: '' })
+  // 핀을 누른 스팟. 화면을 옮기지 않고 시트만 올립니다(2026-09-13).
+  const [picked, setPicked] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -53,23 +56,41 @@ export default function HomePage() {
   return (
     <Screen data-api="GET /api/pois">
       <div className={styles.mapArea}>
-        {/* 핀을 누르면 스팟 상세로 갑니다.
-            02-1의 핀 요약 시트(PinSheet)는 판정 배지·불성립 이유를 담고 있어 판정과 함께
-            지웠습니다. 그 시트의 스팟 쪽 목적지가 곧 스팟 상세였고("어디서 열든 같은 판"),
-            중간 시트 없이 바로 보냅니다. 핀이 겹쳐 있으면 MapView가 먼저 확대해
-            갈라 보여줍니다 — 가려진 핀은 탭할 방법이 없기 때문입니다. */}
-        <MapView
-          spots={spots}
-          onSelectSpot={(spot) => navigate(`/spots/${spot.poiId}`)}
-          topReserved={16}
-        />
+        {/* 핀을 누르면 **스팟 시트**가 아래에서 올라옵니다(2026-09-13).
+            전에는 스팟 상세로 화면이 통째로 바뀌었습니다 — 지도를 보다가 "이게 뭐지"를
+            확인하려면 지도를 떠나야 했고, 돌아오면 배율과 위치가 다시 맞춰졌습니다.
+            시트를 끌어올리면 그 스팟 상세가 그대로 나옵니다.
+            핀이 겹쳐 있으면 MapView가 먼저 확대해 갈라 보여줍니다 — 가려진 핀은
+            탭할 방법이 없기 때문입니다.
 
-        {/* 버튼은 지도 위에 떠 있습니다(프레임 이름의 "버튼은 지도 위에 떠 있음"). */}
-        <div className={styles.cta}>
-          <Button onClick={() => navigate('/courses?spots=3')} data-api="GET /api/courses">
-            {t('home.getCourses')}
-          </Button>
+            시트가 올라오면 지도를 그만큼 줄입니다(`bottom`). 그대로 두면 MapView가 누른
+            핀을 지도 가운데로 옮기는데(`panTo`) 그 가운데가 시트 뒤입니다. 줄어들면
+            ResizeObserver가 `relayout()`을 부르고 남은 영역의 가운데로 갑니다. */}
+        <div className={styles.mapWrap} style={{ bottom: picked ? PEEK_HEIGHT : 0 }}>
+          <MapView
+            spots={spots}
+            selectedSpotId={picked?.poiId ?? null}
+            onSelectSpot={setPicked}
+            onDeselect={() => setPicked(null)}
+            topReserved={16}
+          />
         </div>
+
+        {/* 버튼은 지도 위에 떠 있습니다(프레임 이름의 "버튼은 지도 위에 떠 있음").
+            시트가 올라오면 감춥니다 — 시트가 덮을 자리이고, 지금 할 일은 이 스팟을 보는 것입니다. */}
+        {!picked && (
+          <div className={styles.cta}>
+            <Button onClick={() => navigate('/courses?spots=3')} data-api="GET /api/courses">
+              {t('home.getCourses')}
+            </Button>
+          </div>
+        )}
+
+        <SpotSheet
+          key={picked?.poiId ?? 'none'}
+          spot={picked}
+          onClose={() => setPicked(null)}
+        />
       </div>
 
       <BottomNav />

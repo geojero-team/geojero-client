@@ -1,16 +1,27 @@
 /* 홈 — Figma 02-2 446:453. 지도가 화면을 다 쓰고, 버튼이 그 위에 떠 있습니다.
    전 버전(02-1)의 조건 알약·코스 카드 섹션은 판정과 함께 없어졌습니다. */
 
-/* MapView 의 .root 가 `flex: 1`이므로 **이 자리가 flex 컨테이너여야** 합니다.
-   display:flex 를 빼면 .root 높이가 0이 되고, 그 안의 .canvas(absolute inset:0)까지
-   0이 되어 지도가 통째로 안 보입니다 — 오류도 로딩도 안 뜨는 흰 화면이 됩니다.
-   (2026-09-12 실제로 그렇게 나갔습니다. 지운 MapPage 에는 이 두 줄이 있었고 옮길 때 놓쳤습니다.) */
 .mapArea {
   position: relative;
   flex: 1;
   min-height: 0;
+}
+
+/* MapView 의 .root 가 `flex: 1`이므로 **이 자리가 flex 컨테이너여야** 합니다.
+   display:flex 를 빼면 .root 높이가 0이 되고, 그 안의 .canvas(absolute inset:0)까지
+   0이 되어 지도가 통째로 안 보입니다 — 오류도 로딩도 안 뜨는 흰 화면이 됩니다.
+   (2026-09-12 실제로 그렇게 나갔습니다. 지운 MapPage 에는 이 두 줄이 있었고 옮길 때 놓쳤습니다.)
+
+   `bottom`은 JS가 정합니다 — 스팟 시트가 올라오면 그 높이만큼 지도를 줄입니다.
+   줄이지 않으면 MapView 가 누른 핀을 시트 뒤로 옮깁니다(`panTo`가 지도 가운데로 보냄). */
+.mapWrap {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
+  transition: bottom 0.22s ease;
 }
 
 /* 지도 위에 떠 있는 '코스 추천 받기'. 탭바 바로 위에 붙습니다.

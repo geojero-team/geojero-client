@@ -10,8 +10,19 @@
   position: relative;
   flex: 1;
   min-height: 0;
+}
+
+/* MapView 의 .root 가 `flex: 1`이라 이 자리가 flex 컨테이너여야 합니다 —
+   빼면 지도 높이가 0이 되고 흰 화면이 됩니다(HomePage .mapWrap 주석 참고).
+   `bottom`은 JS가 정합니다: 스팟 시트가 올라오면 그만큼 지도를 줄입니다. */
+.mapWrap {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
+  transition: bottom 0.22s ease;
 }
 
 /* condition-pill(446:719): 지도 위에 떠 있는 알약 */

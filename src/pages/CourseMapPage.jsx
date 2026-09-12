@@ -4,6 +4,7 @@ import BottomNav from '../components/BottomNav'
 import Button from '../components/Button'
 import MapView from '../components/MapView'
 import Screen from '../components/Screen'
+import SpotSheet, { PEEK_HEIGHT } from '../components/SpotSheet'
 import { t } from '../i18n'
 import { api } from '../lib/api'
 import { courseImage, onImageError } from '../lib/courseImage'
@@ -35,6 +36,8 @@ export default function CourseMapPage() {
 
   const [result, setResult] = useState({ status: 'loading', data: null, all: [], error: '' })
   const [activeId, setActiveId] = useState(null)
+  // 핀을 누른 스팟. 홈과 같은 동작입니다 — 화면을 옮기지 않고 시트만 올립니다.
+  const [picked, setPicked] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -42,10 +45,11 @@ export default function CourseMapPage() {
     Promise.all([api.courses(), loadSpotPhotos(), loadVisibleSpots()])
       .then(([data, photos, all]) => {
         if (cancelled) return
-        const picked = (data.courses ?? [])
+        // 이름이 `picked`였는데 핀으로 고른 스팟 상태와 겹쳐서 바꿨습니다.
+        const pickedCourses = (data.courses ?? [])
           .filter((course) => ids.includes(course.courseId))
           .map((course) => ({ ...course, spots: withPhotos(course.spots, photos) }))
-        setResult({ status: 'ready', data: picked, all, error: '' })
+        setResult({ status: 'ready', data: pickedCourses, all, error: '' })
       })
       .catch((error) => {
         if (!cancelled) setResult({ status: 'error', data: null, all: [], error: error.message })
@@ -96,22 +100,33 @@ export default function CourseMapPage() {
   return (
     <Screen data-api="GET /api/courses">
       <div className={styles.mapArea}>
-        {/* 핀을 누르면 그 스팟 상세로 갑니다(홈과 같은 동작). */}
-        <MapView
-          spots={spots}
-          fitSpots={fitSpots}
-          onSelectSpot={(spot) => navigate(`/spots/${spot.poiId}`)}
-          routePath={routePath}
-          orderBySpotId={orderBySpotId}
-          topReserved={TOP_RESERVED}
-        />
+        {/* 핀을 누르면 스팟 시트가 올라옵니다(홈과 같은 동작). 코스를 비교하던 중에
+            "이게 뭐지"를 확인하려고 화면을 떠나면, 돌아왔을 때 고른 코스가 풀립니다. */}
+        <div className={styles.mapWrap} style={{ bottom: picked ? PEEK_HEIGHT : 0 }}>
+          <MapView
+            spots={spots}
+            fitSpots={fitSpots}
+            selectedSpotId={picked?.poiId ?? null}
+            onSelectSpot={setPicked}
+            onDeselect={() => setPicked(null)}
+            routePath={routePath}
+            orderBySpotId={orderBySpotId}
+            topReserved={TOP_RESERVED}
+          />
+        </div>
 
         {/* 몇 곳 코스를 몇 개 고르고 있는지(446:719 condition-pill) */}
-        {active && (
+        {active && !picked && (
           <div className={styles.pill}>
             {t('courseMap.pill', { count: active.spotCount, picked: courses.length })}
           </div>
         )}
+
+        <SpotSheet
+          key={picked?.poiId ?? 'none'}
+          spot={picked}
+          onClose={() => setPicked(null)}
+        />
       </div>
 
       {/* 코스 카드 스트립 — 좌우로 넘겨 비교하고 하나를 선택합니다. */}
