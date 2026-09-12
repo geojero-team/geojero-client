@@ -24,7 +24,6 @@ import styles from './HomePage.module.css'
 export default function HomePage() {
   const navigate = useNavigate()
   const [result, setResult] = useState({ status: 'loading', spots: [], error: '' })
-  const [selectedSpotId, setSelectedSpotId] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -54,11 +53,14 @@ export default function HomePage() {
   return (
     <Screen data-api="GET /api/pois">
       <div className={styles.mapArea}>
+        {/* 핀을 누르면 스팟 상세로 갑니다.
+            02-1의 핀 요약 시트(PinSheet)는 판정 배지·불성립 이유를 담고 있어 판정과 함께
+            지웠습니다. 그 시트의 스팟 쪽 목적지가 곧 스팟 상세였고("어디서 열든 같은 판"),
+            중간 시트 없이 바로 보냅니다. 핀이 겹쳐 있으면 MapView가 먼저 확대해
+            갈라 보여줍니다 — 가려진 핀은 탭할 방법이 없기 때문입니다. */}
         <MapView
           spots={spots}
-          selectedSpotId={selectedSpotId}
-          onSelectSpot={setSelectedSpotId}
-          onDeselect={() => setSelectedSpotId(null)}
+          onSelectSpot={(spot) => navigate(`/spots/${spot.poiId}`)}
           topReserved={16}
         />
 

@@ -35,7 +35,6 @@ export default function CourseMapPage() {
 
   const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
   const [activeId, setActiveId] = useState(null)
-  const [selectedSpotId, setSelectedSpotId] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -85,11 +84,10 @@ export default function CourseMapPage() {
   return (
     <Screen data-api="GET /api/courses">
       <div className={styles.mapArea}>
+        {/* 핀을 누르면 그 스팟 상세로 갑니다(홈과 같은 동작). */}
         <MapView
           spots={spots}
-          selectedSpotId={selectedSpotId}
-          onSelectSpot={setSelectedSpotId}
-          onDeselect={() => setSelectedSpotId(null)}
+          onSelectSpot={(spot) => navigate(`/spots/${spot.poiId}`)}
           routePath={routePath}
           orderBySpotId={orderBySpotId}
           topReserved={TOP_RESERVED}
