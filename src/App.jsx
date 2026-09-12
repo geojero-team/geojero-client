@@ -3,6 +3,7 @@ import { MAP_PATH } from './components/BottomNav'
 import ApiOverlay from './dev/ApiOverlay'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import ConditionsPage from './pages/ConditionsPage'
+import CourseDetailPage from './pages/CourseDetailPage'
 import CoursesPage from './pages/CoursesPage'
 import HomePage from './pages/HomePage'
 import MapPage from './pages/MapPage'
@@ -25,6 +26,7 @@ import VerdictPage from './pages/VerdictPage'
  *   /spots                스팟 목록
  *   /spots/pick           스팟 고르기 (조건은 쿼리로; 없으면 시트에서 정함)
  *   /courses?spots=3      코스 추천 — 개수를 고르면 우리가 짠 코스 (02-2 · 446:559)
+ *   /courses/:id?no=1     코스 상세 — 구간별 노선·이동시간·추정 (02-2 · 446:929)
  *   /plan?spots=…         일정 고르기 — 판정 유물. /courses 로 대체됨
  *   /spots/:spotId        스팟 상세
  *   /verdict/:routeId     판정 결과 (가는 편·오는 편 타임라인; 조건·스팟은 쿼리로)
@@ -43,6 +45,7 @@ export default function App() {
         <Route path="/spots" element={<SpotsPage />} />
         <Route path="/spots/pick" element={<SpotPickPage />} />
         <Route path="/courses" element={<CoursesPage />} />
+        <Route path="/courses/:courseId" element={<CourseDetailPage />} />
         <Route path="/plan" element={<PlanPage />} />
         <Route path="/spots/:spotId" element={<SpotDetailPage />} />
         <Route path="/verdict/:routeId" element={<VerdictPage />} />

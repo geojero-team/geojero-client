@@ -150,6 +150,27 @@ export default {
   'spotDetail.introHead': '소개',
 
   /* ── 일정 고르기 (285:67 / 285:148) ───────────────────────────────────── */
+  // ── 코스 상세 (02-2 · Figma 446:929) ─────────────────────────────────────
+  'courseDetail.title': '코스 {n} · {count}곳',
+  'courseDetail.range': '{origin}에서 출발해 {origin}로 돌아와요 · {legs}구간',
+  'courseDetail.hint': '스팟을 누르면 그 스팟의 버스 시간표를 볼 수 있어요',
+  'courseDetail.departNode': '{origin} 출발',
+  'courseDetail.arriveNode': '{origin} 도착',
+  'courseDetail.leg': '{route}번 · {min}분',
+  'courseDetail.legSameStop': '같은 정류장 · 바로 이동',
+  'courseDetail.timetable': '시간표',
+  'courseDetail.stay': '{min}분 머물러요',
+  'courseDetail.source': '출처 {source} · {date}',
+  'courseDetail.save': '이 코스 저장하기',
+  'courseDetail.loading': '코스를 불러오는 중',
+  'courseDetail.weekday': '평일',
+  'courseDetail.holiday': '휴일',
+  // ★ 추정 시각. 값이 없는 게 아니라 **앞뒤 정류장으로 감싼 값**이라 [미확인]과 다릅니다.
+  // 배지만 달고 왜 추정인지 안 적으면 사용자가 판단할 수 없습니다.
+  'courseDetail.estimated': '시각 추정',
+  'courseDetail.estimatedNote':
+    '{stops} 정류장은 원문 시간표에 시각 칸이 없어, 앞뒤 정류장 시각으로 잡았어요. 실제 버스는 적힌 시각보다 늦게 오고 적힌 도착 시각보다 일찍 닿습니다.',
+
   // ── 코스 추천 (02-2 · Figma 446:559) ─────────────────────────────────────
   // 판정을 뺀 뒤 "스팟을 고르면 판정해준다"에서 "개수를 고르면 우리가 짠 코스를 준다"로
   // 바뀌었습니다. 그래서 plan.* 과 키를 따로 둡니다 — plan.* 은 판정 유물입니다.

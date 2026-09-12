@@ -1,0 +1,282 @@
+/* 코스 상세 — Figma 02-2 446:929.
+   타임라인 구조(44px 거터 + 6px brand 막대)는 VerdictPage(268:351)에서 가져왔습니다.
+   바뀐 것은 둘 — 스팟 노드가 원형 사진 + 순번이 됐고, 구간 텍스트가 `55번 · 40분`처럼
+   **노선 번호**를 답니다(거제시 공식 앱의 "25분 / 13.0km"와 갈라지는 자리, 기준문서 §5). */
+
+.header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: env(safe-area-inset-top, 0px) 20px 0;
+  background: var(--bg-page);
+}
+
+.back {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--type-title);
+  color: var(--text-primary);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: var(--type-title);
+  color: var(--text-primary);
+}
+
+/* 어느 요일 시간표로 계산했는가. 주말은 버스가 달라 이 코스가 성립하지 않습니다. */
+.dayPill {
+  flex: none;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-tint);
+  font: var(--type-label);
+  color: var(--brand-strong);
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--bg-page);
+}
+
+.notice {
+  margin: 0;
+  padding: 20px;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* summary(446:934): 총 소요 + 한 줄 설명 */
+.summary {
+  padding: 16px 20px 0;
+}
+
+.big {
+  margin: 0;
+  font: var(--type-display);
+  color: var(--text-primary);
+}
+
+.range {
+  margin: 4px 0 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+.body {
+  padding: 16px 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
+  border-top: 1px solid var(--border-subtle, var(--border-default));
+  margin-top: 16px;
+}
+
+.hint {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  margin-top: 14px;
+}
+
+.row {
+  display: flex;
+  gap: 14px;
+}
+
+.gutter {
+  position: relative;
+  flex: none;
+  width: 44px;
+  align-self: stretch;
+}
+
+/* 버스 구간: 6px brand 막대 */
+.bar,
+.barTop,
+.barBottom {
+  position: absolute;
+  left: 19px;
+  width: 6px;
+  background: var(--brand-strong);
+}
+
+.bar {
+  top: 0;
+  bottom: 0;
+}
+
+.barTop {
+  top: 0;
+  height: 22px;
+}
+
+.barBottom {
+  top: 22px;
+  bottom: 0;
+}
+
+/* 같은 정류장(버스를 타지 않음): 점선. 막대와 갈라 보여야 합니다 — 탄 것과 안 탄 것은 다릅니다. */
+.dots {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 20px;
+  width: 4px;
+  background-image: radial-gradient(circle at 2px 2px, rgba(71, 84, 103, 0.5) 2px, transparent 2.5px);
+  background-size: 4px 12px;
+  background-repeat: repeat-y;
+}
+
+/* 출발·도착 터미널 노드 — 스팟이 아니라 사진이 없습니다. */
+.terminal {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--brand-strong);
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+  color: var(--brand-strong);
+}
+
+/* 스팟 노드: 44px 원형 사진 + 좌상단 순번. 누르면 시간표로 갑니다. */
+.thumb {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  width: 44px;
+  height: 44px;
+}
+
+.thumbImg {
+  display: block;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--bg-page);
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+}
+
+.num {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--text-on-brand);
+  border-radius: var(--radius-pill);
+  background: var(--brand-strong);
+  font: var(--type-label);
+  color: var(--text-on-brand);
+}
+
+/* ── 구간 줄 ─────────────────────────────────────────────────────────────── */
+
+.legContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 2px 0;
+}
+
+.legText {
+  font: var(--type-body);
+  color: var(--text-primary);
+}
+
+.legTextDim {
+  font: var(--type-body);
+  color: var(--text-secondary);
+}
+
+/* ★ 추정 배지. 숫자만 보이면 확정으로 읽히므로 반드시 이 배지가 붙습니다.
+   경고색(빨강)을 쓰지 않습니다 — 틀린 값이 아니라 폭이 있는 값입니다. */
+.estBadge {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--status-unknown-bg, var(--bg-surface));
+  font: var(--type-label);
+  color: var(--status-unknown, var(--text-secondary));
+  white-space: nowrap;
+}
+
+/* ── 스팟 줄 ─────────────────────────────────────────────────────────────── */
+
+.stopContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 0 10px;
+}
+
+.stopLine {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stopName {
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.timetableLink {
+  font: var(--type-caption);
+  color: var(--brand-strong);
+  white-space: nowrap;
+}
+
+.stay {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* ★ 추정 각주 — 배지가 무슨 뜻인지 여기서만 말할 수 있습니다.
+   "실제 버스는 적힌 시각보다 늦게 온다"가 사용자에게 필요한 문장입니다. */
+.estNote {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  background: var(--bg-surface);
+  font: var(--type-caption);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+.source {
+  margin: 16px 0 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+/* 저장 버튼 — 스크롤과 무관하게 바닥 고정(446:1122) */
+.bottomBar {
+  flex: none;
+  padding: 12px 20px calc(env(safe-area-inset-bottom, 0px) + 12px);
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-page);
+}
