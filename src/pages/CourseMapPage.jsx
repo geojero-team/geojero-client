@@ -67,7 +67,11 @@ export default function CourseMapPage() {
      나머지는 사진 마커로 나뉩니다(orderBySpotId가 그 구분을 만듭니다).
      MapView는 `spotId`로 핀을 식별하므로 poiId를 그 자리에 넣습니다. */
   const spots = useMemo(() => {
-    const course = active?.spots ?? []
+    const byId = new Map((result.all ?? []).map((spot) => [spot.poiId, spot]))
+    /* 코스 스팟에 목록 값을 덮어 씌웁니다. `/api/courses`의 spots 는 seq·shortName·theme·
+       좌표만 주고 **region·category 를 주지 않습니다** — 그대로 시트에 넘기면 peek 이
+       `· ` 만 적힌 빈칸이 됩니다(라이브에서 그렇게 나갔습니다). 코스 쪽 값이 이깁니다. */
+    const course = (active?.spots ?? []).map((spot) => ({ ...byId.get(spot.poiId), ...spot }))
     const inCourse = new Set(course.map((spot) => spot.poiId))
     const rest = (result.all ?? []).filter((spot) => !inCourse.has(spot.poiId))
     return [...course, ...rest].map((spot) => ({ ...spot, spotId: spot.poiId }))

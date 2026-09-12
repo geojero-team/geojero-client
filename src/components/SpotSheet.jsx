@@ -139,9 +139,13 @@ export default function SpotSheet({ spot, onClose }) {
       ) : (
         <div className={styles.peek}>
           <h2 className={styles.name}>{spot.shortName ?? spot.name}</h2>
-          <p className={styles.category}>
-            {spot.region} · {spot.category}
-          </p>
+          {/* 권역·분류가 없으면 줄을 아예 그리지 않습니다 — 값 없이 `·` 만 남으면
+              그게 곧 우리가 기준문서 §4에서 비판하는 '이유 없는 빈칸'입니다. */}
+          {(spot.region || spot.category) && (
+            <p className={styles.category}>
+              {[spot.region, spot.category].filter(Boolean).join(' · ')}
+            </p>
+          )}
           <Button onClick={() => setFull(true)}>{t('spotSheet.expand')} ›</Button>
         </div>
       )}
