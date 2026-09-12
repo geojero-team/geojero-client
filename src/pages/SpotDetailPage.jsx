@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import Button from '../components/Button'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
-import { fetchSpotDetail } from '../data/mockPlan'
+import { loadSpotDetail } from '../lib/spots'
 import { courseImage, onImageError } from '../lib/courseImage'
 import { useDragScroll } from '../lib/useDragScroll'
 import styles from './SpotDetailPage.module.css'
@@ -50,7 +50,7 @@ function PhotoCountIcon() {
 }
 
 export default function SpotDetailPage() {
-  const { spotId } = useParams()
+  const { spotId: poiId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
   const [spot, setSpot] = useState(null)
@@ -60,13 +60,13 @@ export default function SpotDetailPage() {
 
   useEffect(() => {
     let cancelled = false
-    fetchSpotDetail(Number(spotId)).then((data) => {
+    loadSpotDetail(poiId).then((data) => {
       if (!cancelled) setSpot(data)
     })
     return () => {
       cancelled = true
     }
-  }, [spotId])
+  }, [poiId])
 
   // 새 탭으로 바로 열었을 때 뒤로 갈 곳이 없으면 홈으로 보냅니다.
   const goBack = () =>
@@ -77,13 +77,9 @@ export default function SpotDetailPage() {
    * 판정을 빼면서 그 화면이 없어졌고(2026-09-12) 버튼이 조용히 홈으로 떨어지고 있었습니다.
    * 새 흐름에서 스팟 상세가 할 수 있는 일은 그 스팟의 버스 시간표를 여는 것입니다.
    *
-   * 시간표는 **서버 poi_id**로 조회하므로 목의 spotId를 쓸 수 없습니다. 서버를 못 붙으면
-   * poiId가 null이라 버튼 자체를 감춥니다 — 누르면 안 되는 버튼을 보여주지 않습니다.
+   * 2026-09-12에 이 화면도 목에서 서버로 옮겼으므로 주소의 :spotId가 곧 서버 poi_id입니다.
    */
-  const openTimetable = () => {
-    if (!spot?.poiId) return
-    navigate(`/timetable/${spot.poiId}`)
-  }
+  const openTimetable = () => navigate(`/timetable/${poiId}`)
 
   /* 몇 번째 장으로 보낼지. 장 수를 트랙의 자식에서 읽습니다 — 아래 slides보다 먼저
      정의되어야 하기 때문입니다(훅은 조기 반환 앞에 와야 합니다). */
@@ -208,7 +204,7 @@ export default function SpotDetailPage() {
 
         <div className={styles.body}>
           <div className={styles.titleCol}>
-            <h1 className={styles.name}>{spot.name}</h1>
+            <h1 className={styles.name}>{spot.shortName ?? spot.name}</h1>
             <p className={styles.category}>
               {spot.region} · {spot.category}
             </p>

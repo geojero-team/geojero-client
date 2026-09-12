@@ -1,15 +1,25 @@
 /* 홈 — Figma 02-2 446:453. 지도가 화면을 다 쓰고, 버튼이 그 위에 떠 있습니다.
    전 버전(02-1)의 조건 알약·코스 카드 섹션은 판정과 함께 없어졌습니다. */
 
+/* MapView 의 .root 가 `flex: 1`이므로 **이 자리가 flex 컨테이너여야** 합니다.
+   display:flex 를 빼면 .root 높이가 0이 되고, 그 안의 .canvas(absolute inset:0)까지
+   0이 되어 지도가 통째로 안 보입니다 — 오류도 로딩도 안 뜨는 흰 화면이 됩니다.
+   (2026-09-12 실제로 그렇게 나갔습니다. 지운 MapPage 에는 이 두 줄이 있었고 옮길 때 놓쳤습니다.) */
 .mapArea {
   position: relative;
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-/* 지도 위에 떠 있는 '코스 추천 받기'. 탭바 바로 위에 붙습니다. */
+/* 지도 위에 떠 있는 '코스 추천 받기'. 탭바 바로 위에 붙습니다.
+   z-index 가 필요합니다 — 카카오 지도가 타일·오버레이에 자기 z-index 를 쓰기 때문에
+   빼면 버튼이 지도에 덮여 **안 보입니다**(2026-09-12 실제로 그랬습니다).
+   지운 MapPage 의 .entryTag 도 같은 이유로 z-index: 2 였습니다. */
 .cta {
   position: absolute;
+  z-index: 2;
   right: 20px;
   bottom: 16px;
   left: 20px;

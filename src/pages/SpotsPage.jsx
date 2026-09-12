@@ -4,12 +4,15 @@ import BottomNav from '../components/BottomNav'
 import CategoryBar from '../components/CategoryBar'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
-import { fetchSpots } from '../data/mockPlan'
+import { loadVisibleSpots } from '../lib/spots'
 import { courseImage, onImageError } from '../lib/courseImage'
 import styles from './SpotsPage.module.css'
 
 /**
- * 스팟 — Figma `스팟 — 배지 없음 · 검색 없음 (Q1 A안)` (233:378).
+ * 스팟 — Figma 02-2 446:1126 (02-1 233:378과 기능 같음).
+ *
+ * 2026-09-12: 목(data/mockPlan)에서 **서버**로 옮겼습니다. 목은 9경 8곳만 알아서
+ * 시간표 탭(서버 17곳)과 목록이 어긋나 있었습니다 — 같은 제품에서 스팟 수가 둘이었습니다.
  * 열람 전용 목록. 판정 배지·체크·검색 없음. 카드 탭 → 스팟 상세.
  *
  * **불성립 표현을 넣지 않습니다**(2026-09-10 결정: "고른 것만 이유를 준다").
@@ -27,7 +30,10 @@ function SpotCard({ spot, onOpen }) {
         <img className={styles.photoImg} src={courseImage(spot)} alt="" onError={onImageError(spot)} />
       </div>
       <div className={styles.info}>
-        <span className={styles.name}>{spot.name}</span>
+        {/* 화면에 쓰는 이름은 short_name 입니다(기준문서 §7) — 목은 name 에 짧은 이름을
+            담고 있었는데 서버는 name=정식명 / shortName=화면명으로 갈라져 있습니다.
+            그대로 두면 '학동흑진주몽돌해변'·'거제도포로수용소유적공원'이 카드에 들어갑니다. */}
+        <span className={styles.name}>{spot.shortName ?? spot.name}</span>
         <span className={styles.meta}>
           {spot.region} · {spot.category}
         </span>
@@ -43,8 +49,8 @@ export default function SpotsPage() {
 
   useEffect(() => {
     let cancelled = false
-    fetchSpots()
-      .then(({ spots }) => {
+    loadVisibleSpots()
+      .then((spots) => {
         if (!cancelled) setResult({ status: 'ready', spots, error: '' })
       })
       .catch((error) => {
@@ -74,9 +80,9 @@ export default function SpotsPage() {
           <div className={styles.grid}>
             {spots.map((spot) => (
               <SpotCard
-                key={spot.spotId}
+                key={spot.poiId}
                 spot={spot}
-                onOpen={({ spotId }) => navigate(`/spots/${spotId}`)}
+                onOpen={({ poiId }) => navigate(`/spots/${poiId}`)}
               />
             ))}
           </div>

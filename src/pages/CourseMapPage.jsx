@@ -7,7 +7,7 @@ import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { api } from '../lib/api'
 import { courseImage, onImageError } from '../lib/courseImage'
-import { loadSpotPhotos, withPhotos } from '../lib/spotPhotos'
+import { loadSpotPhotos, withPhotos } from '../lib/spots'
 import styles from './CourseMapPage.module.css'
 
 /**
