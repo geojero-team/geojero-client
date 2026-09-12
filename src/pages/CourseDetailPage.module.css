@@ -280,3 +280,33 @@
   border-top: 1px solid var(--border-default);
   background: var(--bg-page);
 }
+
+/* 저장 완료 — 버튼 자리가 결과 줄로 바뀝니다(446:1120). */
+.savedRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+}
+
+.savedText {
+  flex: 1;
+  font: var(--type-body-strong);
+  color: var(--status-yes);
+}
+
+.savedLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--type-caption);
+  color: var(--brand-strong);
+  cursor: pointer;
+}
+
+.saveError {
+  margin: 0 0 8px;
+  font: var(--type-caption);
+  color: var(--status-no, var(--text-primary));
+  word-break: keep-all;
+}

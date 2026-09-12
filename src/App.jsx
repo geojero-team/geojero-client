@@ -14,10 +14,11 @@ import SpotDetailPage from './pages/SpotDetailPage'
 import SpotPickPage from './pages/SpotPickPage'
 import SpotsPage from './pages/SpotsPage'
 import SpotTimetablePage from './pages/SpotTimetablePage'
+import TimetableListPage from './pages/TimetableListPage'
 import VerdictPage from './pages/VerdictPage'
 
 /**
- * 하단 탭 4개 — 홈 / 스팟 / 지도 / 내 일정.
+ * 하단 탭 4개 — 홈 / 스팟 / **시간표** / 내 일정 (02-2에서 지도 탭이 시간표로 바뀜).
  *
  * 홈이 첫 진입 화면입니다. 조건을 정하고 스팟을 고르러 들어가는 순서라
  * 판정 결과(지도)보다 조건 세팅이 먼저 옵니다.
@@ -29,6 +30,7 @@ import VerdictPage from './pages/VerdictPage'
  *   /spots/pick           스팟 고르기 (조건은 쿼리로; 없으면 시트에서 정함)
  *   /courses?spots=3      코스 추천 — 개수를 고르면 우리가 짠 코스 (02-2 · 446:559)
  *   /courses/:id?no=1     코스 상세 — 구간별 노선·이동시간·추정 (02-2 · 446:929)
+ *   /timetable            시간표 탭 — 스팟 목록 (02-2 · 451:518)
  *   /timetable/:poiId     스팟 시간표 — 방향 칩·다음 버스 (02-2 · 453:288)
  *   /course-map?courses=  지도 — 고른 코스를 넘겨 비교 (02-2 · 446:717)
  *   /plan?spots=…         일정 고르기 — 판정 유물. /courses 로 대체됨
@@ -52,6 +54,7 @@ export default function App() {
         <Route path="/courses/:courseId" element={<CourseDetailPage />} />
         <Route path="/course-map" element={<CourseMapPage />} />
         <Route path="/plan" element={<PlanPage />} />
+        <Route path="/timetable" element={<TimetableListPage />} />
         <Route path="/timetable/:poiId" element={<SpotTimetablePage />} />
         <Route path="/spots/:spotId" element={<SpotDetailPage />} />
         <Route path="/verdict/:routeId" element={<VerdictPage />} />

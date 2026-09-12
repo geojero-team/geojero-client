@@ -24,6 +24,7 @@ export default {
   'nav.home': '홈',
   'nav.spots': '스팟',
   'nav.map': '지도',
+  'nav.timetable': '시간표',
   'nav.myPlans': '내 일정',
 
   /* ── 판정 배지 ────────────────────────────────────────────────────────── */
@@ -128,6 +129,8 @@ export default {
 
   /* ── 스팟 목록 (233:378) ──────────────────────────────────────────────── */
   'spots.title': '스팟',
+  'timetableList.title': '시간표',
+  'timetableList.hint': '스팟을 누르면 그 스팟의 버스 시간표를 볼 수 있어요',
   'spots.loading': '스팟을 불러오는 중',
 
   /* ── 스팟 고르기 (233:417 / 285:419) ──────────────────────────────────── */
@@ -150,6 +153,12 @@ export default {
   'spotDetail.introHead': '소개',
 
   /* ── 일정 고르기 (285:67 / 285:148) ───────────────────────────────────── */
+  // ── 저장 (02-2 · Figma 446:1112 로그인 시트 · 446:1120 하단 바) ───────────
+  'courseDetail.saving': '저장하는 중',
+  'courseDetail.saved': '내 일정에 저장했어요',
+  'courseDetail.savedGo': '내 일정 보기',
+  'courseDetail.saveFailed': '저장하지 못했어요 — {error}',
+
   // ── 지도 · 고른 코스 (02-2 · Figma 446:717) ──────────────────────────────
   'courseMap.pill': '{count}곳 코스 · 고른 코스 {picked}개',
   'courseMap.select': '코스 선택',

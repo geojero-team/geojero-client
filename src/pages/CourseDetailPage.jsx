@@ -1,9 +1,11 @@
 import { Fragment, useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Button from '../components/Button'
+import LoginSheet from '../components/LoginSheet'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
-import { api } from '../lib/api'
+import { api, beginKakaoLogin } from '../lib/api'
+import { getToken } from '../lib/session'
 import { courseImage, onImageError } from '../lib/courseImage'
 import { loadSpotPhotos, withPhotos } from '../lib/spotPhotos'
 import styles from './CourseDetailPage.module.css'
@@ -90,6 +92,8 @@ export default function CourseDetailPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [saveState, setSaveState] = useState({ status: 'idle', error: '' })
 
   useEffect(() => {
     let cancelled = false
@@ -129,9 +133,30 @@ export default function CourseDetailPage() {
 
   const openTimetable = (poiId) => navigate(`/timetable/${poiId}`)
 
+  /**
+   * 저장 — 비로그인이면 시트를 먼저 띄웁니다(446:1112).
+   *
+   * 보내는 것은 {courseId, travelDate} 둘뿐입니다. 출발·복귀 시각은 코스에 박혀 있어
+   * 서버가 채웁니다 — 판정 시절엔 사용자 입력이었고 고를 자리가 없어졌습니다.
+   *
+   * ⚠️ travelDate 는 **오늘**로 보냅니다. 코스 상세에 날짜 선택이 없어서입니다.
+   * 코스가 평일 기준이므로 주말에 저장하면 그날 버스와 어긋납니다 —
+   * 날짜 선택을 둘지는 디자인 결정이라 여기서 정하지 않았습니다(팀 확인 필요).
+   */
   const save = () => {
-    // 저장은 로그인 평면입니다. 비로그인 시트는 02-1 그대로 재사용합니다.
-    navigate(`/my?save=${course.courseId}`)
+    if (!getToken()) {
+      setSheetOpen(true)
+      return
+    }
+    const d = new Date()
+    const p = (n) => String(n).padStart(2, '0')
+    const travelDate = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+
+    setSaveState({ status: 'saving', error: '' })
+    api
+      .saveTrip({ courseId: Number(courseId), travelDate })
+      .then(() => setSaveState({ status: 'saved', error: '' }))
+      .catch((error) => setSaveState({ status: 'error', error: error.message }))
   }
 
   if (result.status !== 'ready') {
@@ -230,9 +255,34 @@ export default function CourseDetailPage() {
         </div>
       </div>
 
+      {/* 하단 바 — 저장 직후에는 결과와 '내 일정 보기'로 바뀝니다(446:1120). */}
       <div className={styles.bottomBar}>
-        <Button onClick={save}>{t('courseDetail.save')}</Button>
+        {saveState.status === 'saved' ? (
+          <div className={styles.savedRow}>
+            <span className={styles.savedText}>{t('courseDetail.saved')}</span>
+            <button type="button" className={styles.savedLink} onClick={() => navigate('/my')}>
+              {t('courseDetail.savedGo')} ›
+            </button>
+          </div>
+        ) : (
+          <>
+            {saveState.status === 'error' && (
+              <p className={styles.saveError}>
+                {t('courseDetail.saveFailed', { error: saveState.error })}
+              </p>
+            )}
+            <Button onClick={save} disabled={saveState.status === 'saving'}>
+              {t(saveState.status === 'saving' ? 'courseDetail.saving' : 'courseDetail.save')}
+            </Button>
+          </>
+        )}
       </div>
+
+      <LoginSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onLogin={beginKakaoLogin}
+      />
     </Screen>
   )
 }
