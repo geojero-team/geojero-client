@@ -4,6 +4,7 @@ import ApiOverlay from './dev/ApiOverlay'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import ConditionsPage from './pages/ConditionsPage'
 import CourseDetailPage from './pages/CourseDetailPage'
+import CourseMapPage from './pages/CourseMapPage'
 import CoursesPage from './pages/CoursesPage'
 import HomePage from './pages/HomePage'
 import MapPage from './pages/MapPage'
@@ -29,6 +30,7 @@ import VerdictPage from './pages/VerdictPage'
  *   /courses?spots=3      코스 추천 — 개수를 고르면 우리가 짠 코스 (02-2 · 446:559)
  *   /courses/:id?no=1     코스 상세 — 구간별 노선·이동시간·추정 (02-2 · 446:929)
  *   /timetable/:poiId     스팟 시간표 — 방향 칩·다음 버스 (02-2 · 453:288)
+ *   /course-map?courses=  지도 — 고른 코스를 넘겨 비교 (02-2 · 446:717)
  *   /plan?spots=…         일정 고르기 — 판정 유물. /courses 로 대체됨
  *   /spots/:spotId        스팟 상세
  *   /verdict/:routeId     판정 결과 (가는 편·오는 편 타임라인; 조건·스팟은 쿼리로)
@@ -48,6 +50,7 @@ export default function App() {
         <Route path="/spots/pick" element={<SpotPickPage />} />
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/courses/:courseId" element={<CourseDetailPage />} />
+        <Route path="/course-map" element={<CourseMapPage />} />
         <Route path="/plan" element={<PlanPage />} />
         <Route path="/timetable/:poiId" element={<SpotTimetablePage />} />
         <Route path="/spots/:spotId" element={<SpotDetailPage />} />

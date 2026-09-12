@@ -147,7 +147,7 @@ export default function CoursesPage() {
   const openMap = () => {
     if (selected.size === 0) return
     const ids = courses.filter((c) => selected.has(c.courseId)).map((c) => c.courseId)
-    navigate(`/map?courses=${ids.join(',')}`)
+    navigate(`/course-map?courses=${ids.join(",")}`)
   }
 
   return (

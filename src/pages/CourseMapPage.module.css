@@ -1,0 +1,156 @@
+/* 지도 — 고른 코스 (Figma 02-2 446:717 / 446:823).
+   지도·시트·탭바가 형제입니다(시트가 지도 위에 떠 있지 않고 지도를 밀어냅니다) —
+   CourseStrip(285:251)에서 확인한 구조를 그대로 따릅니다. */
+
+.mapArea {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* condition-pill(446:719): 지도 위에 떠 있는 알약 */
+.pill {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 7px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+  box-shadow: 0 2px 8px rgb(16 24 40 / 12%);
+  font: var(--type-caption);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* course-sheet(446:733): 지도 아래, 탭바 위 */
+.sheet {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 0 14px;
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-page);
+}
+
+.notice {
+  margin: 0;
+  padding: 8px 20px;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* 카드를 가로로 늘어놓고 다음 카드가 우측에 살짝 보이게 둡니다(peek). */
+.strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding: 0 20px;
+}
+
+.strip::-webkit-scrollbar {
+  display: none;
+}
+
+.card {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 300px;
+  padding: 11px 13px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--bg-page);
+  scroll-snap-align: start;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cardOn {
+  padding: 10px 12px;
+  border: 2px solid var(--brand-strong);
+}
+
+.cardHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.cardTitle {
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.cardTime {
+  flex: 1;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+/* 카드가 300px이라 5곳도 들어가야 합니다 — 화살표 없이 번호로 순서를 말합니다
+   (코스 추천 카드와 같은 판단: 가려진 정보는 없는 정보와 같습니다). */
+.order {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.stop {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.thumb {
+  position: relative;
+  width: 42px;
+  height: 42px;
+}
+
+.thumbImg {
+  display: block;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+}
+
+.num {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--text-on-brand);
+  border-radius: var(--radius-pill);
+  background: var(--brand-strong);
+  font: var(--type-label);
+  color: var(--text-on-brand);
+}
+
+.stopName {
+  max-width: 100%;
+  font: var(--type-label);
+  color: var(--text-primary);
+  text-align: center;
+  word-break: keep-all;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.actions {
+  padding: 0 20px;
+}
