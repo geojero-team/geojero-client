@@ -112,7 +112,8 @@ export default function HomePage() {
     }
   }, [trip])
 
-  // '코스 추천 받기' — 조건을 확정하고 다시 판정합니다.
+  // '코스 추천 받기' — 코스 추천 화면으로. 판정을 뺀 뒤(2026-09-12) 조건을 확정할
+  // 자리가 없어졌습니다. 스팟을 고르는 게 아니라 **개수**를 고릅니다(02-2 446:559).
   const applyConditions = useCallback((next) => {
     if (next.origin) saveOrigin(next.origin)
     setResult((prev) => ({ ...prev, status: 'loading' }))
@@ -182,7 +183,7 @@ export default function HomePage() {
 
             <Button
               className={styles.cta}
-              onClick={() => navigate(`/spots/pick?${tripToSearch(trip)}`)}
+              onClick={() => navigate('/courses?spots=3')}
               data-api="GET /api/spots"
             >
               {t('home.cta')}

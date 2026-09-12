@@ -104,19 +104,93 @@ export const api = {
 
   me: () => request('/api/me', { session: true }),
 
-  /** CoursesRes { courses: [{ courseId, name, theme, summary }] } — 저장 목록의 이름·경로 줄. */
-  courses: () => request('/api/courses'),
+  /**
+   * 추천 코스 목록 — 「코스 추천」 화면(Figma 446:559).
+   *
+   * spotCount(3·4·5)로 걸러도 counts는 **전량**을 셉니다. 칩은 코스가 0개여도 개수를
+   * 보여주고 비활성해야 하기 때문입니다 — 지금 4곳이 0개입니다(배 시간표 대기).
+   *
+   * CoursesRes {
+   *   counts: { '3': 1, '4': 0, '5': 2 },
+   *   courses: [{ courseId, courseCode, spotCount, rank, nineScenicCount,
+   *               name, summary, departAt, returnAt, approxTotalMin, approxTotalText,
+   *               spots: [{ seq, poiId, name, shortName, theme, lat, lng }] }] }
+   */
+  courses: (spotCount) =>
+    request(`/api/courses${spotCount ? `?spotCount=${spotCount}` : ''}`),
 
   /**
-   * 저장 일정. 서버가 목록마다 verdictAtSave(저장 시점)와 verdictNow(지금 다시 판정)를
-   * 함께 내려줍니다 — 재판정이 서버에서 이미 돌고 있어 클라이언트가 다시 계산하지 않습니다.
-   * SavedTripRes { savedTripId, courseId, travelDate, arrivalTime, returnTime,
-   *                verdictAtSave, verdictNow }
+   * 코스 상세 — 「코스 상세」 화면(Figma 446:929).
+   *
+   * legs가 타임라인입니다. **leg.estimated가 참이면 그 구간 시각은 추정값**이라
+   * 화면이 확정 시각과 갈라 말해야 합니다(절대규칙 1) — 원문 시간표에 정류장 칸이 없어
+   * 앞뒤 정류장 시각으로 감싼 값이고, 버스를 놓치지 않는 쪽으로만 틀립니다.
+   * mode가 SAME_STOP이면 같은 정류장이라 버스를 타지 않습니다(rides가 빕니다).
+   *
+   * CourseDetail { courseId, courseCode, name, summary, spotCount, nineScenicCount,
+   *   departAt, returnAt, totalMin, approxTotalMin, approxTotalText,
+   *   legCount, estimatedLegCount, service, baseDate, source, originName,
+   *   stops: [{ seq, poiId, name, shortName, theme, lat, lng,
+   *             arriveAt, leaveAt, stayMin }],
+   *   legs: [{ seq, mode, fromPoiId, fromName, toPoiId, toName,
+   *            departAt, arriveAt, durationMin, transfers, estimated,
+   *            rides: [{ routeNo, boardStop, boardAt, boardEstimated,
+   *                      alightStop, alightAt, alightEstimated }] }] }
+   */
+  course: (courseId) => request(`/api/courses/${courseId}`),
+
+  /**
+   * 스팟 시간표 — 「스팟 시간표」 화면(Figma 453:210 · 453:288 · 453:415).
+   *
+   * from='origin'이면 고현터미널 → 스팟 방향으로 뒤집습니다.
+   * toPoiId를 주면 목적지가 그 스팟, 없으면 고현터미널입니다.
+   *
+   * ★ **byRoute는 노선별로 갈라진 소요시간**입니다. 섞어 평균을 내면 실제로 운행하지
+   * 않는 값이 나옵니다. durationMin은 **늦게 닿는 쪽**이고 durationVaries가 참이면
+   * durationMinLow까지 폭이 있습니다(같은 회차가 두 시트에 2~5분 다르게 실린 탓).
+   * 화면은 늦은 쪽을 써야 사용자가 버스를 놓치지 않습니다.
+   *
+   * ★★ **emptyReason이 빈 결과의 이유**입니다. 이유 없는 빈칸을 내보내면
+   * 우리가 기준문서 §4에서 비판하는 것을 우리가 하는 것입니다(절대규칙 3).
+   *   UNKNOWN_TIME         정차는 하는데 원문에 시각이 없다 (unknownTimeRoutes가 노선을 댑니다)
+   *   NO_SERVICE           그 노선이 거기 서지 않는다
+   *   NO_STOP_IN_TIMETABLE 원문 시간표에 이 스팟의 정류장 칸이 없다 (boardStop이 null)
+   *
+   * SpotDeparturesRes { poiId, name, shortName, boardStop, alightLabel,
+   *   boardStopDiffers, to: { poiId, stop, name }, date, dayClass,
+   *   departures: [{ routeNo, depart, arrive, durationMin }], count,
+   *   firstDeparture, lastDeparture, next, byRoute, emptyReason, unknownTimeRoutes,
+   *   source, baseDate }
+   */
+  spotDepartures: (poiId, { date, from, toPoiId, after } = {}) => {
+    const query = new URLSearchParams({ date })
+    if (from) query.set('from', from)
+    if (toPoiId) query.set('toPoiId', String(toPoiId))
+    if (after) query.set('after', after)
+    return request(`/api/pois/${poiId}/departures?${query}`)
+  },
+
+  /**
+   * 저장 일정. 판정 제거(2026-09-12)로 verdictAtSave·verdictNow가 응답에서 빠졌습니다 —
+   * 「내 일정」은 단순 열람입니다(기준문서 §6 컷 순서 3번).
+   * SavedTripRes { savedTripId, courseId, title, chain,
+   *                travelDate, arrivalTime, returnTime }
    */
   savedTrips: () => request('/api/saved-trips', { session: true }),
 
-  /** body { courseId, travelDate, arrivalTime, returnTime } → 201 SavedTripRes */
-  saveTrip: (body) => request('/api/saved-trips', { method: 'POST', body, session: true }),
+  /**
+   * body { courseId, travelDate } → 201 SavedTripRes
+   *
+   * 출발·복귀 시각은 **보내지 않습니다.** 코스에 이미 박혀 있어 서버가 채웁니다 —
+   * 판정 시절엔 사용자가 입력하는 값이었고(막차 역산의 입력) 판정이 빠지며 고를 자리가
+   * 없어졌습니다. 보내면 보낸 값이 쓰이지만 화면에 그 입력이 없습니다.
+   */
+  saveTrip: ({ courseId, travelDate }) =>
+    request('/api/saved-trips', {
+      method: 'POST',
+      body: { courseId, travelDate },
+      session: true,
+    }),
 
   /** 204 No Content. request가 204를 null로 돌려줍니다. */
   deleteTrip: (savedTripId) =>

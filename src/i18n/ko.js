@@ -40,6 +40,9 @@ export default {
   'theme.GARDEN': '식물원',
   'theme.CASTLE': '성',
   'theme.HISTORY': '유적',
+  // 전시관·기념관·체험시설·조각공원을 묶습니다. 칩 칸이 38px이라 '전시·체험'(약 60px)은
+  // 넘칩니다 — '유적'·'성'과 같은 짧은 라벨로 맞췄습니다.
+  'theme.EXHIBIT': '전시',
 
   /* ── 서식 ─────────────────────────────────────────────────────────────── */
   'format.empty': '—',
@@ -147,6 +150,27 @@ export default {
   'spotDetail.introHead': '소개',
 
   /* ── 일정 고르기 (285:67 / 285:148) ───────────────────────────────────── */
+  // ── 코스 추천 (02-2 · Figma 446:559) ─────────────────────────────────────
+  // 판정을 뺀 뒤 "스팟을 고르면 판정해준다"에서 "개수를 고르면 우리가 짠 코스를 준다"로
+  // 바뀌었습니다. 그래서 plan.* 과 키를 따로 둡니다 — plan.* 은 판정 유물입니다.
+  'courses.title': '코스 추천',
+  'courses.headline1': '방문하시고 싶은',
+  'courses.headline2': '스팟 개수를 고르시면',
+  'courses.headline3': '코스를 추천해드립니다.',
+  'courses.originNote': '주의 사항 : 모든 첫 출발지는 고현터미널로 가정합니다.',
+  'courses.countChip': '{n}곳',
+  'courses.total': '총 코스 {count}가지',
+  'courses.cardTitle': '코스 {n}',
+  'courses.nineScenic': '거제9경 {count}곳',
+  'courses.multiHint': '코스는 여러 개 고를 수 있어요',
+  'courses.select': '코스 선택하기',
+  'courses.selectN': '코스 {count}개 선택하기',
+  'courses.loading': '코스를 불러오는 중',
+  // 빈 칩의 이유를 밝힙니다. 이유 없는 빈칸은 우리가 기준문서 §4에서 비판하는 것입니다.
+  'courses.emptyTitle': '{n}곳 코스는 아직 안내할 수 없어요',
+  'courses.emptyFerry': '배로 가는 스팟이 들어가는 코스라, 배 시각을 확인하는 중입니다.',
+  'courses.chipDisabled': '{n}곳 코스 없음',
+
   'plan.title': '일정 고르기',
   'plan.headline1': '사용자님의 일정에 맞춘 코스를',
   'plan.headline2': '추천해드려요',
