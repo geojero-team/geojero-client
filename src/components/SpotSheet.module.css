@@ -72,22 +72,42 @@
   cursor: pointer;
 }
 
-/* peek — 이름 · 권역·분류 · 「자세히 보기」 */
+/* peek — 이름 · 권역·분류 · 사진 한 장.
+   버튼이 아니라 **덩어리 전체가 버튼**입니다(끄는 동작이 어려운 사람의 여는 길).
+   그래서 버튼 기본 모양을 지우고 왼쪽 정렬로 되돌립니다. */
 .peek {
   display: flex;
+  flex: none;
   flex-direction: column;
-  gap: var(--space-xs);
+  width: 100%;
   padding: 4px var(--space-lg) var(--space-lg);
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.peek:active {
+  background: var(--bg-pressed);
 }
 
 .name {
-  margin: 0;
   font: var(--type-display);
   color: var(--text-primary);
 }
 
 .category {
-  margin: 0 0 var(--space-sm);
   font: var(--type-caption);
   color: var(--text-secondary);
+}
+
+/* 사진 — 이름 아래 한 장. 「자세히 보기」 버튼이 있던 자리입니다.
+   140px 은 시트가 화면의 3할 안에 들어오는 선입니다(peek 244px). */
+.photo {
+  display: block;
+  width: 100%;
+  height: 140px;
+  margin-top: var(--space-sm);
+  border-radius: var(--radius-card);
+  object-fit: cover;
 }

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
-import Button from './Button'
 import SpotDetail from './SpotDetail'
 import { t } from '../i18n'
+import { courseImage, onImageError } from '../lib/courseImage'
 import styles from './SpotSheet.module.css'
 
 /**
@@ -18,19 +18,19 @@ import styles from './SpotSheet.module.css'
  * `onDeselect`가 옵니다). 그 배선을 그대로 다시 씁니다.
  *
  * 두 단계로만 섭니다.
- *   peek  이름 · 권역·분류 · 「자세히 보기」  — 지도가 위에 그만큼 남습니다
- *   full  스팟 상세 전체(사진·소개·버스 시간표 보기)
+ *   peek  이름 · 권역·분류 · **사진 한 장** — 지도가 위에 그만큼 남습니다
+ *   full  스팟 상세 전체(사진 캐러셀·소개·버스 시간표 보기)
  * 중간에 멈추지 않습니다 — 반쯤 열린 시트는 사진도 글도 못 읽는 상태입니다.
  */
 
 /**
- * peek 높이(px). 손잡이 + 이름 + 분류 + 버튼이 들어가는 최소치입니다.
+ * peek 높이(px) = 손잡이 24 + 위 4 + 이름 32 + 분류 20 + 8 + 사진 140 + 아래 16.
  *
  * 지도를 이만큼 줄이는 쪽에서도 같은 값이 필요합니다 — 지도가 그대로면 `panTo`가 핀을
  * **시트에 가려진 자리**로 옮깁니다. 그래서 상수를 내보냅니다(값이 두 군데서 갈리면
- * 핀이 시트 경계에 걸립니다).
+ * 핀이 시트 경계에 걸립니다). 844 화면에서 지도가 536px 남습니다.
  */
-export const PEEK_HEIGHT = 188
+export const PEEK_HEIGHT = 244
 
 /** 이만큼 끌면 다음 단계로 넘어갑니다. 짧으면 손 떨림에도 열리고, 길면 안 열립니다. */
 const SNAP_THRESHOLD = 56
@@ -137,17 +137,34 @@ export default function SpotSheet({ spot, onClose }) {
            onBack은 주지 않습니다 — 닫는 방법이 둘이면 어느 게 뭘 닫는지 알 수 없습니다. */
         <SpotDetail key={spot.poiId} poiId={spot.poiId} seed={spot} />
       ) : (
-        <div className={styles.peek}>
-          <h2 className={styles.name}>{spot.shortName ?? spot.name}</h2>
+        /* peek — 이름 · 권역·분류 · 사진 한 장.
+           「자세히 보기」 버튼을 뺐습니다(2026-09-13). 손잡이로 바로 올릴 수 있어 버튼이
+           같은 일을 두 번 하고, 그 자리를 사진에 주는 편이 "여기가 어딘지"를 훨씬 빨리
+           말해줍니다. 대신 **이 덩어리 전체가 눌립니다** — 끄는 동작이 어려운 사람에게
+           열 방법이 남아야 합니다. */
+        <button
+          type="button"
+          className={styles.peek}
+          onClick={() => setFull(true)}
+          aria-label={t('spotSheet.expand')}
+        >
+          <span className={styles.name}>{spot.shortName ?? spot.name}</span>
           {/* 권역·분류가 없으면 줄을 아예 그리지 않습니다 — 값 없이 `·` 만 남으면
               그게 곧 우리가 기준문서 §4에서 비판하는 '이유 없는 빈칸'입니다. */}
           {(spot.region || spot.category) && (
-            <p className={styles.category}>
+            <span className={styles.category}>
               {[spot.region, spot.category].filter(Boolean).join(' · ')}
-            </p>
+            </span>
           )}
-          <Button onClick={() => setFull(true)}>{t('spotSheet.expand')} ›</Button>
-        </div>
+          {/* 사진이 없는 스팟(저작권 Type3)은 courseImage가 테마 자리그림을 줍니다 —
+              0장은 버그가 아니라 사실이므로 빈 자리로 두지 않습니다. */}
+          <img
+            className={styles.photo}
+            src={courseImage(spot)}
+            alt=""
+            onError={onImageError(spot)}
+          />
+        </button>
       )}
     </div>
   )
