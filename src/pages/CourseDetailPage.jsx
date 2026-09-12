@@ -15,12 +15,17 @@ import styles from './CourseDetailPage.module.css'
  *
  * 이 화면이 이 서비스의 주장을 담습니다. 거제시 공식 앱은 코스에 `25분 / 13.0km`를 적고
  * **버스인지 자차인지 밝히지 않습니다**(기준문서 §5). 우리는 구간마다 **노선 번호와
- * 이동시간**을 적고, 그 숫자가 추정이면 추정이라고 말합니다.
+ * 이동시간**을 적습니다 — `55번 · 40분`.
  *
- * ★ 추정 표시가 이 화면의 핵심입니다. 원문 시간표에 정류장 칸이 없는 곳(도장포 등)은
- * 앞뒤 정류장 시각으로 감싼 값이고, 하차는 상한·승차는 하한이라 **버스를 놓치지 않는
- * 쪽으로만 틀립니다.** 이걸 확정 시각처럼 적으면 절대규칙 1을 어기는 것이고,
- * 반대로 빈칸으로 두면 §4에서 우리가 비판하는 '이유 없는 빈칸'이 됩니다.
+ * ⚠️ 2026-09-13에 **시각을 전부 뺐습니다**(팀 결정). 전에는 구간마다 `11:45 ~ 13:45 ·
+ * 120분 머물러요`와 `시각 추정` 배지가 붙었습니다. 뺀 이유: 몇 시에 도착해 얼마나
+ * 머무를지는 **사용자가 정하는 것**이고, 우리가 답하는 것은 *"어느 버스로 몇 분"*입니다.
+ * 시각을 우리가 박아두면 그 코스를 그 시각에만 쓸 수 있는 것처럼 읽힙니다.
+ *
+ * ★ 그래도 각주는 남깁니다. 원문 시간표에 정류장 칸이 없는 곳(도장포 등)은 앞뒤 정류장
+ * 시각으로 감싼 값이라 **소요시간 자체가 추정**입니다. 이걸 확정값처럼 두면 절대규칙 1을
+ * 어기고, 아무 말 없이 두면 §4에서 우리가 비판하는 '이유 없는 빈칸'이 됩니다.
+ * 시각이 화면에서 빠졌으니 각주도 시각이 아니라 **소요시간**을 말합니다.
  */
 
 /** 출발·도착 노드(고현터미널) — 스팟이 아니라 터미널이라 사진 대신 아이콘입니다. */
@@ -51,15 +56,13 @@ function LegRow({ leg }) {
             ? t('courseDetail.legSameStop')
             : t('courseDetail.leg', { route: ride?.routeNo ?? '', min: leg.durationMin })}
         </span>
-        {/* 추정이면 배지를 답니다. 숫자만 보이면 확정으로 읽힙니다. */}
-        {leg.estimated && <span className={styles.estBadge}>{t('courseDetail.estimated')}</span>}
       </div>
     </div>
   )
 }
 
 /** 스팟 노드 — 원형 사진 + 순번. 누르면 그 스팟의 시간표로 갑니다. */
-function StopRow({ stop, onOpenTimetable }) {
+function StopRow({ stop, nextPoiId, onOpenTimetable }) {
   return (
     <div className={styles.row}>
       <div className={styles.gutter}>
@@ -74,14 +77,11 @@ function StopRow({ stop, onOpenTimetable }) {
         <button
           type="button"
           className={styles.stopLine}
-          onClick={() => onOpenTimetable(stop.poiId)}
+          onClick={() => onOpenTimetable(stop.poiId, nextPoiId)}
         >
           <span className={styles.stopName}>{stop.shortName ?? stop.name}</span>
           <span className={styles.timetableLink}>{t('courseDetail.timetable')} ›</span>
         </button>
-        <p className={styles.stay}>
-          {stop.arriveAt} ~ {stop.leaveAt} · {t('courseDetail.stay', { min: stop.stayMin })}
-        </p>
       </div>
     </div>
   )
@@ -119,7 +119,8 @@ export default function CourseDetailPage() {
   // 카드 번호는 목록에서 넘겨받습니다 — 목록의 '코스 1'과 상세 헤더가 어긋나면 안 됩니다.
   const cardNo = searchParams.get('no') ?? '1'
 
-  // 추정이 걸린 정류장 이름을 모아 각주에 적습니다. 배지만 달면 왜 추정인지 알 수 없습니다.
+  // 추정이 걸린 정류장 이름을 모아 각주에 적습니다. 구간 배지를 뺐으므로(시각을 안 적으니
+  // 달 자리가 없습니다) 이 한 줄이 "이 소요시간은 감싼 값"이라고 말하는 유일한 곳입니다.
   const estimatedStops = [
     ...new Set(
       (course?.legs ?? []).flatMap((leg) =>
@@ -131,7 +132,15 @@ export default function CourseDetailPage() {
     ),
   ]
 
-  const openTimetable = (poiId) => navigate(`/timetable/${poiId}`)
+  /**
+   * 스팟 → 그 스팟의 버스 시간표.
+   *
+   * **다음 스팟을 함께 넘깁니다.** 학동 다음이 해금강이면 사용자가 학동에서 필요한 것은
+   * `학동 → 해금강` 시간표입니다 — 전에는 아무것도 안 넘겨서 늘 `학동 → 고현터미널`이
+   * 열렸습니다. 마지막 스팟은 다음이 고현터미널(복귀)이라 넘길 것이 없습니다.
+   */
+  const openTimetable = (poiId, nextPoiId) =>
+    navigate(`/timetable/${poiId}${nextPoiId ? `?to=${nextPoiId}` : ''}`)
 
   /**
    * 저장 — 비로그인이면 시트를 먼저 띄웁니다(446:1112).
@@ -213,7 +222,6 @@ export default function CourseDetailPage() {
                 <span className={styles.stopName}>
                   {t('courseDetail.departNode', { origin })}
                 </span>
-                <p className={styles.stay}>{course.departAt}</p>
               </div>
             </div>
 
@@ -222,7 +230,11 @@ export default function CourseDetailPage() {
               <Fragment key={leg.seq}>
                 <LegRow leg={leg} />
                 {course.stops[i] && (
-                  <StopRow stop={course.stops[i]} onOpenTimetable={openTimetable} />
+                  <StopRow
+                    stop={course.stops[i]}
+                    nextPoiId={course.stops[i + 1]?.poiId}
+                    onOpenTimetable={openTimetable}
+                  />
                 )}
               </Fragment>
             ))}
@@ -237,12 +249,11 @@ export default function CourseDetailPage() {
                 <span className={styles.stopName}>
                   {t('courseDetail.arriveNode', { origin })}
                 </span>
-                <p className={styles.stay}>{course.returnAt}</p>
               </div>
             </div>
           </div>
 
-          {/* ★ 추정 각주. 배지가 무슨 뜻인지 여기서만 말할 수 있습니다. */}
+          {/* ★ 추정 각주. 소요시간 중 어느 것이 감싼 값인지 여기서만 말할 수 있습니다. */}
           {estimatedStops.length > 0 && (
             <p className={styles.estNote}>
               {t('courseDetail.estimatedNote', { stops: estimatedStops.join('·') })}

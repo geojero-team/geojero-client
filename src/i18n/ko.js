@@ -100,7 +100,6 @@ export default {
   // "신촌 시간표"라고 거짓말하는 것이 됩니다.
   'spotTime.boardDiffers': '{alight}에서 내려요. 시간표는 {stop} 정류장 기준이에요.',
   'spotTime.toOrigin': '{spot} → {origin}',
-  'spotTime.fromOrigin': '{origin} → {spot}',
   'spotTime.toSpot': '{spot} → {to}',
   'spotTime.next': '다음 버스 {time} · {route}번',
   'spotTime.noNext': '오늘 남은 버스가 없어요',
@@ -132,17 +131,16 @@ export default {
   'courseDetail.leg': '{route}번 · {min}분',
   'courseDetail.legSameStop': '같은 정류장 · 바로 이동',
   'courseDetail.timetable': '시간표',
-  'courseDetail.stay': '{min}분 머물러요',
   'courseDetail.source': '출처 {source} · {date}',
   'courseDetail.save': '이 코스 저장하기',
   'courseDetail.loading': '코스를 불러오는 중',
   'courseDetail.weekday': '평일',
   'courseDetail.holiday': '휴일',
-  // ★ 추정 시각. 값이 없는 게 아니라 **앞뒤 정류장으로 감싼 값**이라 [미확인]과 다릅니다.
-  // 배지만 달고 왜 추정인지 안 적으면 사용자가 판단할 수 없습니다.
-  'courseDetail.estimated': '시각 추정',
+  // ★ 감싼 소요시간. 값이 없는 게 아니라 **앞뒤 정류장으로 감싼 값**이라 [미확인]과 다릅니다.
+  // 화면에서 시각을 뺐으므로(2026-09-13) 이 각주도 시각이 아니라 소요시간을 말합니다.
+  // 감싸는 방향이 정해져 있어 — 하차는 상한, 승차는 하한 — 늘 넉넉한 쪽으로만 어긋납니다.
   'courseDetail.estimatedNote':
-    '{stops} 정류장은 원문 시간표에 시각 칸이 없어, 앞뒤 정류장 시각으로 잡았어요. 실제 버스는 적힌 시각보다 늦게 오고 적힌 도착 시각보다 일찍 닿습니다.',
+    '{stops} 정류장은 원문 시간표에 칸이 없어, 앞뒤 정류장 시각으로 감싼 값이에요. 실제 이동 시간은 적힌 것보다 짧습니다 — 버스를 놓치지 않는 쪽으로만 어긋납니다.',
 
   // ── 코스 추천 (02-2 · Figma 446:559) ─────────────────────────────────────
   // 판정을 뺀 뒤 "스팟을 고르면 판정해준다"에서 "개수를 고르면 우리가 짠 코스를 준다"로

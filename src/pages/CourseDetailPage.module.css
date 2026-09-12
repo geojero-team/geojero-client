@@ -206,18 +206,6 @@
   color: var(--text-secondary);
 }
 
-/* ★ 추정 배지. 숫자만 보이면 확정으로 읽히므로 반드시 이 배지가 붙습니다.
-   경고색(빨강)을 쓰지 않습니다 — 틀린 값이 아니라 폭이 있는 값입니다. */
-.estBadge {
-  flex: none;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  background: var(--status-unknown-bg, var(--bg-surface));
-  font: var(--type-label);
-  color: var(--status-unknown, var(--text-secondary));
-  white-space: nowrap;
-}
-
 /* ── 스팟 줄 ─────────────────────────────────────────────────────────────── */
 
 .stopContent {
@@ -249,14 +237,8 @@
   white-space: nowrap;
 }
 
-.stay {
-  margin: 0;
-  font: var(--type-caption);
-  color: var(--text-secondary);
-}
-
-/* ★ 추정 각주 — 배지가 무슨 뜻인지 여기서만 말할 수 있습니다.
-   "실제 버스는 적힌 시각보다 늦게 온다"가 사용자에게 필요한 문장입니다. */
+/* ★ 추정 각주 — 어떤 소요시간이 감싼 값인지 여기서만 말할 수 있습니다.
+   시각과 구간 배지를 뺀 뒤로는 이 한 줄이 유일한 근거 표시입니다. */
 .estNote {
   margin: 16px 0 0;
   padding: 12px 14px;

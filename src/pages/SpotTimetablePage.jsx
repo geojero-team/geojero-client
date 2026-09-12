@@ -52,8 +52,19 @@ export default function SpotTimetablePage() {
   // 날짜·시각을 쿼리로 덮어쓸 수 있게 둡니다 — 화면 확인과 회귀에 필요합니다.
   const date = searchParams.get('date') ?? today()
   const now = searchParams.get('now') ?? nowHm()
-  const dir = searchParams.get('dir') ?? 'toOrigin' // toOrigin | fromOrigin
+  /**
+   * 어디로 가는 시간표인가.
+   *
+   * ⚠️ 2026-09-13에 방향의 뜻이 바뀌었습니다(팀 결정). 전에는 `스팟 → 고현` / **`고현 → 스팟`**
+   * 두 칩이었는데, 뒤쪽을 지웠습니다. **그 칩만 남의 정류장 시간표였습니다** — 학동몽돌해변
+   * 화면인데 고현터미널에서 출발하는 버스를 보여줬습니다. 이 화면은 "이 스팟에서 타는 버스"고,
+   * 코스에서 학동 다음이 해금강이면 필요한 것은 **학동 → 해금강**입니다.
+   *
+   *   to   코스의 다음 스팟 poiId. 코스 상세에서 넘어올 때만 붙습니다
+   *   dir  next(다음 스팟) | origin(고현터미널로 복귀). to가 없으면 origin 하나뿐입니다
+   */
   const toPoiId = searchParams.get('to')
+  const dir = searchParams.get('dir') ?? (toPoiId ? 'next' : 'origin')
 
   const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
 
@@ -63,8 +74,8 @@ export default function SpotTimetablePage() {
       .spotDepartures(poiId, {
         date,
         after: now,
-        from: dir === 'fromOrigin' ? 'origin' : undefined,
-        toPoiId: dir === 'toOrigin' ? toPoiId : undefined,
+        // toPoiId를 안 주면 서버가 고현터미널을 목적지로 잡습니다(복귀 방향).
+        toPoiId: dir === 'next' ? toPoiId : undefined,
       })
       .then((data) => {
         if (!cancelled) setResult({ status: 'ready', data, error: '' })
@@ -82,9 +93,10 @@ export default function SpotTimetablePage() {
   const spot = d?.shortName ?? d?.name ?? ''
   const origin = '고현터미널'
 
+  // to는 두 칩 모두에 남겨둡니다 — 복귀 칩을 눌렀다가 다시 돌아올 수 있어야 합니다.
   const setDir = (next) => {
     const params = { dir: next, ...(date ? { date } : {}), ...(now ? { now } : {}) }
-    if (next === 'toOrigin' && toPoiId) params.to = toPoiId
+    if (toPoiId) params.to = toPoiId
     setSearchParams(params, { replace: true })
   }
 
@@ -140,25 +152,27 @@ export default function SpotTimetablePage() {
                 : t('spotTime.board', { stop: d.alightLabel ?? d.boardStop })}
           </p>
 
-          {/* 방향 칩 — 스팟 → 고현 / 고현 → 스팟(453:415 "타는 곳이 고현터미널로 바뀜") */}
+          {/* 방향 칩 — 둘 다 **이 스팟에서 출발하는** 버스입니다.
+              코스에서 왔으면 `다음 스팟`이 기본이고, `고현터미널`은 복귀편입니다.
+              코스 없이 시간표 탭에서 들어오면 갈 곳이 정해지지 않아 복귀편 하나만 둡니다. */}
           <div className={styles.dirs} role="group">
+            {toPoiId && (
+              <button
+                type="button"
+                className={dir === 'next' ? `${styles.dirChip} ${styles.dirOn}` : styles.dirChip}
+                onClick={() => setDir('next')}
+                aria-pressed={dir === 'next'}
+              >
+                {t('spotTime.toSpot', { spot, to: d.to?.name ?? '' })}
+              </button>
+            )}
             <button
               type="button"
-              className={dir === 'toOrigin' ? `${styles.dirChip} ${styles.dirOn}` : styles.dirChip}
-              onClick={() => setDir('toOrigin')}
-              aria-pressed={dir === 'toOrigin'}
+              className={dir === 'origin' ? `${styles.dirChip} ${styles.dirOn}` : styles.dirChip}
+              onClick={() => setDir('origin')}
+              aria-pressed={dir === 'origin'}
             >
-              {toPoiId
-                ? t('spotTime.toSpot', { spot, to: d.to?.name ?? '' })
-                : t('spotTime.toOrigin', { spot, origin })}
-            </button>
-            <button
-              type="button"
-              className={dir === 'fromOrigin' ? `${styles.dirChip} ${styles.dirOn}` : styles.dirChip}
-              onClick={() => setDir('fromOrigin')}
-              aria-pressed={dir === 'fromOrigin'}
-            >
-              {t('spotTime.fromOrigin', { spot, origin })}
+              {t('spotTime.toOrigin', { spot, origin })}
             </button>
           </div>
 
@@ -174,7 +188,7 @@ export default function SpotTimetablePage() {
               {main && (
                 <p className={styles.durLine}>
                   {t('spotTime.duration', {
-                    to: dir === 'fromOrigin' ? spot : (d.to?.name ?? origin),
+                    to: d.to?.name ?? origin,
                     min: durationText(main),
                   })}
                   {others
