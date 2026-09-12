@@ -17,8 +17,7 @@ import styles from './CourseMapPage.module.css'
  * 선택하면 코스 상세로 갑니다 — 코스 추천의 다중 선택은 '찜'이 아니라 여기서 비교할
  * 대상을 추리는 것이었습니다.
  *
- * MapView는 판정 시절 계약(`spotId`·`verdict`)을 쓰므로 얇게 맞춰 넘깁니다.
- * `showVerdict={false}` — 판정은 2026-09-12에 제품에서 빠졌고 핀에 성립 뱃지를 달지 않습니다.
+ * MapView는 `spotId`로 핀을 식별하므로 poiId를 그 자리에 맞춰 넘깁니다.
  */
 
 /** 지도 위에 코스 카드 스트립이 얹히므로 그만큼 위쪽을 비워 핀이 가려지지 않게 합니다. */
@@ -92,7 +91,6 @@ export default function CourseMapPage() {
           onSelectSpot={setSelectedSpotId}
           onDeselect={() => setSelectedSpotId(null)}
           routePath={routePath}
-          showVerdict={false}
           orderBySpotId={orderBySpotId}
           topReserved={TOP_RESERVED}
         />

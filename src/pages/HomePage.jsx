@@ -59,7 +59,6 @@ export default function HomePage() {
           selectedSpotId={selectedSpotId}
           onSelectSpot={setSelectedSpotId}
           onDeselect={() => setSelectedSpotId(null)}
-          showVerdict={false}
           topReserved={16}
         />
 

@@ -27,21 +27,21 @@ import styles from './MyPlansPage.module.css'
 /**
  * 저장 카드 — Figma CourseCard(49:51) kind=saved.
  *
- * **판정 배지를 달지 않습니다.** Figma 컴포넌트 설명이 이유를 적어뒀습니다:
- * "'저장 땐 성립/지금은 불성립' 비교 표시는 컷 1순위라 UI 미포함(컬럼 verdict_at_save만 유지)".
- * 서버는 verdictAtSave·verdictNow를 둘 다 내려주지만 화면에 그리지 않습니다.
+ * **판정 요소가 없습니다.** 2026-09-12에 판정이 제품에서 빠졌고(기준문서 §9) 응답에서
+ * verdictAtSave·verdictNow도 사라졌습니다. 그 둘을 읽던 코드와 '오늘 기준 재판정' 버튼을
+ * 함께 걷어냈습니다 — 컷 순서 3번이 "저장 일정 열람 시 재판정 표시 → 단순 열람으로 확정"입니다.
  */
-function SavedTripCard({ trip, busy, onDelete, onRejudge }) {
+function SavedTripCard({ trip, busy, onDelete }) {
   // 제목·경로는 **저장 시점에 서버가 함께 저장한 값**입니다(V10). 저장된 판정의 legs에는
   // 정류소 이름이 없어서(LegRes = ok·depart·arrive·reason) 여기서 만들 수 없고,
   // 코스 이름이 나중에 바뀌어도 "내가 저장한 그것"이 남아야 합니다.
   const title = trip.title ?? t('myPlans.unknownCourse')
   const chain = trip.chain ?? null
-  const legs = (trip.verdictNow ?? trip.verdictAtSave)?.legs?.length ?? null
   const date = formatMonthDay(trip.travelDate)
-  const meta = legs
-    ? t('myPlans.meta', { date, time: trip.arrivalTime, legs })
-    : t('myPlans.metaNoLegs', { date, time: trip.arrivalTime })
+  // 출발·복귀 시각은 코스에 박힌 값을 서버가 채워준 것입니다(사용자가 고르지 않습니다).
+  const meta = trip.returnTime
+    ? t('myPlans.meta', { date, depart: trip.arrivalTime, back: trip.returnTime })
+    : t('myPlans.metaNoBack', { date, depart: trip.arrivalTime })
 
   return (
     <article className={styles.card}>
@@ -59,16 +59,6 @@ function SavedTripCard({ trip, busy, onDelete, onRejudge }) {
           data-api="DELETE /api/saved-trips/{id}"
         >
           {t('myPlans.delete')}
-        </Button>
-        <span className={styles.spacer} aria-hidden="true" />
-        <Button
-          variant="secondary"
-          className={styles.action}
-          onClick={onRejudge}
-          disabled={busy}
-          data-api="GET /api/saved-trips"
-        >
-          {busy ? t('myPlans.rejudging') : t('myPlans.rejudge')}
         </Button>
       </div>
     </article>
@@ -122,13 +112,6 @@ export default function MyPlansPage() {
       .then(load)
       .catch(() => load())
       .finally(() => setBusy(false))
-  }
-
-  /* '오늘 기준 재판정' — 다시 계산하는 곳은 서버입니다. 목록을 다시 부르면
-     서버가 verdictNow를 그 자리에서 새로 판정해 내려줍니다(SavedTripController.toRes). */
-  const rejudge = () => {
-    setBusy(true)
-    load().finally(() => setBusy(false))
   }
 
   const trips = result.trips
@@ -188,7 +171,6 @@ export default function MyPlansPage() {
                 trip={trip}
                 busy={busy}
                 onDelete={remove}
-                onRejudge={rejudge}
               />
             ))}
           </div>

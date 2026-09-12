@@ -16,7 +16,7 @@ import ko from './ko'
 const LOCALES = { ko }
 const LOCALE = 'ko'
 
-/** t('plan.stateAll', { count: 3 }) — 값의 {count} 자리에 끼웁니다. */
+/** t('courses.total', { count: 3 }) — 값의 {count} 자리에 끼웁니다. */
 export function t(key, vars) {
   const text = LOCALES[LOCALE][key]
 

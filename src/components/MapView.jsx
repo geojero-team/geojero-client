@@ -59,26 +59,14 @@ const FIT_PADDING = 56
 /** 코스 경로 선 — Figma route-line(285:234) 2.5px 단선. 흰 casing 없음. */
 const ROUTE_LINE_WEIGHT = 2.5
 
-/** 마커 이름표에 붙는 판정 말. 모르는 값이 오면 '미확인'으로 읽습니다. */
-const VERDICT_KEYS = {
-  YES: 'status.YES',
-  NO: 'status.NO',
-  UNKNOWN: 'status.UNKNOWN',
-}
-
-/** 코스 정류소 마커의 판정 톤. 성립은 기본(브랜드) — Figma StopMarker default. */
-function toneClassOf(spot, isStop, showVerdict) {
-  if (!isStop || !showVerdict) return null
-  if (spot.verdict === 'NO') return styles.toneNo
-  if (spot.verdict === 'UNKNOWN') return styles.toneUnknown
-  return null
-}
-
 /**
  * 마커 하나. CustomOverlay는 DOM 엘리먼트를 그대로 받으므로 직접 만들어 넣습니다.
  *
- *   코스 정류소  StopMarker — brand 면 + 흰 번호 (미확인·불성립이면 테두리 톤)
+ *   코스 정류소  StopMarker — brand 면 + 흰 번호
  *   코스 밖 스팟 SpotMarker — 흰 면 + brand 테두리 + 카테고리 아이콘
+ *
+ * 2026-09-12: 판정 톤(불성립 빨강·미확인 노랑)과 이름표의 '성립/불성립' 꼬리말을
+ * 걷어냈습니다. 판정이 제품에서 빠지면서 spots 에 verdict 가 오지 않습니다.
  */
 /** 사진이 없거나 링크가 죽었을 때 쓰는 테마 아이콘. Figma SpotMarker(55:45)와 같은 패스입니다. */
 function themeIconSvg(theme) {
@@ -89,22 +77,17 @@ function themeIconSvg(theme) {
   )
 }
 
-function createPinElement(spot, { order, tone }) {
+function createPinElement(spot, { order }) {
   const isStop = order != null
 
   const element = document.createElement('button')
   element.type = 'button'
-  element.className = [styles.pin, isStop ? styles.pinStop : styles.pinSpot, tone]
+  element.className = [styles.pin, isStop ? styles.pinStop : styles.pinSpot]
     .filter(Boolean)
     .join(' ')
 
-  // 판정 3분법 — 미확인을 성립으로 읽지 않는다.
-  const state =
-    isStop && spot.verdict
-      ? ` · ${t(VERDICT_KEYS[spot.verdict] ?? 'status.UNKNOWN')}`
-      : ''
   // 겹쳤을 때 "외 2곳"을 덧붙여야 해서 원본을 따로 들고 있습니다.
-  element.dataset.label = `${spot.shortName ?? spot.name}${state}`
+  element.dataset.label = `${spot.shortName ?? spot.name}`
   element.setAttribute('aria-label', element.dataset.label)
 
   const dot = document.createElement('span')
@@ -308,7 +291,6 @@ export default function MapView({
   onSelectSpot,
   onDeselect,
   routePath = null,
-  showVerdict = true,
   orderBySpotId = null,
   topReserved = 16,
   compact = false, // 판정 결과의 200px 미리보기 — 줌 버튼을 숨깁니다
@@ -398,10 +380,7 @@ export default function MapView({
     pinsRef.current = spots.map((spot) => {
       const order = orderBySpotId?.get(spot.spotId) ?? null
       const isStop = order != null
-      const { element, label, badge } = createPinElement(spot, {
-        order,
-        tone: toneClassOf(spot, isStop, showVerdict),
-      })
+      const { element, label, badge } = createPinElement(spot, { order })
       const position = new kakao.maps.LatLng(spot.lat, spot.lng)
 
       element.addEventListener('click', (event) => {
@@ -448,7 +427,7 @@ export default function MapView({
       pinsRef.current = []
     }
     // topReserved는 liveRef로 읽습니다 — 그 값 때문에 마커를 다시 만들 필요는 없습니다.
-  }, [spots, phase, showVerdict, orderBySpotId])
+  }, [spots, phase, orderBySpotId])
 
   // ── 코스 경로 선 ────────────────────────────────────────────────────────
   useEffect(() => {
