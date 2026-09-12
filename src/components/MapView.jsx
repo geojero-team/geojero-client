@@ -40,8 +40,16 @@ const LABEL_LEFT_GAP = 4
  * 바람의언덕과 도장포는 실제로 250m 거리라, 섬 전체가 보이는 배율에서는 10px 남짓
  * 떨어져 있습니다 — 원 두 개가 그대로 포개집니다. 뒤 핀은 앞 핀에 가려 탭도 안 됩니다.
  * 그래서 한 곳만 남기고 "+N"으로 몇 곳이 더 있는지 말한 뒤, 탭하면 확대해 풀어줍니다.
+ *
+ * ⚠️ 2026-09-12: 28px(마커 지름)에서 **16px로 낮췄습니다.** 28px는 "원이 1px도 겹치지
+ * 않는다"는 기준이었는데, 그러면 가까운 스팟을 보려고 너무 많이 당겨야 했습니다 —
+ * 거제씨월드와 조선해양문화관은 실제로 **112m 떨어진 같은 시설**이라(같은 주소,
+ * 기준문서 §7) 500m 배율에서 계속 하나로 묶였습니다.
+ * 16px이면 원이 12px 겹치지만 **중심이 16px 떨어져 있어 둘 다 탭됩니다** —
+ * 가려져서 닿을 수 없는 것과 살짝 물려 보이는 것은 다른 문제입니다.
+ * 더 낮추면(예: 12px) 탭 영역이 실제로 먹히기 시작합니다.
  */
-const CLUSTER_GAP = MARKER_SIZE
+const CLUSTER_GAP = 16
 
 /** 겹친 핀을 탭했을 때 당길 배율 단계. 2단계면 250m가 40px 넘게 벌어집니다. */
 const CLUSTER_ZOOM_STEP = 2
@@ -193,6 +201,7 @@ function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
     // 겹친 상태에서는 탭이 '고르기'가 아니라 '펼치기'입니다. 클릭 쪽에서 읽습니다.
     pin.element.dataset.covered = String(covered)
     const base = pin.element.dataset.label ?? ''
+
     pin.element.setAttribute(
       'aria-label',
       covered > 0 ? t('map.clusterLabel', { name: base, count: covered }) : base,
