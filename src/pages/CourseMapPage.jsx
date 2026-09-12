@@ -156,7 +156,10 @@ export default function CourseMapPage() {
                       <span className={styles.cardTitle}>
                         {t('courses.cardTitle', { n: index + 1 })}
                       </span>
-                      <span className={styles.cardTime}>{course.approxTotalText}</span>
+                      {/* 경과 시간(약 8시간 30분)이 아니라 버스 이동시간의 합입니다 — 위 CoursesPage 주석 참고 */}
+                      <span className={styles.cardTime}>
+                        {t('courses.busTotal', { min: course.busTotalText })}
+                      </span>
                     </span>
                     <span className={styles.order}>
                       {course.spots.map((spot, i) => (

@@ -73,8 +73,12 @@ function CourseCard({ course, index, selected, onToggle }) {
         ))}
       </div>
 
+      {/* ⚠️ 여기에 `11:05 → 19:40 · 약 8시간 30분`이 있었습니다(2026-09-13 제거).
+          앞의 둘은 **일정**이고 뒤의 하나는 그 일정의 경과 시간입니다 — 3-01은 510분 중
+          버스가 114분뿐이고 나머지는 머무는 시간입니다. 얼마나 머물지는 사용자가 정하는
+          것이므로, 우리가 소유한 숫자인 **구간 이동시간의 합**만 적습니다. */}
       <div className={styles.cardFoot}>
-        {course.departAt} → {course.returnAt} · {course.approxTotalText}
+        {t('courses.busTotal', { min: course.busTotalText })}
       </div>
     </button>
   )

@@ -158,6 +158,9 @@ export default {
   'courses.originNote': '주의 사항 : 모든 첫 출발지는 고현터미널로 가정합니다.',
   'courses.countChip': '{n}곳',
   'courses.total': '총 코스 {count}가지',
+  // ★ 우리가 소유한 숫자. 출발·복귀 시각과 경과 시간(약 8시간 30분)은 2026-09-13에 화면에서
+  // 뺐습니다 — 그 대부분이 머무는 시간이고, 얼마나 머물지는 사용자가 정하는 것입니다.
+  'courses.busTotal': '버스 {min}',
   'courses.cardTitle': '코스 {n}',
   'courses.nineScenic': '거제9경 {count}곳',
   'courses.multiHint': '코스는 여러 개 고를 수 있어요',

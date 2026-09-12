@@ -202,7 +202,10 @@ export default function CourseDetailPage() {
 
       <div className={styles.scroll}>
         <div className={styles.summary}>
-          <p className={styles.big}>{course.approxTotalText}</p>
+          {/* 헤드라인도 경과 시간에서 **버스 이동시간**으로 바꿨습니다(2026-09-13).
+              `약 8시간 30분`은 510분 중 버스가 114분이고 나머지가 머무는 시간이라,
+              우리가 답한다고 한 것("어느 버스로 몇 분")과 다른 숫자였습니다. */}
+          <p className={styles.big}>{t('courses.busTotal', { min: course.busTotalText })}</p>
           <p className={styles.range}>
             {t('courseDetail.range', { origin, legs: course.legCount })}
           </p>
