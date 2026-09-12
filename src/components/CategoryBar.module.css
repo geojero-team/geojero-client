@@ -1,22 +1,47 @@
-/* Figma category(233:387): gap 6, 칸 flex-1, radius 10, pt8 pb6, 세로 gap 4 */
+/* Figma category(233:387)는 6칸을 **균등 분할**로 그렸습니다(칸 flex-1).
+   분류가 8칸으로 늘면서 그 배치가 깨졌습니다 — 350px ÷ 8 − gap ≈ 38px인데
+   '언덕·전망' 라벨은 nowrap 으로 ~60px 가 필요해 글자가 칸을 넘고 서로 붙어 보였습니다.
+
+   그래서 **균등 분할을 버리고 가로 스크롤**로 바꿨습니다(2026-09-12).
+     · 칸은 글자 길이만큼 차지합니다(flex: none) — 라벨이 잘리거나 붙지 않습니다
+     · 넘치면 가로로 스크롤합니다. 분류가 더 늘어도(theme 추가) 안 깨집니다
+     · 스팟 시간표의 방향 칩과 같은 방식이라 제품 안에서 일관됩니다
+   Figma 02-1 에 없는 배치라 디자인 이탈입니다 — 대신 균등 분할이 8칸에서
+   읽히지 않는다는 사실이 근거입니다. */
 .bar {
   display: flex;
-  gap: 6px;
-  width: 100%;
+  /* 부모(.body)가 flex 컬럼입니다. overflow-x 를 준 요소는 flex-shrink 가 실제로
+     작동해서(스크롤 가능하니 줄일 수 있다고 봅니다) 높이가 0으로 눌립니다 —
+     실제로 칩이 통째로 사라졌습니다(2026-09-12). flex: none 으로 못박습니다. */
+  flex: none;
+  gap: 8px;
+  /* 화면 가장자리까지 흘려 "더 있다"가 보이게 합니다. 부모(.body) 좌우 여백 20px 를
+     음수 마진으로 상쇄하고 같은 값을 패딩으로 되돌려, 첫 칸·끝 칸의 여백은 지킵니다. */
+  margin: 0 -20px;
+  padding: 0 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* 세로 스크롤이 이 가로 스크롤에 끌려가지 않게 합니다. */
+  overscroll-behavior-x: contain;
+}
+
+.bar::-webkit-scrollbar {
+  display: none;
 }
 
 .cat {
   display: flex;
-  flex: 1 0 0;
-  min-width: 0;
+  flex: none;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 8px 0 6px;
+  /* 좌우 12px — 글자와 칸 경계가 붙어 보이던 것이 이 여백으로 풀립니다. */
+  padding: 8px 12px 6px;
   border: 1px solid transparent;
   border-radius: 10px;
   background: var(--bg-surface);
   color: var(--text-secondary);
+  cursor: pointer;
 }
 
 .catOn {
