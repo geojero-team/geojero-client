@@ -33,6 +33,9 @@ const OPPOSITE_M = 50
  * 핀 높이가 20~23px이라 0.5에 달린 핀(위아래 10px)과 떨어지려면 절반을 넘겨 -0.6 / 1.6입니다.
  */
 const STACK_M = 25
+/** 지도 화면 좌표로 잴 때(SDK가 투영을 줄 때) — 핀 글자 폭(노선 두어 개 ≈ 65px)·높이(≈ 22px)만큼. */
+const STACK_PX_X = 72
+const STACK_PX_Y = 24
 const ANCHOR_CENTER = 0.5
 const ANCHOR_BELOW = -0.6
 const ANCHOR_ABOVE = 1.6
@@ -145,27 +148,33 @@ export default function BoardingMap({ boarding }) {
     const map = mapRef.current
     if (phase !== 'ready' || !kakao || !map) return
 
-    const points = []
-    const placed = []
-    const overlays = []
-    const add = ({ lat, lng }, content) => {
-      // 먼저 찍힌 핀(대표 핀이 먼저입니다) 중 가까운 것의 수로 높이를 정합니다: 0 제자리, 홀수 아래, 짝수 위.
-      const near = placed.filter((p) => distanceMeters(p, { lat, lng }) < STACK_M).length
-      const yAnchor = near === 0 ? ANCHOR_CENTER : near % 2 === 1 ? ANCHOR_BELOW : ANCHOR_ABOVE
-      placed.push({ lat, lng })
-      const position = new kakao.maps.LatLng(lat, lng)
-      points.push(position)
-      overlays.push(new kakao.maps.CustomOverlay({ map, position, content, xAnchor: 0.5, yAnchor }))
-    }
-
-    stops.forEach((stop) => add(stop, pinElement(routesLabel(stop.routes), styles.pinMain)))
-    exceptions.forEach((ex) => add(ex, pinElement(`${ex.routeNo} ${ex.depart}`, styles.pinException)))
-    if (!(isTerminal && nearestM < TERMINAL_NEAR_M)) add(from, fromElement(from.name))
+    // 1) 찍을 것을 모으고 2) 화면을 맞춘 뒤 3) 그 배율의 화면 좌표로 겹침을 잰다.
+    //    처음엔 미터(25m)로 쟀는데, 운영 거제씨월드에서 26m 떨어진 두 지세포 핀이 몇 px 안에 겹쳐 4000 핀이 가려졌다(2026-09-14).
+    const items = [
+      ...stops.map((stop) => ({ at: stop, content: pinElement(routesLabel(stop.routes), styles.pinMain) })),
+      ...exceptions.map((ex) => ({ at: ex, content: pinElement(`${ex.routeNo} ${ex.depart}`, styles.pinException) })),
+      ...(isTerminal && nearestM < TERMINAL_NEAR_M ? [] : [{ at: from, content: fromElement(from.name) }]),
+    ].map((item) => ({ ...item, position: new kakao.maps.LatLng(item.at.lat, item.at.lng) }))
 
     const bounds = new kakao.maps.LatLngBounds()
-    points.forEach((point) => bounds.extend(point))
+    items.forEach((item) => bounds.extend(item.position))
     map.setBounds(bounds, FIT_PADDING, FIT_PADDING, FIT_PADDING, FIT_PADDING)
     if (map.getLevel() < MIN_LEVEL) map.setLevel(MIN_LEVEL)
+
+    const projection = map.getProjection?.()
+    const placed = []
+    const overlays = items.map((item) => {
+      const point = projection?.containerPointFromCoords(item.position)
+      // 먼저 찍힌 핀(대표 핀이 먼저입니다) 중 겹치는 것의 수로 높이를 정합니다: 0 제자리, 홀수 아래, 짝수 위.
+      const near = placed.filter((p) =>
+        point && p.point
+          ? Math.abs(p.point.x - point.x) < STACK_PX_X && Math.abs(p.point.y - point.y) < STACK_PX_Y
+          : distanceMeters(p.at, item.at) < STACK_M,
+      ).length
+      const yAnchor = near === 0 ? ANCHOR_CENTER : near % 2 === 1 ? ANCHOR_BELOW : ANCHOR_ABOVE
+      placed.push({ at: item.at, point })
+      return new kakao.maps.CustomOverlay({ map, position: item.position, content: item.content, xAnchor: 0.5, yAnchor })
+    })
 
     return () => overlays.forEach((overlay) => overlay.setMap(null))
   }, [phase, stops, exceptions, from, isTerminal, nearestM])

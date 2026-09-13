@@ -49,9 +49,15 @@ const FROM_TERMINAL = {
 }
 
 /** 카카오 지도 대신 — 만든 오버레이를 모아둡니다. */
-function fakeKakao({ level = 1 } = {}) {
+function fakeKakao({ level = 1, pxPerDeg = null } = {}) {
   const overlays = []
   const map = { setBounds: vi.fn(), getLevel: vi.fn(() => level), setLevel: vi.fn() }
+  // 화면 좌표 — 운영 지도(배율 500m 막대 ≈ 57px)처럼 위경도 1도 ≈ pxPerDeg px 로 편다
+  if (pxPerDeg) {
+    map.getProjection = () => ({
+      containerPointFromCoords: (latLng) => ({ x: (latLng.lng - 128.6) * pxPerDeg, y: (35.0 - latLng.lat) * pxPerDeg * 1.2 }),
+    })
+  }
   const kakao = {
     maps: {
       Map: class {
@@ -232,6 +238,34 @@ describe('BoardingMap — 카카오 지도', () => {
     expect(anchors[1]).toBeLessThan(0)
     expect(anchors[2]).toBeGreaterThan(1)
     expect(anchors[3]).toBe(0.5)
+  })
+
+  it('거제씨월드 — 26m 떨어진 두 지세포 핀도 지도 배율에서 몇 px 안에 겹치면 다른 높이에 단다(운영 실측, 2026-09-14)', async () => {
+    // 운영 화면에서 4000 핀이 63 · 67-1 핀 뒤로 가려졌다. 미터 기준(25m)으로는 겹침으로 안 쳤다
+    const { kakao, map, overlays } = fakeKakao({ level: 5, pxPerDeg: 10000 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(
+      <BoardingMap
+        boarding={{
+          from: { name: '거제씨월드', kind: 'SPOT', lat: 34.8358552, lng: 128.7014662 },
+          stops: [
+            { nodeId: 'GJB1657', name: '지세포', lat: 34.828869, lng: 128.702914, distanceM: 788, routes: ['4000'] },
+            { nodeId: 'GJB901', name: '신촌', lat: 34.8345, lng: 128.69975167, distanceM: 217, routes: ['22', '23'] },
+            { nodeId: 'GJB849', name: '지세포', lat: 34.82895333, lng: 128.70264333, distanceM: 775, routes: ['63', '67-1'] },
+          ],
+          exceptions: [],
+          unresolved: [],
+          source: BOARDING.source,
+        }}
+      />,
+    )
+
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    const byText = Object.fromEntries(overlays.map((o) => [o.options.content.textContent, o.options.yAnchor]))
+    expect(byText['4000']).toBe(0.5)
+    expect(byText['63 · 67-1']).not.toBe(0.5)
+    expect(byText['22 · 23']).toBe(0.5)
   })
 
   it('출발지가 고현터미널이고 가장 가까운 핀이 30m 안이면 출발 자리를 찍지 않는다', async () => {
