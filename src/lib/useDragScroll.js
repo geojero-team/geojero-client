@@ -31,12 +31,12 @@ export function useDragScroll(ref, onSettle) {
        커서보다 배율만큼 빨리 움직인다. 실측: zoom 1.5에서 rect.width 585 / clientWidth 390.
        비율을 재서 나눠주면 zoom이 없을 땐 1이라 아무것도 달라지지 않는다. */
     const scale = el.clientWidth > 0 ? el.getBoundingClientRect().width / el.clientWidth : 1
-    drag.current = { x: event.clientX, left: el.scrollLeft, dx: 0, scale }
+    drag.current = { x: event.clientX, left: el.scrollLeft, dx: 0, scale, pointerId: event.pointerId, captured: false }
     moved.current = false
     // 끄는 동안 스냅을 꺼둡니다. mandatory인 채로 scrollLeft를 직접 만지면 매 프레임
     // 스냅이 걸려 손을 따라오지 못합니다.
     el.style.scrollSnapType = 'none'
-    el.setPointerCapture(event.pointerId)
+    // 포인터는 여기서 잡지 않습니다 — 끌기가 시작된 뒤(onPointerMove)에 잡습니다.
   }
 
   const onPointerMove = (event) => {
@@ -45,7 +45,16 @@ export function useDragScroll(ref, onSettle) {
     // 로컬 좌표로 환산해서 들고 다닌다 — onSettle이 clientWidth와 비교하기 때문이다.
     const dx = (event.clientX - drag.current.x) / drag.current.scale
     drag.current.dx = dx
-    if (Math.abs(dx) > 3) moved.current = true
+    if (Math.abs(dx) > 3) {
+      moved.current = true
+      /* 누르는 순간 잡으면 click이 안쪽 버튼이 아니라 이 상자로 갑니다 — Chrome 실측
+         (2026-09-13): 방문자 사진 타일을 마우스로 누르면 pointerup·click 대상이 줄(DIV)이
+         되어 타일이 열리지 않았다. 그래서 끌기로 판정된 뒤에만 잡습니다. */
+      if (!drag.current.captured) {
+        el.setPointerCapture(drag.current.pointerId)
+        drag.current.captured = true
+      }
+    }
     el.scrollLeft = drag.current.left - dx
   }
 
