@@ -73,6 +73,18 @@ describe('고현터미널 이름표 — 마커 아래 가운데(Figma: 마커 �
     expect(terminal.label.style.opacity).toBe('1')
   })
 
+  it('겹치면 고현터미널이 대표로 남고 스팟이 「+1」로 묶인다 — 목록에서 뒤에 와도', () => {
+    // 운영 실측(2026-09-13): 섬 전체 배율에서 포로수용소와 16px 안으로 겹쳐 터미널이 숨었다
+    const spot = pinAt({ ...SPOT, spotId: 13, shortName: '포로수용소' }, 200, 300, 56)
+    const terminal = pinAt(TERMINAL, 206, 304, 64)
+    updateLabelVisibility(fakeMap(), [spot, terminal], null, 16)
+
+    expect(terminal.element.style.display).toBe('')
+    expect(terminal.badge.hidden).toBe(false)
+    expect(terminal.badge.textContent).toBe('+1')
+    expect(spot.element.style.display).toBe('none')
+  })
+
   it('스팟 이름표는 전처럼 오른쪽이다', () => {
     const spot = pinAt(SPOT, 100, 300, 70)
     updateLabelVisibility(fakeMap(), [spot], null, 16)
