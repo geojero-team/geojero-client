@@ -1,0 +1,134 @@
+/* 내 사진 올리기 시트 — Figma 02-1 v2 `268:518` 실측(390×370 hug).
+   pt8 px20 pb24, gap 14. 스크림 + 시트 구조와 z-index는 LoginSheet(240:209)와 같습니다.
+   ScreenPortal이 화면 프레임에 그리므로 지도 시트 안에서 열어도 탭바까지 덮습니다. */
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  padding: 0;
+  border: 0;
+  background: rgba(16, 24, 40, 0.4); /* LoginSheet 스크림과 같은 값 */
+}
+
+.sheet {
+  position: absolute;
+  z-index: 7;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: var(--space-sm) 20px calc(env(safe-area-inset-bottom, 0px) + var(--space-xl));
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--bg-page);
+  box-shadow: var(--elevation-sheet);
+}
+
+/* handle(268:519) — 36×4 */
+.handleRow {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-default);
+}
+
+/* 268:521 — 20 Bold, 왼쪽 정렬 */
+.title {
+  margin: 0;
+  font: var(--type-title);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+/* picker(268:522) — gap 8. 타일 반경 10은 맞는 토큰이 없어 값으로 씁니다. */
+.picker {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* 268:523 — 선택한 사진 96×96 */
+.preview {
+  display: block;
+  width: 96px;
+  height: 96px;
+  border-radius: 10px;
+  background: var(--bg-surface);
+  object-fit: cover;
+}
+
+/* 268:525 — 「+」 96×96, 1px 점선 */
+.pickTile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  border: 1px dashed var(--border-default);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.pickTile:focus-within {
+  outline: 2px solid var(--brand-strong);
+  outline-offset: 2px;
+}
+
+/* 268:526 — 24 Bold */
+.plus {
+  font: var(--type-display);
+}
+
+/* 투명하게 타일 전체를 덮습니다. display:none이면 키보드로 닿지 않습니다. */
+.fileInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* caption-field(268:527) — 350×72, 1px 실선, 반경 control(8), p12.
+   Figma 자리글 상자는 높이 20에 줄높이 24로 어긋나 있어 줄높이 24(body)를 따릅니다. */
+.caption {
+  width: 100%;
+  height: 72px;
+  padding: var(--space-md);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-control);
+  background: var(--bg-page);
+  font: var(--type-body);
+  color: var(--text-primary);
+  resize: none;
+}
+
+/* 268:528 — 16 Regular #98a2b3 */
+.caption::placeholder {
+  color: var(--text-disabled);
+}
+
+/* 268:529 — 12 Medium */
+.notice {
+  margin: 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+/* 실패 문구 — Figma에 없습니다. CourseDetailPage .saveError와 같은 모양입니다. */
+.error {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--status-no, var(--text-primary));
+  word-break: keep-all;
+}

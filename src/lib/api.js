@@ -14,29 +14,56 @@ import { getToken, stashReturnTo } from './session'
 const BASE = import.meta.env.VITE_API_BASE_URL
 const TIMEOUT_MS = 8000
 
+/**
+ * 사진 올리기만 더 기다립니다. 클라가 1MB 안으로 줄여 보내도 모바일 상향 회선에서는
+ * 8초를 넘길 수 있습니다. 적정값은 실측 전이라 [미확인]입니다.
+ */
+export const UPLOAD_TIMEOUT_MS = 30000
+
 /** 카카오를 거쳐 돌아올 우리 쪽 주소. 카카오 콘솔에 등록된 값과 글자까지 같아야 합니다. */
 export const KAKAO_CALLBACK_PATH = '/auth/callback'
 
 export class ApiError extends Error {
-  constructor(message, status = 0) {
+  constructor(message, status = 0, code = undefined) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    // 서버 ProblemDetail의 code(예: UNSUPPORTED_IMAGE_TYPE). 없을 수 있습니다 —
+    // 호출부는 status로 먼저 가르고 code는 있으면 씁니다.
+    this.code = code
   }
 }
 
-async function request(path, { method = 'GET', body, session = false } = {}) {
+/**
+ * 오류 응답이 problem+json이면 code만 꺼냅니다. 본문이 HTML(프록시가 준 413 등)이거나
+ * 깨져 있으면 조용히 undefined — 공통 경로라 여기서 새 예외가 나면 다른 화면의 오류 처리까지 깨집니다.
+ */
+async function readProblemCode(res) {
+  try {
+    if (!res.headers.get('Content-Type')?.includes('application/problem+json')) return undefined
+    const problem = await res.json()
+    return typeof problem?.code === 'string' ? problem.code : undefined
+  } catch {
+    return undefined
+  }
+}
+
+async function request(path, { method = 'GET', body, session = false, timeoutMs = TIMEOUT_MS } = {}) {
   if (!BASE) throw new ApiError('API 주소가 설정되지 않았습니다 (VITE_API_BASE_URL)')
 
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
 
   try {
+    // FormData(사진 올리기)는 Content-Type을 브라우저가 boundary와 함께 붙여야 합니다 —
+    // 우리가 application/json을 붙이거나 문자열로 바꾸면 업로드가 조용히 깨집니다.
+    const isForm = body instanceof FormData
+
     // 다른 사이트라 쿠키가 안 붙습니다. 서버가 준 같은 토큰을 헤더로 보냅니다 —
     // 같은 사이트(geojero.com)가 되면 서버가 쿠키를 먼저 보므로 이 헤더는 무해합니다.
     const token = session ? getToken() : null
     const headers = {
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...(body && !isForm ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     }
 
@@ -46,11 +73,13 @@ async function request(path, { method = 'GET', body, session = false } = {}) {
       // allowCredentials + 정확한 Origin이어야 동작합니다(와일드카드로는 안 됩니다).
       credentials: session ? 'include' : 'omit',
       headers: Object.keys(headers).length > 0 ? headers : undefined,
-      body: body ? JSON.stringify(body) : undefined,
+      body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
       signal: controller.signal,
     })
 
-    if (!res.ok) throw new ApiError(`${method} ${path} → ${res.status}`, res.status)
+    if (!res.ok) {
+      throw new ApiError(`${method} ${path} → ${res.status}`, res.status, await readProblemCode(res))
+    }
     return res.status === 204 ? null : await res.json()
   } catch (error) {
     if (error instanceof ApiError) throw error
@@ -195,6 +224,51 @@ export const api = {
   /** 204 No Content. request가 204를 null로 돌려줍니다. */
   deleteTrip: (savedTripId) =>
     request(`/api/saved-trips/${savedTripId}`, { method: 'DELETE', session: true }),
+
+  /**
+   * 방문자 사진 목록 — 스팟 상세의 「방문자 사진」 섹션(Figma 268:478 · 268:531).
+   *
+   * **보기는 비로그인입니다.** 토큰이 있으면 붙여 보내 서버가 isMine을 계산하게 하고,
+   * 만료된 토큰이어도 서버는 401이 아니라 isMine=false로 줍니다. 0장은 정상 응답입니다.
+   * TourAPI 사진(`/api/pois/{id}`의 detail.images)과는 호출도 필드도 섞지 않습니다.
+   *
+   * VisitorPhotosRes { poiId, count, photos: [{ photoId, imageUrl, width, height,
+   *                    caption, uploadedDate, isMine }] }
+   */
+  getVisitorPhotos: async (poiId) => {
+    const res = await request(`/api/pois/${poiId}/visitor-photos`, { session: true })
+    return { ...res, photos: res.photos.map(withAbsoluteImage) }
+  },
+
+  /**
+   * multipart: file(1장) + caption(선택). → 201 photo(목록 항목과 같은 모양)
+   * 캡션은 앞뒤 공백을 떼고, 비면 보내지 않습니다(서버도 빈 문자열을 null로 봅니다).
+   */
+  uploadVisitorPhoto: async (poiId, blob, caption) => {
+    const form = new FormData()
+    form.append('file', blob, 'photo.jpg')
+    const trimmed = caption?.trim()
+    if (trimmed) form.append('caption', trimmed)
+    const photo = await request(`/api/pois/${poiId}/visitor-photos`, {
+      method: 'POST',
+      body: form,
+      session: true,
+      timeoutMs: UPLOAD_TIMEOUT_MS,
+    })
+    return withAbsoluteImage(photo)
+  },
+
+  /** 204 No Content — 본인 사진만. 남의 사진이면 403, 없으면 404. */
+  deleteVisitorPhoto: (photoId) =>
+    request(`/api/visitor-photos/${photoId}`, { method: 'DELETE', session: true }),
+}
+
+/**
+ * 서버는 imageUrl을 API 상대 경로(`/api/visitor-photos/42/image`)로 줍니다.
+ * 프론트와 API가 다른 사이트라 그대로 `<img src>`에 넣으면 프론트 주소로 가므로 API 주소에 붙입니다.
+ */
+function withAbsoluteImage(photo) {
+  return { ...photo, imageUrl: new URL(photo.imageUrl, new URL(BASE, window.location.origin)).href }
 }
 
 /**
@@ -202,6 +276,15 @@ export const api = {
  * 진입점이 둘(판정 결과의 저장 시트 · 내 일정 빈 상태)이라 여기 한 번만 씁니다.
  */
 export function beginKakaoLogin() {
-  stashReturnTo(`${window.location.pathname}${window.location.search}`)
+  beginKakaoLoginTo(`${window.location.pathname}${window.location.search}`)
+}
+
+/**
+ * 돌아올 곳이 지금 주소가 아닐 때. 지도의 스팟 시트는 주소를 바꾸지 않으므로
+ * 그대로 돌아오면 시트가 닫힌 지도가 나옵니다 — 사진 올리기는 `/spots/{id}?upload=1`로 돌려보냅니다.
+ * (`beginKakaoLogin`에 인자를 더하지 않은 이유: onClick에 그대로 넘겨 이벤트 객체가 첫 인자로 옵니다.)
+ */
+export function beginKakaoLoginTo(returnTo) {
+  stashReturnTo(returnTo)
   api.kakaoStart(`${window.location.origin}${KAKAO_CALLBACK_PATH}`)
 }

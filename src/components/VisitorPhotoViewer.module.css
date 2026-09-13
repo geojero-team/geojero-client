@@ -1,0 +1,124 @@
+/* 방문자 사진 뷰어 — Figma 02-1 v2 `268:499` 실측(390×844).
+   top y12 h56 → photo y120 390×390 → caption y530 px20 gap12 → nav y764 h56 (아래 24).
+
+   ScreenPortal이 화면 프레임(.screen)에 직접 그리므로 inset 0이 곧 프레임 전체입니다 —
+   지도 시트(z-index 3)·탭바 위로 올라가야 해서 로그인 시트(6·7)보다 위인 8입니다.
+
+   어두운 면·보조 글자에 맞는 의미 토큰이 없어 Figma 원시값을 씁니다
+   (Figma도 원시 hex로 칠했습니다. LoginSheet 스크림·SpotDetail 칩과 같은 선례). */
+
+.viewer {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  background: #101828;
+  color: #ffffff;
+}
+
+/* top(268:500) — px16, gap 10 */
+.top {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  height: 56px;
+  margin-top: 12px;
+  padding: 0 var(--space-lg);
+}
+
+/* 268:505 — 날짜 12 Medium #d9dee5 */
+.date {
+  flex: 1;
+  font: var(--type-label);
+  color: #d9dee5;
+}
+
+/* 268:506 — 「3 / 12」 */
+.position {
+  font: var(--type-label);
+}
+
+/* 268:507 — × 20 Bold/28 */
+.close {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--type-title);
+  color: inherit;
+  cursor: pointer;
+}
+
+/* photo(268:508) — 390×390, 면 #333b4a. 사진은 잘리지 않게 넣습니다. */
+.photo {
+  flex: none;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  margin-top: 52px;
+  background: #333b4a;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+/* caption(268:510) — px20, gap 12. 길면 이 칸만 스크롤합니다. */
+.captionBox {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-md);
+  min-height: 0;
+  padding: 20px 20px 0;
+  overflow-y: auto;
+}
+
+/* 268:511 — 16/24 흰 글자 */
+.caption {
+  margin: 0;
+  font: var(--type-body);
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/* nav(268:513) — px24, 양끝 정렬 */
+.nav {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  margin-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--space-xl));
+  padding: 0 var(--space-xl);
+}
+
+/* 268:514 — 44×44 원, 흰색 14% */
+.navButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0 0 2px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  font: var(--type-display);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+/* 첫 장 ‹ · 끝 장 › — Figma에 없는 모습이라 흐리게만 합니다. */
+.navButton:disabled {
+  opacity: 0.35;
+  cursor: default;
+}

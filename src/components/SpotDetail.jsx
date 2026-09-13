@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from './Button'
+import VisitorPhotos from './VisitorPhotos'
 import { t } from '../i18n'
 import { loadSpotDetail } from '../lib/spots'
 import { courseImage, onImageError } from '../lib/courseImage'
@@ -20,8 +21,9 @@ import styles from './SpotDetail.module.css'
  * 판정 자체가 제품에서 빠졌고(기준문서 §9), 시각은 '버스 시간표 보기'가 여는 화면이
  * 노선별로 말합니다. 스팟 하나만 두고 이동시간을 말할 수 없으니 맞는 분담입니다.
  *
- * Figma의 '방문자 사진' 섹션은 넣지 않았습니다 — 노트가 스스로 v2라고 적고 있고,
- * '12장'과 사진 타일 3개는 지금 없는 것을 있는 것처럼 그리게 됩니다.
+ * '방문자 사진' 섹션은 소개 뒤에 둡니다(02-1 `264:227`의 `264:260` 자리 — 2026-09-13 필수 편입).
+ * Figma의 '12장'·사진 타일 3개는 자리글이라 그리지 않고 서버가 준 장수만 그립니다 — 처음엔 17곳 전부
+ * 0장이고 빈 상태(`268:531`)가 정상 화면입니다. TourAPI 사진(아래 hero)과는 호출·상태를 섞지 않습니다.
  */
 
 /** 한 장 너비의 몇 %를 끌어야 다음 장으로 넘길지. */
@@ -52,8 +54,10 @@ function PhotoCountIcon() {
  * @param seed    목록에서 이미 아는 것(이름·권역·분류). 있으면 사진을 기다리는 동안에도
  *                제목이 먼저 뜹니다 — 시트는 누른 즉시 이름이 보여야 합니다
  * @param onBack  주면 사진 위에 ‹ 버튼을 그립니다. 시트에서는 주지 않습니다
+ * @param uploadInUrl  `/spots/:id` 화면이면 참 — 방문자 사진 올리기 뜻을 주소(`?upload=1`)에 둡니다.
+ *                지도 시트는 주소를 바꾸지 않으므로 주지 않습니다
  */
-export default function SpotDetail({ poiId, seed = null, onBack = null }) {
+export default function SpotDetail({ poiId, seed = null, onBack = null, uploadInUrl = false }) {
   const navigate = useNavigate()
   const [loaded, setLoaded] = useState(null)
   const [expanded, setExpanded] = useState(false)
@@ -226,6 +230,13 @@ export default function SpotDetail({ poiId, seed = null, onBack = null }) {
             )}
           </section>
         )}
+
+        {/* 방문자 사진(264:260) — 올린 사람의 사진입니다. 위 hero의 TourAPI 사진과 칸·호출이 따로입니다. */}
+        <VisitorPhotos
+          poiId={poiId}
+          spotName={spot.shortName ?? spot.name}
+          uploadInUrl={uploadInUrl}
+        />
       </div>
     </div>
   )

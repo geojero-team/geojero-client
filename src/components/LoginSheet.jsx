@@ -14,8 +14,11 @@ import styles from './LoginSheet.module.css'
  *
  * 로그인 자체는 백엔드 /api/auth/kakao가 맡습니다. 지금은 서버 배포 전이라
  * 버튼이 그 경로로 보내기만 하고, 실패해도 판정 화면은 그대로 돌아야 합니다.
+ *
+ * title — 진입점이 둘이 되며(코스 저장 · 방문자 사진 올리기) 제목만 받습니다.
+ * 주지 않으면 코스 저장 문구 그대로라 코스 상세 화면은 바뀌지 않습니다.
  */
-export default function LoginSheet({ open, onClose, onLogin }) {
+export default function LoginSheet({ open, onClose, onLogin, title = t('login.title') }) {
   if (!open) return null
 
   return (
@@ -32,7 +35,7 @@ export default function LoginSheet({ open, onClose, onLogin }) {
           <span className={styles.handle} aria-hidden="true" />
         </div>
 
-        <h2 className={styles.title}>{t('login.title')}</h2>
+        <h2 className={styles.title}>{title}</h2>
 
         <KakaoLoginButton onClick={onLogin} data-api="GET /api/auth/kakao/start" />
 

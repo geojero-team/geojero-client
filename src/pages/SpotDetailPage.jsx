@@ -1,4 +1,4 @@
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import Screen from '../components/Screen'
 import SpotDetail from '../components/SpotDetail'
 
@@ -15,15 +15,18 @@ import SpotDetail from '../components/SpotDetail'
 export default function SpotDetailPage() {
   const { spotId } = useParams()
   const navigate = useNavigate()
-  const location = useLocation()
 
-  // 새 탭으로 바로 열었을 때 뒤로 갈 곳이 없으면 홈으로 보냅니다.
+  /* 새 탭으로 바로 열었을 때 뒤로 갈 곳이 없으면 홈으로 보냅니다.
+     `location.key === 'default'`로는 가를 수 없게 됐습니다 — 방문자 사진 올리기가 주소에
+     `?upload=1`을 replace로 붙였다 떼면 key가 바뀌어, 바로 연 화면에서도 navigate(-1)이 앱 밖으로 나갑니다.
+     라우터가 history.state에 적는 idx는 replace로 바뀌지 않으므로 그걸로 앞 기록이 있는지 봅니다.
+     카카오 로그인에서 돌아온 화면도 idx가 0이라 카카오 페이지로 되돌아가지 않습니다. */
   const goBack = () =>
-    location.key === 'default' ? navigate('/', { replace: true }) : navigate(-1)
+    (window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate('/', { replace: true })
 
   return (
     <Screen data-api="GET /api/pois/{poiId}">
-      <SpotDetail key={spotId} poiId={spotId} onBack={goBack} />
+      <SpotDetail key={spotId} poiId={spotId} onBack={goBack} uploadInUrl />
     </Screen>
   )
 }

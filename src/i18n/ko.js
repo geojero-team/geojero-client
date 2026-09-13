@@ -88,6 +88,47 @@ export default {
   'spotDetail.openTimetable': '버스 시간표 보기',
   'spotDetail.introHead': '소개',
 
+  /* ── 방문자 사진 (02-1 v2 · 268:478 인라인 캡션 · 268:499 뷰어 · 268:531 빈 상태) ── */
+  // 제목·개수·타일·빈 상태는 Figma 원문 그대로입니다. 작성자 줄은 날짜만 씁니다 —
+  // 서버가 작성자를 내려주지 않습니다(표기 규칙 미정). 「신고」는 그리지 않습니다(본인 삭제만).
+  'visitorPhotos.title': '방문자 사진',
+  'visitorPhotos.count': '{n}장',
+  'visitorPhotos.uploadTile': '내 사진 올리기',
+  'visitorPhotos.emptyTitle': '아직 올라온 사진이 없어요',
+  'visitorPhotos.emptyCta': '첫 사진 올리기',
+  // 여기부터는 Figma에 없는 문구입니다. 0장과 실패는 다른 답이라 문구도 다릅니다.
+  // 「삭제」는 Figma 「신고」(268:498 · 268:512) 자리에 내 사진일 때만 둡니다(기준문서 §6).
+  'visitorPhotos.delete': '삭제',
+  'visitorPhotos.loading': '사진을 불러오는 중',
+  'visitorPhotos.loadFailed': '사진을 불러오지 못했어요',
+  'visitorPhotos.retry': '다시 시도',
+  'visitorPhotos.tileAria': '{n}번째 방문자 사진',
+  'visitorPhotos.deleteConfirm': '이 사진을 지울까요?',
+  'visitorPhotos.deleteCancel': '취소',
+  'visitorPhotos.deleteFailed': '사진을 지우지 못했어요',
+  'visitorPhotos.uploaded': '사진을 올렸어요',
+  'visitorPhotos.loginTitle': '사진을 올리려면 로그인 해주세요',
+  'visitorPhotos.viewerAria': '방문자 사진 크게 보기',
+  'visitorPhotos.prev': '이전 사진',
+  'visitorPhotos.next': '다음 사진',
+
+  /* ── 내 사진 올리기 시트 (02-1 v2 · 268:518) ─────────────────────────────── */
+  'visitorPhotoUpload.title': '{name}에서 찍은 사진',
+  'visitorPhotoUpload.preview': '선택한 사진',
+  'visitorPhotoUpload.captionPlaceholder': '한 줄 남기기 (선택)',
+  'visitorPhotoUpload.notice': '날짜는 자동으로 붙어요 · 사진 속 위치 정보는 저장하지 않아요',
+  'visitorPhotoUpload.submit': '올리기',
+  // 여기부터는 Figma에 없는 상태의 문구입니다(시트는 활성 상태 하나만 그려져 있습니다).
+  'visitorPhotoUpload.sheetAria': '사진 올리기',
+  'visitorPhotoUpload.pick': '사진 고르기',
+  'visitorPhotoUpload.change': '사진 바꾸기',
+  'visitorPhotoUpload.submitting': '올리는 중',
+  'visitorPhotoUpload.errTooLarge': '사진이 너무 커요',
+  // 형식 이름(JPEG·PNG)을 적지 않습니다 — 브라우저가 열 수 있으면 JPEG로 바꿔 올리므로 실제와 달라집니다.
+  'visitorPhotoUpload.errUnreadable': '이 사진은 올릴 수 없어요',
+  'visitorPhotoUpload.errCaption': '한 줄은 {max}자까지예요',
+  'visitorPhotoUpload.errNetwork': '올리지 못했어요. 잠시 뒤 다시 시도해 주세요',
+
   /* ── 일정 고르기 (285:67 / 285:148) ───────────────────────────────────── */
   // ── 저장 (02-2 · Figma 446:1112 로그인 시트 · 446:1120 하단 바) ───────────
   'courseDetail.saving': '저장하는 중',
