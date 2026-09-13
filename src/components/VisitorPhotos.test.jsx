@@ -123,8 +123,10 @@ describe('방문자 사진 — 보기', () => {
     expect(screen.queryAllByRole('button', { name: /번째 방문자 사진$/ })).toHaveLength(0)
     expect(api.getVisitorPhotos).toHaveBeenCalledWith(3)
 
-    // 더보기는 열 사진이 없어 숨깁니다. 02-1의 빈 상태 카드 문구도 쓰지 않습니다.
-    for (const absent of ['0장', '12장', '신고', '더보기', '아직 올라온 사진이 없어요', '첫 사진 올리기']) {
+    // 더보기는 피그마(485:213)대로 0장이어도 보입니다 — 열 사진이 없어 누를 수는 없습니다(사용자 요청 2026-09-14).
+    expect(screen.getByRole('button', { name: '방문자 사진 더보기' })).toBeDisabled()
+    // 02-1의 빈 상태 카드 문구는 쓰지 않습니다.
+    for (const absent of ['0장', '12장', '신고', '아직 올라온 사진이 없어요', '첫 사진 올리기']) {
       expect(screen.queryByText(absent)).not.toBeInTheDocument()
     }
     expect(screen.queryByText(/여행자 A/)).not.toBeInTheDocument()
@@ -160,6 +162,7 @@ describe('방문자 사진 — 보기', () => {
     const tiles = await screen.findAllByRole('button', { name: /번째 방문자 사진$/ })
     expect(tiles).toHaveLength(2)
     expect(screen.getByRole('button', { name: '방문자 사진 더보기' })).toHaveTextContent('더보기')
+    expect(screen.getByRole('button', { name: '방문자 사진 더보기' })).toBeEnabled()
     expect(screen.getByRole('button', { name: '내 사진 올리기' })).toBeInTheDocument()
     // 타일 사진은 장식(alt="")이라 역할로 찾지 않습니다 — 버튼의 이름이 사진을 말합니다.
     expect(tiles[0].querySelector('img')).toHaveAttribute('src', PHOTOS[0].imageUrl)

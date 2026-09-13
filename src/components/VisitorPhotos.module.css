@@ -58,6 +58,11 @@
   cursor: pointer;
 }
 
+/* 0장일 때 「더보기」 — 피그마와 같은 모양으로 보이되 누를 수 없습니다. */
+.link:disabled {
+  cursor: default;
+}
+
 /* strip(484:216) — 가로 스크롤, gap 8. 스크롤바는 SpotDetail .track과 같은 이유로 숨깁니다
    (마우스는 useDragScroll로 끌어 넘깁니다). */
 .strip {

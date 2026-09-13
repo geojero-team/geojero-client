@@ -20,7 +20,7 @@ import styles from './VisitorPhotos.module.css'
  *   불러오는 중   제목 + 안내
  *   실패         제목 + 실패 문구 + 다시 시도. 빈 상태 문구를 쓰지 않습니다
  *   0장          제목 + 올리기 타일 + 빈 사진 칸 3개 — 02-2 스팟 상세 그림 그대로입니다(사용자 결정, 02-1 빈 상태 카드 `268:531`은 쓰지 않음).
- *                「더보기」는 열 사진이 없어 숨깁니다. 처음엔 17곳 전부 이 화면입니다
+ *                「더보기」는 피그마대로 보이되 열 사진이 없어 비활성입니다. 처음엔 17곳 전부 이 화면입니다
  *   N장          제목 + 「더보기」 + 올리기 타일 + 사진 타일
  *
  * 보기 — 타일을 누르면 **바로 그 사진의 뷰어**, 「더보기」는 뷰어를 1장부터 엽니다(02-2 `485:213`).
@@ -230,12 +230,15 @@ export default function VisitorPhotos({ poiId, spotName, uploadInUrl = false }) 
         <h2 id={headingId} className={styles.title}>
           {t('visitorPhotos.title')}
         </h2>
-        {photos.length > 0 && (
+        {/* 「더보기」(485:213)는 목록을 받으면 0장이어도 그립니다 — 피그마 그대로(사용자 요청 2026-09-14).
+            0장이면 뷰어로 열 사진이 없어 비활성입니다. 불러오는 중·실패에는 그리지 않습니다. */}
+        {list.status === 'ready' && (
           <button
             type="button"
             className={styles.link}
             aria-label={t('visitorPhotos.moreAria')}
             onClick={() => showInViewer(0)}
+            disabled={photos.length === 0}
           >
             {t('visitorPhotos.more')}
           </button>
