@@ -1,6 +1,6 @@
-/* 방문자 사진 — Figma 02-1 v2 `268:478`(인라인 캡션) · `268:531`(빈 상태).
-   스팟 상세 .body(gap 22) 안, 소개 뒤에 들어갑니다(264:227의 264:260 자리).
-   프레임의 px20 py16은 .body가 이미 주므로 섹션 자신은 gap 10만 둡니다.
+/* 방문자 사진 — Figma 02-2 `484:212`(섹션) · `268:531`(빈 상태).
+   스팟 상세 .body(gap 22) 안, 소개 뒤에 들어갑니다(446:1176의 484:212 자리).
+   섹션 자신은 head와 strip 사이 gap 10만 둡니다.
    타일 반경 10은 맞는 토큰이 없어 값으로 씁니다(--radius-card 8 / --radius-md 12). */
 
 .section {
@@ -9,7 +9,7 @@
   gap: 10px;
 }
 
-/* head(268:479) — 제목이 남은 폭을 채우고 개수가 오른쪽 끝 */
+/* head(484:213) — 제목이 남은 폭을 채우고 「더보기」(485:213)가 오른쪽 끝 */
 .head {
   display: flex;
   align-items: center;
@@ -21,11 +21,6 @@
   margin: 0;
   font: var(--type-body-strong);
   color: var(--text-primary);
-}
-
-.count {
-  font: var(--type-caption);
-  color: var(--text-secondary);
 }
 
 .pending {
@@ -53,7 +48,7 @@
   word-break: keep-all;
 }
 
-/* 268:535 — 타일이 아니라 글자 링크 */
+/* 268:535 · 485:213 — 타일이 아니라 글자 링크 */
 .link {
   padding: 0;
   border: 0;
@@ -63,7 +58,7 @@
   cursor: pointer;
 }
 
-/* strip(268:482) — 가로 스크롤, gap 8. 스크롤바는 SpotDetail .track과 같은 이유로 숨깁니다
+/* strip(484:216) — 가로 스크롤, gap 8. 스크롤바는 SpotDetail .track과 같은 이유로 숨깁니다
    (마우스는 useDragScroll로 끌어 넘깁니다). */
 .strip {
   display: flex;
@@ -78,7 +73,7 @@
   display: none;
 }
 
-/* upload-tile(268:483) — 96×96, 1px 점선, 세로 gap 2 */
+/* upload-tile(484:217) — 96×96, 1px 점선, 세로 gap 2 */
 .uploadTile {
   display: flex;
   flex: none;
@@ -96,7 +91,7 @@
   cursor: pointer;
 }
 
-/* 268:484 — 24 Bold */
+/* 484:218 — 24 Bold */
 .plus {
   font: var(--type-display);
 }
@@ -105,9 +100,8 @@
   font: var(--type-label);
 }
 
-/* visitor-photo(268:488) — 128×96 */
+/* visitor-photo(484:220) — 128×96 */
 .tile {
-  position: relative;
   flex: none;
   width: 128px;
   height: 96px;
@@ -127,51 +121,13 @@
   user-select: none;
 }
 
-/* 선택(268:486) — 2px 실선. 사진 위에 덧그려 테두리 때문에 사진 크기가 흔들리지 않게 합니다. */
-.tileOn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: 2px solid var(--brand-strong);
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-/* caption-card(268:492) — px14 py12, gap 8, 반경 12 */
-.captionCard {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-sm);
-  padding: var(--space-md) 14px;
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-}
-
-/* who(268:496) — 날짜만 */
-.date {
-  margin: 0;
-  font: var(--type-label);
-  color: var(--text-secondary);
-}
-
-/* 268:497 — 14/20. 사용자가 넣은 줄바꿈은 살립니다. */
-.caption {
-  margin: 0;
-  font: var(--type-caption);
-  color: var(--text-primary);
-  white-space: pre-line;
-  word-break: keep-all;
-  overflow-wrap: anywhere;
-}
-
 .notice {
   margin: 0;
   font: var(--type-caption);
   color: var(--text-secondary);
 }
 
-/* 「삭제」 — 「신고」(268:498) 모양 그대로: 버튼 모양 없는 12 Medium 글자 */
+/* 「삭제」 — 02-1 「신고」(268:512) 모양 그대로: 버튼 모양 없는 12 Medium 글자 */
 .action {
   padding: 0;
   border: 0;
@@ -197,7 +153,7 @@
   color: var(--text-primary);
 }
 
-/* 뷰어(268:512) 위에서는 어두운 면 글자색. 의미 토큰이 없어 Figma 원시값입니다. */
+/* 뷰어(268:499) 위라 어두운 면 글자색. 의미 토큰이 없어 Figma 원시값입니다. */
 .deleteDark .action {
   color: #d9dee5;
 }

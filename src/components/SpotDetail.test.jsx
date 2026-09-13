@@ -61,7 +61,7 @@ describe('SpotDetail — 방문자 사진 자리', () => {
     const { container } = renderDetail()
 
     const section = await screen.findByRole('region', { name: '방문자 사진' })
-    expect(await within(section).findByText('2장')).toBeInTheDocument()
+    expect(await within(section).findAllByRole('button', { name: /번째 방문자 사진$/ })).toHaveLength(2)
     const intro = screen.getByRole('heading', { name: '소개' })
     expect(intro.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 

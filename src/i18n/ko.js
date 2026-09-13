@@ -88,16 +88,18 @@ export default {
   'spotDetail.openTimetable': '버스 시간표 보기',
   'spotDetail.introHead': '소개',
 
-  /* ── 방문자 사진 (02-1 v2 · 268:478 인라인 캡션 · 268:499 뷰어 · 268:531 빈 상태) ── */
-  // 제목·개수·타일·빈 상태는 Figma 원문 그대로입니다. 작성자 줄은 날짜만 씁니다 —
+  /* ── 방문자 사진 (02-2 · 484:212 섹션 · 268:499 뷰어 · 268:531 빈 상태) ── */
+  // 제목·더보기·타일·빈 상태는 Figma 원문 그대로입니다. 작성자 줄은 날짜만 씁니다 —
   // 서버가 작성자를 내려주지 않습니다(표기 규칙 미정). 「신고」는 그리지 않습니다(본인 삭제만).
   'visitorPhotos.title': '방문자 사진',
-  'visitorPhotos.count': '{n}장',
+  'visitorPhotos.more': '더보기',
   'visitorPhotos.uploadTile': '내 사진 올리기',
   'visitorPhotos.emptyTitle': '아직 올라온 사진이 없어요',
   'visitorPhotos.emptyCta': '첫 사진 올리기',
   // 여기부터는 Figma에 없는 문구입니다. 0장과 실패는 다른 답이라 문구도 다릅니다.
-  // 「삭제」는 Figma 「신고」(268:498 · 268:512) 자리에 내 사진일 때만 둡니다(기준문서 §6).
+  // 「더보기」가 소개의 「더보기」와 같은 글자라 읽는 이름만 구분합니다.
+  // 「삭제」는 02-1 「신고」(268:512) 자리, 뷰어 캡션 아래에 내 사진일 때만 둡니다(기준문서 §6).
+  'visitorPhotos.moreAria': '방문자 사진 더보기',
   'visitorPhotos.delete': '삭제',
   'visitorPhotos.loading': '사진을 불러오는 중',
   'visitorPhotos.loadFailed': '사진을 불러오지 못했어요',

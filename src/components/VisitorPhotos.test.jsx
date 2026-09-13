@@ -119,19 +119,19 @@ describe('방문자 사진 — 보기', () => {
     expect(screen.getByRole('button', { name: '첫 사진 올리기' })).toBeInTheDocument()
     expect(api.getVisitorPhotos).toHaveBeenCalledWith(3)
 
-    for (const absent of ['0장', '12장', '신고', '내 사진 올리기']) {
+    for (const absent of ['0장', '12장', '신고', '내 사진 올리기', '더보기']) {
       expect(screen.queryByText(absent)).not.toBeInTheDocument()
     }
     expect(screen.queryByText(/여행자 A/)).not.toBeInTheDocument()
     expect(screen.queryByText(/55번 09:05/)).not.toBeInTheDocument()
   })
 
-  it('불러오는 중에는 개수 없이 로딩 문구만', () => {
+  it('불러오는 중에는 더보기 없이 로딩 문구만', () => {
     api.getVisitorPhotos.mockReturnValue(new Promise(() => {}))
     renderSection()
 
     expect(screen.getByText('사진을 불러오는 중')).toBeInTheDocument()
-    expect(screen.queryByText(/^\d+장$/)).not.toBeInTheDocument()
+    expect(screen.queryByText('더보기')).not.toBeInTheDocument()
     expect(screen.queryByText('아직 올라온 사진이 없어요')).not.toBeInTheDocument()
   })
 
@@ -144,30 +144,51 @@ describe('방문자 사진 — 보기', () => {
     expect(screen.queryByText(/→ 500/)).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: '다시 시도' }))
-    expect(await screen.findByText('2장')).toBeInTheDocument()
+    expect(await screen.findAllByRole('button', { name: /번째 방문자 사진$/ })).toHaveLength(2)
     expect(api.getVisitorPhotos).toHaveBeenCalledTimes(2)
   })
 
-  it('2장: 개수·올리기 타일·사진 타일 2개 → 누르면 캡션 카드(날짜) → 다시 누르면 뷰어', async () => {
+  it('2장: 더보기·올리기 타일·사진 타일 2개 — 개수와 캡션 카드는 없다 (02-2 `484:212`)', async () => {
     api.getVisitorPhotos.mockResolvedValue(listOf(PHOTOS))
-    const user = renderSection()
+    renderSection()
 
-    expect(await screen.findByText('2장')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '내 사진 올리기' })).toBeInTheDocument()
-    const tiles = screen.getAllByRole('button', { name: /번째 방문자 사진$/ })
+    const tiles = await screen.findAllByRole('button', { name: /번째 방문자 사진$/ })
     expect(tiles).toHaveLength(2)
+    expect(screen.getByRole('button', { name: '방문자 사진 더보기' })).toHaveTextContent('더보기')
+    expect(screen.getByRole('button', { name: '내 사진 올리기' })).toBeInTheDocument()
     // 타일 사진은 장식(alt="")이라 역할로 찾지 않습니다 — 버튼의 이름이 사진을 말합니다.
     expect(tiles[0].querySelector('img')).toHaveAttribute('src', PHOTOS[0].imageUrl)
 
-    await user.click(tiles[0])
-    expect(tiles[0]).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByText('9/13(일)')).toBeInTheDocument()
-    expect(screen.getByText('몽돌 소리가 좋아요')).toBeInTheDocument()
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByText('2장')).not.toBeInTheDocument()
+    expect(screen.queryByText('몽돌 소리가 좋아요')).not.toBeInTheDocument()
+    expect(screen.queryByText('9/13(일)')).not.toBeInTheDocument()
+  })
 
-    await user.click(tiles[0])
+  it('더보기를 누르면 뷰어가 1장부터 열린다', async () => {
+    api.getVisitorPhotos.mockResolvedValue(listOf(PHOTOS))
+    const user = renderSection()
+
+    await user.click(await screen.findByRole('button', { name: '방문자 사진 더보기' }))
+
     const viewer = screen.getByRole('dialog', { name: '방문자 사진 크게 보기' })
     expect(within(viewer).getByText('1 / 2')).toBeInTheDocument()
+  })
+
+  it('타일을 한 번 누르면 바로 그 사진의 뷰어 — 넘기고 닫는다', async () => {
+    api.getVisitorPhotos.mockResolvedValue(listOf(PHOTOS))
+    const user = renderSection()
+    const tiles = await screen.findAllByRole('button', { name: /번째 방문자 사진$/ })
+
+    await user.click(tiles[1])
+    let viewer = screen.getByRole('dialog', { name: '방문자 사진 크게 보기' })
+    expect(within(viewer).getByText('2 / 2')).toBeInTheDocument()
+    await user.click(within(viewer).getByRole('button', { name: '닫기' }))
+
+    await user.click(tiles[0])
+    viewer = screen.getByRole('dialog', { name: '방문자 사진 크게 보기' })
+    expect(within(viewer).getByText('1 / 2')).toBeInTheDocument()
+    expect(within(viewer).getByText('9/13(일)')).toBeInTheDocument()
+    expect(within(viewer).getByText('몽돌 소리가 좋아요')).toBeInTheDocument()
     expect(within(viewer).getByRole('button', { name: '이전 사진' })).toBeDisabled()
 
     await user.click(within(viewer).getByRole('button', { name: '다음 사진' }))
@@ -180,15 +201,11 @@ describe('방문자 사진 — 보기', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('내 사진이면 캡션 카드와 뷰어에 「삭제」, 남의 사진이면 없다 — 「신고」는 어디에도 없다', async () => {
+  it('내 사진이면 뷰어에 「삭제」, 남의 사진이면 없다 — 「신고」는 어디에도 없다', async () => {
     api.getVisitorPhotos.mockResolvedValue(listOf(PHOTOS))
     const user = renderSection()
     const tiles = await screen.findAllByRole('button', { name: /번째 방문자 사진$/ })
 
-    await user.click(tiles[0])
-    expect(screen.getByRole('button', { name: '삭제' })).toBeInTheDocument()
-
-    await user.click(tiles[1])
     expect(screen.queryByRole('button', { name: '삭제' })).not.toBeInTheDocument()
 
     await user.click(tiles[1])
@@ -200,7 +217,7 @@ describe('방문자 사진 — 보기', () => {
     expect(screen.queryByText('신고')).not.toBeInTheDocument()
   })
 
-  it('내 사진 삭제 — 한 번 더 확인한 뒤 deleteVisitorPhoto를 부르고 목록을 다시 받는다', async () => {
+  it('내 사진 삭제 — 한 번 더 확인한 뒤 deleteVisitorPhoto를 부르고 뷰어를 닫고 목록을 다시 받는다', async () => {
     api.getVisitorPhotos
       .mockResolvedValueOnce(listOf(PHOTOS))
       .mockResolvedValueOnce(listOf([PHOTOS[1]]))
@@ -209,23 +226,27 @@ describe('방문자 사진 — 보기', () => {
     const tiles = await screen.findAllByRole('button', { name: /번째 방문자 사진$/ })
 
     await user.click(tiles[0])
-    await user.click(screen.getByRole('button', { name: '삭제' }))
-    expect(screen.getByText('이 사진을 지울까요?')).toBeInTheDocument()
+    const viewer = screen.getByRole('dialog')
+    await user.click(within(viewer).getByRole('button', { name: '삭제' }))
+    expect(within(viewer).getByText('이 사진을 지울까요?')).toBeInTheDocument()
     expect(api.deleteVisitorPhoto).not.toHaveBeenCalled()
 
-    await user.click(screen.getByRole('button', { name: '삭제' }))
+    await user.click(within(viewer).getByRole('button', { name: '삭제' }))
     expect(api.deleteVisitorPhoto).toHaveBeenCalledWith(42)
-    expect(await screen.findByText('1장')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /번째 방문자 사진$/ })).toHaveLength(1),
+    )
     expect(api.getVisitorPhotos).toHaveBeenCalledTimes(2)
-    expect(screen.queryByText('몽돌 소리가 좋아요')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  /** 내 사진(42)을 골라 「삭제」 → 확인 「삭제」까지 누릅니다. */
+  /** 내 사진(42)의 뷰어를 열어 「삭제」 → 확인 「삭제」까지 누릅니다. */
   async function confirmDeleteOfMine(user) {
     const tiles = await screen.findAllByRole('button', { name: /번째 방문자 사진$/ })
     await user.click(tiles[0])
-    await user.click(screen.getByRole('button', { name: '삭제' }))
-    await user.click(screen.getByRole('button', { name: '삭제' }))
+    const viewer = screen.getByRole('dialog')
+    await user.click(within(viewer).getByRole('button', { name: '삭제' }))
+    await user.click(within(viewer).getByRole('button', { name: '삭제' }))
   }
 
   it.each([
@@ -254,9 +275,11 @@ describe('방문자 사진 — 보기', () => {
 
     await confirmDeleteOfMine(user)
 
-    expect(await screen.findByText('1장')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /번째 방문자 사진$/ })).toHaveLength(1),
+    )
     expect(screen.queryByText('사진을 지우지 못했어요')).not.toBeInTheDocument()
-    expect(screen.queryByText('몽돌 소리가 좋아요')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('뷰어는 지도 시트처럼 갇힌 자리에서 열어도 화면 프레임에 그린다', async () => {
@@ -272,7 +295,6 @@ describe('방문자 사진 — 보기', () => {
     })
     const tiles = await screen.findAllByRole('button', { name: /번째 방문자 사진$/ })
 
-    await user.click(tiles[0])
     await user.click(tiles[0])
 
     expect(screen.getByRole('dialog').parentElement).toBe(screen.getByTestId('frame'))
@@ -463,7 +485,7 @@ describe('방문자 사진 — 올리기 시트', () => {
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: SHEET_TITLE })).not.toBeInTheDocument(),
     )
-    expect(await screen.findByText('1장')).toBeInTheDocument()
+    expect(await screen.findAllByRole('button', { name: /번째 방문자 사진$/ })).toHaveLength(1)
     expect(screen.getByText('사진을 올렸어요')).toBeInTheDocument()
   })
 
