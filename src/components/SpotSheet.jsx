@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import SpotDetail from './SpotDetail'
 import { t } from '../i18n'
 import { courseImage, onImageError } from '../lib/courseImage'
+import { peekHeightOf } from './spotSheetHeight'
 import styles from './SpotSheet.module.css'
 
 /**
@@ -18,19 +19,11 @@ import styles from './SpotSheet.module.css'
  * `onDeselect`가 옵니다). 그 배선을 그대로 다시 씁니다.
  *
  * 두 단계로만 섭니다.
- *   peek  이름 · 권역·분류 · **사진 한 장** — 지도가 위에 그만큼 남습니다
+ *   peek  이름 · 권역·분류 · **사진 한 장** — 지도가 위에 그만큼 남습니다(높이는 spotSheetHeight.js)
+ *         고현터미널은 이름 · 「모든 코스의 출발 지점」뿐이라 더 낮습니다
  *   full  스팟 상세 전체(사진 캐러셀·소개·버스 시간표 보기)
  * 중간에 멈추지 않습니다 — 반쯤 열린 시트는 사진도 글도 못 읽는 상태입니다.
  */
-
-/**
- * peek 높이(px) = 손잡이 24 + 위 4 + 이름 32 + 분류 20 + 8 + 사진 140 + 아래 16.
- *
- * 지도를 이만큼 줄이는 쪽에서도 같은 값이 필요합니다 — 지도가 그대로면 `panTo`가 핀을
- * **시트에 가려진 자리**로 옮깁니다. 그래서 상수를 내보냅니다(값이 두 군데서 갈리면
- * 핀이 시트 경계에 걸립니다). 844 화면에서 지도가 536px 남습니다.
- */
-export const PEEK_HEIGHT = 244
 
 /** 이만큼 끌면 다음 단계로 넘어갑니다. 짧으면 손 떨림에도 열리고, 길면 안 열립니다. */
 const SNAP_THRESHOLD = 56
@@ -52,11 +45,12 @@ export default function SpotSheet({ spot, onClose }) {
      남으면 누른 적 없는 스팟의 상세가 펼쳐진 채로 뜹니다. 그 초기화를 effect 에서
      하지 않고 **부모가 `key={poiId}` 로 다시 마운트**해서 합니다. */
 
-  const maxHeight = () => rootRef.current?.parentElement?.clientHeight ?? PEEK_HEIGHT
+  const peek = peekHeightOf(spot)
+  const maxHeight = () => rootRef.current?.parentElement?.clientHeight ?? peek
 
   const onPointerDown = (event) => {
     // 손잡이에서만 끕니다. 본문에서 끌면 사진 캐러셀·본문 스크롤과 싸웁니다.
-    dragRef.current = { y: event.clientY, from: full ? maxHeight() : PEEK_HEIGHT }
+    dragRef.current = { y: event.clientY, from: full ? maxHeight() : peek }
     movedRef.current = false
     setDragging(true)
     event.currentTarget.setPointerCapture?.(event.pointerId)
@@ -89,7 +83,7 @@ export default function SpotSheet({ spot, onClose }) {
   }
 
   // full에서는 시트가 부모를 꽉 채웁니다. peek·끄는 중에는 px로 잠급니다.
-  const height = dragHeight != null ? `${dragHeight}px` : full ? '100%' : `${PEEK_HEIGHT}px`
+  const height = dragHeight != null ? `${dragHeight}px` : full ? '100%' : `${peek}px`
 
   if (!spot) return null
 
@@ -149,21 +143,28 @@ export default function SpotSheet({ spot, onClose }) {
           aria-label={t('spotSheet.expand')}
         >
           <span className={styles.name}>{spot.shortName ?? spot.name}</span>
-          {/* 권역·분류가 없으면 줄을 아예 그리지 않습니다 — 값 없이 `·` 만 남으면
-              그게 곧 우리가 기준문서 §4에서 비판하는 '이유 없는 빈칸'입니다. */}
-          {(spot.region || spot.category) && (
-            <span className={styles.category}>
-              {[spot.region, spot.category].filter(Boolean).join(' · ')}
-            </span>
+          {spot.kind === 'TERMINAL' ? (
+            /* 고현터미널 — 권역·분류 자리에 무엇인지 말합니다. 사진은 없습니다(TourAPI 장소가 아님). */
+            <span className={styles.category}>{t('terminal.startPoint')}</span>
+          ) : (
+            <>
+              {/* 권역·분류가 없으면 줄을 아예 그리지 않습니다 — 값 없이 `·` 만 남으면
+                  그게 곧 우리가 기준문서 §4에서 비판하는 '이유 없는 빈칸'입니다. */}
+              {(spot.region || spot.category) && (
+                <span className={styles.category}>
+                  {[spot.region, spot.category].filter(Boolean).join(' · ')}
+                </span>
+              )}
+              {/* 사진이 없는 스팟(저작권 Type3)은 courseImage가 테마 자리그림을 줍니다 —
+                  0장은 버그가 아니라 사실이므로 빈 자리로 두지 않습니다. */}
+              <img
+                className={styles.photo}
+                src={courseImage(spot)}
+                alt=""
+                onError={onImageError(spot)}
+              />
+            </>
           )}
-          {/* 사진이 없는 스팟(저작권 Type3)은 courseImage가 테마 자리그림을 줍니다 —
-              0장은 버그가 아니라 사실이므로 빈 자리로 두지 않습니다. */}
-          <img
-            className={styles.photo}
-            src={courseImage(spot)}
-            alt=""
-            onError={onImageError(spot)}
-          />
         </button>
       )}
     </div>

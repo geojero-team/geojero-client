@@ -6,6 +6,7 @@ import { api, beginKakaoLoginTo } from '../lib/api'
 import { loadSpotDetail } from '../lib/spots'
 import Screen from './Screen'
 import SpotSheet from './SpotSheet'
+import { PEEK_HEIGHT, peekHeightOf } from './spotSheetHeight'
 
 vi.mock('../lib/api', () => ({
   api: { getVisitorPhotos: vi.fn(), me: vi.fn() },
@@ -27,6 +28,44 @@ beforeEach(() => {
   localStorage.clear()
   loadSpotDetail.mockResolvedValue({ ...SPOT, photos: [] })
   api.getVisitorPhotos.mockResolvedValue({ poiId: 4, count: 0, photos: [] })
+})
+
+const TERMINAL = { poiId: 23, kind: 'TERMINAL', name: '고현터미널', shortName: '고현터미널', theme: null, region: null, category: null }
+
+describe('SpotSheet — 고현터미널(출발 지점)', () => {
+  it('peek는 이름과 「모든 코스의 출발 지점」뿐 — 사진이 없어 시트가 낮다', () => {
+    render(
+      <MemoryRouter>
+        <SpotSheet spot={TERMINAL} onClose={vi.fn()} />
+      </MemoryRouter>,
+    )
+    const sheet = screen.getByRole('dialog', { name: '고현터미널' })
+    expect(sheet).toHaveTextContent('고현터미널')
+    expect(sheet).toHaveTextContent('모든 코스의 출발 지점')
+    expect(sheet.querySelector('img')).toBeNull()
+    expect(sheet.style.height).toBe(`${peekHeightOf(TERMINAL)}px`)
+    expect(peekHeightOf(TERMINAL)).toBeLessThan(PEEK_HEIGHT)
+    expect(peekHeightOf(SPOT)).toBe(PEEK_HEIGHT)
+  })
+
+  it('펼치면 버스 시간표 버튼 없이 출발 지점 문구와 방문자 사진', async () => {
+    loadSpotDetail.mockResolvedValue({ ...TERMINAL, photos: [] })
+    api.getVisitorPhotos.mockResolvedValue({ poiId: 23, count: 0, photos: [] })
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <SpotSheet spot={TERMINAL} onClose={vi.fn()} />
+      </MemoryRouter>,
+    )
+
+    await user.click(screen.getByRole('button', { name: '자세히 보기', expanded: false }))
+
+    expect(await screen.findByRole('heading', { name: '방문자 사진' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '고현터미널' })).toBeInTheDocument()
+    expect(screen.getByText('모든 코스의 출발 지점')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '버스 시간표 보기' })).not.toBeInTheDocument()
+    expect(api.getVisitorPhotos).toHaveBeenCalledWith(23)
+  })
 })
 
 describe('SpotSheet — 방문자 사진', () => {

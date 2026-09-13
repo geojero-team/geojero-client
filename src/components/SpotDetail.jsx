@@ -115,6 +115,7 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, uploadIn
   // 사진은 TourAPI 런타임 호출값입니다(detail.images — 대표가 첫 장, 저작권은 서버가 거름).
   // 장수 칩·인디케이터는 두 장 이상일 때만 띄웁니다 — 없는 장수를 적지 않습니다.
   // 출처 칩은 실제 TourAPI 응답일 때만 답니다(자체 소개문 폴백이면 출처가 다릅니다).
+  const isTerminal = spot.kind === 'TERMINAL'
   const photos = spot.photos ?? []
   const hasPhotos = photos.length > 0
   const fromTourApi = spot.overviewSource === 'TourAPI'
@@ -203,13 +204,17 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, uploadIn
         <div className={styles.titleCol}>
           <h1 className={styles.name}>{spot.shortName ?? spot.name}</h1>
           <p className={styles.category}>
-            {spot.region} · {spot.category}
+            {isTerminal ? t('terminal.startPoint') : `${spot.region} · ${spot.category}`}
           </p>
         </div>
 
-        <Button onClick={openTimetable} data-api="GET /api/pois/{id}/departures">
-          {t('spotDetail.openTimetable')}
-        </Button>
+        {/* 고현터미널은 스팟처럼 펼치지만 버스 시간표 버튼이 없습니다(2026-09-13 사용자 결정) —
+            터미널에서 가는 버스는 각 스팟 시간표의 「고현터미널 → 스팟」이 말합니다. */}
+        {!isTerminal && (
+          <Button onClick={openTimetable} data-api="GET /api/pois/{id}/departures">
+            {t('spotDetail.openTimetable')}
+          </Button>
+        )}
 
         {/* 소개는 TourAPI overview 원문입니다. 수정·요약하지 않습니다(저작권).
             서버가 안 떠 있으면 이 덩어리 자체를 그리지 않습니다. */}

@@ -78,6 +78,19 @@ describe('SpotDetail — 방문자 사진 자리', () => {
     expect(screen.queryByText(/^v2 ·/)).not.toBeInTheDocument()
   })
 
+  it('고현터미널이면 권역·분류 대신 「모든 코스의 출발 지점」, 버스 시간표 버튼 없이 방문자 사진', async () => {
+    renderDetail({
+      poiId: 23, kind: 'TERMINAL', name: '고현터미널', shortName: '고현터미널',
+      theme: null, region: null, category: null, overview: null, overviewSource: 'FALLBACK', photos: [],
+    })
+
+    expect(await screen.findByRole('region', { name: '방문자 사진' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '고현터미널' })).toBeInTheDocument()
+    expect(screen.getByText('모든 코스의 출발 지점')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '버스 시간표 보기' })).not.toBeInTheDocument()
+    expect(screen.queryByText('·')).not.toBeInTheDocument()
+  })
+
   it('소개가 없는 스팟이면 「버스 시간표 보기」 바로 뒤에 온다', async () => {
     renderDetail({ ...SPOT, overview: null })
 

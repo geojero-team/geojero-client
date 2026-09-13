@@ -1,0 +1,281 @@
+import { t } from '../i18n'
+import { ICON_PATHS } from '../lib/spotIcons'
+import styles from './MapView.module.css'
+
+/*
+ * 지도 핀 DOM 과 이름표 배치 — MapView.jsx 에서 그대로 옮겼습니다(2026-09-13).
+ * 테스트가 부르려면 내보내야 하는데, 컴포넌트 파일이 함수를 내보내면 fast refresh 규칙
+ * (react-refresh/only-export-components)에 걸려서 따로 뒀습니다. 카카오 SDK 를 모르는 순수 DOM 코드입니다.
+ */
+
+/** 라벨 사이 최소 간격(px). 이보다 가까우면 뒤 순위 라벨을 숨깁니다. */
+const LABEL_GAP = 4
+
+/**
+ * 마커 기하 — Figma 285:208 실측.
+ * SpotMarker·StopMarker 모두 28×28이고 **원의 중심이 지리 좌표**입니다
+ * (CustomOverlay xAnchor 0.5 / yAnchor 0.5). 꼬리·사진 핀은 쓰지 않습니다.
+ *
+ * 라벨은 마커 박스 기준 오른쪽 +30 / 위 +5에 붙습니다. 오른쪽이 막히면 왼쪽으로
+ * 뒤집는데, 그때 간격은 Figma 실측대로 4px입니다(오른쪽 2px와 비대칭 — 원본 그대로).
+ *
+ * [주의] 아래 값을 바꾸면 MapView.module.css의 .pin / .pinLabel 치수도 같이 고쳐야
+ * 이름표 충돌 계산이 어긋나지 않습니다.
+ */
+const MARKER_SIZE = 28
+const MARKER_HALF = MARKER_SIZE / 2
+const LABEL_HEIGHT = 18
+const LABEL_TOP_INSET = 5
+const LABEL_RIGHT_GAP = 30
+const LABEL_LEFT_GAP = 4
+
+/**
+ * 마커 중심끼리 이보다 가까우면 한 덩어리로 봅니다.
+ *
+ * 바람의언덕과 도장포는 실제로 250m 거리라, 섬 전체가 보이는 배율에서는 10px 남짓
+ * 떨어져 있습니다 — 원 두 개가 그대로 포개집니다. 뒤 핀은 앞 핀에 가려 탭도 안 됩니다.
+ * 그래서 한 곳만 남기고 "+N"으로 몇 곳이 더 있는지 말한 뒤, 탭하면 확대해 풀어줍니다.
+ *
+ * ⚠️ 2026-09-12: 28px(마커 지름)에서 **16px로 낮췄습니다.** 28px는 "원이 1px도 겹치지
+ * 않는다"는 기준이었는데, 그러면 가까운 스팟을 보려고 너무 많이 당겨야 했습니다 —
+ * 거제씨월드와 조선해양문화관은 실제로 **112m 떨어진 같은 시설**이라(같은 주소,
+ * 기준문서 §7) 500m 배율에서 계속 하나로 묶였습니다.
+ * 16px이면 원이 12px 겹치지만 **중심이 16px 떨어져 있어 둘 다 탭됩니다** —
+ * 가려져서 닿을 수 없는 것과 살짝 물려 보이는 것은 다른 문제입니다.
+ * 더 낮추면(예: 12px) 탭 영역이 실제로 먹히기 시작합니다.
+ */
+const CLUSTER_GAP = 16
+
+/**
+ * 마커 하나. CustomOverlay는 DOM 엘리먼트를 그대로 받으므로 직접 만들어 넣습니다.
+ *
+ *   코스 정류소  StopMarker — brand 면 + 흰 번호
+ *   코스 밖 스팟 SpotMarker — 흰 면 + brand 테두리 + 카테고리 아이콘
+ *
+ * 2026-09-12: 판정 톤(불성립 빨강·미확인 노랑)과 이름표의 '성립/불성립' 꼬리말을
+ * 걷어냈습니다. 판정이 제품에서 빠지면서 spots 에 verdict 가 오지 않습니다.
+ */
+/** 사진이 없거나 링크가 죽었을 때 쓰는 테마 아이콘. Figma SpotMarker(55:45)와 같은 패스입니다. */
+function themeIconSvg(theme) {
+  return (
+    `<svg width="${MARKER_SIZE}" height="${MARKER_SIZE}" viewBox="0 0 28 28" aria-hidden="true">` +
+    `<path d="${ICON_PATHS[theme] ?? ICON_PATHS.VIEW}" fill="none" stroke="currentColor"` +
+    ' stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  )
+}
+
+/**
+ * 고현터미널 — Figma 02-2 `501:213` 내보낸 자산 그대로(2026-09-13).
+ * 모든 코스의 출발 지점이라 스팟(흰 면 + 사진)과 반대로 **브랜드 면 + 흰 버스**입니다.
+ * 원 r=13 + 흰 테두리 2 = 28px 박스라 스팟 마커와 크기·중심이 같습니다.
+ */
+const TERMINAL_MARKER_SVG =
+  '<svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">' +
+  '<circle cx="14" cy="14" r="13" fill="#0069B3" stroke="white" stroke-width="2"/>' +
+  '<path d="M17.3333 8H10.6667C9.5621 8 8.66667 8.89543 8.66667 10V15.3333C8.66667 16.4379 9.5621 17.3333 10.6667 17.3333H17.3333C18.4379 17.3333 19.3333 16.4379 19.3333 15.3333V10C19.3333 8.89543 18.4379 8 17.3333 8Z" stroke="white" stroke-width="1.33333"/>' +
+  '<path d="M8.66667 12.6667H19.3333" stroke="white" stroke-width="1.33333"/>' +
+  '<path d="M11.3333 17.3333V19.3333" stroke="white" stroke-width="1.33333" stroke-linecap="round"/>' +
+  '<path d="M16.6667 17.3333V19.3333" stroke="white" stroke-width="1.33333" stroke-linecap="round"/>' +
+  '</svg>'
+
+/** 이름표를 마커 아래 가운데에 둘 때 마커와의 간격(px) — Figma 501:220이 501:213 아래 30(28 + 2). */
+const LABEL_BELOW_GAP = 2
+
+export function createPinElement(spot, { order }) {
+  const isStop = order != null
+  const isTerminal = spot.kind === 'TERMINAL'
+
+  const element = document.createElement('button')
+  element.type = 'button'
+  element.className = [
+    styles.pin,
+    isTerminal ? styles.pinTerminal : isStop ? styles.pinStop : styles.pinSpot,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  // 겹쳤을 때 "외 2곳"을 덧붙여야 해서 원본을 따로 들고 있습니다.
+  element.dataset.label = `${spot.shortName ?? spot.name}`
+  element.setAttribute('aria-label', element.dataset.label)
+
+  const dot = document.createElement('span')
+  dot.className = styles.pinDot
+  if (isTerminal) {
+    dot.innerHTML = TERMINAL_MARKER_SVG
+  } else if (isStop) {
+    dot.textContent = String(order)
+  } else if (spot.thumbnailUrl) {
+    const photo = document.createElement('img')
+    photo.className = styles.pinPhoto
+    photo.src = spot.thumbnailUrl
+    photo.alt = ''
+    // 링크가 죽으면 빈 원이 남습니다. 아이콘으로 되돌립니다.
+    photo.addEventListener('error', () => {
+      dot.innerHTML = themeIconSvg(spot.theme)
+    })
+    dot.append(photo)
+  } else {
+    dot.innerHTML = themeIconSvg(spot.theme)
+  }
+
+  const label = document.createElement('span')
+  label.className = styles.pinLabel
+  label.textContent = spot.shortName ?? spot.name
+
+  // 겹친 곳 수. 배율마다 달라지므로 여기서는 빈 채로 두고 updateLabelVisibility가 채웁니다.
+  const badge = document.createElement('span')
+  badge.className = styles.pinCluster
+  badge.hidden = true
+
+  element.append(dot, label, badge)
+  return { element, label, badge, isTerminal }
+}
+
+/**
+ * 라벨 겹침 정리.
+ * 거제 남부에 스팟이 몰려 있어서 라벨을 전부 그리면 서로 잘립니다.
+ * Figma 기본 배치는 마커 오른쪽이고, 막히면 왼쪽으로 뒤집습니다(바람의언덕이 그 예).
+ * 양쪽 다 막히면 그 이름표만 숨깁니다 — 점 자체는 항상 보입니다.
+ * 고현터미널만 Figma(`501:220`)대로 **마커 아래 가운데**를 먼저 시도하고, 막히면 오른쪽 → 왼쪽입니다.
+ */
+export function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
+  let projection
+  try {
+    projection = map.getProjection()
+  } catch {
+    return
+  }
+  if (!projection) return
+
+  // 지도 가장자리에 걸친 이름표는 잘려서 못 읽습니다. 화면 안에 들어오는지도 봅니다.
+  const node = map.getNode?.()
+  const viewWidth = node?.offsetWidth ?? Infinity
+  const viewHeight = node?.offsetHeight ?? Infinity
+
+  const points = new Map()
+
+  // 1) 픽셀 좌표를 먼저 구합니다.
+  //    z축도 여기서 정합니다 — 화면 아래(남쪽) 마커가 위로 올라와 층이 읽힙니다.
+  pins.forEach((pin) => {
+    const point = projection.containerPointFromCoords(pin.overlay.getPosition())
+    points.set(pin.spotId, point)
+
+    const isSelected = pin.spotId === selectedId
+    pin.overlay.setZIndex(isSelected ? 9999 : 100 + Math.round(point.y))
+  })
+
+  // 2) 우선순위 — 선택한 스팟, 코스 정류소, 나머지 순.
+  //    겹친 무리의 대표와 이름표 자리를 둘 다 이 순서로 정합니다.
+  const rank = (pin) => (pin.spotId === selectedId ? 0 : pin.isStop ? 1 : 2)
+  const ordered = [...pins].sort((a, b) => rank(a) - rank(b))
+
+  /* 3) 포개진 마커 정리.
+   *
+   * 배율을 당기면 저절로 풀리는 문제라 좌표는 건드리지 않습니다 — 핀을 밀어내면
+   * "이 서비스는 위치가 정확하다"는 전제가 깨집니다. 대신 대표 하나만 남기고
+   * 몇 곳이 더 있는지 배지로 말한 뒤, 탭하면 확대해서 실제로 갈라 보여줍니다. */
+  const heads = []
+  const hidden = new Set()
+
+  ordered.forEach((pin) => {
+    const point = points.get(pin.spotId)
+    if (!point) return
+    const head = heads.find((other) => {
+      const q = points.get(other.pin.spotId)
+      return Math.hypot(point.x - q.x, point.y - q.y) < CLUSTER_GAP
+    })
+    if (head) {
+      hidden.add(pin.spotId)
+      head.covered += 1
+    } else {
+      heads.push({ pin, covered: 0 })
+    }
+  })
+
+  pins.forEach((pin) => {
+    const isHidden = hidden.has(pin.spotId)
+    pin.element.style.display = isHidden ? 'none' : ''
+    if (isHidden) pin.badge.hidden = true
+  })
+
+  heads.forEach(({ pin, covered }) => {
+    pin.badge.hidden = covered === 0
+    pin.badge.textContent = covered > 0 ? `+${covered}` : ''
+    // 겹친 상태에서는 탭이 '고르기'가 아니라 '펼치기'입니다. 클릭 쪽에서 읽습니다.
+    pin.element.dataset.covered = String(covered)
+    const base = pin.element.dataset.label ?? ''
+
+    pin.element.setAttribute(
+      'aria-label',
+      covered > 0 ? t('map.clusterLabel', { name: base, count: covered }) : base,
+    )
+  })
+
+  // 4) 마커가 이름표보다 먼저 자리를 차지합니다. 이름표가 남의 마커에 걸치면 둘 다
+  //    못 읽습니다. 숨긴 마커는 자리를 차지하지 않습니다 — 그리지 않으니까요.
+  const occupied = []
+  heads.forEach(({ pin }) => {
+    const point = points.get(pin.spotId)
+    occupied.push({
+      owner: pin.spotId,
+      left: point.x - MARKER_HALF,
+      right: point.x + MARKER_HALF,
+      top: point.y - MARKER_HALF,
+      bottom: point.y + MARKER_HALF,
+    })
+  })
+
+  // 5) 이름표를 우선순위대로 놓습니다. heads는 이미 그 순서이고, 가려진 핀은
+  //    빠져 있습니다 — 안 보이는 마커의 이름표를 위해 자리를 비워둘 이유가 없습니다.
+  heads.forEach(({ pin }) => {
+    // opacity는 레이아웃에 영향이 없어서 숨긴 상태에서도 폭을 잴 수 있습니다.
+    const width = pin.label.offsetWidth
+    const point = points.get(pin.spotId)
+    if (!point || width === 0) return
+
+    const markerLeft = point.x - MARKER_HALF
+    const top = point.y - MARKER_HALF + LABEL_TOP_INSET
+    const boxAt = (left, boxTop = top) => ({
+      left,
+      right: left + width,
+      top: boxTop,
+      bottom: boxTop + LABEL_HEIGHT,
+    })
+
+    const right = boxAt(markerLeft + LABEL_RIGHT_GAP)
+    const left = boxAt(markerLeft - LABEL_LEFT_GAP - width)
+    const below = pin.isTerminal
+      ? boxAt(point.x - width / 2, point.y + MARKER_HALF + LABEL_BELOW_GAP)
+      : null
+    const candidates = below ? [below, right, left] : [right, left]
+
+    const fits = (box) =>
+      !occupied.some(
+        (other) =>
+          other.owner !== pin.spotId &&
+          box.left < other.right + LABEL_GAP &&
+          box.right + LABEL_GAP > other.left &&
+          box.top < other.bottom + LABEL_GAP &&
+          box.bottom + LABEL_GAP > other.top,
+      )
+
+    const within = (box) =>
+      box.left >= 0 &&
+      box.right <= viewWidth &&
+      box.top >= topReserved &&
+      box.bottom <= viewHeight
+
+    // (터미널은 아래 →) 오른쪽 → 왼쪽 순으로 시도합니다.
+    // 방금 탭한 스팟의 이름표는 자리가 없어도 보여줍니다. 숨겨버리면
+    // "내가 뭘 눌렀는지"가 사라집니다. 나머지가 이걸 피해 가면 됩니다.
+    const placement =
+      candidates.find((box) => within(box) && fits(box)) ??
+      (pin.spotId === selectedId ? (candidates.find(within) ?? candidates[candidates.length - 1]) : null)
+
+    pin.label.classList.toggle(styles.pinLabelLeft, placement === left)
+    pin.label.classList.toggle(styles.pinLabelBelow, placement != null && placement === below)
+    pin.label.style.opacity = placement ? '1' : '0'
+    pin.label.style.pointerEvents = placement ? '' : 'none'
+    if (placement) occupied.push({ ...placement, owner: pin.spotId })
+  })
+}

@@ -1,0 +1,79 @@
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { api } from '../lib/api'
+import { loadSpotDetail } from '../lib/spots'
+import { peekHeightOf } from '../components/spotSheetHeight'
+import HomePage from './HomePage'
+
+vi.mock('../lib/api', () => ({
+  api: { pois: vi.fn(), getVisitorPhotos: vi.fn(), me: vi.fn() },
+  beginKakaoLogin: vi.fn(),
+  beginKakaoLoginTo: vi.fn(),
+}))
+
+vi.mock('../lib/spots', () => ({ loadSpotDetail: vi.fn() }))
+
+// 카카오 지도는 jsdom에서 뜨지 않습니다. 받은 핀을 버튼으로 그려 누를 수 있게만 합니다.
+let mapProps = null
+vi.mock('../components/MapView', () => ({
+  default: (props) => {
+    mapProps = props
+    return (
+      <div data-testid="map">
+        {props.spots.map((s) => (
+          <button key={s.spotId} type="button" onClick={() => props.onSelectSpot(s)}>
+            {`핀 ${s.shortName ?? s.name}`}
+          </button>
+        ))}
+      </div>
+    )
+  },
+}))
+
+const POIS = [
+  { poiId: 4, name: '학동흑진주몽돌해변', shortName: '학동몽돌해변', kind: 'SPOT', theme: 'BEACH', region: '남부권', category: '해수욕장', lat: 34.77, lng: 128.64, imageUrl: null },
+  { poiId: 12, name: '명사해수욕장', shortName: '명사해수욕장', kind: 'SPOT', theme: null, lat: 34.72, lng: 128.6, imageUrl: null },
+  { poiId: 23, name: '고현터미널', shortName: '고현터미널', kind: 'TERMINAL', theme: null, region: null, category: null, lat: 34.8906148, lng: 128.6242507, imageUrl: null },
+]
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  mapProps = null
+  api.pois.mockResolvedValue({ pois: POIS })
+  api.getVisitorPhotos.mockResolvedValue({ poiId: 23, count: 0, photos: [] })
+  loadSpotDetail.mockResolvedValue({ ...POIS[2], photos: [] })
+})
+
+describe('홈 지도 — 고현터미널(출발 지점)', () => {
+  it('화면 스팟과 함께 고현터미널을 지도에 넘기고, theme 없는 스팟은 넘기지 않는다', async () => {
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('button', { name: '핀 고현터미널' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '핀 학동몽돌해변' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '핀 명사해수욕장' })).not.toBeInTheDocument()
+    const terminal = mapProps.spots.find((s) => s.poiId === 23)
+    expect(terminal).toMatchObject({ spotId: 23, kind: 'TERMINAL', lat: 34.8906148, lng: 128.6242507 })
+  })
+
+  it('누르면 스팟처럼 시트가 올라오고 지도는 터미널 시트 높이만큼 줄어든다', async () => {
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>,
+    )
+
+    await user.click(await screen.findByRole('button', { name: '핀 고현터미널' }))
+
+    const sheet = screen.getByRole('dialog', { name: '고현터미널' })
+    expect(sheet).toHaveTextContent('모든 코스의 출발 지점')
+    expect(mapProps.selectedSpotId).toBe(23)
+    expect(screen.getByTestId('map').parentElement.style.bottom).toBe(`${peekHeightOf(POIS[2])}px`)
+  })
+})

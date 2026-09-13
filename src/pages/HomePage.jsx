@@ -5,7 +5,8 @@ import BottomNav from '../components/BottomNav'
 import Button from '../components/Button'
 import MapView from '../components/MapView'
 import Screen from '../components/Screen'
-import SpotSheet, { PEEK_HEIGHT } from '../components/SpotSheet'
+import SpotSheet from '../components/SpotSheet'
+import { peekHeightOf } from '../components/spotSheetHeight'
 import { t } from '../i18n'
 import { api } from '../lib/api'
 import styles from './HomePage.module.css'
@@ -36,9 +37,11 @@ export default function HomePage() {
       .then(({ pois }) => {
         if (cancelled) return
         // theme이 있는 스팟만 화면에 뜹니다(명사해수욕장 등은 쓸 사진이 없어 빠져 있습니다).
+        // 고현터미널(kind TERMINAL, theme 없음)은 모든 코스의 출발 지점이라 함께 찍습니다 —
+        // Figma 02-2 `501:213`, 좌표는 서버 V22(TAGO 정류소 '터미널(일반)').
         // MapView는 `spotId`로 핀을 식별하므로 poiId를 그 자리에 넣습니다.
         const spots = (pois ?? [])
-          .filter((poi) => poi.theme && poi.lat != null && poi.lng != null)
+          .filter((poi) => (poi.theme || poi.kind === 'TERMINAL') && poi.lat != null && poi.lng != null)
           .map((poi) => ({ ...poi, spotId: poi.poiId, thumbnailUrl: poi.imageUrl }))
         setResult({ status: 'ready', spots, error: '' })
       })
@@ -67,7 +70,7 @@ export default function HomePage() {
             시트가 올라오면 지도를 그만큼 줄입니다(`bottom`). 그대로 두면 MapView가 누른
             핀을 지도 가운데로 옮기는데(`panTo`) 그 가운데가 시트 뒤입니다. 줄어들면
             ResizeObserver가 `relayout()`을 부르고 남은 영역의 가운데로 갑니다. */}
-        <div className={styles.mapWrap} style={{ bottom: picked ? PEEK_HEIGHT : 0 }}>
+        <div className={styles.mapWrap} style={{ bottom: picked ? peekHeightOf(picked) : 0 }}>
           <MapView
             spots={spots}
             selectedSpotId={picked?.poiId ?? null}
