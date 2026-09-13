@@ -1,0 +1,560 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recommended_courses.schema.json",
+  "title": "거제로 추천 당일 코스",
+  "description": "뜻: 고현터미널에서 출발해 고현터미널로 돌아오는 추천 당일 코스(3곳·4곳 각 10개, 5곳은 가능한 3개 전부 · 모두 23개)입니다. 모든 구간은 갈아타지 않는 직행 버스 한 대입니다.\n왜: 02-2 화면(Figma 페이지 442:748)의 코스 추천 → 지도 → 코스 상세를 이 파일만으로 그릴 수 있게 만들었습니다.\n\n만드는 법: timetable/build_recommended_courses.py가 recommended_courses.txt(사람이 검토해 확정한 결과)를 그대로 옮깁니다. 이 JSON을 손으로 고치지 말고, txt를 고친 뒤 스크립트를 다시 돌리세요.\n\n화면별로 쓰는 항목:\n- 코스 추천(Figma 446:559 · 3곳/4곳/5곳 칩 · 여러 개 선택 · 시각은 안 보여줌): courses 중 spotCount가 고른 값인 것을 rank 순서대로. 카드 제목 '코스 {rank}', 부제 '거제9경 {nineScenicCount}곳', 동그라미 = stops[].spotId → spots[].shortName.\n- 지도 코스 카드(446:717): approxTotalMin('약 8시간 30분'). stops 순서대로 지도에 번호 핀.\n- 코스 상세(446:929): 고현터미널 출발 → legs[0] → stops[0] → legs[1] → … → 고현터미널 도착. 구간 문구 '버스 약 40분' = legs[].durationMin. 스팟 동그라미를 누르면 스팟 시간표로.\n- 스팟 시간표(453:210): spots[].hubId로 spot_times.json의 legs(from 또는 to가 그 hubId)를 찾아 방향별 출발 시각을 보여줍니다. 타는 곳 문구는 spots[].alight. hubId가 null인 스팟(지심도·내도)은 지금 데이터로는 시간표를 보여줄 수 없습니다.\n\n이 파일에 없는 것: 스팟 사진(TourAPI에서 따로), 주말·방학 시간표, 배 시각.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "spots",
+    "courses"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "뜻: 이 설명 파일의 위치입니다.\n왜: VS Code가 이 값을 보고 항목마다 설명을 마우스오버로 띄웁니다. 백엔드는 무시하면 됩니다."
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "뜻: 데이터 전체에 대한 정보입니다.\n왜: 출처 표기, 이 코스들을 어떤 규칙으로 골랐는지, 어디까지 믿을 수 있는지가 여기 있습니다.",
+      "required": [
+        "source",
+        "baseDate",
+        "service",
+        "computedAt",
+        "sourceFile",
+        "origin",
+        "rules",
+        "selection",
+        "estimatedStops",
+        "assumptions",
+        "excluded"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "뜻: 원본 출처입니다(spot_times.json의 meta.source와 같음).\n왜: 화면 하단 출처 표기('출처 거제시 BIS 원문 · 2026-08-18')에 씁니다."
+        },
+        "baseDate": {
+          "type": "string",
+          "format": "date",
+          "description": "뜻: 원본 시간표의 시행일(YYYY-MM-DD)입니다.\n왜: 시간표는 개편됩니다. source와 한 쌍으로 보여줘야 사용자가 낡은 정보를 걸러낼 수 있습니다."
+        },
+        "service": {
+          "enum": [
+            "WEEKDAY"
+          ],
+          "description": "뜻: 평일 시간표로 계산했다는 표시입니다.\n왜: 주말·방학에는 버스 시각이 달라 이 코스가 성립하지 않을 수 있습니다. 주말에 보여줄 때는 안내가 필요합니다."
+        },
+        "computedAt": {
+          "type": "string",
+          "format": "date",
+          "description": "뜻: 코스를 계산한 날입니다.\n왜: baseDate(시간표 시행일)가 computedAt보다 뒤로 바뀌었다면 코스를 다시 계산해야 한다는 신호입니다."
+        },
+        "sourceFile": {
+          "type": "string",
+          "description": "뜻: 이 JSON을 옮겨 온 확정본 파일 이름입니다.\n왜: 숫자가 이상하면 이 txt에서 같은 courseId 블록(예: courseId '3-01' = [3곳-01])을 보면 됩니다."
+        },
+        "origin": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "stop",
+            "hubId"
+          ],
+          "description": "뜻: 모든 코스의 출발·복귀 지점입니다(고현터미널 고정).\n왜: 기획상 첫 출발지를 고현터미널로 가정합니다. 코스 추천 화면의 '주의 사항 : 모든 첫 출발지는 고현터미널로 가정합니다.' 문구가 이것입니다. legs의 'ORIGIN'이 이 지점입니다.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "뜻: 화면에 쓰는 이름('고현터미널')."
+            },
+            "stop": {
+              "type": "string",
+              "description": "뜻: 시간표 원문의 정류장 이름('고현'). legs[].ride.board.stop 등에 나오는 표기입니다."
+            },
+            "hubId": {
+              "type": "string",
+              "description": "뜻: spot_times.json의 hubs[].hubId('GOHYEON').\n왜: 고현터미널 출발 시간표를 spot_times.json에서 찾을 때 씁니다."
+            }
+          }
+        },
+        "rules": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "departAfter",
+            "returnToOrigin",
+            "directOnly",
+            "minStayMin",
+            "maxWaitMin",
+            "maxLegMin",
+            "arrivalDeadline"
+          ],
+          "description": "뜻: 코스를 만들 때 지킨 규칙입니다. 모든 코스가 이 규칙을 만족합니다.\n왜: 백엔드가 코스를 새로 계산하거나 '왜 이 코스는 없냐'에 답할 때 기준이 됩니다.",
+          "properties": {
+            "departAfter": {
+              "$ref": "#/$defs/time",
+              "description": "뜻: 이 시각 이후에 고현터미널을 출발하는 코스만 만들었습니다.\n왜: 사용자(기획) 결정으로 11:00 출발을 기준으로 정했습니다."
+            },
+            "returnToOrigin": {
+              "type": "boolean",
+              "description": "뜻: 모든 코스가 고현터미널로 돌아오는지 여부입니다(항상 true).\n왜: 당일치기라 마지막 구간은 반드시 고현터미널 복귀입니다."
+            },
+            "directOnly": {
+              "type": "boolean",
+              "description": "뜻: 모든 구간을 갈아타지 않고 버스 한 대(직행)로만 이었는지 여부입니다(항상 true).\n왜: 기획 결정입니다. 고현 → (갈아탐) → 스팟 → (갈아탐) → 스팟 같은 코스는 만들지 않습니다. 코스를 새로 계산할 때도 지켜야 합니다."
+            },
+            "minStayMin": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "island",
+                "outdoor",
+                "facility"
+              ],
+              "description": "뜻: 스팟 종류(spots[].kind)별 최소 체류 시간(분)입니다.\n왜: 섬은 배를 타고 들어가 돌아보는 시간이 필요해 길게 잡았습니다. 실제 체류(stops[].stayMin)는 버스 시간에 맞추느라 이보다 길 수 있습니다.",
+              "properties": {
+                "island": {
+                  "type": "integer",
+                  "description": "뜻: 섬(외도·내도·지심도) 최소 체류(분)."
+                },
+                "outdoor": {
+                  "type": "integer",
+                  "description": "뜻: 야외 스팟 최소 체류(분)."
+                },
+                "facility": {
+                  "type": "integer",
+                  "description": "뜻: 시설 스팟 최소 체류(분)."
+                }
+              }
+            },
+            "maxWaitMin": {
+              "type": "integer",
+              "description": "뜻: 스팟에서 최소 체류가 끝난 뒤 다음 버스를 이 값(분) 넘게 기다리는 코스는 없습니다. 기다리는 만큼 스팟에 더 머무는 것으로 봅니다.\n왜: 시골 버스는 배차가 길어서, 기다림이 긴 코스는 사용자가 실제로 쓰지 않습니다."
+            },
+            "maxLegMin": {
+              "type": "integer",
+              "description": "뜻: 스팟 간 버스 이동(버스에 탄 시간)이 이 값(분) 미만입니다. 고현터미널 출발·복귀 구간에는 적용하지 않았습니다.\n왜: 이동이 너무 긴 조합은 코스로서 의미가 없어 뺐습니다."
+            },
+            "arrivalDeadline": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "island",
+                "facility",
+                "outdoor"
+              ],
+              "description": "뜻: 스팟 종류별로 이 시각보다 늦게 도착하는 코스는 만들지 않았습니다.\n왜: 운영시간 데이터가 없어 정한 가정입니다(섬은 마지막 배, 시설은 입장 마감, 야외는 해 질 무렵을 생각한 값).",
+              "properties": {
+                "island": {
+                  "$ref": "#/$defs/time",
+                  "description": "뜻: 섬 도착 마감."
+                },
+                "facility": {
+                  "$ref": "#/$defs/time",
+                  "description": "뜻: 시설 도착 마감."
+                },
+                "outdoor": {
+                  "$ref": "#/$defs/time",
+                  "description": "뜻: 야외 도착 마감."
+                }
+              }
+            }
+          }
+        },
+        "selection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "order",
+            "dedupe",
+            "perSpotCount"
+          ],
+          "description": "뜻: 가능한 코스 중에서 추천 코스를 고른 방법입니다.\n왜: 추천은 가능한 코스의 일부입니다. 어떤 기준으로 골랐는지 설명할 수 있어야 합니다.",
+          "properties": {
+            "order": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "뜻: 순위(courses[].rank)를 매긴 기준입니다. 앞의 것이 우선입니다.\n왜: 인기 데이터가 없어 이 기준을 정했습니다. 인기 데이터가 생기면 바꿀 부분입니다."
+            },
+            "dedupe": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "뜻: 비슷한 코스가 몰리지 않게 뺀 규칙입니다.\n왜: 같은 9경 조합만 10개 나오면 선택지가 없는 것과 같아서입니다."
+            },
+            "perSpotCount": {
+              "type": "array",
+              "description": "뜻: 스팟 수별로 가능한 코스 수와 고른 코스 수입니다.\n왜: '가능한 59개 중 10개'처럼 추천이 일부라는 걸 설명할 때 씁니다. 6곳 이상은 11시 출발로 가능한 코스가 없습니다.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "label",
+                  "spotCount",
+                  "picked",
+                  "candidates"
+                ],
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "description": "뜻: 화면 표기('3곳', '6곳 이상')."
+                  },
+                  "spotCount": {
+                    "type": "integer",
+                    "description": "뜻: 스팟 수. '6곳 이상'은 6."
+                  },
+                  "picked": {
+                    "type": "integer",
+                    "description": "뜻: 추천으로 고른 코스 수(courses에 들어 있는 수)."
+                  },
+                  "candidates": {
+                    "type": "integer",
+                    "description": "뜻: 규칙(rules)을 만족하는 전체 코스 수."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "estimatedStops": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "뜻: 시간표에 시각 칸이 없어 앞뒤 정류장 시각으로 추정한 정류장 목록입니다.\n왜: legs[].ride.board/alight의 estimated가 true인 정류장이 이것들입니다. build_spot_times.py의 VIRTUAL_STOPS에 코스 계산 때 추가한 장승포를 더한 것입니다."
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "뜻: 원본만으로 확정할 수 없어서 정한 가정입니다.\n왜: 틀릴 수 있는 부분을 백엔드와 화면이 알고 있어야 사용자에게 잘못 확정해서 말하지 않습니다."
+        },
+        "excluded": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "뜻: 추천에서 빠진 스팟과 그 이유입니다.\n왜: '공곶이는 왜 없냐' 같은 질문에 답하는 근거입니다."
+        }
+      }
+    },
+    "spots": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/spot"
+      },
+      "description": "뜻: courses에 한 번이라도 나오는 스팟 목록입니다.\n왜: 코스마다 스팟 정보를 반복하지 않으려고 따로 뺐습니다. courses[].stops[].spotId로 찾습니다."
+    },
+    "courses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/course"
+      },
+      "description": "뜻: 추천 코스입니다. spotCount 오름차순, 같은 spotCount 안에서는 rank 순입니다.\n왜: 코스 추천 화면이 spotCount로 걸러 rank 순으로 그대로 보여주면 됩니다."
+    }
+  },
+  "$defs": {
+    "time": {
+      "type": "string",
+      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+      "description": "뜻: 당일 시각(HH:MM, 24시간제)입니다.\n왜: 모든 코스가 평일 하루 안에서 끝나서 날짜 없이 씁니다."
+    },
+    "spot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "spotId",
+        "name",
+        "shortName",
+        "kind",
+        "nineScenic",
+        "hubStop",
+        "hubId",
+        "alight",
+        "inSpotTimes",
+        "temporaryHub"
+      ],
+      "description": "뜻: 스팟 하나입니다.",
+      "properties": {
+        "spotId": {
+          "type": "string",
+          "description": "뜻: 스팟 id입니다. spot_times.json의 spots[].spotId와 같게 맞췄습니다.\n왜: 두 파일을 이 id로 잇습니다. JISIMDO·NAEDO는 spot_times.json에 없어서 여기서 새로 붙였습니다."
+        },
+        "name": {
+          "type": "string",
+          "description": "뜻: 정식 이름입니다(recommended_courses.txt 표기).\n왜: 코스 상세 타임라인처럼 이름을 다 보여줄 자리에 씁니다."
+        },
+        "shortName": {
+          "type": "string",
+          "description": "뜻: 짧은 이름입니다.\n왜: 코스 카드 동그라미 밑(폭 64px)과 지도 라벨에는 긴 이름이 들어가지 않아서 따로 둡니다."
+        },
+        "kind": {
+          "enum": [
+            "island",
+            "outdoor",
+            "facility"
+          ],
+          "description": "뜻: 섬(배를 타고 들어감) · 야외 · 시설입니다.\n왜: 최소 체류(meta.rules.minStayMin)와 도착 마감(meta.rules.arrivalDeadline)이 종류마다 다릅니다."
+        },
+        "nineScenic": {
+          "type": "boolean",
+          "description": "뜻: 거제9경인지 여부입니다.\n왜: 추천 순위의 첫 기준이고, 카드 부제 '거제9경 N곳'의 재료입니다."
+        },
+        "hubStop": {
+          "type": "string",
+          "description": "뜻: 코스에서 이 스팟에 가려고 내리는 거점 정류장 이름입니다(시간표 원문 표기)."
+        },
+        "hubId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "뜻: hubStop의 spot_times.json hubs[].hubId입니다. 장승포·구조라는 spot_times.json의 거점이 아니라서 null입니다.\n왜: 스팟 시간표 화면이 이 id로 spot_times.json의 legs를 찾습니다. null이면 시간표를 열지 말거나 '준비 중'으로 보여줘야 합니다."
+        },
+        "alight": {
+          "type": "string",
+          "description": "뜻: 실제로 타고 내리는 정류장 안내 문구입니다(spot_times.json의 spots[].alight).\n왜: 스팟 시간표의 '○○ 정류장에서 타요.' 문구에 씁니다. 거점과 실제 정류장이 다를 때가 있습니다(예: 씨월드는 거점이 지세포, 정류장은 신촌)."
+        },
+        "inSpotTimes": {
+          "type": "boolean",
+          "description": "뜻: spot_times.json에 이 스팟이 있는지 여부입니다.\n왜: false면 소요시간과 시간표를 spot_times.json에서 가져올 수 없습니다(지심도·내도)."
+        },
+        "temporaryHub": {
+          "type": "boolean",
+          "description": "뜻: 배 타는 항구 근처 정류장을 임시 거점으로 쓴 스팟인지 여부입니다.\n왜: 배 시각을 반영하지 않았으니 섬 체류는 가정입니다. 화면에서 배 시간은 따로 확인하라고 안내해야 합니다."
+        }
+      }
+    },
+    "course": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "courseId",
+        "spotCount",
+        "rank",
+        "nineScenicCount",
+        "departAt",
+        "returnAt",
+        "totalMin",
+        "approxTotalMin",
+        "stops",
+        "legs"
+      ],
+      "description": "뜻: 추천 코스 하나입니다.",
+      "properties": {
+        "courseId": {
+          "type": "string",
+          "pattern": "^[3-5]-\\d\\d$",
+          "description": "뜻: '{스팟 수}-{순위 두 자리}'입니다(예: '3-01').\n왜: txt의 [3곳-01]과 1:1로 대응해서 두 파일을 맞춰 보기 쉽습니다.\n주의: 순위로 만든 id라서, 시간표가 바뀌어 다시 계산하면 같은 id가 다른 코스를 가리킬 수 있습니다. 내 일정에 저장할 때는 courseId와 함께 stops의 spotId 순서도 저장하세요."
+        },
+        "spotCount": {
+          "enum": [
+            3,
+            4,
+            5
+          ],
+          "description": "뜻: 방문하는 스팟 수입니다.\n왜: 코스 추천 화면의 3곳/4곳/5곳 칩이 이 값으로 거릅니다. 6곳 이상은 11시 출발로 가능한 코스가 없어서 없습니다."
+        },
+        "rank": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "뜻: 같은 spotCount 안에서의 순위입니다(1이 가장 추천).\n왜: 목록 정렬 순서이고, 카드 제목 '코스 {rank}'입니다. 기준은 meta.selection.order."
+        },
+        "nineScenicCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "뜻: 들어 있는 거제9경 수입니다.\n왜: 카드 부제 '거제9경 N곳'에 씁니다."
+        },
+        "departAt": {
+          "$ref": "#/$defs/time",
+          "description": "뜻: 고현터미널에서 첫 버스를 타는 시각입니다(= legs[0].departAt).\n왜: 코스 추천 화면에서는 보여주지 않고, 지도·코스 상세부터 씁니다."
+        },
+        "returnAt": {
+          "$ref": "#/$defs/time",
+          "description": "뜻: 고현터미널에 돌아오는 시각입니다(= 마지막 legs의 arriveAt)."
+        },
+        "totalMin": {
+          "type": "integer",
+          "description": "뜻: returnAt - departAt(분)입니다."
+        },
+        "approxTotalMin": {
+          "type": "integer",
+          "description": "뜻: totalMin을 30분 단위로 반올림한 값입니다(15분은 올림. 515분 → 510분, 595분 → 600분).\n왜: 지도 코스 카드의 '약 8시간 30분'이 이 값입니다. 백엔드와 프론트가 반올림을 따로 하면 숫자가 어긋나서 여기서 한 번만 정합니다."
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/stop"
+          },
+          "description": "뜻: 방문하는 스팟입니다(방문 순서대로). 길이 = spotCount."
+        },
+        "legs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/leg"
+          },
+          "description": "뜻: 이동 구간입니다(순서대로). 길이 = spotCount + 1. 첫 구간은 ORIGIN → 첫 스팟, 마지막 구간은 마지막 스팟 → ORIGIN.\n왜: 코스 상세 타임라인은 legs와 stops를 번갈아 그리면 됩니다."
+        }
+      }
+    },
+    "stop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "order",
+        "spotId",
+        "arriveAt",
+        "leaveAt",
+        "stayMin",
+        "checkHours"
+      ],
+      "description": "뜻: 코스 안에서 스팟에 머무는 한 번입니다.",
+      "properties": {
+        "order": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "뜻: 방문 순서입니다(1부터).\n왜: 화면의 번호 동그라미(1·2·3)가 이 값입니다."
+        },
+        "spotId": {
+          "type": "string",
+          "description": "뜻: spots[].spotId입니다."
+        },
+        "arriveAt": {
+          "$ref": "#/$defs/time",
+          "description": "뜻: 이 스팟 정류장에 내리는 시각입니다(= 들어오는 구간의 arriveAt)."
+        },
+        "leaveAt": {
+          "$ref": "#/$defs/time",
+          "description": "뜻: 이 스팟을 떠나는 시각입니다(= 나가는 구간의 departAt)."
+        },
+        "stayMin": {
+          "type": "integer",
+          "description": "뜻: 실제로 머무는 시간(leaveAt - arriveAt, 분)입니다.\n왜: 버스 시간에 맞추느라 최소 체류(meta.rules.minStayMin)보다 길 수 있습니다. 정류장과 스팟 사이를 걷는 시간이 이 안에 들어 있습니다."
+        },
+        "checkHours": {
+          "type": "boolean",
+          "description": "뜻: true면 시설에 17:00 이후(시설 도착 마감 시각)에 닿는 스팟입니다. txt의 '※ 운영시간 확인'이 이것입니다.\n왜: 운영시간 데이터가 없어 도착 마감을 가정으로 뒀기 때문에, 마감에 걸친 시설은 입장이 안 될 수 있습니다. 화면에 '운영시간을 확인하세요'를 띄워야 합니다."
+        }
+      }
+    },
+    "leg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "to",
+        "mode",
+        "departAt",
+        "arriveAt",
+        "durationMin",
+        "ride"
+      ],
+      "description": "뜻: 한 지점에서 다음 지점으로 가는 구간입니다.",
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "뜻: 출발지입니다. 'ORIGIN'(고현터미널) 또는 spots[].spotId.\n왜: 첫 구간은 항상 ORIGIN에서 시작합니다."
+        },
+        "to": {
+          "type": "string",
+          "description": "뜻: 도착지입니다. spots[].spotId, 마지막 구간은 'ORIGIN'(고현터미널 복귀)."
+        },
+        "mode": {
+          "enum": [
+            "BUS",
+            "SAME_STOP"
+          ],
+          "description": "뜻: BUS는 버스로 이동, SAME_STOP은 버스 없이 옆 스팟으로 이동입니다.\n왜: 조선해양문화관과 거제씨월드는 같은 정류장 근처라 버스를 타지 않습니다. SAME_STOP이면 ride는 null이고 durationMin은 0입니다. 화면에는 '같은 정류장 근처'처럼 보여주세요."
+        },
+        "departAt": {
+          "$ref": "#/$defs/time",
+          "description": "뜻: 버스를 타는 시각입니다(SAME_STOP이면 앞 스팟을 떠나는 시각)."
+        },
+        "arriveAt": {
+          "$ref": "#/$defs/time",
+          "description": "뜻: 버스에서 내리는 시각입니다(SAME_STOP이면 departAt과 같음)."
+        },
+        "durationMin": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "뜻: arriveAt - departAt(분), 즉 버스에 탄 시간입니다.\n왜: 코스 상세의 '버스 약 40분'이 이 값입니다. 추정 정류장이 섞일 수 있어 화면에는 '약'을 붙입니다."
+        },
+        "ride": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ride"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "뜻: 이 구간에서 타는 버스 한 대입니다. SAME_STOP이면 null.\n왜: 직행만 쓰기 때문에 한 구간 = 버스 한 대입니다. 배열이 아니라서 환승이 끼어들 자리가 없습니다."
+        }
+      }
+    },
+    "ride": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "routeNo",
+        "board",
+        "alight"
+      ],
+      "description": "뜻: 버스 한 대를 타고 내리는 것입니다(갈아타지 않음).",
+      "properties": {
+        "routeNo": {
+          "type": "string",
+          "description": "뜻: 노선 번호입니다(예: '55', '67-1', '100-1').\n왜: '-1' 같은 지선 표기가 있어 숫자로 바꾸면 안 됩니다. spot_times.json legs[].routeNo와 같은 표기입니다."
+        },
+        "board": {
+          "$ref": "#/$defs/rideEnd",
+          "description": "뜻: 타는 곳과 시각입니다."
+        },
+        "alight": {
+          "$ref": "#/$defs/rideEnd",
+          "description": "뜻: 내리는 곳과 시각입니다."
+        }
+      }
+    },
+    "rideEnd": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stop",
+        "hubId",
+        "at",
+        "estimated"
+      ],
+      "description": "뜻: 버스를 타거나 내리는 한 지점입니다.",
+      "properties": {
+        "stop": {
+          "type": "string",
+          "description": "뜻: 정류장 이름입니다(시간표 원문 표기. 다만 '거제'는 '거제면'으로 적음).\n왜: 화면에 그대로 보여주는 값입니다."
+        },
+        "hubId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "뜻: spot_times.json의 hubs[].hubId입니다. 거점이 아닌 정류장(장승포·구조라 등)은 null.\n왜: 이 정류장의 시간표가 필요하면 spot_times.json에서 이 id로 찾습니다."
+        },
+        "at": {
+          "$ref": "#/$defs/time",
+          "description": "뜻: 이 정류장에서 타는(board) 또는 내리는(alight) 시각입니다."
+        },
+        "estimated": {
+          "type": "boolean",
+          "description": "뜻: true면 시간표에 이 정류장 시각 칸이 없어 앞뒤 정류장 시각으로 잡은 값입니다(meta.estimatedStops).\n왜: 실제 버스는 적힌 승차 시각보다 늦게 오고, 적힌 도착 시각보다 일찍 닿습니다. 화면에서는 '쯤'이나 '약'을 붙여야 합니다."
+        }
+      }
+    }
+  }
+}

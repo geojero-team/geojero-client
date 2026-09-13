@@ -145,7 +145,8 @@
 }
 
 /* ── 지도 컨트롤 ──────────────────────────────────────────────────────────
-   Figma 240:169/171 — 36px 버튼 두 개가 8px 떨어져 있고 테두리는 없습니다.
+   확대·축소를 흰 면 하나로 묶고 가운데 구분선으로 나눕니다(2026-09-13).
+   전에는 Figma 240:169/171대로 36px 버튼 두 개가 8px 떨어져 따로 떠 있었습니다.
    top은 인라인 스타일로 들어옵니다(조건 칩이 있을 때와 없을 때가 달라서). */
 
 .controls {
@@ -154,26 +155,32 @@
   right: var(--space-md);
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--bg-page);
+  box-shadow: var(--elevation-chip);
 }
 
 .zoomButton {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-control);
-  background: var(--bg-page);
+  background: transparent;
   color: var(--text-primary);
-  font: var(--type-body);
-  box-shadow: var(--elevation-chip);
   cursor: pointer;
 }
 
 .zoomButton:active {
-  background: var(--bg-surface);
+  background: var(--bg-pressed);
+}
+
+.zoomDivider {
+  height: 1px;
+  margin: 0 var(--space-sm);
+  background: var(--border-default);
 }
 
 /* ── 로딩 / 에러 ──────────────────────────────────────────────────────────*/

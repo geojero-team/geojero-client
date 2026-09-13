@@ -113,13 +113,6 @@
   color: var(--brand-strong);
 }
 
-.durLine {
-  margin: 4px 0 0;
-  font: var(--type-caption);
-  color: var(--text-secondary);
-  word-break: keep-all;
-}
-
 .tableHead {
   display: flex;
   align-items: baseline;

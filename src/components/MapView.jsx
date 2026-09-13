@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { RotateCw, TriangleAlert } from 'lucide-react'
+import { Minus, Plus, RotateCw, TriangleAlert } from 'lucide-react'
 import { t } from '../i18n'
 import { loadKakaoMaps } from '../lib/kakaoLoader'
 import { ICON_PATHS } from '../lib/spotIcons'
@@ -532,7 +532,9 @@ export default function MapView({
     <div className={styles.root}>
       <div ref={containerRef} className={styles.canvas} />
 
-      {/* Figma 240:169/171 — 테두리 없는 36px 버튼 두 개, 8px 간격, 우측 12px */}
+      {/* 확대·축소 — 한 덩어리로 묶었습니다(2026-09-13). 전에는 36px 버튼 두 개가 8px 떨어져
+          따로 떠 있었습니다(Figma 240:169/171). 같은 일을 하는 두 버튼이 갈라져 보여서,
+          흰 면 하나에 구분선으로 나눴습니다. 색·그림자는 기존 토큰 그대로입니다. */}
       {phase === 'ready' && !compact && (
         <div className={styles.controls} style={{ top: topReserved + 16 }}>
           <button
@@ -541,15 +543,16 @@ export default function MapView({
             onClick={() => zoom(-1)}
             aria-label={t('map.zoomIn')}
           >
-            +
+            <Plus size={18} strokeWidth={2} aria-hidden="true" />
           </button>
+          <span className={styles.zoomDivider} aria-hidden="true" />
           <button
             type="button"
             className={styles.zoomButton}
             onClick={() => zoom(1)}
             aria-label={t('map.zoomOut')}
           >
-            −
+            <Minus size={18} strokeWidth={2} aria-hidden="true" />
           </button>
         </div>
       )}

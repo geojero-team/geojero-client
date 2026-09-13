@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { api } from '../lib/api'
+import { loadSpots } from '../lib/spots'
 import styles from './SpotTimetablePage.module.css'
 
 /**
@@ -11,13 +12,14 @@ import styles from './SpotTimetablePage.module.css'
  * 코스 상세에서 스팟을 누르면 여기로 옵니다. 코스가 "요약"이면 이 화면이 "근거"입니다 —
  * 우리가 적은 `55번 · 40분`이 어느 회차에서 나온 값인지 사용자가 직접 볼 수 있게 합니다.
  *
- * 세 가지를 숨기지 않습니다.
- *  1. **소요시간의 폭** — 같은 노선·방향인데도 2~5분 흔들립니다(같은 회차가 50번대와
- *     60번대 시트에 다르게 실린 탓). 한 값으로 뭉개지 않고 `약 40~43분`으로 적습니다.
- *  2. **읽는 정류장이 다를 때** — 조선해양문화관은 신촌에서 내리지만 시간표는 지세포
+ * 두 가지를 숨기지 않습니다.
+ *  1. **읽는 정류장이 다를 때** — 조선해양문화관은 신촌에서 내리지만 시간표는 지세포
  *     기준입니다. 숨기면 거짓말이 됩니다.
- *  3. **빈 결과의 이유** — 운행 없음 / 시각 미상 / 정류장 칸 없음을 갈라 말합니다.
+ *  2. **빈 결과의 이유** — 운행 없음 / 시각 미상 / 정류장 칸 없음을 갈라 말합니다.
  *     이유 없는 빈칸은 우리가 기준문서 §4에서 비판하는 것입니다(절대규칙 3).
+ *
+ * 2026-09-13: 다음 버스 카드 아래의 노선별 소요시간 줄(`고현터미널까지 약 20분 · 53번은 약 20분 · …`)을
+ * 뺐습니다. 노선이 많은 스팟에서 한 문단이 되어 '다음 버스'가 묻혔습니다. 카드는 다음 버스 한 줄만 말합니다.
  */
 
 /** 시각 문자열("HH:MM")을 분으로. 지난 차를 흐리게 하려면 비교가 필요합니다. */
@@ -36,12 +38,33 @@ function nowHm() {
   return `${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
-/** 노선별 소요시간 한 조각 — 흔들리면 폭으로, 상수면 한 값으로. */
-function durationText(route) {
-  if (route.durationMin == null) return null
-  return route.durationVaries
-    ? t('spotTime.minRange', { low: route.durationMinLow, high: route.durationMin })
-    : t('spotTime.min', { min: route.durationMin })
+/** 고현터미널 — 모든 코스의 출발·복귀 지점입니다. 스팟이 아니라서 poiId가 없습니다. */
+const ORIGIN = '고현터미널'
+
+/**
+ * 방향 칩. 칩 하나가 "어디서 타서 어디로 가는가" 한 쌍입니다(2026-09-13, 두 개에서 네 개로).
+ *
+ *   next        이 스팟 → 코스의 다음 스팟
+ *   fromNext    코스의 다음 스팟 → 이 스팟 (거꾸로)
+ *   origin      이 스팟 → 고현터미널
+ *   fromOrigin  고현터미널 → 이 스팟
+ *
+ * next·fromNext는 코스 상세에서 넘어와 다음 스팟(`to`)을 알 때만 있습니다. 시간표 탭에서
+ * 들어오면 고현터미널 왕복 두 칩입니다. 모든 스팟에 같은 규칙입니다.
+ *
+ * ⚠️ 한때 `고현 → 스팟` 칩을 지웠습니다 — 그 칩만 남의 정류장(고현터미널) 시간표라 헷갈렸습니다.
+ * 이번에 되살리면서 칩 아래 문구를 **타는 곳에 맞춰** 바꿉니다(`고현터미널에서 타요.`).
+ */
+function directionsFor(hasNext) {
+  return hasNext ? ['next', 'fromNext', 'origin', 'fromOrigin'] : ['origin', 'fromOrigin']
+}
+
+/** 방향 → 서버 호출. fromNext는 **다음 스팟**의 시간표에서 목적지를 이 스팟으로 잡은 것입니다. */
+function fetchDirection(dir, { poiId, nextId, date, after }) {
+  if (dir === 'next') return api.spotDepartures(poiId, { date, after, toPoiId: nextId })
+  if (dir === 'fromNext') return api.spotDepartures(nextId, { date, after, toPoiId: poiId })
+  if (dir === 'fromOrigin') return api.spotDepartures(poiId, { date, after, from: 'origin' })
+  return api.spotDepartures(poiId, { date, after })
 }
 
 export default function SpotTimetablePage() {
@@ -52,31 +75,32 @@ export default function SpotTimetablePage() {
   // 날짜·시각을 쿼리로 덮어쓸 수 있게 둡니다 — 화면 확인과 회귀에 필요합니다.
   const date = searchParams.get('date') ?? today()
   const now = searchParams.get('now') ?? nowHm()
-  /**
-   * 어디로 가는 시간표인가.
-   *
-   * ⚠️ 2026-09-13에 방향의 뜻이 바뀌었습니다(팀 결정). 전에는 `스팟 → 고현` / **`고현 → 스팟`**
-   * 두 칩이었는데, 뒤쪽을 지웠습니다. **그 칩만 남의 정류장 시간표였습니다** — 학동몽돌해변
-   * 화면인데 고현터미널에서 출발하는 버스를 보여줬습니다. 이 화면은 "이 스팟에서 타는 버스"고,
-   * 코스에서 학동 다음이 해금강이면 필요한 것은 **학동 → 해금강**입니다.
-   *
-   *   to   코스의 다음 스팟 poiId. 코스 상세에서 넘어올 때만 붙습니다
-   *   dir  next(다음 스팟) | origin(고현터미널로 복귀). to가 없으면 origin 하나뿐입니다
-   */
-  const toPoiId = searchParams.get('to')
-  const dir = searchParams.get('dir') ?? (toPoiId ? 'next' : 'origin')
+  // 코스의 다음 스팟 poiId. 코스 상세에서 넘어올 때만 붙습니다.
+  const nextId = searchParams.get('to')
+  const dirs = directionsFor(Boolean(nextId))
+  const asked = searchParams.get('dir')
+  const dir = dirs.includes(asked) ? asked : dirs[0]
 
   const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
+  /* poiId → 짧은 이름. 칩 이름을 **응답과 떼어** 정합니다. 전에는 다음 스팟 칩 이름을
+     응답의 `to`에서 읽었는데, 고현터미널 칩을 누르면 응답의 to가 고현터미널로 바뀌어
+     **옆 칩 이름까지 '해금강 → 고현터미널'로 바뀌었습니다**(2026-09-13 버그). */
+  const [names, setNames] = useState(() => new Map())
 
   useEffect(() => {
     let cancelled = false
-    api
-      .spotDepartures(poiId, {
-        date,
-        after: now,
-        // toPoiId를 안 주면 서버가 고현터미널을 목적지로 잡습니다(복귀 방향).
-        toPoiId: dir === 'next' ? toPoiId : undefined,
-      })
+    loadSpots().then((spots) => {
+      if (cancelled) return
+      setNames(new Map([...spots].map(([id, poi]) => [String(id), poi.shortName ?? poi.name])))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    fetchDirection(dir, { poiId, nextId, date, after: now })
       .then((data) => {
         if (!cancelled) setResult({ status: 'ready', data, error: '' })
       })
@@ -86,17 +110,28 @@ export default function SpotTimetablePage() {
     return () => {
       cancelled = true
     }
-  }, [poiId, date, now, dir, toPoiId])
+  }, [poiId, nextId, dir, date, now])
 
   const d = result.data
   const dayLabel = t(d?.dayClass === 'HOLIDAY' ? 'courseDetail.holiday' : 'courseDetail.weekday')
-  const spot = d?.shortName ?? d?.name ?? ''
-  const origin = '고현터미널'
+  // 제목은 늘 **이 스팟**입니다. fromNext 응답은 다음 스팟 기준이라 응답 이름을 쓰면 제목이 바뀝니다.
+  const spotFromResponse = dir === 'fromNext' ? '' : (d?.shortName ?? d?.name ?? '')
+  const spot = names.get(String(poiId)) ?? spotFromResponse
+  const nextFromResponse =
+    dir === 'next' ? d?.to?.name : dir === 'fromNext' ? (d?.shortName ?? d?.name) : null
+  const nextName = (nextId ? names.get(String(nextId)) : null) ?? nextFromResponse ?? ''
 
-  // to는 두 칩 모두에 남겨둡니다 — 복귀 칩을 눌렀다가 다시 돌아올 수 있어야 합니다.
+  const dirLabel = (k) => {
+    if (k === 'next') return t('spotTime.dir', { from: spot, to: nextName })
+    if (k === 'fromNext') return t('spotTime.dir', { from: nextName, to: spot })
+    if (k === 'fromOrigin') return t('spotTime.dir', { from: ORIGIN, to: spot })
+    return t('spotTime.dir', { from: spot, to: ORIGIN })
+  }
+
+  // to는 모든 칩에 남겨둡니다 — 고현터미널 칩을 눌렀다가 다음 스팟 칩으로 돌아올 수 있어야 합니다.
   const setDir = (next) => {
     const params = { dir: next, ...(date ? { date } : {}), ...(now ? { now } : {}) }
-    if (toPoiId) params.to = toPoiId
+    if (nextId) params.to = nextId
     setSearchParams(params, { replace: true })
   }
 
@@ -128,8 +163,6 @@ export default function SpotTimetablePage() {
 
   const nowMin = toMin(now)
   const nextDepart = d.next?.depart ?? null
-  const main = d.byRoute?.[0]
-  const others = (d.byRoute ?? []).slice(1)
 
   return (
     <Screen data-api="GET /api/pois/{id}/departures">
@@ -143,41 +176,35 @@ export default function SpotTimetablePage() {
 
       <div className={styles.scroll}>
         <div className={styles.body}>
-          {/* 어디서 타는지. 내리는 곳과 시간표 기준이 다르면 그 사실을 함께 적습니다. */}
+          {/* 어디서 타는지. 내리는 곳과 시간표 기준이 다르면 그 사실을 함께 적습니다.
+              고현터미널 → 스팟은 서버의 alightLabel이 **스팟 쪽** 정류장이라 그대로 쓰면
+              "해금강 정류장에서 타요"가 됩니다 — 타는 곳은 고현터미널이므로 따로 적습니다. */}
           <p className={styles.board}>
-            {d.boardStop == null
+            {dir === 'fromOrigin'
+              ? t('spotTime.board', { stop: ORIGIN })
+              : d.boardStop == null
               ? t('spotTime.emptyNoStop')
               : d.boardStopDiffers
                 ? t('spotTime.boardDiffers', { alight: d.alightLabel, stop: d.boardStop })
                 : t('spotTime.board', { stop: d.alightLabel ?? d.boardStop })}
           </p>
 
-          {/* 방향 칩 — 둘 다 **이 스팟에서 출발하는** 버스입니다.
-              코스에서 왔으면 `다음 스팟`이 기본이고, `고현터미널`은 복귀편입니다.
-              코스 없이 시간표 탭에서 들어오면 갈 곳이 정해지지 않아 복귀편 하나만 둡니다. */}
+          {/* 방향 칩 — 코스에서 왔으면 다음 스팟 왕복 + 고현터미널 왕복 네 개, 아니면 고현터미널 왕복 둘. */}
           <div className={styles.dirs} role="group">
-            {toPoiId && (
+            {dirs.map((k) => (
               <button
+                key={k}
                 type="button"
-                className={dir === 'next' ? `${styles.dirChip} ${styles.dirOn}` : styles.dirChip}
-                onClick={() => setDir('next')}
-                aria-pressed={dir === 'next'}
+                className={k === dir ? `${styles.dirChip} ${styles.dirOn}` : styles.dirChip}
+                onClick={() => setDir(k)}
+                aria-pressed={k === dir}
               >
-                {t('spotTime.toSpot', { spot, to: d.to?.name ?? '' })}
+                {dirLabel(k)}
               </button>
-            )}
-            <button
-              type="button"
-              className={dir === 'origin' ? `${styles.dirChip} ${styles.dirOn}` : styles.dirChip}
-              onClick={() => setDir('origin')}
-              aria-pressed={dir === 'origin'}
-            >
-              {t('spotTime.toOrigin', { spot, origin })}
-            </button>
+            ))}
           </div>
 
-          {/* 다음 버스 + 노선별 소요시간. 노선을 섞어 평균을 내지 않습니다 — 실제로
-              운행하지 않는 값이 나옵니다(engine.md). */}
+          {/* 다음 버스 한 줄만 말합니다(2026-09-13). 노선별 소요시간 줄은 뺐습니다 — 파일 머리 주석 참고. */}
           {d.count > 0 && (
             <div className={styles.nextCard}>
               <p className={styles.nextLine}>
@@ -185,22 +212,6 @@ export default function SpotTimetablePage() {
                   ? t('spotTime.next', { time: d.next.depart, route: d.next.routeNo })
                   : t('spotTime.noNext')}
               </p>
-              {main && (
-                <p className={styles.durLine}>
-                  {t('spotTime.duration', {
-                    to: d.to?.name ?? origin,
-                    min: durationText(main),
-                  })}
-                  {others
-                    .filter((r) => r.durationMin != null)
-                    .map((r) => (
-                      <span key={r.routeNo}>
-                        {' · '}
-                        {t('spotTime.durationMore', { route: r.routeNo, min: durationText(r) })}
-                      </span>
-                    ))}
-                </p>
-              )}
             </div>
           )}
 

@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "spot_times.schema.json",
+  "title": "거제로 스팟 소요시간",
+  "description": "거제시 거점 버스 시간표(xlsx)에서 뽑은 스팟별 소요시간입니다. timetable/build_spot_times.py가 만들기 때문에 손으로 고치지 말고 스크립트를 다시 돌리세요. 항목에 마우스를 올리면 뜻과 필요한 이유가 보입니다.",
+  "type": "object",
+  "required": ["meta", "hubs", "spots", "matrix", "excluded", "legs"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "뜻: 이 설명 파일의 위치입니다.\n왜: VS Code가 이 값을 보고 항목마다 설명을 마우스오버로 띄웁니다. 백엔드는 무시하면 됩니다."
+    },
+    "meta": {
+      "type": "object",
+      "description": "뜻: 데이터 전체에 대한 정보입니다.\n왜: 판정 화면 하단의 출처 표기와, 이 숫자를 얼마나 믿을 수 있는지가 여기 있습니다.",
+      "required": ["source", "baseDate", "service", "origin", "maxRideMin"],
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "뜻: 원본 출처입니다.\n왜: 모든 판정 응답에 출처를 실어야 합니다(API_DRAFT 3.5). '추정이 아니라 원문'이 이 서비스의 근거라서 화면에 항상 보여야 합니다."
+        },
+        "baseDate": {
+          "type": "string",
+          "format": "date",
+          "description": "뜻: 원본 시간표의 시행일(YYYY-MM-DD)입니다.\n왜: 시간표는 개편됩니다. 언제 기준인지 밝혀야 사용자가 낡은 정보를 걸러낼 수 있습니다. source와 한 쌍입니다."
+        },
+        "service": {
+          "enum": ["WEEKDAY"],
+          "description": "뜻: 어느 요일 시간표로 만든 데이터인지입니다. 지금은 평일뿐입니다.\n왜: 10·20·100·110번대는 평일과 주말 시각이 다르고, 방학에는 전 노선이 주말 시간표로 돕니다. 주말에 평일 데이터로 판정하면 없는 버스를 추천하게 됩니다."
+        },
+        "origin": {
+          "type": "object",
+          "description": "뜻: 모든 소요시간의 출발 기준 거점입니다(고현 고정).\n왜: 기획상 출발지를 고현으로 고정했습니다. 스팟의 fromOrigin·toOrigin이 이 거점 기준입니다.",
+          "properties": {
+            "hubId": { "type": "string", "description": "출발 거점 id" },
+            "name": { "type": "string", "description": "출발 거점 이름" }
+          }
+        },
+        "maxRideMin": {
+          "type": "integer",
+          "description": "뜻: 스팟 간 이동에서 버스에 탄 시간이 이 값(분) 이상이면 matrix에서 뺍니다.\n왜: 버스로 너무 오래 걸리는 조합을 코스 추천 후보에서 미리 걸러냅니다. 기준을 바꾸려면 스크립트의 MAX_RIDE_MIN만 고치면 됩니다."
+        },
+        "sources": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "뜻: 값을 뽑은 원본 파일과 시트 목록입니다.\n왜: 숫자가 이상할 때 원본 어디를 봐야 하는지 바로 찾기 위해서입니다."
+        },
+        "assumptions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "뜻: 원본만으로 확정할 수 없어서 정한 가정입니다.\n왜: 가정은 틀릴 수 있습니다. 적어둬야 원본이 바뀌었을 때 무엇을 다시 봐야 하는지 압니다."
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "뜻: 원본에서 발견한 불일치와 불확실성입니다. 우리가 쓰는 거점을 지나는 회차의 문제만 적습니다. 시각이 거꾸로 적힌 부분은 원본 오타라 계산에서 뺐습니다.\n왜: 시트끼리 시각이 다르거나 원문이 스스로 근사값이라고 밝힌 부분입니다. 보수적으로 처리했지만 알고 있어야 합니다."
+        }
+      }
+    },
+    "hubs": {
+      "type": "array",
+      "description": "뜻: 시간표상의 거점 목록입니다.\n왜: 스팟은 시간표에 직접 나오지 않습니다. 스팟 -> 거점 -> 시각 순서로 찾아가기 때문에 거점이 따로 있어야 합니다.",
+      "items": {
+        "type": "object",
+        "required": ["hubId", "name", "inTimetable"],
+        "properties": {
+          "hubId": {
+            "type": "string",
+            "description": "뜻: 거점 고유 id입니다.\n왜: 한글 이름은 표기가 흔들립니다(고현 / 터미널 / 터미널순환). 데이터끼리 연결할 때는 id를 씁니다."
+          },
+          "name": { "type": "string", "description": "뜻: 화면에 보일 거점 이름입니다." },
+          "inTimetable": {
+            "type": "boolean",
+            "description": "뜻: 시간표에 이 거점의 시각 칸이 있는지입니다.\n왜: false면 시각을 모르는 정류장입니다(도장포·식물원·대금교차로·포로수용소·옥포대첩기념공원·맹종죽테마파크). 옆 정류장 시각으로 범위를 잡아 쓰기 때문에, 여기가 끼인 구간은 bound=true가 됩니다."
+          }
+        }
+      }
+    },
+    "spots": {
+      "type": "array",
+      "description": "뜻: 관광 스팟과, 고현에서 오가는 정보입니다.\n왜: 스팟 목록(API_DRAFT 4.2)과 스팟 상세(4.3)가 이 값을 씁니다.",
+      "items": {
+        "type": "object",
+        "required": ["spotId", "name", "region", "hubIds", "dayTrip"],
+        "properties": {
+          "spotId": { "type": "string", "description": "뜻: 스팟 고유 id입니다." },
+          "name": { "type": "string", "description": "뜻: 스팟 이름입니다." },
+          "region": {
+            "type": "string",
+            "description": "뜻: 스팟이 속한 권역입니다(남부권·북부권·중부권·서부권).\n왜: 스팟 목록을 권역별로 묶어 보여줄 때 씁니다."
+          },
+          "hubIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1,
+            "description": "뜻: 이 스팟에 가려면 내리는 거점들입니다. 대부분 하나이고, 여차·홍포 해안비경처럼 어느 종점에서 내려도 되는 스팟은 둘입니다.\n왜: 스팟과 거점은 1:1이 아닙니다. 바람의언덕과 도장포유람선은 둘 다 도장포에 붙고, 여차·홍포 해안비경은 홍포와 여차 두 곳에 붙습니다. 여러 개면 그중 어디로 가는 버스든 다 씁니다."
+          },
+          "alight": {
+            "type": "string",
+            "description": "뜻: 실제로 내릴 정류장 이름입니다.\n왜: 시간표의 거점명과 실제 하차 정류장이 다를 수 있어서, 사용자에게 보여줄 이름을 따로 둡니다."
+          },
+          "dayTrip": {
+            "type": "boolean",
+            "description": "뜻: 당일 코스에 넣어도 되는 스팟인지입니다.\n왜: 시간표상 그날 고현으로 돌아올 수 없는 스팟이 있습니다. false면 코스 추천에서 뺍니다(서비스는 당일 코스만 다룹니다). 이유는 dayTripNote에 있습니다."
+          },
+          "dayTripNote": {
+            "type": "string",
+            "description": "뜻: dayTrip이 false인 이유입니다. dayTrip이 true면 이 항목이 없습니다."
+          },
+          "fromOrigin": {
+            "oneOf": [{ "$ref": "#/$defs/legSummary" }, { "type": "null" }],
+            "description": "뜻: 고현 -> 스팟, 가는 편입니다.\n왜: 가는 소요시간과 첫차·막차를 알아야 출발 시각을 정할 수 있습니다. 직행 버스가 없으면 null입니다."
+          },
+          "toOrigin": {
+            "oneOf": [{ "$ref": "#/$defs/legSummary" }, { "type": "null" }],
+            "description": "뜻: 스팟 -> 고현, 돌아오는 편입니다.\n왜: 여기의 lastDepart가 곧 '돌아오는 막차'이고 판정의 핵심입니다(API_DRAFT 4.3 facts). 이걸 놓치면 그날 못 돌아옵니다."
+          }
+        }
+      }
+    },
+    "matrix": {
+      "type": "array",
+      "description": "뜻: 스팟에서 스팟으로 같은 회차 버스로 바로 갈 수 있는 조합입니다. 환승 경로는 넣지 않았고, 탄 시간이 meta.maxRideMin 이상인 조합도 빠져 있습니다(excluded 참고).\n왜: 여러 스팟을 고른 사용자에게 방문 순서를 추천하려면 스팟 사이 이동 비용을 알아야 합니다. 미리 계산해 두면 백엔드가 경로 탐색 알고리즘을 따로 구현하지 않아도 됩니다.",
+      "items": {
+        "allOf": [
+          { "$ref": "#/$defs/legSummary" },
+          {
+            "type": "object",
+            "required": ["from", "to", "mode"],
+            "properties": {
+              "from": { "type": "string", "description": "뜻: 출발 스팟 id입니다." },
+              "to": { "type": "string", "description": "뜻: 도착 스팟 id입니다." },
+              "mode": {
+                "enum": ["BUS", "SAME_STOP"],
+                "description": "뜻: 두 스팟 사이를 어떻게 가는지입니다.\nBUS = 같은 회차로 바로 가는 버스가 있음. trips에 회차별 시각이 있습니다\nSAME_STOP = 같은 정류장에 붙은 스팟이라 버스가 필요 없음(도보 거리는 계산하지 않음)\n왜: SAME_STOP이 없으면 코스 추천이 같은 곳에 있는 두 스팟 사이에도 버스를 기다려야 한다고 계산합니다. 55번은 최대 대기가 몇 시간이라, 하루에 되는 코스를 안 된다고 판정하게 됩니다."
+              },
+              "note": {
+                "type": "string",
+                "description": "뜻: mode가 BUS가 아닐 때의 설명입니다. 화면에 그대로 써도 됩니다."
+              }
+            }
+          }
+        ]
+      }
+    },
+    "excluded": {
+      "type": "array",
+      "description": "뜻: matrix에서 뺀 스팟 조합과 그 이유입니다.\n왜: 빠진 조합이 계산 실수인지 기준 때문인지 구분하려고 남깁니다. 코스 추천은 이 조합을 쓰지 않습니다.",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "reason"],
+        "properties": {
+          "from": { "type": "string", "description": "뜻: 출발 스팟 id입니다." },
+          "to": { "type": "string", "description": "뜻: 도착 스팟 id입니다." },
+          "reason": {
+            "enum": ["OVER_MAX_RIDE", "NO_ROUTE"],
+            "description": "뜻: 뺀 이유입니다.\nOVER_MAX_RIDE = 버스에 탄 시간이 meta.maxRideMin 이상\nNO_ROUTE = 같은 회차로 바로 가는 버스가 없음(환승 경로는 고려하지 않음)"
+          },
+          "rideMaxMin": {
+            "type": "integer",
+            "description": "뜻: OVER_MAX_RIDE일 때, 바로 가는 버스의 탄 시간 최댓값(분)입니다.\n왜: 기준을 몇 분 넘어서 빠졌는지 보여줘야 기준을 조정할지 판단할 수 있습니다."
+          }
+        }
+      }
+    },
+    "legs": {
+      "type": "array",
+      "description": "뜻: 거점에서 거점까지를 노선별로 나눈 구간입니다.\n왜: spots와 matrix는 이걸 노선 구분 없이 합친 요약입니다. '몇 번 버스가 몇 시에'처럼 노선별로 봐야 할 때 씁니다. 원본에 가장 가까운 데이터입니다.",
+      "items": {
+        "allOf": [
+          { "$ref": "#/$defs/legSummary" },
+          {
+            "type": "object",
+            "required": ["from", "to", "routeNo"],
+            "properties": {
+              "from": { "type": "string", "description": "뜻: 출발 거점 id입니다." },
+              "to": { "type": "string", "description": "뜻: 도착 거점 id입니다." },
+              "routeNo": {
+                "type": "string",
+                "description": "뜻: 노선 번호입니다.\n왜: '55-1'처럼 하이픈이 들어가서 숫자가 아니라 문자열입니다."
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "hhmm": {
+      "type": "string",
+      "pattern": "^\\d{2}:\\d{2}$",
+      "description": "24시간제 시각 HH:MM"
+    },
+    "trip": {
+      "type": "object",
+      "required": ["depart", "arrive"],
+      "properties": {
+        "depart": {
+          "$ref": "#/$defs/hhmm",
+          "description": "뜻: 이 회차가 출발 지점을 떠나는 시각입니다. bound=true면 실제로는 이보다 늦게 옵니다(하한)."
+        },
+        "arrive": {
+          "$ref": "#/$defs/hhmm",
+          "description": "뜻: 이 회차가 도착 지점에 닿는 시각입니다. bound=true면 실제로는 이보다 일찍 닿습니다(상한)."
+        }
+      }
+    },
+    "legSummary": {
+      "type": "object",
+      "properties": {
+        "rideMin": {
+          "type": "object",
+          "description": "뜻: 버스에 탄 뒤 내릴 때까지 걸리는 분입니다. 회차마다 다르면 최솟값과 최댓값입니다.\n왜: 코스 전체 소요를 계산하는 기본값입니다. 다만 이것만으로 코스를 짜면 안 됩니다. maxGapMin을 같이 보세요.",
+          "properties": {
+            "min": { "type": "integer", "description": "가장 빨리 가는 경우의 소요(분)" },
+            "max": { "type": "integer", "description": "가장 오래 걸리는 경우의 소요(분)" }
+          }
+        },
+        "maxGapMin": {
+          "type": ["integer", "null"],
+          "description": "뜻: 연속된 두 출발 사이의 가장 긴 간격(분)입니다. 한 번 놓치면 최대 이만큼 기다립니다. 하루 1회뿐이면 null입니다.\n왜: 55번은 하루 6회라 소요가 10분이어도 대기가 5시간일 수 있습니다. 코스가 되는지는 소요시간보다 이 값이 좌우합니다."
+        },
+        "firstDepart": {
+          "$ref": "#/$defs/hhmm",
+          "description": "뜻: 첫차 출발 시각입니다.\n왜: 이보다 이른 출발을 제안하지 않기 위해서입니다."
+        },
+        "lastDepart": {
+          "$ref": "#/$defs/hhmm",
+          "description": "뜻: 막차 출발 시각입니다.\n왜: 이보다 늦으면 그날 이 구간을 탈 수 없습니다. 돌아오는 편(toOrigin)의 lastDepart가 판정의 핵심입니다."
+        },
+        "count": {
+          "type": "integer",
+          "description": "뜻: 하루 운행 횟수입니다.\n왜: 적을수록 한 번 놓쳤을 때의 위험이 큽니다. 빈도를 한눈에 보려고 둡니다."
+        },
+        "trips": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/trip" },
+          "description": "뜻: 회차별 출발·도착 시각 전체입니다. 같은 시각에 출발하는 회차는 같은 버스로 보고 한 번만, 가장 늦은 도착으로 적습니다.\n왜: 코스 계산은 이 목록으로 해야 합니다. 스팟에 도착한 시각 이후의 첫 출발을 찾아야 실제 대기시간이 나옵니다. rideMin만으로는 대기를 알 수 없습니다."
+        },
+        "routes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "뜻: 이 구간을 달리는 노선 번호들입니다.\n왜: 사용자에게 몇 번 버스를 타야 하는지 보여주기 위해서입니다."
+        },
+        "bound": {
+          "type": "boolean",
+          "description": "뜻: true면 시각을 모르는 정류장이 끼어서, 옆 정류장 시각으로 범위를 잡은 값입니다.\n왜: 정확한 값이 아니라는 표시입니다. 도착은 늦게, 승차는 이르게 잡아서 실제보다 손해 보는 쪽으로만 틀립니다. 그래서 판정에 써도 막차를 놓치게 만들지는 않습니다."
+        }
+      }
+    }
+  }
+}

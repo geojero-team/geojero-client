@@ -94,10 +94,12 @@
   gap: 14px;
 }
 
+/* 거터는 56px — 스팟 사진(56px)이 들어가는 폭입니다(2026-09-13, 44에서 키움).
+   막대·점선·터미널 노드는 모두 이 폭의 가운데(28px)에 맞춥니다. */
 .gutter {
   position: relative;
   flex: none;
-  width: 44px;
+  width: 56px;
   align-self: stretch;
 }
 
@@ -106,7 +108,7 @@
 .barTop,
 .barBottom {
   position: absolute;
-  left: 19px;
+  left: 25px;
   width: 6px;
   background: var(--brand-strong);
 }
@@ -131,7 +133,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 20px;
+  left: 26px;
   width: 4px;
   background-image: radial-gradient(circle at 2px 2px, rgba(71, 84, 103, 0.5) 2px, transparent 2.5px);
   background-size: 4px 12px;
@@ -142,7 +144,7 @@
 .terminal {
   position: absolute;
   top: 8px;
-  left: 8px;
+  left: 14px;
   display: grid;
   place-items: center;
   width: 28px;
@@ -153,19 +155,29 @@
   color: var(--brand-strong);
 }
 
-/* 스팟 노드: 44px 원형 사진 + 좌상단 순번. 누르면 시간표로 갑니다. */
+/* 스팟 노드: 56px 원형 사진 + 좌상단 순번. 누르면 시간표로 갑니다.
+   추정 각주를 뺀 자리만큼 사진을 키웠습니다(44 → 56px, 2026-09-13). */
 .thumb {
   position: absolute;
   top: 4px;
   left: 0;
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
+}
+
+/* 스팟 줄은 사진 가운데(32px)에서 막대가 갈라집니다. 터미널 줄(22px)과 높이가 달라 따로 둡니다. */
+.gutterStop .barTop {
+  height: 32px;
+}
+
+.gutterStop .barBottom {
+  top: 32px;
 }
 
 .thumbImg {
   display: block;
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   border: 2px solid var(--bg-page);
   border-radius: var(--radius-pill);
   object-fit: cover;
@@ -215,6 +227,13 @@
   padding: 6px 0 10px;
 }
 
+/* 스팟 줄은 사진(56px + 위아래 4px) 높이에 맞춰 이름을 가운데에 둡니다. */
+.stopContentSpot {
+  justify-content: center;
+  min-height: 64px;
+  padding: 0;
+}
+
 .stopLine {
   display: flex;
   align-items: baseline;
@@ -235,18 +254,6 @@
   font: var(--type-caption);
   color: var(--brand-strong);
   white-space: nowrap;
-}
-
-/* ★ 추정 각주 — 어떤 소요시간이 감싼 값인지 여기서만 말할 수 있습니다.
-   시각과 구간 배지를 뺀 뒤로는 이 한 줄이 유일한 근거 표시입니다. */
-.estNote {
-  margin: 16px 0 0;
-  padding: 12px 14px;
-  border-radius: var(--radius-card);
-  background: var(--bg-surface);
-  font: var(--type-caption);
-  color: var(--text-primary);
-  word-break: keep-all;
 }
 
 .source {

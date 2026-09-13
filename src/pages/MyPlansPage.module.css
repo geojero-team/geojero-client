@@ -55,10 +55,131 @@
   background: var(--bg-page);
 }
 
+/* 카드 본문 = 코스 상세로 가는 버튼(2026-09-13). 버튼 기본 모양을 지우고 카드 안 세로 줄로 둡니다. */
+.cardMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cardMain:active {
+  opacity: 0.72;
+}
+
 .cardTitle {
   margin: 0;
   font: var(--type-body-strong);
   color: var(--text-primary);
+}
+
+/* ── 사진 줄 — 코스 추천 카드(CoursesPage .order)와 같은 치수입니다 ───────────
+   카드 안쪽 폭이 318px로 같아서 3곳은 84px 칸 + 화살표, 4·5곳은 칸을 줄여 전부 보이게 합니다.
+   padding-top은 번호 배지(-5px)가 잘리지 않게 둔 자리입니다. */
+.order {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  padding-top: 7px;
+}
+
+.order[data-count='4'],
+.order[data-count='5'] {
+  justify-content: space-between;
+}
+
+.stop {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 84px;
+}
+
+.order[data-count='4'] .stop {
+  width: 76px;
+}
+
+.order[data-count='5'] .stop {
+  width: 62px;
+}
+
+.thumb {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+.thumbImg {
+  display: block;
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+}
+
+.order[data-count='4'] .thumb,
+.order[data-count='4'] .thumbImg {
+  width: 52px;
+  height: 52px;
+}
+
+.order[data-count='5'] .thumb,
+.order[data-count='5'] .thumbImg {
+  width: 46px;
+  height: 46px;
+}
+
+.num {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--text-on-brand);
+  border-radius: var(--radius-pill);
+  background: var(--brand-strong);
+  font: var(--type-caption);
+  color: var(--text-on-brand);
+}
+
+.stopName {
+  max-width: 100%;
+  font: var(--type-caption);
+  color: var(--text-primary);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.order[data-count='4'] .stopName,
+.order[data-count='5'] .stopName {
+  font: var(--type-label);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.arrow {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 33px;
+  height: 60px;
+  font: var(--type-body);
+  color: var(--text-disabled);
 }
 
 .chain {
@@ -73,7 +194,7 @@
   color: var(--text-secondary);
 }
 
-/* actions(49:59) — [삭제] · 늘어나는 빈칸 · [오늘 기준 재판정] */
+/* actions(49:59) — [삭제] · 늘어나는 빈칸 · [코스 상세 확인] (재판정 자리에 들어감, 2026-09-13) */
 .actions {
   display: flex;
   align-items: center;

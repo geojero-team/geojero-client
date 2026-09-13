@@ -8,6 +8,7 @@ import SpotSheet, { PEEK_HEIGHT } from '../components/SpotSheet'
 import { t } from '../i18n'
 import { api } from '../lib/api'
 import { courseImage, onImageError } from '../lib/courseImage'
+import { formatDuration } from '../lib/format'
 import { loadSpotPhotos, loadVisibleSpots, withPhotos } from '../lib/spots'
 import styles from './CourseMapPage.module.css'
 
@@ -158,7 +159,7 @@ export default function CourseMapPage() {
                       </span>
                       {/* 경과 시간(약 8시간 30분)이 아니라 버스 이동시간의 합입니다 — 위 CoursesPage 주석 참고 */}
                       <span className={styles.cardTime}>
-                        {t('courses.busTotal', { min: course.busTotalText })}
+                        {t('courseMap.busTotal', { time: formatDuration(course.busMinTotal) })}
                       </span>
                     </span>
                     <span className={styles.order}>

@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import Button from '../components/Button'
 import LoginSheet from '../components/LoginSheet'
 import Screen from '../components/Screen'
@@ -7,6 +7,7 @@ import { t } from '../i18n'
 import { api, beginKakaoLogin } from '../lib/api'
 import { getToken } from '../lib/session'
 import { courseImage, onImageError } from '../lib/courseImage'
+import { formatDuration } from '../lib/format'
 import { loadSpotPhotos, withPhotos } from '../lib/spots'
 import styles from './CourseDetailPage.module.css'
 
@@ -22,10 +23,10 @@ import styles from './CourseDetailPage.module.css'
  * 머무를지는 **사용자가 정하는 것**이고, 우리가 답하는 것은 *"어느 버스로 몇 분"*입니다.
  * 시각을 우리가 박아두면 그 코스를 그 시각에만 쓸 수 있는 것처럼 읽힙니다.
  *
- * ★ 그래도 각주는 남깁니다. 원문 시간표에 정류장 칸이 없는 곳(도장포 등)은 앞뒤 정류장
- * 시각으로 감싼 값이라 **소요시간 자체가 추정**입니다. 이걸 확정값처럼 두면 절대규칙 1을
- * 어기고, 아무 말 없이 두면 §4에서 우리가 비판하는 '이유 없는 빈칸'이 됩니다.
- * 시각이 화면에서 빠졌으니 각주도 시각이 아니라 **소요시간**을 말합니다.
+ * ⚠️ 같은 날 **추정 각주도 뺐습니다**(팀 결정). "도장포 정류장은 원문 시간표에 칸이 없어…"
+ * 문장이 타임라인 아래에 붙어 있었는데, 화면을 읽는 사람에게는 설명이 아니라 경고문으로
+ * 읽혔습니다. 추정 여부는 API(leg.estimated · rides[].boardEstimated)에 그대로 남아 있습니다.
+ * 빈 자리만큼 스팟 사진을 키웠습니다(44 → 56px).
  */
 
 /** 출발·도착 노드(고현터미널) — 스팟이 아니라 터미널이라 사진 대신 아이콘입니다. */
@@ -65,7 +66,7 @@ function LegRow({ leg }) {
 function StopRow({ stop, nextPoiId, onOpenTimetable }) {
   return (
     <div className={styles.row}>
-      <div className={styles.gutter}>
+      <div className={`${styles.gutter} ${styles.gutterStop}`}>
         <span className={styles.barTop} />
         <span className={styles.barBottom} />
         <span className={styles.thumb}>
@@ -73,7 +74,7 @@ function StopRow({ stop, nextPoiId, onOpenTimetable }) {
           <span className={styles.num}>{stop.seq}</span>
         </span>
       </div>
-      <div className={styles.stopContent}>
+      <div className={`${styles.stopContent} ${styles.stopContentSpot}`}>
         <button
           type="button"
           className={styles.stopLine}
@@ -90,7 +91,6 @@ function StopRow({ stop, nextPoiId, onOpenTimetable }) {
 export default function CourseDetailPage() {
   const { courseId } = useParams()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
   const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
   const [sheetOpen, setSheetOpen] = useState(false)
   const [saveState, setSaveState] = useState({ status: 'idle', error: '' })
@@ -116,21 +116,6 @@ export default function CourseDetailPage() {
 
   const course = result.data
   const origin = course?.originName ?? '고현터미널'
-  // 카드 번호는 목록에서 넘겨받습니다 — 목록의 '코스 1'과 상세 헤더가 어긋나면 안 됩니다.
-  const cardNo = searchParams.get('no') ?? '1'
-
-  // 추정이 걸린 정류장 이름을 모아 각주에 적습니다. 구간 배지를 뺐으므로(시각을 안 적으니
-  // 달 자리가 없습니다) 이 한 줄이 "이 소요시간은 감싼 값"이라고 말하는 유일한 곳입니다.
-  const estimatedStops = [
-    ...new Set(
-      (course?.legs ?? []).flatMap((leg) =>
-        (leg.rides ?? []).flatMap((ride) => [
-          ride.boardEstimated ? ride.boardStop : null,
-          ride.alightEstimated ? ride.alightStop : null,
-        ]),
-      ).filter(Boolean),
-    ),
-  ]
 
   /**
    * 스팟 → 그 스팟의 버스 시간표.
@@ -191,9 +176,9 @@ export default function CourseDetailPage() {
         <button type="button" className={styles.back} onClick={() => navigate(-1)} aria-label={t('common.back')}>
           ←
         </button>
-        <h1 className={styles.title}>
-          {t('courseDetail.title', { n: cardNo, count: course.spotCount })}
-        </h1>
+        {/* '코스 1 · 3곳'이던 제목을 '코스'로 줄였습니다(2026-09-13). 번호는 목록에서의 순서라
+            내 일정처럼 목록 밖에서 들어오면 뜻이 없고, 스팟 수는 타임라인이 이미 보여줍니다. */}
+        <h1 className={styles.title}>{t('courseDetail.title')}</h1>
         {/* 어느 요일 시간표로 계산한 코스인지. 주말은 버스가 달라 이 코스가 성립하지 않습니다. */}
         <span className={styles.dayPill}>
           {t(course.service === 'HOLIDAY' ? 'courseDetail.holiday' : 'courseDetail.weekday')}
@@ -205,7 +190,9 @@ export default function CourseDetailPage() {
           {/* 헤드라인도 경과 시간에서 **버스 이동시간**으로 바꿨습니다(2026-09-13).
               `약 8시간 30분`은 510분 중 버스가 114분이고 나머지가 머무는 시간이라,
               우리가 답한다고 한 것("어느 버스로 몇 분")과 다른 숫자였습니다. */}
-          <p className={styles.big}>{t('courses.busTotal', { min: course.busTotalText })}</p>
+          <p className={styles.big}>
+            {t('courses.busTotal', { time: formatDuration(course.busMinTotal) })}
+          </p>
           <p className={styles.range}>
             {t('courseDetail.range', { origin, legs: course.legCount })}
           </p>
@@ -255,13 +242,6 @@ export default function CourseDetailPage() {
               </div>
             </div>
           </div>
-
-          {/* ★ 추정 각주. 소요시간 중 어느 것이 감싼 값인지 여기서만 말할 수 있습니다. */}
-          {estimatedStops.length > 0 && (
-            <p className={styles.estNote}>
-              {t('courseDetail.estimatedNote', { stops: estimatedStops.join('·') })}
-            </p>
-          )}
 
           <p className={styles.source}>
             {t('courseDetail.source', { source: course.source, date: course.baseDate })}

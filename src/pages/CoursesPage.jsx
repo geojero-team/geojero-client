@@ -5,6 +5,7 @@ import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { api } from '../lib/api'
 import { courseImage, onImageError } from '../lib/courseImage'
+import { formatDuration } from '../lib/format'
 import { loadSpotPhotos, withPhotos } from '../lib/spots'
 import styles from './CoursesPage.module.css'
 
@@ -78,7 +79,7 @@ function CourseCard({ course, index, selected, onToggle }) {
           버스가 114분뿐이고 나머지는 머무는 시간입니다. 얼마나 머물지는 사용자가 정하는
           것이므로, 우리가 소유한 숫자인 **구간 이동시간의 합**만 적습니다. */}
       <div className={styles.cardFoot}>
-        {t('courses.busTotal', { min: course.busTotalText })}
+        {t('courses.busTotal', { time: formatDuration(course.busMinTotal) })}
       </div>
     </button>
   )

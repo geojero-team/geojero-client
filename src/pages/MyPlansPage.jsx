@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import Button from '../components/Button'
@@ -6,8 +6,10 @@ import KakaoLoginButton from '../components/KakaoLoginButton'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { api, beginKakaoLogin } from '../lib/api'
-import { formatMonthDay } from '../lib/format'
+import { courseImage, onImageError } from '../lib/courseImage'
+import { formatDuration, formatMonthDay } from '../lib/format'
 import { clearSession, getToken } from '../lib/session'
+import { loadSpotPhotos, withPhotos } from '../lib/spots'
 import styles from './MyPlansPage.module.css'
 
 /**
@@ -30,24 +32,68 @@ import styles from './MyPlansPage.module.css'
  * **판정 요소가 없습니다.** 2026-09-12에 판정이 제품에서 빠졌고(기준문서 §9) 응답에서
  * verdictAtSave·verdictNow도 사라졌습니다. 그 둘을 읽던 코드와 '오늘 기준 재판정' 버튼을
  * 함께 걷어냈습니다 — 컷 순서 3번이 "저장 일정 열람 시 재판정 표시 → 단순 열람으로 확정"입니다.
+ *
+ * 2026-09-13: 스팟을 `학동 · 해금강 · 바람의언덕` 글자 대신 **코스 추천 카드와 같은 사진 줄**로
+ * 보여주고, 카드를 누르면(또는 '코스 상세 확인') 그 코스 상세로 갑니다. 사진 줄은 저장 응답에
+ * 없어서 코스 상세(`/api/courses/{id}`)를 함께 부릅니다 — 그 호출이 실패하면 저장된
+ * 제목 글자로 그립니다(카드가 비지 않게).
  */
-function SavedTripCard({ trip, busy, onDelete }) {
-  // 제목·경로는 **저장 시점에 서버가 함께 저장한 값**입니다(V10). 저장된 판정의 legs에는
-  // 정류소 이름이 없어서(LegRes = ok·depart·arrive·reason) 여기서 만들 수 없고,
-  // 코스 이름이 나중에 바뀌어도 "내가 저장한 그것"이 남아야 합니다.
+function SavedTripCard({ trip, course, busy, onDelete, onOpen }) {
+  // 제목·경로는 **저장 시점에 서버가 함께 저장한 값**입니다(V10). 사진 줄을 못 그릴 때만 씁니다.
   const title = trip.title ?? t('myPlans.unknownCourse')
-  const chain = trip.chain ?? null
   const date = formatMonthDay(trip.travelDate)
   // 출발·복귀 시각은 코스에 박힌 값을 서버가 채워준 것입니다(사용자가 고르지 않습니다).
   const meta = trip.returnTime
     ? t('myPlans.meta', { date, depart: trip.arrivalTime, back: trip.returnTime })
     : t('myPlans.metaNoBack', { date, depart: trip.arrivalTime })
+  const stops = course?.stops ?? []
+  // 30분 단위로 반올림한 값은 서버가 한 번만 정합니다(approxTotalMin) — 여기서 따로 계산하면 어긋납니다.
+  const approx = course?.approxTotalMin
 
   return (
     <article className={styles.card}>
-      <p className={styles.cardTitle}>{title}</p>
-      {chain && <p className={styles.chain}>{chain}</p>}
-      <p className={styles.meta}>{meta}</p>
+      {/* 카드 본문 전체가 코스 상세로 가는 버튼입니다. 삭제·상세 버튼은 이 밖에 둡니다 —
+          버튼 안에 버튼을 넣으면 스크린리더와 키보드가 둘을 구별하지 못합니다. */}
+      <button
+        type="button"
+        className={styles.cardMain}
+        onClick={() => onOpen(trip)}
+        aria-label={t('myPlans.openAria', { title })}
+      >
+        {stops.length > 0 ? (
+          <span className={styles.order} data-count={stops.length}>
+            {stops.map((spot, i) => (
+              <Fragment key={spot.poiId}>
+                {i > 0 && stops.length <= 3 && (
+                  <span className={styles.arrow} aria-hidden="true">
+                    →
+                  </span>
+                )}
+                <span className={styles.stop}>
+                  <span className={styles.thumb}>
+                    <img
+                      className={styles.thumbImg}
+                      src={courseImage(spot)}
+                      alt=""
+                      onError={onImageError(spot)}
+                    />
+                    <span className={styles.num}>{i + 1}</span>
+                  </span>
+                  <span className={styles.stopName}>{spot.shortName ?? spot.name}</span>
+                </span>
+              </Fragment>
+            ))}
+          </span>
+        ) : (
+          <span className={styles.cardTitle}>{title}</span>
+        )}
+        <span className={styles.meta}>{meta}</span>
+        {approx != null && (
+          <span className={styles.meta}>
+            {t('myPlans.duration', { time: formatDuration(approx) })}
+          </span>
+        )}
+      </button>
 
       <div className={styles.actions}>
         <Button
@@ -60,9 +106,40 @@ function SavedTripCard({ trip, busy, onDelete }) {
         >
           {t('myPlans.delete')}
         </Button>
+        <span className={styles.spacer} />
+        <Button
+          variant="secondary"
+          className={styles.action}
+          onClick={() => onOpen(trip)}
+          data-api="GET /api/courses/{id}"
+        >
+          {t('myPlans.openDetail')}
+        </Button>
       </div>
     </article>
   )
+}
+
+/**
+ * 저장 카드마다 코스 상세를 부릅니다 — 사진 줄(스팟 poiId·이름)과 소요 시간이 저장 응답에 없어서입니다.
+ * 같은 코스를 여러 번 저장했으면 한 번만 부릅니다. 실패한 코스는 맵에서 빠지고 카드는 제목 글자로 그립니다.
+ */
+async function loadTripCourses(trips) {
+  const ids = [...new Set(trips.map((trip) => trip.courseId).filter(Boolean))]
+  if (ids.length === 0) return new Map()
+  const [photos, details] = await Promise.all([
+    loadSpotPhotos(),
+    Promise.allSettled(ids.map((id) => api.course(id))),
+  ])
+  const byId = new Map()
+  details.forEach((res, i) => {
+    if (res.status !== 'fulfilled') return
+    byId.set(ids[i], {
+      stops: withPhotos(res.value.stops ?? [], photos),
+      approxTotalMin: res.value.approxTotalMin,
+    })
+  })
+  return byId
 }
 
 export default function MyPlansPage() {
@@ -70,6 +147,8 @@ export default function MyPlansPage() {
   const [loggedIn, setLoggedIn] = useState(() => Boolean(getToken()))
   const [result, setResult] = useState({ status: 'loading', trips: [], error: '' })
   const [busy, setBusy] = useState(false)
+  // courseId → { stops, approxTotalMin }. 저장 카드의 사진 줄·소요 시간입니다.
+  const [tripCourses, setTripCourses] = useState(() => new Map())
 
   /* 상태를 콜백에서만 건드립니다 — 이펙트 본문에서 곧바로 setState를 부르면
      연쇄 렌더가 됩니다(react-hooks/set-state-in-effect). 첫 진입은 이미 'loading'이고,
@@ -78,7 +157,10 @@ export default function MyPlansPage() {
     return api
       .savedTrips()
       .then((trips) => {
-        setResult({ status: 'ready', trips: trips ?? [], error: '' })
+        const list = trips ?? []
+        setResult({ status: 'ready', trips: list, error: '' })
+        // 카드 글자는 먼저 그리고, 사진 줄은 코스 상세가 오는 대로 채웁니다.
+        return loadTripCourses(list).then(setTripCourses)
       })
       .catch((error) => {
         // 토큰이 만료·폐기됐으면 로그인부터 다시 해야 합니다.
@@ -115,6 +197,11 @@ export default function MyPlansPage() {
   }
 
   const trips = result.trips
+
+  // 저장한 코스의 상세로 — 코스 추천에서 들어간 것과 같은 화면입니다.
+  const openCourse = (trip) => {
+    if (trip.courseId) navigate(`/courses/${trip.courseId}`)
+  }
 
   return (
     <Screen data-api="GET /api/saved-trips">
@@ -169,8 +256,10 @@ export default function MyPlansPage() {
               <SavedTripCard
                 key={trip.savedTripId}
                 trip={trip}
+                course={tripCourses.get(trip.courseId)}
                 busy={busy}
                 onDelete={remove}
+                onOpen={openCourse}
               />
             ))}
           </div>

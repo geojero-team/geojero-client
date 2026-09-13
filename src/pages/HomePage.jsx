@@ -1,3 +1,4 @@
+import { Route } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
@@ -80,7 +81,12 @@ export default function HomePage() {
             시트가 올라오면 감춥니다 — 시트가 덮을 자리이고, 지금 할 일은 이 스팟을 보는 것입니다. */}
         {!picked && (
           <div className={styles.cta}>
-            <Button onClick={() => navigate('/courses?spots=3')} data-api="GET /api/courses">
+            <Button
+              className={styles.ctaButton}
+              onClick={() => navigate('/courses?spots=3')}
+              data-api="GET /api/courses"
+            >
+              <Route size={18} strokeWidth={2} aria-hidden="true" />
               {t('home.getCourses')}
             </Button>
           </div>

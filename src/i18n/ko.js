@@ -98,6 +98,8 @@ export default {
   // ── 지도 · 고른 코스 (02-2 · Figma 446:717) ──────────────────────────────
   'courseMap.pill': '{count}곳 코스 · 고른 코스 {picked}개',
   'courseMap.select': '코스 선택',
+  // 지도 카드는 폭이 좁아 '총 … 소요'를 뺀 짧은 꼴입니다.
+  'courseMap.busTotal': '{time} 예정',
   'courseMap.none': '고른 코스가 없어요. 코스 추천에서 다시 골라 주세요.',
 
   // ── 스팟 시간표 (02-2 · Figma 453:210 · 453:288 · 453:415) ───────────────
@@ -105,16 +107,10 @@ export default {
   // 내리는 정류장과 시간표를 읽는 정류장이 다를 때. 숨기면 "지세포 시간표"를
   // "신촌 시간표"라고 거짓말하는 것이 됩니다.
   'spotTime.boardDiffers': '{alight}에서 내려요. 시간표는 {stop} 정류장 기준이에요.',
-  'spotTime.toOrigin': '{spot} → {origin}',
-  'spotTime.toSpot': '{spot} → {to}',
+  // 방향 칩 — 어디서 타서 어디로 가는가(2026-09-13, 네 방향). {from}·{to}는 스팟 이름 또는 고현터미널.
+  'spotTime.dir': '{from} → {to}',
   'spotTime.next': '다음 버스 {time} · {route}번',
   'spotTime.noNext': '오늘 남은 버스가 없어요',
-  'spotTime.duration': '{to}까지 {min}',
-  'spotTime.durationMore': '{route}번은 {min}',
-  'spotTime.min': '약 {min}분',
-  // 같은 노선·방향인데도 소요시간이 흔들립니다(같은 회차가 두 시트에 2~5분 다르게 실림).
-  // 한 값으로 뭉개지 않고 폭을 적습니다 — 늦은 쪽을 믿어야 버스를 놓치지 않습니다.
-  'spotTime.minRange': '약 {low}~{high}분',
   'spotTime.tableTitle': '{day} 시간표',
   'spotTime.summary': '첫차 {first} · 막차 {last} · 하루 {count}회',
   'spotTime.hour': '{h}시',
@@ -129,9 +125,9 @@ export default {
   'spotTime.emptyNoStopHint': '버스가 지나가더라도 몇 시에 닿는지는 원문에 적혀 있지 않습니다.',
 
   // ── 코스 상세 (02-2 · Figma 446:929) ─────────────────────────────────────
-  'courseDetail.title': '코스 {n} · {count}곳',
+  'courseDetail.title': '코스',
   'courseDetail.range': '{origin}에서 출발해 {origin}로 돌아와요 · {legs}구간',
-  'courseDetail.hint': '스팟을 누르면 그 스팟의 버스 시간표를 볼 수 있어요',
+  'courseDetail.hint': '시간표를 클릭하면 그 스팟의 버스 시간표를 볼 수 있어요',
   'courseDetail.departNode': '{origin} 출발',
   'courseDetail.arriveNode': '{origin} 도착',
   'courseDetail.leg': '{route}번 · {min}분',
@@ -142,11 +138,6 @@ export default {
   'courseDetail.loading': '코스를 불러오는 중',
   'courseDetail.weekday': '평일',
   'courseDetail.holiday': '휴일',
-  // ★ 감싼 소요시간. 값이 없는 게 아니라 **앞뒤 정류장으로 감싼 값**이라 [미확인]과 다릅니다.
-  // 화면에서 시각을 뺐으므로(2026-09-13) 이 각주도 시각이 아니라 소요시간을 말합니다.
-  // 감싸는 방향이 정해져 있어 — 하차는 상한, 승차는 하한 — 늘 넉넉한 쪽으로만 어긋납니다.
-  'courseDetail.estimatedNote':
-    '{stops} 정류장은 원문 시간표에 칸이 없어, 앞뒤 정류장 시각으로 감싼 값이에요. 실제 이동 시간은 적힌 것보다 짧습니다 — 버스를 놓치지 않는 쪽으로만 어긋납니다.',
 
   // ── 코스 추천 (02-2 · Figma 446:559) ─────────────────────────────────────
   // 판정을 뺀 뒤 "스팟을 고르면 판정해준다"에서 "개수를 고르면 우리가 짠 코스를 준다"로
@@ -155,12 +146,14 @@ export default {
   'courses.headline1': '방문하시고 싶은',
   'courses.headline2': '스팟 개수를 고르시면',
   'courses.headline3': '코스를 추천해드립니다.',
-  'courses.originNote': '주의 사항 : 모든 첫 출발지는 고현터미널로 가정합니다.',
+  'courses.originNote': '주의사항 : 모든 첫 출발지는 고현터미널로 가정합니다.',
   'courses.countChip': '{n}곳',
   'courses.total': '총 코스 {count}가지',
   // ★ 우리가 소유한 숫자. 출발·복귀 시각과 경과 시간(약 8시간 30분)은 2026-09-13에 화면에서
   // 뺐습니다 — 그 대부분이 머무는 시간이고, 얼마나 머물지는 사용자가 정하는 것입니다.
-  'courses.busTotal': '버스 {min}',
+  // {time}은 formatDuration(busMinTotal) — '약'을 붙이지 않습니다('예정'이 그 뜻을 대신합니다).
+  // 코스 추천 카드와 코스 상세 머리가 함께 씁니다.
+  'courses.busTotal': '총 {time} 소요 예정',
   'courses.cardTitle': '코스 {n}',
   'courses.nineScenic': '거제9경 {count}곳',
   'courses.multiHint': '코스는 여러 개 고를 수 있어요',
@@ -212,6 +205,10 @@ export default {
   'myPlans.deleteAria': '{title} 삭제',
   'myPlans.meta': '{date} · {depart} 출발 → {back} 복귀',
   'myPlans.metaNoBack': '{date} · {depart} 출발',
+  // 저장 카드 둘째 줄 — 머무는 시간까지 넣은 전체 일정 길이(approxTotalMin, 30분 단위).
+  'myPlans.duration': '약 {time} 소요 예정',
+  'myPlans.openDetail': '코스 상세 확인',
+  'myPlans.openAria': '{title} 코스 상세 보기',
   'myPlans.unknownCourse': '저장한 코스',
 
   /* ── 자리표시자 (/conditions — 아직 만들지 않은 화면) ─────────────────── */
