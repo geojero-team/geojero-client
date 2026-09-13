@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import Button from './Button'
 import { t } from '../i18n'
 import { api } from '../lib/api'
+import { useSheetDismiss } from '../lib/useSheetDismiss'
 import {
   UploadImageError,
   makePreviewUrl,
@@ -100,6 +101,8 @@ export default function VisitorPhotoUploadSheet({
   const close = () => {
     if (!submitting) onClose()
   }
+  // 손잡이를 끌어내려도 같은 close 로 닫습니다(올리는 중이면 제자리로 돌아옵니다).
+  const { handleProps, sheetStyle } = useSheetDismiss(close)
 
   return (
     <>
@@ -110,8 +113,13 @@ export default function VisitorPhotoUploadSheet({
         aria-label={t('common.close')}
       />
 
-      <section className={styles.sheet} role="dialog" aria-label={t('visitorPhotoUpload.sheetAria')}>
-        <div className={styles.handleRow}>
+      <section
+        className={styles.sheet}
+        style={sheetStyle}
+        role="dialog"
+        aria-label={t('visitorPhotoUpload.sheetAria')}
+      >
+        <div className={styles.handleRow} {...handleProps}>
           <span className={styles.handle} aria-hidden="true" />
         </div>
 

@@ -23,12 +23,20 @@
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   background: var(--bg-page);
   box-shadow: var(--elevation-sheet);
+  /* 손잡이를 조금 끌다 놓으면 제자리로 돌아갑니다(끄는 동안은 useSheetDismiss 가 전환을 끕니다). */
+  transition: transform 160ms ease;
 }
 
+/* 막대는 36×4 그대로. 끌어내리는 자리는 24px 로 키우고 위아래 -10px 로 196 높이를 그대로 둡니다.
+   touch-action 은 useSheetDismiss 가 붙입니다. */
 .handleRow {
   display: flex;
+  align-items: center;
   justify-content: center;
   width: 100%;
+  height: 24px;
+  margin: -10px 0;
+  cursor: grab;
 }
 
 .handle {

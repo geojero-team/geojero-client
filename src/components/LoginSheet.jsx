@@ -1,5 +1,6 @@
 import Button from './Button'
 import { t } from '../i18n'
+import { useSheetDismiss } from '../lib/useSheetDismiss'
 import KakaoLoginButton from './KakaoLoginButton'
 import styles from './LoginSheet.module.css'
 
@@ -19,6 +20,8 @@ import styles from './LoginSheet.module.css'
  * 주지 않으면 코스 저장 문구 그대로라 코스 상세 화면은 바뀌지 않습니다.
  */
 export default function LoginSheet({ open, onClose, onLogin, title = t('login.title') }) {
+  // 훅은 조기 반환보다 먼저 부릅니다. 손잡이를 끌어내리면 닫힙니다(올리기 시트와 같은 손잡이).
+  const { handleProps, sheetStyle } = useSheetDismiss(onClose)
   if (!open) return null
 
   return (
@@ -30,8 +33,8 @@ export default function LoginSheet({ open, onClose, onLogin, title = t('login.ti
         aria-label={t('common.close')}
       />
 
-      <section className={styles.sheet} aria-label={t('login.sheetAria')}>
-        <div className={styles.handleRow}>
+      <section className={styles.sheet} style={sheetStyle} aria-label={t('login.sheetAria')}>
+        <div className={styles.handleRow} {...handleProps}>
           <span className={styles.handle} aria-hidden="true" />
         </div>
 
