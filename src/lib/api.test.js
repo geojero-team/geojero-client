@@ -194,6 +194,27 @@ describe('방문자 사진 호출', () => {
   })
 })
 
+describe('유람선 시간표 호출', () => {
+  it('값이 있는 파라미터만 붙여 GET /api/pois/{id}/ferries 를 부른다', async () => {
+    const { api } = await loadApi()
+    const fetchMock = vi.fn(async () => respond(200, JSON.stringify({ ferries: [] }), 'application/json'))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await api.spotFerries(5, { date: '2026-09-14', after: '12:30' })
+    await api.spotFerries(1, { toPoiId: 5 })
+    await api.spotFerries(3, { date: '2026-09-14', after: '12:30', toPoiId: null })
+    await api.spotFerries(2)
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      `${BASE}/api/pois/5/ferries?date=2026-09-14&after=12%3A30`,
+      `${BASE}/api/pois/1/ferries?toPoiId=5`,
+      `${BASE}/api/pois/3/ferries?date=2026-09-14&after=12%3A30`,
+      `${BASE}/api/pois/2/ferries`,
+    ])
+    expect(fetchMock.mock.calls.every(([url]) => !url.includes('undefined') && !url.includes('null'))).toBe(true)
+  })
+})
+
 describe('타임아웃', () => {
   it('일반 호출은 8초에 끊지만 올리기는 그보다 오래 기다린다', async () => {
     const { api, UPLOAD_TIMEOUT_MS } = await loadApi()

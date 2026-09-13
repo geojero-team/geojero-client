@@ -42,6 +42,9 @@ export default {
   'format.duration.hour': '{hours}시간',
   'format.duration.minute': '{minutes}분',
   'format.cost': '{amount}원',
+  // 타는 곳 거리(2026-09-14 · Figma 프레임 없음 — 사용자 결정). 「약」은 쓰는 문구가 붙입니다.
+  'format.distance.m': '{m}m',
+  'format.distance.km': '{km}km',
   'format.date.short': '{month}/{day}',
   'format.date.long': '{month}/{day}({weekday}) · {dayType}',
   'format.date.weekday': '{month}/{day}({weekday})',
@@ -87,7 +90,8 @@ export default {
   'spotDetail.goToPhoto': '{n}번째 사진 보기',
   // 02-1에서는 '일정에 담기'였고 스팟 고르기로 보냈습니다. 판정을 빼면서 그 화면이
   // 없어져 버튼이 홈으로 떨어졌습니다 — 새 흐름에 맞는 행동은 시간표 보기입니다.
-  'spotDetail.openTimetable': '버스 시간표 보기',
+  // 2026-09-14 「버스」를 뗐습니다(사용자 결정) — 외도보타니아·도장포유람선은 배 시간표도 엽니다.
+  'spotDetail.openTimetable': '시간표 보기',
   'spotDetail.introHead': '소개',
 
   /* ── 방문자 사진 (02-2 · 484:212 섹션 · 268:499 뷰어) ── */
@@ -167,6 +171,59 @@ export default {
   'spotTime.emptyNoService': '이 날은 이 구간을 가는 버스가 없어요.',
   'spotTime.emptyNoStop': '원문 시간표에 이 스팟의 정류장 칸이 없어요.',
   'spotTime.emptyNoStopHint': '버스가 지나가더라도 몇 시에 닿는지는 원문에 적혀 있지 않습니다.',
+
+  // ── 유람선 시간표 (스팟 시간표의 배 칩) ──────────────────────────────────
+  // Figma 프레임 없음 — 2026-09-14 사용자 결정. 원천은 외도유람선 예약센터 배시간표입니다.
+  // ★ 배 화면에는 「운행 없음」을 쓰지 않습니다. 원문이 공개한 날의 0편만 「예정된 배 없음」,
+  // 공개 전·수집 전 날은 전부 「시각 미확인」입니다 — 안 올라온 달을 운휴로 말하면 §4의 '이유 없는 빈칸'입니다.
+  'ferry.dirToSpot': '{dock} 선착장 → {spot}',
+  'ferry.dockChip': '{dock} 선착장 배 시간표',
+  'ferry.board': '{dock} 선착장에서 타요.',
+  'ferry.access': '예약센터 안내 — “{quote}”',
+  // 「같은 배로」라고 쓰지 않습니다 — 외도에서 타는 배가 같은 배라는 근거는 원문에 없습니다(사용자 결정).
+  'ferry.roundTrip': '왕복이에요. 외도에 내려 {stay} 구경한 뒤 출발한 {dock} 선착장으로 돌아와요.',
+  'ferry.cruiseNoLanding': '외도에 내리지 않아요',
+  // 복귀 시각은 늘 「약」 — 원문이 기상·인원에 따라 10~30분 앞당기거나 늦출 수 있다고 적습니다.
+  'ferry.next': '다음 배 {time} · 약 {ret} 복귀',
+  'ferry.nextOn': '다음 배 {day} {time} · 약 {ret} 복귀',
+  'ferry.nextUnknown': '다음 배 시각 미확인 — 배시간표에 아직 안 올라왔어요',
+  'ferry.noNext': '앞으로 {days}일 동안 예정된 배가 없어요',
+  'ferry.today': '오늘',
+  // 오늘 줄에서 이미 떠난 배는 흐리게가 아니라 뺍니다 — 회색이 선상관광 색과 헷갈리지 않게(사용자 결정).
+  'ferry.todayDone': '오늘 남은 배 없음',
+  'ferry.nextTag': '다음',
+  'ferry.sailingA11y': '{time} 출발 · {course} · 약 {ret} 복귀',
+  'ferry.noSailing': '예정된 배 없음',
+  'ferry.unpublished': '시각 미확인 · 배시간표에 아직 안 올라왔어요 ({fetched} 확인)',
+  'ferry.notCollected': '시각 미확인 · 이 날짜는 수집하지 않았어요',
+  'ferry.range': '{from}~{to}',
+  'ferry.book': '예약센터에서 예약 ↗',
+  'ferry.bookA11y': '{course} 예약 — 새 창에서 열려요',
+  'ferry.caution': '출항은 기상·인원에 따라 10~30분 앞당겨지거나 늦어질 수 있어요. 복귀 시각은 그래서 "약"이에요. (예약센터 안내)',
+  // {source}는 서버 coverage.source(원천 이름) — 데이터라 사전에 박지 않습니다.
+  'ferry.source': '출처 {source} · {fetched} 확인 · {through}까지 공개',
+  'ferry.crossChecked': '도장포유람선 누리집과 대조',
+  'ferry.loadFailed': '배 시간표를 불러오지 못했어요 — {error}',
+  'ferry.noDock': '{spot} 근처에서 {to}에 가는 배를 타는 선착장을 원문에서 찾지 못했어요.',
+  'ferry.noDockHint': '{to} 시간표에서 선착장 4곳의 배를 볼 수 있어요.',
+
+  // ── 타는 곳 (스팟 시간표의 버스 칩 · 방향 칩 아래) ───────────────────────
+  // Figma 프레임 없음 — 2026-09-14 사용자 결정. 정류장 좌표는 서버가 TAGO에서 받아 줍니다.
+  // 거리는 좌표 사이 직선이라 「약」을 붙입니다. 이 자리에도 「운행 없음」을 쓰지 않습니다.
+  'boarding.title': '타는 곳',
+  'boarding.stopName': '{name} 정류장',
+  'boarding.distance': '{place}에서 약 {dist}',
+  'boarding.directions': '카카오맵 길찾기 ↗',
+  'boarding.directionsA11y': '{name} 정류장 카카오맵 길찾기 — 새 창에서 열려요',
+  // 지도 핀의 노선 — 3개가 넘으면 첫 노선 + 나머지 수.
+  'boarding.routesMore': '{first} 외 {count}',
+  'boarding.opposite': '{route}번 {time} 버스는 길 건너편 정류장에서 타요.',
+  'boarding.otherStop': '{route}번 {time} 버스는 {name} 정류장(약 {dist} 떨어진 곳)에서 타요.',
+  'boarding.split': '{route}번은 편마다 타는 쪽이 달라요 — {list}',
+  'boarding.splitItem': '{time} 버스',
+  'boarding.unresolved': '{routes}번은 타는 곳을 지도에 표시하지 못했어요.',
+  'boarding.mapFailed': '지도를 불러오지 못했어요',
+  'boarding.source': '정류장 위치 {source}',
 
   // ── 코스 상세 (02-2 · Figma 446:929) ─────────────────────────────────────
   'courseDetail.title': '코스',

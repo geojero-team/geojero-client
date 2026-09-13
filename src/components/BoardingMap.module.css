@@ -1,0 +1,146 @@
+/* 타는 곳 — Figma 프레임 없음(2026-09-14 사용자 결정).
+   180px 작은 지도 + 정류장 목록. 지도가 못 떠도 목록만으로 길을 찾을 수 있어야 합니다.
+   핀 모양은 홈 지도 마커(MapView.module.css)의 브랜드 면·테두리 규칙을 따릅니다. */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.map {
+  height: 180px;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--map-sea);
+}
+
+/* ── 지도 핀 (CustomOverlay 안의 DOM) ─────────────────────────────────── */
+
+/* 대표 핀 — 브랜드 면 + 흰 노선 번호 / 예외 핀 — 흰 면 + 브랜드 테두리 */
+.pinMain,
+.pinException {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font: var(--type-label);
+  white-space: nowrap;
+  box-shadow: var(--elevation-pin);
+}
+
+.pinMain {
+  background: var(--brand-strong);
+  color: var(--text-on-brand);
+}
+
+/* 예외 핀 — 흰 바탕 브랜드 테두리 + 노선·시각. 대표 핀과 다른 정류장이라는 뜻입니다. */
+.pinException {
+  border: 1.5px solid var(--brand-strong);
+  background: var(--bg-page);
+  color: var(--brand-strong);
+}
+
+/* 출발 자리 — 작은 진회색 점 + 이름표. 점 중심이 좌표입니다(이름표는 점 박스 밖). */
+.from {
+  position: relative;
+  display: block;
+  width: 10px;
+  height: 10px;
+}
+
+.fromDot {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--bg-page);
+  border-radius: var(--radius-pill);
+  background: var(--text-primary);
+  box-sizing: border-box;
+}
+
+.fromLabel {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  padding: 1px 4px;
+  border-radius: var(--radius-xs);
+  background: var(--bg-page);
+  font: var(--type-label);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ── 목록 ────────────────────────────────────────────────────────────── */
+
+.stops {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stop {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.stopHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.stopName {
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+/* 노선 배지 — 시간표의 노선 배지와 같은 모양 */
+.badge {
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--brand-strong);
+  font: var(--type-label);
+  color: var(--text-on-brand);
+}
+
+.stopMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.distance {
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.directions {
+  font: var(--type-label);
+  color: var(--brand-strong);
+}
+
+.note {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+.source {
+  margin: 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+}

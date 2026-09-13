@@ -10,6 +10,17 @@ export function formatDuration(minutes) {
   return t('format.duration.hourMinute', { hours: h, minutes: m })
 }
 
+/**
+ * 311 -> "310m" · 1080 -> "1.1km" — 타는 곳의 직선거리(2026-09-14).
+ * 서버 값은 좌표 사이 직선이라 걷는 길과 다릅니다. 1m 단위로 적으면 정확한 척하게 되어
+ * 10m로 뭉개고, 「약」은 문구 쪽(boarding.*)이 붙입니다. 반올림이 1000m가 되면 km로 넘깁니다.
+ */
+export function formatDistance(meters) {
+  const rounded = Math.round(meters / 10) * 10
+  if (rounded < 1000) return t('format.distance.m', { m: rounded })
+  return t('format.distance.km', { km: (meters / 1000).toFixed(1) })
+}
+
 /** 41200 -> "41,200원" — 자릿수 구분은 아직 ko-KR 고정입니다(쓰는 곳 없음). */
 export function formatCost(won) {
   if (won == null) return t('format.empty')

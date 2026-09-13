@@ -200,6 +200,37 @@ export const api = {
   },
 
   /**
+   * 유람선 시간표 — 스팟 시간표 화면의 배 칩(2026-09-14 · Figma 프레임 없음).
+   *
+   * **값이 있는 파라미터만 붙입니다.** date를 빼면 서버가 KST 오늘로 잡는데, `date=undefined`를
+   * 보내면 400입니다. 화면은 버스와 같은 date·after를 넘겨 한 화면에서 "오늘"이 갈리지 않게 합니다.
+   * 선착장이 전부 한 응답에 들어 있어 칩을 바꿔도 다시 부르지 않습니다.
+   *
+   * ★ rows[].status가 날짜마다 답의 종류입니다 — 배에는 요일 구분(dayClass)이 없습니다.
+   *   PUBLISHED      원문이 그날을 공개했다. sailings가 비면 그날 예정된 배가 없다
+   *   UNPUBLISHED    수집 때 원문에 아직 없었다 → 시각 미확인
+   *   NOT_COLLECTED  수집하지 않은 날짜 → 시각 미확인
+   * 서버는 지난 편을 거르지 않습니다 — 오늘 줄에서 빼는 것은 화면 몫입니다.
+   *
+   * SpotFerriesRes { poiId, shortName, hasBusStop, toPoiId, toIsFerryDestination,
+   *   towardEmptyReason, asOf: { date, time, zone }, days,
+   *   ferries: [{ key, relation(DESTINATION|DOCK|TOWARD), landingOnly,
+   *     dock: { dockCode, operatorName, shortName, address }, access: { quote, sourceUrl } | null,
+   *     courses: [{ courseId, landsOnOedo, legendLabel, name, totalMin, totalText, oedoStayMin, bookingUrl }],
+   *     next: [{ courseId, date, depart, returnApprox }],
+   *     rows: [{ date, status, sailings: [{ depart, courseId, returnApprox }] }],
+   *     coverage: { publishedThrough, fetchedAt, source, sourceUrl, crossCheckUrl } }] }
+   */
+  spotFerries: (poiId, { date, after, toPoiId } = {}) => {
+    const query = new URLSearchParams()
+    if (date) query.set('date', date)
+    if (after) query.set('after', after)
+    if (toPoiId != null) query.set('toPoiId', String(toPoiId))
+    const qs = query.toString()
+    return request(`/api/pois/${poiId}/ferries${qs ? `?${qs}` : ''}`)
+  },
+
+  /**
    * 저장 일정. 판정 제거(2026-09-12)로 verdictAtSave·verdictNow가 응답에서 빠졌습니다 —
    * 「내 일정」은 단순 열람입니다(기준문서 §6 컷 순서 3번).
    * SavedTripRes { savedTripId, courseId, title, chain,

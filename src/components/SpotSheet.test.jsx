@@ -63,7 +63,7 @@ describe('SpotSheet — 고현터미널(출발 지점)', () => {
     expect(await screen.findByRole('heading', { name: '방문자 사진' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '고현터미널' })).toBeInTheDocument()
     expect(screen.getByText('모든 코스의 출발 지점')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '버스 시간표 보기' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '시간표 보기' })).not.toBeInTheDocument()
     expect(api.getVisitorPhotos).toHaveBeenCalledWith(23)
   })
 })

@@ -1,0 +1,201 @@
+/* 유람선 시간표 — Figma 프레임 없음(2026-09-14 사용자 결정).
+   원천 사이트(외도유람선 예약센터 배시간표)처럼 날짜마다 한 줄에 시각을 늘어놓고, 코스는 글자 색으로 가릅니다.
+   카드·출처 모양은 스팟 시간표(SpotTimetablePage.module.css)의 버스 조각과 맞춥니다. */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.boardBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.board {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+.caption {
+  margin: 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+/* 코스 색 — 원천 그대로. 외도상륙 검정 / 선상관광 빨강. */
+.landing {
+  color: var(--text-primary);
+}
+
+.cruise {
+  color: var(--ferry-cruise);
+}
+
+/* 다음 배 카드 — 버스의 다음 버스 카드와 같은 면 */
+.nextCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  background: var(--brand-tint);
+}
+
+.nextLine {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--brand-strong);
+  word-break: keep-all;
+}
+
+/* 코스가 둘일 때 줄 끝의 코스 이름. 빨강 글자는 연파랑 면 위에서 대비가 모자라 점만 코스 색으로 칠합니다. */
+.nextCourse {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  font: var(--type-label);
+  color: var(--brand-strong);
+}
+
+.dot {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.courses {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.course {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--bg-page);
+}
+
+.courseHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.courseLabel {
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.courseTotal {
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* 이 클라의 첫 외부 링크 — 새 창이라 ↗를 붙입니다. */
+.book {
+  align-self: flex-start;
+  font: var(--type-label);
+  color: var(--brand-strong);
+}
+
+/* 각주 — 표 바로 위 두 줄(원천 사이트와 같은 자리) */
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+  font: var(--type-label);
+  word-break: keep-all;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border-default);
+}
+
+/* 날짜 칸 — '9/14(월)'·범위 '11/1(일)~11/7(토)'가 들어가야 해서 버스의 '07시' 칸(34px)보다 넓습니다. */
+.day {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 68px;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.todayTag,
+.nextTag {
+  align-self: flex-start;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-tint);
+  font: var(--type-label);
+  color: var(--brand-strong);
+}
+
+.times {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: var(--type-time);
+}
+
+.none {
+  flex: 1;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* 시각 미확인 — 원래 뜻이 "미확인"인 색을 씁니다(코스 색과 섞이지 않게). */
+.unknown {
+  flex: 1;
+  font: var(--type-caption);
+  color: var(--status-unknown);
+  word-break: keep-all;
+}
+
+.source {
+  margin: 4px 0 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+}

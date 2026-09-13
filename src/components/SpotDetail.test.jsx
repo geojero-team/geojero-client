@@ -87,15 +87,15 @@ describe('SpotDetail — 방문자 사진 자리', () => {
     expect(await screen.findByRole('region', { name: '방문자 사진' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '고현터미널' })).toBeInTheDocument()
     expect(screen.getByText('모든 코스의 출발 지점')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '버스 시간표 보기' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '시간표 보기' })).not.toBeInTheDocument()
     expect(screen.queryByText('·')).not.toBeInTheDocument()
   })
 
-  it('소개가 없는 스팟이면 「버스 시간표 보기」 바로 뒤에 온다', async () => {
+  it('소개가 없는 스팟이면 「시간표 보기」 바로 뒤에 온다', async () => {
     renderDetail({ ...SPOT, overview: null })
 
     const section = await screen.findByRole('region', { name: '방문자 사진' })
-    const button = screen.getByRole('button', { name: '버스 시간표 보기' })
+    const button = screen.getByRole('button', { name: '시간표 보기' })
     expect(button.nextElementSibling).toBe(section)
   })
 })

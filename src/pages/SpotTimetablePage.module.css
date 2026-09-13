@@ -58,6 +58,14 @@
   color: var(--text-secondary);
 }
 
+/* 칩 아래 버스 불러오는 중·실패 한 줄 — 칩은 남겨 둡니다(배 칩으로 돌아갈 수 있게). */
+.busStatus {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
 /* "학동 정류장에서 타요." — 스팟이 아니라 정류장에서 탑니다.
    내리는 곳과 시간표 기준이 다르면 두 문장이 됩니다(신촌에서 내리고 지세포 기준). */
 .board {
