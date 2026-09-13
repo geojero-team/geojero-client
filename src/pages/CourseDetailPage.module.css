@@ -39,9 +39,13 @@
   color: var(--brand-strong);
 }
 
+/* 세로 flex — 코스가 짧아 화면이 남으면 본문(타임라인)이 저장 버튼 위까지 늘어납니다(2026-09-13).
+   코스가 길면 늘어날 자리가 없으니 평소처럼 스크롤됩니다. */
 .scroll {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   background: var(--bg-page);
 }
@@ -55,6 +59,7 @@
 
 /* summary(446:934): 총 소요 + 한 줄 설명 */
 .summary {
+  flex: none;
   padding: 16px 20px 0;
 }
 
@@ -72,6 +77,9 @@
 }
 
 .body {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
   padding: 16px 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
   border-top: 1px solid var(--border-subtle, var(--border-default));
   margin-top: 16px;
@@ -84,9 +92,15 @@
 }
 
 .timeline {
+  flex: 1 0 auto;
   display: flex;
   flex-direction: column;
   margin-top: 14px;
+}
+
+/* 남는 높이는 구간 줄(버스 막대)이 나눠 가집니다 — 스팟·터미널 줄은 그대로라 사진 간격만 벌어집니다. */
+.legRow {
+  flex: 1 0 auto;
 }
 
 .row {

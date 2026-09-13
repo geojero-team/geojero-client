@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "recommended_courses.schema.json",
   "title": "거제로 추천 당일 코스",
-  "description": "뜻: 고현터미널에서 출발해 고현터미널로 돌아오는 추천 당일 코스(3곳·4곳 각 10개, 5곳은 가능한 3개 전부 · 모두 23개)입니다. 모든 구간은 갈아타지 않는 직행 버스 한 대입니다.\n왜: 02-2 화면(Figma 페이지 442:748)의 코스 추천 → 지도 → 코스 상세를 이 파일만으로 그릴 수 있게 만들었습니다.\n\n만드는 법: timetable/build_recommended_courses.py가 recommended_courses.txt(사람이 검토해 확정한 결과)를 그대로 옮깁니다. 이 JSON을 손으로 고치지 말고, txt를 고친 뒤 스크립트를 다시 돌리세요.\n\n화면별로 쓰는 항목:\n- 코스 추천(Figma 446:559 · 3곳/4곳/5곳 칩 · 여러 개 선택 · 시각은 안 보여줌): courses 중 spotCount가 고른 값인 것을 rank 순서대로. 카드 제목 '코스 {rank}', 부제 '거제9경 {nineScenicCount}곳', 동그라미 = stops[].spotId → spots[].shortName.\n- 지도 코스 카드(446:717): approxTotalMin('약 8시간 30분'). stops 순서대로 지도에 번호 핀.\n- 코스 상세(446:929): 고현터미널 출발 → legs[0] → stops[0] → legs[1] → … → 고현터미널 도착. 구간 문구 '버스 약 40분' = legs[].durationMin. 스팟 동그라미를 누르면 스팟 시간표로.\n- 스팟 시간표(453:210): spots[].hubId로 spot_times.json의 legs(from 또는 to가 그 hubId)를 찾아 방향별 출발 시각을 보여줍니다. 타는 곳 문구는 spots[].alight. hubId가 null인 스팟(지심도·내도)은 지금 데이터로는 시간표를 보여줄 수 없습니다.\n\n이 파일에 없는 것: 스팟 사진(TourAPI에서 따로), 주말·방학 시간표, 배 시각.",
+  "description": "뜻: 고현터미널에서 출발해 고현터미널로 돌아오는 추천 당일 코스(3곳·4곳 각 10개, 5곳은 가능한 3개 전부 · 모두 23개)입니다. 모든 구간은 갈아타지 않는 직행 버스 한 대입니다.\n왜: 02-2 화면(Figma 페이지 442:748)의 코스 추천 → 지도 → 코스 상세를 이 파일만으로 그릴 수 있게 만들었습니다.\n\n만드는 법: timetable/build_recommended_courses.py가 recommended_courses.txt(사람이 검토해 확정한 결과)를 그대로 옮깁니다. 이 JSON을 손으로 고치지 말고, txt를 고친 뒤 스크립트를 다시 돌리세요.\n\n화면별로 쓰는 항목:\n- 코스 추천(Figma 446:559 · 3곳/4곳/5곳 칩 · 여러 개 선택 · 시각은 안 보여줌): courses 중 spotCount가 고른 값인 것을 rank 순서대로. 카드 제목 '코스 {rank}', 부제 '거제9경 {nineScenicCount}곳', 동그라미 = stops[].spotId → spots[].shortName.\n- 지도 코스 카드(446:717): approxTotalMin('약 8시간 30분'). stops 순서대로 지도에 번호 핀.\n- 코스 상세(446:929): 고현터미널 출발 → legs[0] → stops[0] → legs[1] → … → 고현터미널 도착. 구간 문구 '버스 약 40분' = legs[].durationMin. 스팟 동그라미를 누르면 스팟 시간표로.\n- 스팟 시간표(453:210): spots[].hubId로 spot_times.json의 legs(from 또는 to가 그 hubId)를 찾아 방향별 출발 시각을 보여줍니다. 타는 곳 문구는 spots[].alight. 지금 적재분의 스팟은 전부 hubId가 있습니다 — 배를 타야 하는 섬(지심도·내도)은 코스에서 뺐습니다.\n\n이 파일에 없는 것: 스팟 사진(TourAPI에서 따로), 주말·방학 시간표, 배 시각.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -286,7 +286,7 @@
       "properties": {
         "spotId": {
           "type": "string",
-          "description": "뜻: 스팟 id입니다. spot_times.json의 spots[].spotId와 같게 맞췄습니다.\n왜: 두 파일을 이 id로 잇습니다. JISIMDO·NAEDO는 spot_times.json에 없어서 여기서 새로 붙였습니다."
+          "description": "뜻: 스팟 id입니다. spot_times.json의 spots[].spotId와 같게 맞췄습니다.\n왜: 두 파일을 이 id로 잇습니다. spot_times.json에 없는 스팟이 들어오면(배 시간표를 받아 섬 코스를 넣을 때) 여기서 새 id를 붙입니다."
         },
         "name": {
           "type": "string",
@@ -317,7 +317,7 @@
             "string",
             "null"
           ],
-          "description": "뜻: hubStop의 spot_times.json hubs[].hubId입니다. 장승포·구조라는 spot_times.json의 거점이 아니라서 null입니다.\n왜: 스팟 시간표 화면이 이 id로 spot_times.json의 legs를 찾습니다. null이면 시간표를 열지 말거나 '준비 중'으로 보여줘야 합니다."
+          "description": "뜻: hubStop의 spot_times.json hubs[].hubId입니다. spot_times.json의 거점이 아닌 정류장이면 null입니다(지금 적재분에는 없음).\n왜: 스팟 시간표 화면이 이 id로 spot_times.json의 legs를 찾습니다. null이면 시간표를 열지 말거나 '준비 중'으로 보여줘야 합니다."
         },
         "alight": {
           "type": "string",
@@ -325,7 +325,7 @@
         },
         "inSpotTimes": {
           "type": "boolean",
-          "description": "뜻: spot_times.json에 이 스팟이 있는지 여부입니다.\n왜: false면 소요시간과 시간표를 spot_times.json에서 가져올 수 없습니다(지심도·내도)."
+          "description": "뜻: spot_times.json에 이 스팟이 있는지 여부입니다.\n왜: false면 소요시간과 시간표를 spot_times.json에서 가져올 수 없습니다(지금 적재분에는 없음 — 섬 코스를 넣을 때 생깁니다)."
         },
         "temporaryHub": {
           "type": "boolean",

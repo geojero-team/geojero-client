@@ -46,8 +46,9 @@ function LegRow({ leg }) {
   const ride = leg.rides?.[0]
   const sameStop = leg.mode === 'SAME_STOP'
 
+  // legRow — 화면이 남으면 구간 줄이 늘어나 타임라인이 저장 버튼 위까지 찹니다.
   return (
-    <div className={styles.row}>
+    <div className={`${styles.row} ${styles.legRow}`}>
       <div className={styles.gutter}>
         <span className={sameStop ? styles.dots : styles.bar} />
       </div>

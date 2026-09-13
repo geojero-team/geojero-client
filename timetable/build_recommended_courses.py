@@ -28,7 +28,7 @@ TXT = HERE / 'recommended_courses.txt'
 SPOT_TIMES = HERE / 'spot_times.json'
 OUT = HERE / 'recommended_courses.json'
 SCHEMA_REF = './recommended_courses.schema.json'
-COMPUTED_AT = '2026-09-12'  # txt를 계산한 날. txt 첫머리 '계산' 값과 같게 맞출 것
+COMPUTED_AT = '2026-09-13'  # txt를 계산한 날. txt 첫머리 '계산' 값과 같게 맞출 것
 
 ORIGIN = {'name': '고현터미널', 'stop': '고현', 'hubId': 'GOHYEON'}
 
@@ -55,8 +55,8 @@ TEMP_ALIGHT = {
     'JISIMDO': '장승포 (지심도 배는 장승포항에서 탐)',
     'NAEDO': '구조라 (내도 배는 구조라항에서 탐)',
 }
-# 시각 칸이 없어 앞뒤 정류장으로 잡은 정류장. 장승포는 코스 계산 때 10번의 두모~능포 사이로 추가한 것
-ESTIMATED_STOPS = set(VIRTUAL_STOPS) | {'장승포'}
+# 시각 칸이 없어 앞뒤 정류장으로 잡은 정류장(build_spot_times.VIRTUAL_STOPS와 같다)
+ESTIMATED_STOPS = set(VIRTUAL_STOPS)
 
 RULES = {
     'departAfter': '11:00',
@@ -79,7 +79,7 @@ SELECTION_DEDUPE = [
 ]
 ASSUMPTIONS = [
     '시각 칸이 없는 정류장(estimatedStops)은 앞뒤 정류장 시각으로 잡은 값입니다. 실제 버스는 적힌 승차 시각보다 늦게 오고, 적힌 도착 시각보다 일찍 닿습니다.',
-    '지심도(장승포)·내도(구조라)는 배 타는 항구 근처 정류장을 임시 거점으로 썼습니다. 유람선·배 시각은 어느 코스에도 반영하지 않았습니다.',
+    '유람선·배 시각은 어느 코스에도 반영하지 않았습니다. 배를 타야 들어가는 섬(동백섬 지심도·내도)은 코스에서 뺐습니다.',
     '도착 마감(섬 15:00·시설 17:00·야외 18:00)은 운영시간 데이터가 없어 정한 가정입니다.',
     '평일 시간표로 계산했습니다. 주말·방학에는 버스 시각이 달라 성립하지 않을 수 있습니다.',
     '스팟 체류(stayMin)에는 정류장과 스팟 사이를 걷는 시간이 들어 있습니다.',

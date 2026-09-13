@@ -4,7 +4,7 @@
     "source": "거제시 BIS 원문",
     "baseDate": "2026-08-18",
     "service": "WEEKDAY",
-    "computedAt": "2026-09-12",
+    "computedAt": "2026-09-13",
     "sourceFile": "recommended_courses.txt",
     "origin": {
       "name": "고현터미널",
@@ -44,13 +44,13 @@
           "label": "3곳",
           "spotCount": 3,
           "picked": 10,
-          "candidates": 59
+          "candidates": 40
         },
         {
           "label": "4곳",
           "spotCount": 4,
           "picked": 10,
-          "candidates": 36
+          "candidates": 27
         },
         {
           "label": "5곳",
@@ -72,12 +72,11 @@
       "맹종죽테마파크",
       "식물원",
       "옥포대첩기념공원",
-      "장승포",
       "포로수용소"
     ],
     "assumptions": [
       "시각 칸이 없는 정류장(estimatedStops)은 앞뒤 정류장 시각으로 잡은 값입니다. 실제 버스는 적힌 승차 시각보다 늦게 오고, 적힌 도착 시각보다 일찍 닿습니다.",
-      "지심도(장승포)·내도(구조라)는 배 타는 항구 근처 정류장을 임시 거점으로 썼습니다. 유람선·배 시각은 어느 코스에도 반영하지 않았습니다.",
+      "유람선·배 시각은 어느 코스에도 반영하지 않았습니다. 배를 타야 들어가는 섬(동백섬 지심도·내도)은 코스에서 뺐습니다.",
       "도착 마감(섬 15:00·시설 17:00·야외 18:00)은 운영시간 데이터가 없어 정한 가정입니다.",
       "평일 시간표로 계산했습니다. 주말·방학에는 버스 시각이 달라 성립하지 않을 수 있습니다.",
       "스팟 체류(stayMin)에는 정류장과 스팟 사이를 걷는 시간이 들어 있습니다."
@@ -127,30 +126,6 @@
       "temporaryHub": false
     },
     {
-      "spotId": "JISIMDO",
-      "name": "동백섬 지심도",
-      "shortName": "지심도",
-      "kind": "island",
-      "nineScenic": true,
-      "hubStop": "장승포",
-      "hubId": null,
-      "alight": "장승포 (지심도 배는 장승포항에서 탐)",
-      "inSpotTimes": false,
-      "temporaryHub": true
-    },
-    {
-      "spotId": "NAEDO",
-      "name": "내도",
-      "shortName": "내도",
-      "kind": "island",
-      "nineScenic": true,
-      "hubStop": "구조라",
-      "hubId": null,
-      "alight": "구조라 (내도 배는 구조라항에서 탐)",
-      "inSpotTimes": false,
-      "temporaryHub": true
-    },
-    {
       "spotId": "SHIPBUILDING_MUSEUM",
       "name": "거제조선해양문화관",
       "shortName": "조선해양문화관",
@@ -195,6 +170,18 @@
       "hubStop": "대금교차로",
       "hubId": "DAEGEUM",
       "alight": "대금교차로 정류장",
+      "inSpotTimes": true,
+      "temporaryHub": false
+    },
+    {
+      "spotId": "MAENGJONGJUK_PARK",
+      "name": "거제맹종죽테마파크",
+      "shortName": "맹종죽테마파크",
+      "kind": "facility",
+      "nineScenic": false,
+      "hubStop": "맹종죽테마파크",
+      "hubId": "MAENGJONGJUK",
+      "alight": "맹종죽테마파크 정류장",
       "inSpotTimes": true,
       "temporaryHub": false
     },
@@ -346,266 +333,6 @@
       "courseId": "3-02",
       "spotCount": 3,
       "rank": 2,
-      "nineScenicCount": 3,
-      "departAt": "11:04",
-      "returnAt": "20:55",
-      "totalMin": 591,
-      "approxTotalMin": 600,
-      "stops": [
-        {
-          "order": 1,
-          "spotId": "NAEDO",
-          "arriveAt": "11:55",
-          "leaveAt": "15:05",
-          "stayMin": 190,
-          "checkHours": false
-        },
-        {
-          "order": 2,
-          "spotId": "HAKDONG_BEACH",
-          "arriveAt": "15:30",
-          "leaveAt": "17:45",
-          "stayMin": 135,
-          "checkHours": false
-        },
-        {
-          "order": 3,
-          "spotId": "BARAM_HILL",
-          "arriveAt": "17:55",
-          "leaveAt": "20:05",
-          "stayMin": 130,
-          "checkHours": false
-        }
-      ],
-      "legs": [
-        {
-          "from": "ORIGIN",
-          "to": "NAEDO",
-          "mode": "BUS",
-          "departAt": "11:04",
-          "arriveAt": "11:55",
-          "durationMin": 51,
-          "ride": {
-            "routeNo": "22-1",
-            "board": {
-              "stop": "고현",
-              "hubId": "GOHYEON",
-              "at": "11:04",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "구조라",
-              "hubId": null,
-              "at": "11:55",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "NAEDO",
-          "to": "HAKDONG_BEACH",
-          "mode": "BUS",
-          "departAt": "15:05",
-          "arriveAt": "15:30",
-          "durationMin": 25,
-          "ride": {
-            "routeNo": "67-1",
-            "board": {
-              "stop": "구조라",
-              "hubId": null,
-              "at": "15:05",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "학동",
-              "hubId": "HAKDONG",
-              "at": "15:30",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "HAKDONG_BEACH",
-          "to": "BARAM_HILL",
-          "mode": "BUS",
-          "departAt": "17:45",
-          "arriveAt": "17:55",
-          "durationMin": 10,
-          "ride": {
-            "routeNo": "55",
-            "board": {
-              "stop": "학동",
-              "hubId": "HAKDONG",
-              "at": "17:45",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "도장포",
-              "hubId": "DOJANGPO",
-              "at": "17:55",
-              "estimated": true
-            }
-          }
-        },
-        {
-          "from": "BARAM_HILL",
-          "to": "ORIGIN",
-          "mode": "BUS",
-          "departAt": "20:05",
-          "arriveAt": "20:55",
-          "durationMin": 50,
-          "ride": {
-            "routeNo": "55",
-            "board": {
-              "stop": "도장포",
-              "hubId": "DOJANGPO",
-              "at": "20:05",
-              "estimated": true
-            },
-            "alight": {
-              "stop": "고현",
-              "hubId": "GOHYEON",
-              "at": "20:55",
-              "estimated": false
-            }
-          }
-        }
-      ]
-    },
-    {
-      "courseId": "3-03",
-      "spotCount": 3,
-      "rank": 3,
-      "nineScenicCount": 2,
-      "departAt": "11:05",
-      "returnAt": "18:18",
-      "totalMin": 433,
-      "approxTotalMin": 420,
-      "stops": [
-        {
-          "order": 1,
-          "spotId": "HAKDONG_BEACH",
-          "arriveAt": "11:45",
-          "leaveAt": "13:10",
-          "stayMin": 85,
-          "checkHours": false
-        },
-        {
-          "order": 2,
-          "spotId": "NAEDO",
-          "arriveAt": "13:30",
-          "leaveAt": "16:00",
-          "stayMin": 150,
-          "checkHours": false
-        },
-        {
-          "order": 3,
-          "spotId": "SEA_WORLD",
-          "arriveAt": "16:05",
-          "leaveAt": "17:33",
-          "stayMin": 88,
-          "checkHours": false
-        }
-      ],
-      "legs": [
-        {
-          "from": "ORIGIN",
-          "to": "HAKDONG_BEACH",
-          "mode": "BUS",
-          "departAt": "11:05",
-          "arriveAt": "11:45",
-          "durationMin": 40,
-          "ride": {
-            "routeNo": "55",
-            "board": {
-              "stop": "고현",
-              "hubId": "GOHYEON",
-              "at": "11:05",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "학동",
-              "hubId": "HAKDONG",
-              "at": "11:45",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "HAKDONG_BEACH",
-          "to": "NAEDO",
-          "mode": "BUS",
-          "departAt": "13:10",
-          "arriveAt": "13:30",
-          "durationMin": 20,
-          "ride": {
-            "routeNo": "67-1",
-            "board": {
-              "stop": "학동",
-              "hubId": "HAKDONG",
-              "at": "13:10",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "구조라",
-              "hubId": null,
-              "at": "13:30",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "NAEDO",
-          "to": "SEA_WORLD",
-          "mode": "BUS",
-          "departAt": "16:00",
-          "arriveAt": "16:05",
-          "durationMin": 5,
-          "ride": {
-            "routeNo": "22",
-            "board": {
-              "stop": "구조라",
-              "hubId": null,
-              "at": "16:00",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "지세포",
-              "hubId": "JISEPO",
-              "at": "16:05",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "SEA_WORLD",
-          "to": "ORIGIN",
-          "mode": "BUS",
-          "departAt": "17:33",
-          "arriveAt": "18:18",
-          "durationMin": 45,
-          "ride": {
-            "routeNo": "23",
-            "board": {
-              "stop": "지세포",
-              "hubId": "JISEPO",
-              "at": "17:33",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "고현",
-              "hubId": "GOHYEON",
-              "at": "18:18",
-              "estimated": false
-            }
-          }
-        }
-      ]
-    },
-    {
-      "courseId": "3-04",
-      "spotCount": 3,
-      "rank": 4,
       "nineScenicCount": 2,
       "departAt": "11:04",
       "returnAt": "20:55",
@@ -733,139 +460,9 @@
       ]
     },
     {
-      "courseId": "3-05",
+      "courseId": "3-03",
       "spotCount": 3,
-      "rank": 5,
-      "nineScenicCount": 2,
-      "departAt": "11:05",
-      "returnAt": "18:31",
-      "totalMin": 446,
-      "approxTotalMin": 450,
-      "stops": [
-        {
-          "order": 1,
-          "spotId": "HAKDONG_BEACH",
-          "arriveAt": "11:45",
-          "leaveAt": "13:10",
-          "stayMin": 85,
-          "checkHours": false
-        },
-        {
-          "order": 2,
-          "spotId": "NAEDO",
-          "arriveAt": "13:30",
-          "leaveAt": "16:20",
-          "stayMin": 170,
-          "checkHours": false
-        },
-        {
-          "order": 3,
-          "spotId": "YANGJIAM_PARK",
-          "arriveAt": "16:48",
-          "leaveAt": "17:52",
-          "stayMin": 64,
-          "checkHours": false
-        }
-      ],
-      "legs": [
-        {
-          "from": "ORIGIN",
-          "to": "HAKDONG_BEACH",
-          "mode": "BUS",
-          "departAt": "11:05",
-          "arriveAt": "11:45",
-          "durationMin": 40,
-          "ride": {
-            "routeNo": "55",
-            "board": {
-              "stop": "고현",
-              "hubId": "GOHYEON",
-              "at": "11:05",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "학동",
-              "hubId": "HAKDONG",
-              "at": "11:45",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "HAKDONG_BEACH",
-          "to": "NAEDO",
-          "mode": "BUS",
-          "departAt": "13:10",
-          "arriveAt": "13:30",
-          "durationMin": 20,
-          "ride": {
-            "routeNo": "67-1",
-            "board": {
-              "stop": "학동",
-              "hubId": "HAKDONG",
-              "at": "13:10",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "구조라",
-              "hubId": null,
-              "at": "13:30",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "NAEDO",
-          "to": "YANGJIAM_PARK",
-          "mode": "BUS",
-          "departAt": "16:20",
-          "arriveAt": "16:48",
-          "durationMin": 28,
-          "ride": {
-            "routeNo": "61",
-            "board": {
-              "stop": "구조라",
-              "hubId": null,
-              "at": "16:20",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "능포",
-              "hubId": "NEUNGPO",
-              "at": "16:48",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "YANGJIAM_PARK",
-          "to": "ORIGIN",
-          "mode": "BUS",
-          "departAt": "17:52",
-          "arriveAt": "18:31",
-          "durationMin": 39,
-          "ride": {
-            "routeNo": "10",
-            "board": {
-              "stop": "능포",
-              "hubId": "NEUNGPO",
-              "at": "17:52",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "고현",
-              "hubId": "GOHYEON",
-              "at": "18:31",
-              "estimated": false
-            }
-          }
-        }
-      ]
-    },
-    {
-      "courseId": "3-06",
-      "spotCount": 3,
-      "rank": 6,
+      "rank": 3,
       "nineScenicCount": 2,
       "departAt": "11:05",
       "returnAt": "19:35",
@@ -993,9 +590,9 @@
       ]
     },
     {
-      "courseId": "3-07",
+      "courseId": "3-04",
       "spotCount": 3,
-      "rank": 7,
+      "rank": 4,
       "nineScenicCount": 2,
       "departAt": "11:05",
       "returnAt": "19:40",
@@ -1123,9 +720,9 @@
       ]
     },
     {
-      "courseId": "3-08",
+      "courseId": "3-05",
       "spotCount": 3,
-      "rank": 8,
+      "rank": 5,
       "nineScenicCount": 2,
       "departAt": "11:05",
       "returnAt": "19:40",
@@ -1253,139 +850,9 @@
       ]
     },
     {
-      "courseId": "3-09",
+      "courseId": "3-06",
       "spotCount": 3,
-      "rank": 9,
-      "nineScenicCount": 2,
-      "departAt": "11:00",
-      "returnAt": "19:40",
-      "totalMin": 520,
-      "approxTotalMin": 510,
-      "stops": [
-        {
-          "order": 1,
-          "spotId": "JISIMDO",
-          "arriveAt": "11:40",
-          "leaveAt": "14:12",
-          "stayMin": 152,
-          "checkHours": false
-        },
-        {
-          "order": 2,
-          "spotId": "YANGJIAM_PARK",
-          "arriveAt": "14:20",
-          "leaveAt": "16:40",
-          "stayMin": 140,
-          "checkHours": false
-        },
-        {
-          "order": 3,
-          "spotId": "HAKDONG_BEACH",
-          "arriveAt": "17:25",
-          "leaveAt": "19:00",
-          "stayMin": 95,
-          "checkHours": false
-        }
-      ],
-      "legs": [
-        {
-          "from": "ORIGIN",
-          "to": "JISIMDO",
-          "mode": "BUS",
-          "departAt": "11:00",
-          "arriveAt": "11:40",
-          "durationMin": 40,
-          "ride": {
-            "routeNo": "10",
-            "board": {
-              "stop": "고현",
-              "hubId": "GOHYEON",
-              "at": "11:00",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "장승포",
-              "hubId": null,
-              "at": "11:40",
-              "estimated": true
-            }
-          }
-        },
-        {
-          "from": "JISIMDO",
-          "to": "YANGJIAM_PARK",
-          "mode": "BUS",
-          "departAt": "14:12",
-          "arriveAt": "14:20",
-          "durationMin": 8,
-          "ride": {
-            "routeNo": "10",
-            "board": {
-              "stop": "장승포",
-              "hubId": null,
-              "at": "14:12",
-              "estimated": true
-            },
-            "alight": {
-              "stop": "능포",
-              "hubId": "NEUNGPO",
-              "at": "14:20",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "YANGJIAM_PARK",
-          "to": "HAKDONG_BEACH",
-          "mode": "BUS",
-          "departAt": "16:40",
-          "arriveAt": "17:25",
-          "durationMin": 45,
-          "ride": {
-            "routeNo": "67-1",
-            "board": {
-              "stop": "능포",
-              "hubId": "NEUNGPO",
-              "at": "16:40",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "학동",
-              "hubId": "HAKDONG",
-              "at": "17:25",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "HAKDONG_BEACH",
-          "to": "ORIGIN",
-          "mode": "BUS",
-          "departAt": "19:00",
-          "arriveAt": "19:40",
-          "durationMin": 40,
-          "ride": {
-            "routeNo": "55",
-            "board": {
-              "stop": "학동",
-              "hubId": "HAKDONG",
-              "at": "19:00",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "고현",
-              "hubId": "GOHYEON",
-              "at": "19:40",
-              "estimated": false
-            }
-          }
-        }
-      ]
-    },
-    {
-      "courseId": "3-10",
-      "spotCount": 3,
-      "rank": 10,
+      "rank": 6,
       "nineScenicCount": 2,
       "departAt": "11:05",
       "returnAt": "19:40",
@@ -1513,14 +980,14 @@
       ]
     },
     {
-      "courseId": "4-01",
-      "spotCount": 4,
-      "rank": 1,
-      "nineScenicCount": 2,
+      "courseId": "3-07",
+      "spotCount": 3,
+      "rank": 7,
+      "nineScenicCount": 1,
       "departAt": "11:05",
-      "returnAt": "19:23",
-      "totalMin": 498,
-      "approxTotalMin": 510,
+      "returnAt": "17:03",
+      "totalMin": 358,
+      "approxTotalMin": 360,
       "stops": [
         {
           "order": 1,
@@ -1532,26 +999,18 @@
         },
         {
           "order": 2,
-          "spotId": "NAEDO",
-          "arriveAt": "13:30",
-          "leaveAt": "16:00",
-          "stayMin": 150,
+          "spotId": "SEA_WORLD",
+          "arriveAt": "13:37",
+          "leaveAt": "14:57",
+          "stayMin": 80,
           "checkHours": false
         },
         {
           "order": 3,
-          "spotId": "SEA_WORLD",
-          "arriveAt": "16:05",
-          "leaveAt": "17:23",
-          "stayMin": 78,
-          "checkHours": false
-        },
-        {
-          "order": 4,
           "spotId": "YANGJIAM_PARK",
-          "arriveAt": "17:44",
-          "leaveAt": "18:44",
-          "stayMin": 60,
+          "arriveAt": "15:18",
+          "leaveAt": "16:24",
+          "stayMin": 66,
           "checkHours": false
         }
       ],
@@ -1581,11 +1040,11 @@
         },
         {
           "from": "HAKDONG_BEACH",
-          "to": "NAEDO",
+          "to": "SEA_WORLD",
           "mode": "BUS",
           "departAt": "13:10",
-          "arriveAt": "13:30",
-          "durationMin": 20,
+          "arriveAt": "13:37",
+          "durationMin": 27,
           "ride": {
             "routeNo": "67-1",
             "board": {
@@ -1595,32 +1054,9 @@
               "estimated": false
             },
             "alight": {
-              "stop": "구조라",
-              "hubId": null,
-              "at": "13:30",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "NAEDO",
-          "to": "SEA_WORLD",
-          "mode": "BUS",
-          "departAt": "16:00",
-          "arriveAt": "16:05",
-          "durationMin": 5,
-          "ride": {
-            "routeNo": "22",
-            "board": {
-              "stop": "구조라",
-              "hubId": null,
-              "at": "16:00",
-              "estimated": false
-            },
-            "alight": {
               "stop": "지세포",
               "hubId": "JISEPO",
-              "at": "16:05",
+              "at": "13:37",
               "estimated": false
             }
           }
@@ -1629,21 +1065,21 @@
           "from": "SEA_WORLD",
           "to": "YANGJIAM_PARK",
           "mode": "BUS",
-          "departAt": "17:23",
-          "arriveAt": "17:44",
+          "departAt": "14:57",
+          "arriveAt": "15:18",
           "durationMin": 21,
           "ride": {
-            "routeNo": "62",
+            "routeNo": "61",
             "board": {
               "stop": "지세포",
               "hubId": "JISEPO",
-              "at": "17:23",
+              "at": "14:57",
               "estimated": false
             },
             "alight": {
               "stop": "능포",
               "hubId": "NEUNGPO",
-              "at": "17:44",
+              "at": "15:18",
               "estimated": false
             }
           }
@@ -1652,21 +1088,21 @@
           "from": "YANGJIAM_PARK",
           "to": "ORIGIN",
           "mode": "BUS",
-          "departAt": "18:44",
-          "arriveAt": "19:23",
+          "departAt": "16:24",
+          "arriveAt": "17:03",
           "durationMin": 39,
           "ride": {
-            "routeNo": "10",
+            "routeNo": "11",
             "board": {
               "stop": "능포",
               "hubId": "NEUNGPO",
-              "at": "18:44",
+              "at": "16:24",
               "estimated": false
             },
             "alight": {
               "stop": "고현",
               "hubId": "GOHYEON",
-              "at": "19:23",
+              "at": "17:03",
               "estimated": false
             }
           }
@@ -1674,10 +1110,256 @@
       ]
     },
     {
-      "courseId": "4-02",
-      "spotCount": 4,
-      "rank": 2,
-      "nineScenicCount": 2,
+      "courseId": "3-08",
+      "spotCount": 3,
+      "rank": 8,
+      "nineScenicCount": 1,
+      "departAt": "11:05",
+      "returnAt": "16:50",
+      "totalMin": 345,
+      "approxTotalMin": 360,
+      "stops": [
+        {
+          "order": 1,
+          "spotId": "HAKDONG_BEACH",
+          "arriveAt": "11:45",
+          "leaveAt": "13:10",
+          "stayMin": 85,
+          "checkHours": false
+        },
+        {
+          "order": 2,
+          "spotId": "SHIPBUILDING_MUSEUM",
+          "arriveAt": "13:37",
+          "leaveAt": "14:37",
+          "stayMin": 60,
+          "checkHours": false
+        },
+        {
+          "order": 3,
+          "spotId": "SEA_WORLD",
+          "arriveAt": "14:37",
+          "leaveAt": "16:05",
+          "stayMin": 88,
+          "checkHours": false
+        }
+      ],
+      "legs": [
+        {
+          "from": "ORIGIN",
+          "to": "HAKDONG_BEACH",
+          "mode": "BUS",
+          "departAt": "11:05",
+          "arriveAt": "11:45",
+          "durationMin": 40,
+          "ride": {
+            "routeNo": "55",
+            "board": {
+              "stop": "고현",
+              "hubId": "GOHYEON",
+              "at": "11:05",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "학동",
+              "hubId": "HAKDONG",
+              "at": "11:45",
+              "estimated": false
+            }
+          }
+        },
+        {
+          "from": "HAKDONG_BEACH",
+          "to": "SHIPBUILDING_MUSEUM",
+          "mode": "BUS",
+          "departAt": "13:10",
+          "arriveAt": "13:37",
+          "durationMin": 27,
+          "ride": {
+            "routeNo": "67-1",
+            "board": {
+              "stop": "학동",
+              "hubId": "HAKDONG",
+              "at": "13:10",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "지세포",
+              "hubId": "JISEPO",
+              "at": "13:37",
+              "estimated": false
+            }
+          }
+        },
+        {
+          "from": "SHIPBUILDING_MUSEUM",
+          "to": "SEA_WORLD",
+          "mode": "SAME_STOP",
+          "departAt": "14:37",
+          "arriveAt": "14:37",
+          "durationMin": 0,
+          "ride": null
+        },
+        {
+          "from": "SEA_WORLD",
+          "to": "ORIGIN",
+          "mode": "BUS",
+          "departAt": "16:05",
+          "arriveAt": "16:50",
+          "durationMin": 45,
+          "ride": {
+            "routeNo": "22",
+            "board": {
+              "stop": "지세포",
+              "hubId": "JISEPO",
+              "at": "16:05",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "고현",
+              "hubId": "GOHYEON",
+              "at": "16:50",
+              "estimated": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "courseId": "3-09",
+      "spotCount": 3,
+      "rank": 9,
+      "nineScenicCount": 1,
+      "departAt": "11:04",
+      "returnAt": "19:40",
+      "totalMin": 516,
+      "approxTotalMin": 510,
+      "stops": [
+        {
+          "order": 1,
+          "spotId": "SEA_WORLD",
+          "arriveAt": "11:48",
+          "leaveAt": "13:00",
+          "stayMin": 72,
+          "checkHours": false
+        },
+        {
+          "order": 2,
+          "spotId": "GISEONGGWAN",
+          "arriveAt": "13:50",
+          "leaveAt": "15:25",
+          "stayMin": 95,
+          "checkHours": false
+        },
+        {
+          "order": 3,
+          "spotId": "BARAM_HILL",
+          "arriveAt": "16:10",
+          "leaveAt": "18:48",
+          "stayMin": 158,
+          "checkHours": false
+        }
+      ],
+      "legs": [
+        {
+          "from": "ORIGIN",
+          "to": "SEA_WORLD",
+          "mode": "BUS",
+          "departAt": "11:04",
+          "arriveAt": "11:48",
+          "durationMin": 44,
+          "ride": {
+            "routeNo": "22-1",
+            "board": {
+              "stop": "고현",
+              "hubId": "GOHYEON",
+              "at": "11:04",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "지세포",
+              "hubId": "JISEPO",
+              "at": "11:48",
+              "estimated": false
+            }
+          }
+        },
+        {
+          "from": "SEA_WORLD",
+          "to": "GISEONGGWAN",
+          "mode": "BUS",
+          "departAt": "13:00",
+          "arriveAt": "13:50",
+          "durationMin": 50,
+          "ride": {
+            "routeNo": "67-1",
+            "board": {
+              "stop": "지세포",
+              "hubId": "JISEPO",
+              "at": "13:00",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "거제면",
+              "hubId": "GEOJE_MYEON",
+              "at": "13:50",
+              "estimated": false
+            }
+          }
+        },
+        {
+          "from": "GISEONGGWAN",
+          "to": "BARAM_HILL",
+          "mode": "BUS",
+          "departAt": "15:25",
+          "arriveAt": "16:10",
+          "durationMin": 45,
+          "ride": {
+            "routeNo": "55-1",
+            "board": {
+              "stop": "거제면",
+              "hubId": "GEOJE_MYEON",
+              "at": "15:25",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "도장포",
+              "hubId": "DOJANGPO",
+              "at": "16:10",
+              "estimated": true
+            }
+          }
+        },
+        {
+          "from": "BARAM_HILL",
+          "to": "ORIGIN",
+          "mode": "BUS",
+          "departAt": "18:48",
+          "arriveAt": "19:40",
+          "durationMin": 52,
+          "ride": {
+            "routeNo": "55",
+            "board": {
+              "stop": "도장포",
+              "hubId": "DOJANGPO",
+              "at": "18:48",
+              "estimated": true
+            },
+            "alight": {
+              "stop": "고현",
+              "hubId": "GOHYEON",
+              "at": "19:40",
+              "estimated": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "courseId": "3-10",
+      "spotCount": 3,
+      "rank": 10,
+      "nineScenicCount": 1,
       "departAt": "11:00",
       "returnAt": "19:40",
       "totalMin": 520,
@@ -1685,41 +1367,33 @@
       "stops": [
         {
           "order": 1,
-          "spotId": "JISIMDO",
-          "arriveAt": "11:40",
-          "leaveAt": "14:12",
-          "stayMin": 152,
-          "checkHours": false
-        },
-        {
-          "order": 2,
           "spotId": "YANGJIAM_PARK",
-          "arriveAt": "14:20",
-          "leaveAt": "15:40",
-          "stayMin": 80,
-          "checkHours": false
-        },
-        {
-          "order": 3,
-          "spotId": "SEA_WORLD",
-          "arriveAt": "16:00",
-          "leaveAt": "17:00",
+          "arriveAt": "11:40",
+          "leaveAt": "12:40",
           "stayMin": 60,
           "checkHours": false
         },
         {
-          "order": 4,
-          "spotId": "HAKDONG_BEACH",
-          "arriveAt": "17:25",
-          "leaveAt": "19:00",
+          "order": 2,
+          "spotId": "GISEONGGWAN",
+          "arriveAt": "13:50",
+          "leaveAt": "15:25",
           "stayMin": 95,
+          "checkHours": false
+        },
+        {
+          "order": 3,
+          "spotId": "BARAM_HILL",
+          "arriveAt": "16:10",
+          "leaveAt": "18:48",
+          "stayMin": 158,
           "checkHours": false
         }
       ],
       "legs": [
         {
           "from": "ORIGIN",
-          "to": "JISIMDO",
+          "to": "YANGJIAM_PARK",
           "mode": "BUS",
           "departAt": "11:00",
           "arriveAt": "11:40",
@@ -1733,96 +1407,73 @@
               "estimated": false
             },
             "alight": {
-              "stop": "장승포",
-              "hubId": null,
-              "at": "11:40",
-              "estimated": true
-            }
-          }
-        },
-        {
-          "from": "JISIMDO",
-          "to": "YANGJIAM_PARK",
-          "mode": "BUS",
-          "departAt": "14:12",
-          "arriveAt": "14:20",
-          "durationMin": 8,
-          "ride": {
-            "routeNo": "10",
-            "board": {
-              "stop": "장승포",
-              "hubId": null,
-              "at": "14:12",
-              "estimated": true
-            },
-            "alight": {
               "stop": "능포",
               "hubId": "NEUNGPO",
-              "at": "14:20",
+              "at": "11:40",
               "estimated": false
             }
           }
         },
         {
           "from": "YANGJIAM_PARK",
-          "to": "SEA_WORLD",
+          "to": "GISEONGGWAN",
           "mode": "BUS",
-          "departAt": "15:40",
-          "arriveAt": "16:00",
-          "durationMin": 20,
+          "departAt": "12:40",
+          "arriveAt": "13:50",
+          "durationMin": 70,
           "ride": {
-            "routeNo": "61",
+            "routeNo": "67-1",
             "board": {
               "stop": "능포",
               "hubId": "NEUNGPO",
-              "at": "15:40",
+              "at": "12:40",
               "estimated": false
             },
             "alight": {
-              "stop": "지세포",
-              "hubId": "JISEPO",
-              "at": "16:00",
+              "stop": "거제면",
+              "hubId": "GEOJE_MYEON",
+              "at": "13:50",
               "estimated": false
             }
           }
         },
         {
-          "from": "SEA_WORLD",
-          "to": "HAKDONG_BEACH",
+          "from": "GISEONGGWAN",
+          "to": "BARAM_HILL",
           "mode": "BUS",
-          "departAt": "17:00",
-          "arriveAt": "17:25",
-          "durationMin": 25,
+          "departAt": "15:25",
+          "arriveAt": "16:10",
+          "durationMin": 45,
           "ride": {
-            "routeNo": "67-1",
+            "routeNo": "55-1",
             "board": {
-              "stop": "지세포",
-              "hubId": "JISEPO",
-              "at": "17:00",
+              "stop": "거제면",
+              "hubId": "GEOJE_MYEON",
+              "at": "15:25",
               "estimated": false
             },
             "alight": {
-              "stop": "학동",
-              "hubId": "HAKDONG",
-              "at": "17:25",
-              "estimated": false
+              "stop": "도장포",
+              "hubId": "DOJANGPO",
+              "at": "16:10",
+              "estimated": true
             }
           }
         },
         {
-          "from": "HAKDONG_BEACH",
+          "from": "BARAM_HILL",
           "to": "ORIGIN",
           "mode": "BUS",
-          "departAt": "19:00",
+          "departAt": "18:48",
           "arriveAt": "19:40",
-          "durationMin": 40,
+          "durationMin": 52,
           "ride": {
             "routeNo": "55",
             "board": {
-              "stop": "학동",
-              "hubId": "HAKDONG",
-              "at": "19:00",
-              "estimated": false
+              "stop": "도장포",
+              "hubId": "DOJANGPO",
+              "at": "18:48",
+              "estimated": true
             },
             "alight": {
               "stop": "고현",
@@ -1835,156 +1486,9 @@
       ]
     },
     {
-      "courseId": "4-03",
+      "courseId": "4-01",
       "spotCount": 4,
-      "rank": 3,
-      "nineScenicCount": 2,
-      "departAt": "11:04",
-      "returnAt": "19:40",
-      "totalMin": 516,
-      "approxTotalMin": 510,
-      "stops": [
-        {
-          "order": 1,
-          "spotId": "NAEDO",
-          "arriveAt": "11:55",
-          "leaveAt": "14:32",
-          "stayMin": 157,
-          "checkHours": false
-        },
-        {
-          "order": 2,
-          "spotId": "SHIPBUILDING_MUSEUM",
-          "arriveAt": "14:37",
-          "leaveAt": "15:37",
-          "stayMin": 60,
-          "checkHours": false
-        },
-        {
-          "order": 3,
-          "spotId": "SEA_WORLD",
-          "arriveAt": "15:37",
-          "leaveAt": "17:00",
-          "stayMin": 83,
-          "checkHours": false
-        },
-        {
-          "order": 4,
-          "spotId": "HAKDONG_BEACH",
-          "arriveAt": "17:25",
-          "leaveAt": "19:00",
-          "stayMin": 95,
-          "checkHours": false
-        }
-      ],
-      "legs": [
-        {
-          "from": "ORIGIN",
-          "to": "NAEDO",
-          "mode": "BUS",
-          "departAt": "11:04",
-          "arriveAt": "11:55",
-          "durationMin": 51,
-          "ride": {
-            "routeNo": "22-1",
-            "board": {
-              "stop": "고현",
-              "hubId": "GOHYEON",
-              "at": "11:04",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "구조라",
-              "hubId": null,
-              "at": "11:55",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "NAEDO",
-          "to": "SHIPBUILDING_MUSEUM",
-          "mode": "BUS",
-          "departAt": "14:32",
-          "arriveAt": "14:37",
-          "durationMin": 5,
-          "ride": {
-            "routeNo": "23",
-            "board": {
-              "stop": "구조라",
-              "hubId": null,
-              "at": "14:32",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "지세포",
-              "hubId": "JISEPO",
-              "at": "14:37",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "SHIPBUILDING_MUSEUM",
-          "to": "SEA_WORLD",
-          "mode": "SAME_STOP",
-          "departAt": "15:37",
-          "arriveAt": "15:37",
-          "durationMin": 0,
-          "ride": null
-        },
-        {
-          "from": "SEA_WORLD",
-          "to": "HAKDONG_BEACH",
-          "mode": "BUS",
-          "departAt": "17:00",
-          "arriveAt": "17:25",
-          "durationMin": 25,
-          "ride": {
-            "routeNo": "67-1",
-            "board": {
-              "stop": "지세포",
-              "hubId": "JISEPO",
-              "at": "17:00",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "학동",
-              "hubId": "HAKDONG",
-              "at": "17:25",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "HAKDONG_BEACH",
-          "to": "ORIGIN",
-          "mode": "BUS",
-          "departAt": "19:00",
-          "arriveAt": "19:40",
-          "durationMin": 40,
-          "ride": {
-            "routeNo": "55",
-            "board": {
-              "stop": "학동",
-              "hubId": "HAKDONG",
-              "at": "19:00",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "고현",
-              "hubId": "GOHYEON",
-              "at": "19:40",
-              "estimated": false
-            }
-          }
-        }
-      ]
-    },
-    {
-      "courseId": "4-04",
-      "spotCount": 4,
-      "rank": 4,
+      "rank": 1,
       "nineScenicCount": 2,
       "departAt": "11:05",
       "returnAt": "20:55",
@@ -2143,9 +1647,9 @@
       ]
     },
     {
-      "courseId": "4-05",
+      "courseId": "4-02",
       "spotCount": 4,
-      "rank": 5,
+      "rank": 2,
       "nineScenicCount": 2,
       "departAt": "11:04",
       "returnAt": "20:55",
@@ -2304,9 +1808,9 @@
       ]
     },
     {
-      "courseId": "4-06",
+      "courseId": "4-03",
       "spotCount": 4,
-      "rank": 6,
+      "rank": 3,
       "nineScenicCount": 1,
       "departAt": "11:02",
       "returnAt": "19:40",
@@ -2465,156 +1969,9 @@
       ]
     },
     {
-      "courseId": "4-07",
+      "courseId": "4-04",
       "spotCount": 4,
-      "rank": 7,
-      "nineScenicCount": 1,
-      "departAt": "11:00",
-      "returnAt": "18:30",
-      "totalMin": 450,
-      "approxTotalMin": 450,
-      "stops": [
-        {
-          "order": 1,
-          "spotId": "YANGJIAM_PARK",
-          "arriveAt": "11:40",
-          "leaveAt": "12:40",
-          "stayMin": 60,
-          "checkHours": false
-        },
-        {
-          "order": 2,
-          "spotId": "NAEDO",
-          "arriveAt": "13:05",
-          "leaveAt": "15:50",
-          "stayMin": 165,
-          "checkHours": false
-        },
-        {
-          "order": 3,
-          "spotId": "SHIPBUILDING_MUSEUM",
-          "arriveAt": "15:57",
-          "leaveAt": "16:57",
-          "stayMin": 60,
-          "checkHours": false
-        },
-        {
-          "order": 4,
-          "spotId": "SEA_WORLD",
-          "arriveAt": "16:57",
-          "leaveAt": "17:57",
-          "stayMin": 60,
-          "checkHours": false
-        }
-      ],
-      "legs": [
-        {
-          "from": "ORIGIN",
-          "to": "YANGJIAM_PARK",
-          "mode": "BUS",
-          "departAt": "11:00",
-          "arriveAt": "11:40",
-          "durationMin": 40,
-          "ride": {
-            "routeNo": "10",
-            "board": {
-              "stop": "고현",
-              "hubId": "GOHYEON",
-              "at": "11:00",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "능포",
-              "hubId": "NEUNGPO",
-              "at": "11:40",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "YANGJIAM_PARK",
-          "to": "NAEDO",
-          "mode": "BUS",
-          "departAt": "12:40",
-          "arriveAt": "13:05",
-          "durationMin": 25,
-          "ride": {
-            "routeNo": "67-1",
-            "board": {
-              "stop": "능포",
-              "hubId": "NEUNGPO",
-              "at": "12:40",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "구조라",
-              "hubId": null,
-              "at": "13:05",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "NAEDO",
-          "to": "SHIPBUILDING_MUSEUM",
-          "mode": "BUS",
-          "departAt": "15:50",
-          "arriveAt": "15:57",
-          "durationMin": 7,
-          "ride": {
-            "routeNo": "61",
-            "board": {
-              "stop": "구조라",
-              "hubId": null,
-              "at": "15:50",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "지세포",
-              "hubId": "JISEPO",
-              "at": "15:57",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "SHIPBUILDING_MUSEUM",
-          "to": "SEA_WORLD",
-          "mode": "SAME_STOP",
-          "departAt": "16:57",
-          "arriveAt": "16:57",
-          "durationMin": 0,
-          "ride": null
-        },
-        {
-          "from": "SEA_WORLD",
-          "to": "ORIGIN",
-          "mode": "BUS",
-          "departAt": "17:57",
-          "arriveAt": "18:30",
-          "durationMin": 33,
-          "ride": {
-            "routeNo": "4000",
-            "board": {
-              "stop": "지세포",
-              "hubId": "JISEPO",
-              "at": "17:57",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "고현",
-              "hubId": "GOHYEON",
-              "at": "18:30",
-              "estimated": false
-            }
-          }
-        }
-      ]
-    },
-    {
-      "courseId": "4-08",
-      "spotCount": 4,
-      "rank": 8,
+      "rank": 4,
       "nineScenicCount": 1,
       "departAt": "11:00",
       "returnAt": "17:30",
@@ -2759,29 +2116,337 @@
       ]
     },
     {
-      "courseId": "4-09",
+      "courseId": "4-05",
       "spotCount": 4,
-      "rank": 9,
+      "rank": 5,
       "nineScenicCount": 1,
-      "departAt": "11:00",
-      "returnAt": "18:50",
-      "totalMin": 470,
-      "approxTotalMin": 480,
+      "departAt": "11:04",
+      "returnAt": "20:55",
+      "totalMin": 591,
+      "approxTotalMin": 600,
       "stops": [
         {
           "order": 1,
-          "spotId": "JISIMDO",
-          "arriveAt": "11:40",
-          "leaveAt": "14:12",
-          "stayMin": 152,
+          "spotId": "SEA_WORLD",
+          "arriveAt": "11:48",
+          "leaveAt": "12:57",
+          "stayMin": 69,
           "checkHours": false
         },
         {
           "order": 2,
           "spotId": "YANGJIAM_PARK",
-          "arriveAt": "14:20",
+          "arriveAt": "13:18",
+          "leaveAt": "14:40",
+          "stayMin": 82,
+          "checkHours": false
+        },
+        {
+          "order": 3,
+          "spotId": "GISEONGGWAN",
+          "arriveAt": "15:50",
+          "leaveAt": "17:25",
+          "stayMin": 95,
+          "checkHours": false
+        },
+        {
+          "order": 4,
+          "spotId": "BARAM_HILL",
+          "arriveAt": "17:55",
+          "leaveAt": "20:05",
+          "stayMin": 130,
+          "checkHours": false
+        }
+      ],
+      "legs": [
+        {
+          "from": "ORIGIN",
+          "to": "SEA_WORLD",
+          "mode": "BUS",
+          "departAt": "11:04",
+          "arriveAt": "11:48",
+          "durationMin": 44,
+          "ride": {
+            "routeNo": "22-1",
+            "board": {
+              "stop": "고현",
+              "hubId": "GOHYEON",
+              "at": "11:04",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "지세포",
+              "hubId": "JISEPO",
+              "at": "11:48",
+              "estimated": false
+            }
+          }
+        },
+        {
+          "from": "SEA_WORLD",
+          "to": "YANGJIAM_PARK",
+          "mode": "BUS",
+          "departAt": "12:57",
+          "arriveAt": "13:18",
+          "durationMin": 21,
+          "ride": {
+            "routeNo": "60",
+            "board": {
+              "stop": "지세포",
+              "hubId": "JISEPO",
+              "at": "12:57",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "능포",
+              "hubId": "NEUNGPO",
+              "at": "13:18",
+              "estimated": false
+            }
+          }
+        },
+        {
+          "from": "YANGJIAM_PARK",
+          "to": "GISEONGGWAN",
+          "mode": "BUS",
+          "departAt": "14:40",
+          "arriveAt": "15:50",
+          "durationMin": 70,
+          "ride": {
+            "routeNo": "67-1",
+            "board": {
+              "stop": "능포",
+              "hubId": "NEUNGPO",
+              "at": "14:40",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "거제면",
+              "hubId": "GEOJE_MYEON",
+              "at": "15:50",
+              "estimated": false
+            }
+          }
+        },
+        {
+          "from": "GISEONGGWAN",
+          "to": "BARAM_HILL",
+          "mode": "BUS",
+          "departAt": "17:25",
+          "arriveAt": "17:55",
+          "durationMin": 30,
+          "ride": {
+            "routeNo": "55",
+            "board": {
+              "stop": "거제면",
+              "hubId": "GEOJE_MYEON",
+              "at": "17:25",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "도장포",
+              "hubId": "DOJANGPO",
+              "at": "17:55",
+              "estimated": true
+            }
+          }
+        },
+        {
+          "from": "BARAM_HILL",
+          "to": "ORIGIN",
+          "mode": "BUS",
+          "departAt": "20:05",
+          "arriveAt": "20:55",
+          "durationMin": 50,
+          "ride": {
+            "routeNo": "55",
+            "board": {
+              "stop": "도장포",
+              "hubId": "DOJANGPO",
+              "at": "20:05",
+              "estimated": true
+            },
+            "alight": {
+              "stop": "고현",
+              "hubId": "GOHYEON",
+              "at": "20:55",
+              "estimated": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "courseId": "4-06",
+      "spotCount": 4,
+      "rank": 6,
+      "nineScenicCount": 1,
+      "departAt": "11:04",
+      "returnAt": "20:55",
+      "totalMin": 591,
+      "approxTotalMin": 600,
+      "stops": [
+        {
+          "order": 1,
+          "spotId": "SHIPBUILDING_MUSEUM",
+          "arriveAt": "11:48",
+          "leaveAt": "12:48",
+          "stayMin": 60,
+          "checkHours": false
+        },
+        {
+          "order": 2,
+          "spotId": "SEA_WORLD",
+          "arriveAt": "12:48",
+          "leaveAt": "15:00",
+          "stayMin": 132,
+          "checkHours": false
+        },
+        {
+          "order": 3,
+          "spotId": "GISEONGGWAN",
+          "arriveAt": "15:50",
+          "leaveAt": "17:25",
+          "stayMin": 95,
+          "checkHours": false
+        },
+        {
+          "order": 4,
+          "spotId": "BARAM_HILL",
+          "arriveAt": "17:55",
+          "leaveAt": "20:05",
+          "stayMin": 130,
+          "checkHours": false
+        }
+      ],
+      "legs": [
+        {
+          "from": "ORIGIN",
+          "to": "SHIPBUILDING_MUSEUM",
+          "mode": "BUS",
+          "departAt": "11:04",
+          "arriveAt": "11:48",
+          "durationMin": 44,
+          "ride": {
+            "routeNo": "22-1",
+            "board": {
+              "stop": "고현",
+              "hubId": "GOHYEON",
+              "at": "11:04",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "지세포",
+              "hubId": "JISEPO",
+              "at": "11:48",
+              "estimated": false
+            }
+          }
+        },
+        {
+          "from": "SHIPBUILDING_MUSEUM",
+          "to": "SEA_WORLD",
+          "mode": "SAME_STOP",
+          "departAt": "12:48",
+          "arriveAt": "12:48",
+          "durationMin": 0,
+          "ride": null
+        },
+        {
+          "from": "SEA_WORLD",
+          "to": "GISEONGGWAN",
+          "mode": "BUS",
+          "departAt": "15:00",
+          "arriveAt": "15:50",
+          "durationMin": 50,
+          "ride": {
+            "routeNo": "67-1",
+            "board": {
+              "stop": "지세포",
+              "hubId": "JISEPO",
+              "at": "15:00",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "거제면",
+              "hubId": "GEOJE_MYEON",
+              "at": "15:50",
+              "estimated": false
+            }
+          }
+        },
+        {
+          "from": "GISEONGGWAN",
+          "to": "BARAM_HILL",
+          "mode": "BUS",
+          "departAt": "17:25",
+          "arriveAt": "17:55",
+          "durationMin": 30,
+          "ride": {
+            "routeNo": "55",
+            "board": {
+              "stop": "거제면",
+              "hubId": "GEOJE_MYEON",
+              "at": "17:25",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "도장포",
+              "hubId": "DOJANGPO",
+              "at": "17:55",
+              "estimated": true
+            }
+          }
+        },
+        {
+          "from": "BARAM_HILL",
+          "to": "ORIGIN",
+          "mode": "BUS",
+          "departAt": "20:05",
+          "arriveAt": "20:55",
+          "durationMin": 50,
+          "ride": {
+            "routeNo": "55",
+            "board": {
+              "stop": "도장포",
+              "hubId": "DOJANGPO",
+              "at": "20:05",
+              "estimated": true
+            },
+            "alight": {
+              "stop": "고현",
+              "hubId": "GOHYEON",
+              "at": "20:55",
+              "estimated": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "courseId": "4-07",
+      "spotCount": 4,
+      "rank": 7,
+      "nineScenicCount": 0,
+      "departAt": "11:02",
+      "returnAt": "18:50",
+      "totalMin": 468,
+      "approxTotalMin": 480,
+      "stops": [
+        {
+          "order": 1,
+          "spotId": "MAEMI_CASTLE",
+          "arriveAt": "11:47",
+          "leaveAt": "13:37",
+          "stayMin": 110,
+          "checkHours": false
+        },
+        {
+          "order": 2,
+          "spotId": "YANGJIAM_PARK",
+          "arriveAt": "14:30",
           "leaveAt": "15:40",
-          "stayMin": 80,
+          "stayMin": 70,
           "checkHours": false
         },
         {
@@ -2804,46 +2469,46 @@
       "legs": [
         {
           "from": "ORIGIN",
-          "to": "JISIMDO",
+          "to": "MAEMI_CASTLE",
           "mode": "BUS",
-          "departAt": "11:00",
-          "arriveAt": "11:40",
-          "durationMin": 40,
+          "departAt": "11:02",
+          "arriveAt": "11:47",
+          "durationMin": 45,
           "ride": {
-            "routeNo": "10",
+            "routeNo": "33",
             "board": {
               "stop": "고현",
               "hubId": "GOHYEON",
-              "at": "11:00",
+              "at": "11:02",
               "estimated": false
             },
             "alight": {
-              "stop": "장승포",
-              "hubId": null,
-              "at": "11:40",
+              "stop": "대금교차로",
+              "hubId": "DAEGEUM",
+              "at": "11:47",
               "estimated": true
             }
           }
         },
         {
-          "from": "JISIMDO",
+          "from": "MAEMI_CASTLE",
           "to": "YANGJIAM_PARK",
           "mode": "BUS",
-          "departAt": "14:12",
-          "arriveAt": "14:20",
-          "durationMin": 8,
+          "departAt": "13:37",
+          "arriveAt": "14:30",
+          "durationMin": 53,
           "ride": {
-            "routeNo": "10",
+            "routeNo": "33",
             "board": {
-              "stop": "장승포",
-              "hubId": null,
-              "at": "14:12",
+              "stop": "대금교차로",
+              "hubId": "DAEGEUM",
+              "at": "13:37",
               "estimated": true
             },
             "alight": {
               "stop": "능포",
               "hubId": "NEUNGPO",
-              "at": "14:20",
+              "at": "14:30",
               "estimated": false
             }
           }
@@ -2906,114 +2571,68 @@
       ]
     },
     {
-      "courseId": "4-10",
+      "courseId": "4-08",
       "spotCount": 4,
-      "rank": 10,
-      "nineScenicCount": 1,
-      "departAt": "11:05",
-      "returnAt": "19:23",
-      "totalMin": 498,
-      "approxTotalMin": 510,
+      "rank": 8,
+      "nineScenicCount": 0,
+      "departAt": "11:04",
+      "returnAt": "19:59",
+      "totalMin": 535,
+      "approxTotalMin": 540,
       "stops": [
         {
           "order": 1,
-          "spotId": "GISEONGGWAN",
-          "arriveAt": "11:25",
-          "leaveAt": "12:48",
-          "stayMin": 83,
+          "spotId": "SEA_WORLD",
+          "arriveAt": "11:48",
+          "leaveAt": "12:57",
+          "stayMin": 69,
           "checkHours": false
         },
         {
           "order": 2,
-          "spotId": "NAEDO",
-          "arriveAt": "13:30",
-          "leaveAt": "16:00",
-          "stayMin": 150,
+          "spotId": "YANGJIAM_PARK",
+          "arriveAt": "13:18",
+          "leaveAt": "14:22",
+          "stayMin": 64,
           "checkHours": false
         },
         {
           "order": 3,
-          "spotId": "SEA_WORLD",
-          "arriveAt": "16:05",
-          "leaveAt": "17:23",
-          "stayMin": 78,
+          "spotId": "MAENGJONGJUK_PARK",
+          "arriveAt": "15:35",
+          "leaveAt": "17:22",
+          "stayMin": 107,
           "checkHours": false
         },
         {
           "order": 4,
-          "spotId": "YANGJIAM_PARK",
-          "arriveAt": "17:44",
-          "leaveAt": "18:44",
-          "stayMin": 60,
+          "spotId": "MAEMI_CASTLE",
+          "arriveAt": "17:47",
+          "leaveAt": "19:09",
+          "stayMin": 82,
           "checkHours": false
         }
       ],
       "legs": [
         {
           "from": "ORIGIN",
-          "to": "GISEONGGWAN",
+          "to": "SEA_WORLD",
           "mode": "BUS",
-          "departAt": "11:05",
-          "arriveAt": "11:25",
-          "durationMin": 20,
+          "departAt": "11:04",
+          "arriveAt": "11:48",
+          "durationMin": 44,
           "ride": {
-            "routeNo": "55",
+            "routeNo": "22-1",
             "board": {
               "stop": "고현",
               "hubId": "GOHYEON",
-              "at": "11:05",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "거제면",
-              "hubId": "GEOJE_MYEON",
-              "at": "11:25",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "GISEONGGWAN",
-          "to": "NAEDO",
-          "mode": "BUS",
-          "departAt": "12:48",
-          "arriveAt": "13:30",
-          "durationMin": 42,
-          "ride": {
-            "routeNo": "67-1",
-            "board": {
-              "stop": "거제면",
-              "hubId": "GEOJE_MYEON",
-              "at": "12:48",
-              "estimated": false
-            },
-            "alight": {
-              "stop": "구조라",
-              "hubId": null,
-              "at": "13:30",
-              "estimated": false
-            }
-          }
-        },
-        {
-          "from": "NAEDO",
-          "to": "SEA_WORLD",
-          "mode": "BUS",
-          "departAt": "16:00",
-          "arriveAt": "16:05",
-          "durationMin": 5,
-          "ride": {
-            "routeNo": "22",
-            "board": {
-              "stop": "구조라",
-              "hubId": null,
-              "at": "16:00",
+              "at": "11:04",
               "estimated": false
             },
             "alight": {
               "stop": "지세포",
               "hubId": "JISEPO",
-              "at": "16:05",
+              "at": "11:48",
               "estimated": false
             }
           }
@@ -3022,44 +2641,398 @@
           "from": "SEA_WORLD",
           "to": "YANGJIAM_PARK",
           "mode": "BUS",
-          "departAt": "17:23",
-          "arriveAt": "17:44",
+          "departAt": "12:57",
+          "arriveAt": "13:18",
           "durationMin": 21,
           "ride": {
-            "routeNo": "62",
+            "routeNo": "60",
             "board": {
               "stop": "지세포",
               "hubId": "JISEPO",
-              "at": "17:23",
+              "at": "12:57",
               "estimated": false
             },
             "alight": {
               "stop": "능포",
               "hubId": "NEUNGPO",
-              "at": "17:44",
+              "at": "13:18",
               "estimated": false
             }
           }
         },
         {
           "from": "YANGJIAM_PARK",
-          "to": "ORIGIN",
+          "to": "MAENGJONGJUK_PARK",
           "mode": "BUS",
-          "departAt": "18:44",
-          "arriveAt": "19:23",
-          "durationMin": 39,
+          "departAt": "14:22",
+          "arriveAt": "15:35",
+          "durationMin": 73,
           "ride": {
-            "routeNo": "10",
+            "routeNo": "32",
             "board": {
               "stop": "능포",
               "hubId": "NEUNGPO",
-              "at": "18:44",
+              "at": "14:22",
               "estimated": false
+            },
+            "alight": {
+              "stop": "맹종죽테마파크",
+              "hubId": "MAENGJONGJUK",
+              "at": "15:35",
+              "estimated": true
+            }
+          }
+        },
+        {
+          "from": "MAENGJONGJUK_PARK",
+          "to": "MAEMI_CASTLE",
+          "mode": "BUS",
+          "departAt": "17:22",
+          "arriveAt": "17:47",
+          "durationMin": 25,
+          "ride": {
+            "routeNo": "33",
+            "board": {
+              "stop": "맹종죽테마파크",
+              "hubId": "MAENGJONGJUK",
+              "at": "17:22",
+              "estimated": true
+            },
+            "alight": {
+              "stop": "대금교차로",
+              "hubId": "DAEGEUM",
+              "at": "17:47",
+              "estimated": true
+            }
+          }
+        },
+        {
+          "from": "MAEMI_CASTLE",
+          "to": "ORIGIN",
+          "mode": "BUS",
+          "departAt": "19:09",
+          "arriveAt": "19:59",
+          "durationMin": 50,
+          "ride": {
+            "routeNo": "32-1",
+            "board": {
+              "stop": "대금교차로",
+              "hubId": "DAEGEUM",
+              "at": "19:09",
+              "estimated": true
             },
             "alight": {
               "stop": "고현",
               "hubId": "GOHYEON",
-              "at": "19:23",
+              "at": "19:59",
+              "estimated": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "courseId": "4-09",
+      "spotCount": 4,
+      "rank": 9,
+      "nineScenicCount": 2,
+      "departAt": "11:04",
+      "returnAt": "20:55",
+      "totalMin": 591,
+      "approxTotalMin": 600,
+      "stops": [
+        {
+          "order": 1,
+          "spotId": "SHIPBUILDING_MUSEUM",
+          "arriveAt": "11:48",
+          "leaveAt": "12:48",
+          "stayMin": 60,
+          "checkHours": false
+        },
+        {
+          "order": 2,
+          "spotId": "SEA_WORLD",
+          "arriveAt": "12:48",
+          "leaveAt": "15:00",
+          "stayMin": 132,
+          "checkHours": false
+        },
+        {
+          "order": 3,
+          "spotId": "HAKDONG_BEACH",
+          "arriveAt": "15:30",
+          "leaveAt": "17:45",
+          "stayMin": 135,
+          "checkHours": false
+        },
+        {
+          "order": 4,
+          "spotId": "BARAM_HILL",
+          "arriveAt": "17:55",
+          "leaveAt": "20:05",
+          "stayMin": 130,
+          "checkHours": false
+        }
+      ],
+      "legs": [
+        {
+          "from": "ORIGIN",
+          "to": "SHIPBUILDING_MUSEUM",
+          "mode": "BUS",
+          "departAt": "11:04",
+          "arriveAt": "11:48",
+          "durationMin": 44,
+          "ride": {
+            "routeNo": "22-1",
+            "board": {
+              "stop": "고현",
+              "hubId": "GOHYEON",
+              "at": "11:04",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "지세포",
+              "hubId": "JISEPO",
+              "at": "11:48",
+              "estimated": false
+            }
+          }
+        },
+        {
+          "from": "SHIPBUILDING_MUSEUM",
+          "to": "SEA_WORLD",
+          "mode": "SAME_STOP",
+          "departAt": "12:48",
+          "arriveAt": "12:48",
+          "durationMin": 0,
+          "ride": null
+        },
+        {
+          "from": "SEA_WORLD",
+          "to": "HAKDONG_BEACH",
+          "mode": "BUS",
+          "departAt": "15:00",
+          "arriveAt": "15:30",
+          "durationMin": 30,
+          "ride": {
+            "routeNo": "67-1",
+            "board": {
+              "stop": "지세포",
+              "hubId": "JISEPO",
+              "at": "15:00",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "학동",
+              "hubId": "HAKDONG",
+              "at": "15:30",
+              "estimated": false
+            }
+          }
+        },
+        {
+          "from": "HAKDONG_BEACH",
+          "to": "BARAM_HILL",
+          "mode": "BUS",
+          "departAt": "17:45",
+          "arriveAt": "17:55",
+          "durationMin": 10,
+          "ride": {
+            "routeNo": "55",
+            "board": {
+              "stop": "학동",
+              "hubId": "HAKDONG",
+              "at": "17:45",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "도장포",
+              "hubId": "DOJANGPO",
+              "at": "17:55",
+              "estimated": true
+            }
+          }
+        },
+        {
+          "from": "BARAM_HILL",
+          "to": "ORIGIN",
+          "mode": "BUS",
+          "departAt": "20:05",
+          "arriveAt": "20:55",
+          "durationMin": 50,
+          "ride": {
+            "routeNo": "55",
+            "board": {
+              "stop": "도장포",
+              "hubId": "DOJANGPO",
+              "at": "20:05",
+              "estimated": true
+            },
+            "alight": {
+              "stop": "고현",
+              "hubId": "GOHYEON",
+              "at": "20:55",
+              "estimated": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "courseId": "4-10",
+      "spotCount": 4,
+      "rank": 10,
+      "nineScenicCount": 2,
+      "departAt": "11:00",
+      "returnAt": "20:55",
+      "totalMin": 595,
+      "approxTotalMin": 600,
+      "stops": [
+        {
+          "order": 1,
+          "spotId": "YANGJIAM_PARK",
+          "arriveAt": "11:40",
+          "leaveAt": "12:40",
+          "stayMin": 60,
+          "checkHours": false
+        },
+        {
+          "order": 2,
+          "spotId": "HAKDONG_BEACH",
+          "arriveAt": "13:25",
+          "leaveAt": "15:00",
+          "stayMin": 95,
+          "checkHours": false
+        },
+        {
+          "order": 3,
+          "spotId": "GISEONGGWAN",
+          "arriveAt": "15:20",
+          "leaveAt": "17:25",
+          "stayMin": 125,
+          "checkHours": false
+        },
+        {
+          "order": 4,
+          "spotId": "BARAM_HILL",
+          "arriveAt": "17:55",
+          "leaveAt": "20:05",
+          "stayMin": 130,
+          "checkHours": false
+        }
+      ],
+      "legs": [
+        {
+          "from": "ORIGIN",
+          "to": "YANGJIAM_PARK",
+          "mode": "BUS",
+          "departAt": "11:00",
+          "arriveAt": "11:40",
+          "durationMin": 40,
+          "ride": {
+            "routeNo": "10",
+            "board": {
+              "stop": "고현",
+              "hubId": "GOHYEON",
+              "at": "11:00",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "능포",
+              "hubId": "NEUNGPO",
+              "at": "11:40",
+              "estimated": false
+            }
+          }
+        },
+        {
+          "from": "YANGJIAM_PARK",
+          "to": "HAKDONG_BEACH",
+          "mode": "BUS",
+          "departAt": "12:40",
+          "arriveAt": "13:25",
+          "durationMin": 45,
+          "ride": {
+            "routeNo": "67-1",
+            "board": {
+              "stop": "능포",
+              "hubId": "NEUNGPO",
+              "at": "12:40",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "학동",
+              "hubId": "HAKDONG",
+              "at": "13:25",
+              "estimated": false
+            }
+          }
+        },
+        {
+          "from": "HAKDONG_BEACH",
+          "to": "GISEONGGWAN",
+          "mode": "BUS",
+          "departAt": "15:00",
+          "arriveAt": "15:20",
+          "durationMin": 20,
+          "ride": {
+            "routeNo": "55",
+            "board": {
+              "stop": "학동",
+              "hubId": "HAKDONG",
+              "at": "15:00",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "거제면",
+              "hubId": "GEOJE_MYEON",
+              "at": "15:20",
+              "estimated": false
+            }
+          }
+        },
+        {
+          "from": "GISEONGGWAN",
+          "to": "BARAM_HILL",
+          "mode": "BUS",
+          "departAt": "17:25",
+          "arriveAt": "17:55",
+          "durationMin": 30,
+          "ride": {
+            "routeNo": "55",
+            "board": {
+              "stop": "거제면",
+              "hubId": "GEOJE_MYEON",
+              "at": "17:25",
+              "estimated": false
+            },
+            "alight": {
+              "stop": "도장포",
+              "hubId": "DOJANGPO",
+              "at": "17:55",
+              "estimated": true
+            }
+          }
+        },
+        {
+          "from": "BARAM_HILL",
+          "to": "ORIGIN",
+          "mode": "BUS",
+          "departAt": "20:05",
+          "arriveAt": "20:55",
+          "durationMin": 50,
+          "ride": {
+            "routeNo": "55",
+            "board": {
+              "stop": "도장포",
+              "hubId": "DOJANGPO",
+              "at": "20:05",
+              "estimated": true
+            },
+            "alight": {
+              "stop": "고현",
+              "hubId": "GOHYEON",
+              "at": "20:55",
               "estimated": false
             }
           }
