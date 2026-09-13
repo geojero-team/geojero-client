@@ -11,7 +11,7 @@ import { useDragScroll } from '../lib/useDragScroll'
 import styles from './VisitorPhotos.module.css'
 
 /**
- * 방문자 사진 — Figma 02-2 `446:1160`의 `484:212`(섹션) · `268:499`(뷰어) · `268:518`(올리기 시트) · `268:531`(빈 상태).
+ * 방문자 사진 — Figma 02-2 `446:1160`의 `484:212`(섹션) · `268:499`(뷰어) · `268:518`(올리기 시트).
  *
  * **TourAPI 사진과 섞지 않습니다.** 위 hero 캐러셀은 `spot.photos`(TourAPI, 출처표시)이고
  * 여기는 올린 사람의 사진입니다. 호출(`api.getVisitorPhotos`)도 상태도 따로 둡니다.
@@ -19,7 +19,8 @@ import styles from './VisitorPhotos.module.css'
  * 화면 상태 — 0장과 실패를 반드시 가릅니다(절대규칙 3, 「운행 없음 ≠ 시각 미상」과 같은 구조).
  *   불러오는 중   제목 + 안내
  *   실패         제목 + 실패 문구 + 다시 시도. 빈 상태 문구를 쓰지 않습니다
- *   0장          제목 + 「아직 올라온 사진이 없어요」 + 「첫 사진 올리기」 — 처음엔 17곳 전부 이 화면입니다
+ *   0장          제목 + 올리기 타일 + 빈 사진 칸 3개 — 02-2 스팟 상세 그림 그대로입니다(사용자 결정, 02-1 빈 상태 카드 `268:531`은 쓰지 않음).
+ *                「더보기」는 열 사진이 없어 숨깁니다. 처음엔 17곳 전부 이 화면입니다
  *   N장          제목 + 「더보기」 + 올리기 타일 + 사진 타일
  *
  * 보기 — 타일을 누르면 **바로 그 사진의 뷰어**, 「더보기」는 뷰어를 1장부터 엽니다(02-2 `485:213`).
@@ -250,43 +251,40 @@ export default function VisitorPhotos({ poiId, spotName, uploadInUrl = false }) 
             {t('visitorPhotos.retry')}
           </button>
         </div>
-      ) : photos.length === 0 ? (
-        /* 빈 상태(268:531) — 개수도 올리기 타일도 없고 글자 링크 하나입니다. */
-        <div className={styles.card}>
-          <p className={styles.cardText}>{t('visitorPhotos.emptyTitle')}</p>
-          <button type="button" className={styles.link} onClick={requestUpload}>
-            {t('visitorPhotos.emptyCta')}
-          </button>
-        </div>
       ) : (
-        <>
-          <div ref={stripRef} className={styles.strip} {...dragHandlers}>
-            <button type="button" className={styles.uploadTile} onClick={requestUpload}>
-              <span className={styles.plus} aria-hidden="true">
-                +
-              </span>
-              <span className={styles.uploadLabel}>{t('visitorPhotos.uploadTile')}</span>
-            </button>
+        <div ref={stripRef} className={styles.strip} {...dragHandlers}>
+          <button type="button" className={styles.uploadTile} onClick={requestUpload}>
+            <span className={styles.plus} aria-hidden="true">
+              +
+            </span>
+            <span className={styles.uploadLabel}>{t('visitorPhotos.uploadTile')}</span>
+          </button>
 
-            {photos.map((photo, index) => (
-              <button
-                key={photo.photoId}
-                type="button"
-                className={styles.tile}
-                aria-label={t('visitorPhotos.tileAria', { n: index + 1 })}
-                onClick={() => showInViewer(index)}
-              >
-                <img
-                  className={styles.tileImg}
-                  src={photo.imageUrl}
-                  alt=""
-                  draggable="false"
-                  loading="lazy"
-                />
-              </button>
-            ))}
-          </div>
-        </>
+          {photos.length === 0
+            ? /* 0장 — 사진 칸 자리(484:220~224) 셋. 누를 사진이 없어 버튼이 아닙니다. */
+              [0, 1, 2].map((slot) => (
+                <div key={slot} className={`${styles.tile} ${styles.slot}`} aria-hidden="true">
+                  {t('visitorPhotos.slot')}
+                </div>
+              ))
+            : photos.map((photo, index) => (
+                <button
+                  key={photo.photoId}
+                  type="button"
+                  className={styles.tile}
+                  aria-label={t('visitorPhotos.tileAria', { n: index + 1 })}
+                  onClick={() => showInViewer(index)}
+                >
+                  <img
+                    className={styles.tileImg}
+                    src={photo.imageUrl}
+                    alt=""
+                    draggable="false"
+                    loading="lazy"
+                  />
+                </button>
+              ))}
+        </div>
       )}
 
       {notice && (

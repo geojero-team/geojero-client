@@ -45,7 +45,7 @@ describe('SpotSheet — 방문자 사진', () => {
 
     // 손잡이(aria-expanded=false)로 펼칩니다 — peek 덩어리도 같은 이름의 버튼입니다.
     await user.click(screen.getByRole('button', { name: '자세히 보기', expanded: false }))
-    await user.click(await screen.findByRole('button', { name: '첫 사진 올리기' }))
+    await user.click(await screen.findByRole('button', { name: '내 사진 올리기' }))
 
     const title = screen.getByRole('heading', { name: '사진을 올리려면 로그인 해주세요' })
     expect(title.closest('section').parentElement).toBe(screen.getByTestId('frame'))

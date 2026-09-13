@@ -110,16 +110,21 @@ beforeEach(() => {
 })
 
 describe('방문자 사진 — 보기', () => {
-  it('0장이면 빈 상태 원문만 있고 개수·자리글·신고가 없다', async () => {
+  /** 사진 칸 자리(484:220~224)의 「방문자 사진」 글자 — 같은 글자인 제목은 뺍니다. */
+  const slotLabels = () => screen.queryAllByText('방문자 사진').filter((el) => el.tagName !== 'H2')
+
+  it('0장이면 02-2 스팟 상세 그림(484:212) 그대로 — 올리기 칸 + 빈 사진 칸 3개, 누를 사진 타일은 없다', async () => {
     api.getVisitorPhotos.mockResolvedValue(listOf([]))
     renderSection()
 
-    expect(await screen.findByText('아직 올라온 사진이 없어요')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: '내 사진 올리기' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '방문자 사진' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '첫 사진 올리기' })).toBeInTheDocument()
+    expect(slotLabels()).toHaveLength(3)
+    expect(screen.queryAllByRole('button', { name: /번째 방문자 사진$/ })).toHaveLength(0)
     expect(api.getVisitorPhotos).toHaveBeenCalledWith(3)
 
-    for (const absent of ['0장', '12장', '신고', '내 사진 올리기', '더보기']) {
+    // 더보기는 열 사진이 없어 숨깁니다. 02-1의 빈 상태 카드 문구도 쓰지 않습니다.
+    for (const absent of ['0장', '12장', '신고', '더보기', '아직 올라온 사진이 없어요', '첫 사진 올리기']) {
       expect(screen.queryByText(absent)).not.toBeInTheDocument()
     }
     expect(screen.queryByText(/여행자 A/)).not.toBeInTheDocument()
@@ -132,7 +137,7 @@ describe('방문자 사진 — 보기', () => {
 
     expect(screen.getByText('사진을 불러오는 중')).toBeInTheDocument()
     expect(screen.queryByText('더보기')).not.toBeInTheDocument()
-    expect(screen.queryByText('아직 올라온 사진이 없어요')).not.toBeInTheDocument()
+    expect(slotLabels()).toHaveLength(0)
   })
 
   it('불러오기 실패는 빈 상태가 아니라 실패 문구 — 다시 시도하면 다시 부른다', async () => {
@@ -140,7 +145,7 @@ describe('방문자 사진 — 보기', () => {
     const user = renderSection()
 
     expect(await screen.findByText('사진을 불러오지 못했어요')).toBeInTheDocument()
-    expect(screen.queryByText('아직 올라온 사진이 없어요')).not.toBeInTheDocument()
+    expect(slotLabels()).toHaveLength(0)
     expect(screen.queryByText(/→ 500/)).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: '다시 시도' }))
@@ -159,6 +164,7 @@ describe('방문자 사진 — 보기', () => {
     // 타일 사진은 장식(alt="")이라 역할로 찾지 않습니다 — 버튼의 이름이 사진을 말합니다.
     expect(tiles[0].querySelector('img')).toHaveAttribute('src', PHOTOS[0].imageUrl)
 
+    expect(slotLabels()).toHaveLength(0)
     expect(screen.queryByText('2장')).not.toBeInTheDocument()
     expect(screen.queryByText('몽돌 소리가 좋아요')).not.toBeInTheDocument()
     expect(screen.queryByText('9/13(일)')).not.toBeInTheDocument()
@@ -306,7 +312,7 @@ describe('방문자 사진 — 올리기 진입 (지도 시트: 주소를 바꾸
     api.getVisitorPhotos.mockResolvedValue(listOf([]))
     const user = renderSection()
 
-    await user.click(await screen.findByRole('button', { name: '첫 사진 올리기' }))
+    await user.click(await screen.findByRole('button', { name: '내 사진 올리기' }))
 
     expect(screen.getByRole('heading', { name: LOGIN_TITLE })).toBeInTheDocument()
     expect(screen.queryByText('코스를 저장하려면 로그인 해주세요')).not.toBeInTheDocument()
@@ -338,7 +344,7 @@ describe('방문자 사진 — 올리기 진입 (지도 시트: 주소를 바꾸
     api.me.mockRejectedValue(httpError(401))
     const user = renderSection()
 
-    await user.click(await screen.findByRole('button', { name: '첫 사진 올리기' }))
+    await user.click(await screen.findByRole('button', { name: '내 사진 올리기' }))
 
     expect(await screen.findByRole('heading', { name: LOGIN_TITLE })).toBeInTheDocument()
     expect(localStorage.getItem('gj_token')).toBeNull()
@@ -351,7 +357,7 @@ describe('방문자 사진 — 올리기 진입 (지도 시트: 주소를 바꾸
     api.me.mockRejectedValue(httpError(403))
     const user = renderSection()
 
-    await user.click(await screen.findByRole('button', { name: '첫 사진 올리기' }))
+    await user.click(await screen.findByRole('button', { name: '내 사진 올리기' }))
 
     expect(await screen.findByRole('heading', { name: LOGIN_TITLE })).toBeInTheDocument()
     expect(localStorage.getItem('gj_token')).toBeNull()
@@ -366,7 +372,7 @@ describe('방문자 사진 — 올리기 진입 (지도 시트: 주소를 바꾸
     api.me.mockRejectedValue(httpError(status))
     const user = renderSection()
 
-    await user.click(await screen.findByRole('button', { name: '첫 사진 올리기' }))
+    await user.click(await screen.findByRole('button', { name: '내 사진 올리기' }))
 
     expect(await screen.findByRole('heading', { name: SHEET_TITLE })).toBeInTheDocument()
     expect(localStorage.getItem('gj_token')).toBe('tok')
@@ -387,7 +393,7 @@ describe('방문자 사진 — 올리기 진입 (지도 시트: 주소를 바꾸
       ),
     })
 
-    await user.click(await screen.findByRole('button', { name: '첫 사진 올리기' }))
+    await user.click(await screen.findByRole('button', { name: '내 사진 올리기' }))
 
     const sheet = await screen.findByRole('dialog', { name: '사진 올리기' })
     expect(sheet.parentElement).toBe(screen.getByTestId('frame'))
@@ -399,7 +405,7 @@ describe('방문자 사진 — 올리기 진입 (스팟 상세 화면: ?upload=1
     api.getVisitorPhotos.mockResolvedValue(listOf([]))
     const user = renderSection({ route: '/spots/3', uploadInUrl: true })
 
-    await user.click(await screen.findByRole('button', { name: '첫 사진 올리기' }))
+    await user.click(await screen.findByRole('button', { name: '내 사진 올리기' }))
 
     expect(screen.getByTestId('loc')).toHaveTextContent('/spots/3?upload=1')
     expect(screen.getByRole('heading', { name: LOGIN_TITLE })).toBeInTheDocument()
@@ -447,7 +453,7 @@ describe('방문자 사진 — 올리기 시트', () => {
     api.getVisitorPhotos.mockResolvedValueOnce(listOf([])).mockResolvedValue(listOf([NEW_PHOTO]))
     api.me.mockResolvedValue({ nickname: '뚜벅이' })
     const user = renderSection()
-    await user.click(await screen.findByRole('button', { name: '첫 사진 올리기' }))
+    await user.click(await screen.findByRole('button', { name: '내 사진 올리기' }))
     await screen.findByRole('heading', { name: SHEET_TITLE })
     return user
   }

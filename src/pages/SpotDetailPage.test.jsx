@@ -34,7 +34,7 @@ describe('SpotDetailPage — 방문자 사진 올리기 주소', () => {
       </BrowserRouter>,
     )
 
-    await user.click(await screen.findByRole('button', { name: '첫 사진 올리기' }))
+    await user.click(await screen.findByRole('button', { name: '내 사진 올리기' }))
     expect(window.location.search).toBe('?upload=1')
 
     await user.click(screen.getByRole('button', { name: '카카오로 로그인' }))
@@ -64,7 +64,7 @@ describe('SpotDetailPage — 방문자 사진 올리기 주소', () => {
     )
 
     await user.click(screen.getByRole('link', { name: '스팟 목록' }))
-    await user.click(await screen.findByRole('button', { name: '첫 사진 올리기' }))
+    await user.click(await screen.findByRole('button', { name: '내 사진 올리기' }))
     await user.click(screen.getByRole('button', { name: '나중에' }))
     await user.click(screen.getByRole('button', { name: '뒤로' }))
 

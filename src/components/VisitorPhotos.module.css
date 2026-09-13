@@ -1,4 +1,4 @@
-/* 방문자 사진 — Figma 02-2 `484:212`(섹션) · `268:531`(빈 상태).
+/* 방문자 사진 — Figma 02-2 `484:212`(섹션 — 0장일 때도 이 모습).
    스팟 상세 .body(gap 22) 안, 소개 뒤에 들어갑니다(446:1176의 484:212 자리).
    섹션 자신은 head와 strip 사이 gap 10만 둡니다.
    타일 반경 10은 맞는 토큰이 없어 값으로 씁니다(--radius-card 8 / --radius-md 12). */
@@ -29,7 +29,7 @@
   color: var(--text-secondary);
 }
 
-/* empty(268:533) — 350×98, py24, gap 6, 가운데. 불러오기 실패도 같은 칸에 다른 문구로 둡니다. */
+/* 불러오기 실패 — 02-1 빈 상태 칸(268:533) 모양을 빌립니다: 350×98, py24, gap 6, 가운데. */
 .card {
   display: flex;
   flex-direction: column;
@@ -48,7 +48,7 @@
   word-break: keep-all;
 }
 
-/* 268:535 · 485:213 — 타일이 아니라 글자 링크 */
+/* 485:213 「더보기」 · 「다시 시도」 — 타일이 아니라 글자 링크 */
 .link {
   padding: 0;
   border: 0;
@@ -111,6 +111,17 @@
   background: var(--bg-surface);
   overflow: hidden;
   cursor: pointer;
+}
+
+/* visitor-photo (자리)(484:220) — 0장일 때. 가운데 「방문자 사진」 12 Medium */
+.slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: var(--type-label);
+  color: var(--text-secondary);
+  cursor: default;
+  user-select: none;
 }
 
 .tileImg {
