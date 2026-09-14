@@ -134,19 +134,23 @@ export const api = {
   me: () => request('/api/me', { session: true }),
 
   /**
-   * 추천 코스 목록 — 「코스 추천」 화면(Figma 446:559).
+   * 추천 코스 목록 — 「코스 추천」 화면(v3 대표 코스 카드 · Figma 585:417).
    *
-   * spotCount(3·4·5)로 걸러도 counts는 **전량**을 셉니다. 칩은 코스가 0개여도 개수를
-   * 보여주고 비활성해야 하기 때문입니다 — 지금 4곳이 0개입니다(배 시간표 대기).
+   * featured=true 면 서버가 규칙(9경 많은 순 · 버스 시간 짧은 순 · 곳 수 · 코드 순)으로 고른
+   * **대표 10개**만 줍니다. 없으면 전량 — 지도(CourseMapPage)가 고른 courseId 를 거기서 찾습니다.
+   * spotCount 필터는 3/4/5곳 칩과 함께 뺐습니다(2026-09-14). counts 는 그대로 옵니다.
    *
    * CoursesRes {
-   *   counts: { '3': 1, '4': 0, '5': 2 },
+   *   counts: { '3': 10, '4': 10, '5': 3 },
    *   courses: [{ courseId, courseCode, spotCount, rank, nineScenicCount,
-   *               name, summary, departAt, returnAt, approxTotalMin, approxTotalText,
+   *               name, summary, title, intro, nineScenicNos, busRoutes,
+   *               tripsPerDay: { weekday, holiday } | null, holidayService,
+   *               departAt, returnAt, approxTotalMin, approxTotalText, busMinTotal, busTotalText,
    *               spots: [{ seq, poiId, name, shortName, theme, lat, lng }] }] }
+   * title·intro 는 null 일 수 있고, tripsPerDay 는 busRoutes 가 하나일 때만 옵니다.
    */
-  courses: (spotCount) =>
-    request(`/api/courses${spotCount ? `?spotCount=${spotCount}` : ''}`),
+  courses: ({ featured = false } = {}) =>
+    request(`/api/courses${featured ? '?featured=true' : ''}`),
 
   /**
    * 코스 상세 — 「코스 상세」 화면(Figma 446:929).
@@ -156,7 +160,7 @@ export const api = {
    * 앞뒤 정류장 시각으로 감싼 값이고, 버스를 놓치지 않는 쪽으로만 틀립니다.
    * mode가 SAME_STOP이면 같은 정류장이라 버스를 타지 않습니다(rides가 빕니다).
    *
-   * CourseDetail { courseId, courseCode, name, summary, spotCount, nineScenicCount,
+   * CourseDetail { courseId, courseCode, name, title, intro, summary, spotCount, nineScenicCount,
    *   departAt, returnAt, totalMin, approxTotalMin, approxTotalText,
    *   legCount, estimatedLegCount, service, baseDate, source, originName,
    *   stops: [{ seq, poiId, name, shortName, theme, lat, lng,

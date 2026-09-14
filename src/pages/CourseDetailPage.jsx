@@ -7,6 +7,7 @@ import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { api, beginKakaoLogin } from '../lib/api'
 import { courseImage, onImageError } from '../lib/courseImage'
+import { courseTitle } from '../lib/courseTitle'
 import { getToken } from '../lib/session'
 import { formatDuration } from '../lib/format'
 import { loadSpots } from '../lib/spots'
@@ -25,7 +26,8 @@ import styles from './CourseDetailPage.module.css'
  *  · 머리에 **220px 지도**(번호 핀 + 고현터미널 + 순서 선, 끌기·확대 됨), 권역, 제목, 스팟 체인, 칩 둘(버스 합계 · 구간 수).
  *  · **제목은 규칙으로 짓습니다 — 「{첫 스팟}에서 {끝 스팟}까지」**(2026-09-14 사용자 결정). 그림의 「몽돌에서 바람의언덕까지」는
  *    사람이 지은 이름인데 코스 23개에 그런 이름이 없고, 서버 코스 name 은 전부 줄임말 체인이라(「학동 · 기성관 · …」,
- *    「기성관」·「맹종죽테마파크」는 TourAPI 정본 이름이 아님 — 절대규칙 5) 쓰지 않습니다. 진짜 이름이 생기면 그걸 먼저 씁니다.
+ *    「기성관」·「맹종죽테마파크」는 TourAPI 정본 이름이 아님 — 절대규칙 5) 쓰지 않습니다.
+ *    → 2026-09-14 저녁 서버 `title`(V28 · 대표 코스 10개)이 생겨 **있으면 그것을 먼저** 씁니다(`lib/courseTitle` — 코스 추천 카드와 같은 규칙).
  *    체인(「학동몽돌해변 · 해금강 · 바람의언덕」)은 제목 아래 부제로 — 그래서 가운데 스팟도 빠지지 않습니다.
  *    그림에 있던 「고현터미널에서 출발해 고현터미널로 돌아와요」 문장은 확정 그림에서 빠졌습니다(타임라인 양 끝과 각주가 같은 말을 합니다).
  *  · 타임라인 스팟 줄은 **40px 둥근 사진 + 왼쪽 위 20px 번호**. 사진은 /api/pois 대표 사진(코스 API는 사진을 주지 않는다 — TourAPI
@@ -234,8 +236,8 @@ export default function CourseDetailPage() {
       <span className={styles.chainName}>{i < names.length - 1 ? `${name} ·` : name}</span>
     </Fragment>
   ))
-  // 제목 — 「학동몽돌해변에서 바람의언덕까지」. 한 곳뿐이면 「해금강에서 해금강까지」가 되므로 이름 그대로.
-  const title = names.length >= 2 ? t('courseDetail.titleRange', { first: names[0], last: names[names.length - 1] }) : chain
+  // 제목 — 서버 title 이 있으면 그것, 없으면 「학동몽돌해변에서 바람의언덕까지」. 한 곳뿐이면 이름 그대로(체인).
+  const title = courseTitle(course.title, names) ?? chain
   const hasEstimate = legs.some((leg) => leg.estimated)
 
   return (

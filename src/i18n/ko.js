@@ -10,6 +10,9 @@ export default {
   'common.close': '닫기',
   'common.more': '더보기',
   'common.loadFailed': '불러오지 못했습니다 — {error}',
+  // 코스 제목 규칙 — 코스 추천 카드와 코스 상세가 같이 씁니다(lib/courseTitle). 서버 title 이 없을 때만.
+  // 첫 스팟과 끝 스팟의 짧은 이름(2026-09-14 사용자 결정) — 그림의 「몽돌에서 바람의언덕까지」처럼 줄이진 못합니다.
+  'common.courseTitleRange': '{first}에서 {last}까지',
 
   /* ── 탭바 ─────────────────────────────────────────────────────────────── */
   // 홈 — 02-2에서 조건·판정 카드가 빠지고 이 버튼 하나가 남았습니다(446:453).
@@ -264,9 +267,7 @@ export default {
   // 권역은 /api/pois 에서 붙입니다. 여러 권역이면 방문 순서대로 한 번씩(「남부권·동부권」).
   'courseDetail.meta': '{regions} · {count}곳',
   'courseDetail.metaCount': '{count}곳',
-  // 제목 규칙 — 첫 스팟과 끝 스팟의 짧은 이름(2026-09-14 사용자 결정). 그림의 「몽돌에서 바람의언덕까지」처럼 줄이진 못합니다.
-  // 코스에 진짜 이름이 생기면 그걸 먼저 쓰고 없을 때만 이 규칙입니다.
-  'courseDetail.titleRange': '{first}에서 {last}까지',
+  // 제목은 서버 title, 없으면 common.courseTitleRange 규칙(lib/courseTitle).
   // {time}은 formatDuration(busMinTotal) — 서버 busTotalText는 60분 미만이면 「약 0시간 40분」이 되어 쓰지 않습니다.
   'courseDetail.busChip': '버스 약 {time}',
   'courseDetail.legChip': '{n}구간',
@@ -288,31 +289,36 @@ export default {
   'courseDetail.weekday': '평일',
   'courseDetail.holiday': '휴일',
 
-  // ── 코스 추천 (02-2 · Figma 446:559) ─────────────────────────────────────
-  // 판정을 뺀 뒤 "스팟을 고르면 판정해준다"에서 "개수를 고르면 우리가 짠 코스를 준다"로
-  // 바뀌었습니다. 그래서 plan.* 과 키를 따로 둡니다 — plan.* 은 판정 유물입니다.
+  // ── 코스 추천 (v3 대표 코스 카드 · Figma 02-2 585:417 · 585:485 · 582:416) ───────
+  // 2026-09-14 저녁 사용자 결정 — 3/4/5곳 칩을 없애고 **대표 코스 10개**를 카드로 보여줍니다
+  // (어느 10개인지는 서버 featured=true 가 정합니다). plan.* 과 키를 따로 둡니다 — plan.* 은 판정 유물입니다.
   'courses.title': '코스 추천',
-  'courses.headline1': '방문하시고 싶은',
-  'courses.headline2': '스팟 개수를 고르시면',
-  'courses.headline3': '코스를 추천해드립니다.',
-  'courses.originNote': '주의사항 : 모든 첫 출발지는 고현터미널로 가정합니다.',
-  'courses.countChip': '{n}곳',
-  'courses.total': '총 코스 {count}가지',
-  // ★ 우리가 소유한 숫자. 출발·복귀 시각과 경과 시간(약 8시간 30분)은 2026-09-13에 화면에서
-  // 뺐습니다 — 그 대부분이 머무는 시간이고, 얼마나 머물지는 사용자가 정하는 것입니다.
-  // {time}은 formatDuration(busMinTotal) — '약'을 붙이지 않습니다('예정'이 그 뜻을 대신합니다).
-  // 코스 추천 카드가 씁니다(코스 상세는 09-14 개정에서 칩 courseDetail.busChip 으로 바뀌었습니다).
-  'courses.busTotal': '총 {time} 소요 예정',
+  'courses.headline1': '거제 9경을 버스로 잇는',
+  'courses.headline2': '대표 코스',
+  // 출발지 가정과 근거를 한 줄에 — 모든 시각이 이 위에 서 있어서 숨기면 안 됩니다.
+  'courses.originNote': '출발은 고현터미널 · 노선과 시간은 거제시 BIS 원문 기준',
+  'courses.total': '대표 코스 {count}가지 · 여러 개 고를 수 있어요',
+  // hero 에 사진이 없을 때. 자리그림 SVG 를 쓰지 않고 이유를 적습니다 — 0장은 버그가 아니라 사실입니다(저작권 Type3 · 기준문서 §5).
+  'courses.noPhoto': '사진 없음 — TourAPI 사진 0장',
+  // 9경 배지 — nineScenicNos 를 「{n}경」으로 띄어 잇습니다(「거제 9경 · 1경 2경 4경」). 0곳이면 배지 자체가 없습니다.
+  'courses.nineBadge': '거제 9경 · {list}',
+  'courses.nineNo': '{n}경',
+  // 태그 넷 — 값은 전부 서버 데이터(busMinTotal · busRoutes · tripsPerDay · holidayService)에서 옵니다(절대규칙 1).
+  // {time}은 formatDuration(busMinTotal) — 서버 busTotalText 는 60분 미만이면 「약 0시간 40분」이 되어 쓰지 않습니다.
+  'courses.tagBus': '버스 약 {time}',
+  'courses.tagRouteOne': '{route}번 한 노선',
+  'courses.tagRouteMany': '{routes}번 {count}노선',
+  // 배차는 노선이 하나일 때만 옵니다(tripsPerDay). 평일·휴일 회차가 같으면 「매일」, 다르면 평일 값만.
+  'courses.tagDaily': '매일 {n}회',
+  'courses.tagWeekday': '평일 {n}회',
+  'courses.tagServiceAll': '평일·휴일',
+  'courses.tagServiceWeekday': '평일만',
+  // 지도의 코스 카드 스트립(CourseMapPage)이 씁니다 — 코스 추천 카드는 코스 제목(title)을 씁니다.
   'courses.cardTitle': '코스 {n}',
-  'courses.nineScenic': '거제9경 {count}곳',
-  'courses.multiHint': '코스는 여러 개 고를 수 있어요',
-  'courses.select': '코스 선택하기',
+  // 하단 고정 바 — 고른 게 1개 이상일 때만 뜹니다(0개면 바 자체가 없어 단수형이 없습니다).
   'courses.selectN': '코스 {count}개 선택하기',
   'courses.loading': '코스를 불러오는 중',
-  // 빈 칩의 이유를 밝힙니다. 이유 없는 빈칸은 우리가 기준문서 §4에서 비판하는 것입니다.
-  'courses.emptyTitle': '{n}곳 코스는 아직 안내할 수 없어요',
-  'courses.emptyFerry': '배로 가는 스팟이 들어가는 코스라, 배 시각을 확인하는 중입니다.',
-  'courses.chipDisabled': '{n}곳 코스 없음',
+  'courses.empty': '코스가 아직 없어요',
 
 
   /* ── 지도 (285:208 / 240:164) ─────────────────────────────────────────── */

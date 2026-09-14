@@ -1,6 +1,7 @@
-/* 코스 추천 — Figma 02-2 446:559 / 451:184.
-   흰 페이지, 탭바 없음, 버튼은 본문 맨 아래. 카드 구조는 PlanPage(285:85)에서 가져왔고
-   바뀐 것은 셋입니다 — 개수 칩이 생겼고, 선택이 체크(다중)로 바뀌었고, 버튼이 하나입니다. */
+/* 코스 추천 — v3 대표 코스 카드(Figma 02-2 585:417 고름 · 585:485 안 고름 · 582:416 카드 3장).
+   흰 페이지, 탭바 없음. 카드는 사진(200) 위에 9경 배지가 걸치고, 아래에 제목 · 스팟 체인 · 소개 · 태그.
+   고른 게 있으면 바닥에 고정 바가 뜹니다. 토큰에 없는 값(13/18 배지 글자 · 14/20 Medium · 그림자)은
+   그림 값을 그대로 둡니다(tokens.css 머리 주석: Figma를 다시 잰다). */
 
 .header {
   flex: none;
@@ -33,70 +34,35 @@
   background: var(--bg-page);
 }
 
+/* 585:419 — 본문. 아래 104 는 고정 바(80) 자리 + 여유. 바가 있을 때만 비우면 고르는 순간 마지막 카드가
+   튀므로 늘 비워 둡니다. */
 .body {
   display: flex;
   flex-direction: column;
   gap: 16px;
   min-height: 100%;
-  padding: 8px 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
+  padding: 8px 20px calc(env(safe-area-inset-bottom, 0px) + 104px);
 }
 
+/* 24/32 Bold 두 줄 */
 .headline {
   margin: 0;
   font: var(--type-display);
   color: var(--text-primary);
-  text-align: right;
 }
 
-/* '주의 사항 : 모든 첫 출발지는 고현터미널로 가정합니다.'
-   가정을 화면에 적는 줄입니다 — 모든 시각이 이 위에 서 있어서 숨기면 안 됩니다. */
+/* 출발지 가정 · 근거 한 줄 — 모든 시각이 이 위에 서 있어서 숨기면 안 됩니다. */
 .note {
   margin: 0;
   font: var(--type-caption);
   color: var(--text-secondary);
-  text-align: right;
   word-break: keep-all;
-}
-
-/* spot-count(446:567): 우측 정렬 pill 3개, gap 8 */
-.chips {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.chip {
-  padding: 8px 18px;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-pill);
-  background: var(--bg-page);
-  font: var(--type-body);
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-.chipOn {
-  border-color: var(--brand-strong);
-  background: var(--brand-tint);
-  color: var(--brand-strong);
-}
-
-/* 코스가 0개인 칩. 숨기지 않고 흐리게 둡니다 — 숨기면 왜 없는지 알 수 없습니다. */
-.chip[data-empty='true'] {
-  color: var(--text-disabled);
-}
-
-.chip[data-empty='true'].chipOn {
-  border-color: var(--border-default);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
 }
 
 .total {
   margin: 0;
   font: var(--type-caption);
   color: var(--status-yes);
-  text-align: right;
 }
 
 .notice {
@@ -105,243 +71,171 @@
   color: var(--text-secondary);
 }
 
-.card {
+/* course-list — 카드 사이 16 */
+.list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+}
+
+/* 카드 — 흰 바탕 · radius 8 · 테두리 1. 카드 전체가 버튼이라 버튼 기본 모양을 지웁니다.
+   overflow hidden 은 사진 모서리를 둥글게 자르는 것 — 배지는 카드 안쪽(183px)에 있어 잘리지 않습니다. */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  padding: 14px 16px;
+  padding: 0;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-card);
   background: var(--bg-page);
+  overflow: hidden;
   text-align: left;
   cursor: pointer;
 }
 
-/* 고른 카드는 2px brand — 안쪽 여백을 1px 줄여 위치를 지킵니다. */
+/* 고름 — 2px brand 테두리(585:421). 테두리 폭을 바꾸면 안쪽이 1px 밀려 사진·배지가 흔들리므로,
+   1px 테두리 색만 바꾸고 바깥 1px 을 그림자로 더해 2px 로 보이게 합니다. 안쪽 그림자(inset)는 200px 사진이
+   덮어 위쪽은 1px 로만 보였습니다(배포 전 리뷰). 카드 사이 16px 이라 바깥 1px 은 이웃과 닿지 않습니다. */
 .cardOn {
-  padding: 13px 15px;
-  border: 2px solid var(--brand-strong);
+  border-color: var(--brand-strong);
+  box-shadow: 0 0 0 1px var(--brand-strong);
 }
 
 .card:active {
   background: var(--bg-pressed);
 }
 
-.cardRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* hero 200 — 첫 스팟 사진. 사진이 없으면 border-default 바탕에 한 줄 */
+.hero {
+  display: grid;
+  flex: none;
+  place-items: center;
+  height: 200px;
+  background: var(--border-default);
+}
+
+.heroImg {
+  display: block;
   width: 100%;
+  height: 200px;
+  object-fit: cover;
 }
 
-.cardTitle {
-  flex: none;
-  font: var(--type-body-strong);
-  color: var(--text-primary);
-}
-
-.tag {
-  flex: none;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  background: var(--status-yes-bg);
+/* 「사진 없음 — TourAPI 사진 0장」 12 Medium 보조색. 자리그림 SVG 를 쓰지 않습니다(그림이 그렇다). */
+.noPhoto {
   font: var(--type-label);
-  color: var(--status-yes);
+  color: var(--text-secondary);
+}
+
+/* 9경 배지 — hero 오른쪽 아래에 걸침: 오른쪽 20 · 카드 위에서 183(hero 아래 경계 200 에 반쯤).
+   brand 알약 px14 py6 · 13/18 Bold 흰 글자 · 그림자는 그림 값 그대로 */
+.badge {
+  position: absolute;
+  top: 183px;
+  right: 20px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-strong);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+  color: var(--text-on-brand);
   white-space: nowrap;
 }
 
-.spacer {
-  flex: 1;
+/* content — 위 26 은 배지가 걸치는 자리(배지 아래 끝 213 = hero 200 + 13) */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 26px 20px 20px;
 }
 
-/* check(446:563): 28px 원. 안 고른 상태는 테두리만, 고른 상태는 brand 면 + 흰 체크 */
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* 제목 20/28 Bold. 「옥포대첩기념공원에서 조선해양문화관까지」는 띄어쓰기에서 두 줄 — 이름 가운데서 끊지 않습니다. */
+.cardTitle {
+  flex: 1;
+  min-width: 0;
+  font: var(--type-title);
+  color: var(--text-primary);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/* 32px 원. 안 고름: 흰 .92 바탕 + 1.5px 회색 원(그림 #98a2b3 — text/disabled 와 같은 값이라 그 토큰을 빌립니다.
+   글자가 아니라 테두리입니다). 고름: brand 면 + 흰 체크. */
 .check {
   display: grid;
   flex: none;
   place-items: center;
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--border-default);
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid var(--text-disabled);
   border-radius: var(--radius-pill);
-  background: var(--bg-page);
-  font: var(--type-caption);
-  color: transparent;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-on-brand);
 }
 
 .checkOn {
   border-color: var(--brand-strong);
   background: var(--brand-strong);
-  color: var(--text-on-brand);
 }
 
-/* order: 가로 나열. 5곳이면 카드 안에서 가로 스크롤
-
-   ⚠️ padding-top이 장식이 아닙니다. `overflow-x: auto`를 주면 브라우저가 `overflow-y`도
-   `auto`로 올립니다(visible과 auto는 한 요소에 못 섞입니다). 그러면 썸네일 밖 -5px로
-   나간 번호 배지가 이 요소의 padding box 경계에 걸려 **위쪽 6px이 잘립니다.**
-   패딩은 padding box 안쪽이라 잘리지 않으므로, 배지가 설 자리를 여기서 만들어 줍니다. */
-.order {
-  display: flex;
-  align-items: flex-start;
-  width: 100%;
-  padding-top: 7px;
-  overflow-x: auto;
-  scrollbar-width: none;
+/* 스팟 한 줄 14/20 Medium 보조색 — 5곳이면 자연 줄바꿈 */
+.chain {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--text-secondary);
+  word-break: keep-all;
 }
 
-.order::-webkit-scrollbar {
-  display: none;
-}
-
-.stop {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  width: 84px;
-}
-
-.thumb {
-  position: relative;
-  width: 60px;
-  height: 60px;
-}
-
-.thumbImg {
-  display: block;
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-pill);
-  object-fit: cover;
-}
-
-.num {
-  position: absolute;
-  top: -5px;
-  left: -5px;
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border: 2px solid var(--text-on-brand);
-  border-radius: var(--radius-pill);
-  background: var(--brand-strong);
-  font: var(--type-caption);
-  color: var(--text-on-brand);
-}
-
-.stopName {
-  max-width: 100%;
-  font: var(--type-caption);
-  color: var(--text-primary);
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 4·5곳은 카드 폭(318px)에 84px 칸이 안 들어갑니다.
-   가로 스크롤에 맡기면 뒤쪽 스팟이 가려지고, 그러면 5-01과 5-07처럼 4번째만 다른 코스를
-   구별할 수 없습니다. 그래서 칸과 썸네일을 줄이고 이름을 두 줄까지 풀어 **전부 보이게** 합니다.
-   3곳(Figma 기준 레이아웃)은 손대지 않습니다. */
-.order[data-count='4'] .stop {
-  width: 76px;
-}
-
-.order[data-count='5'] .stop {
-  width: 62px;
-}
-
-.order[data-count='4'] .thumb,
-.order[data-count='4'] .thumbImg {
-  width: 52px;
-  height: 52px;
-}
-
-.order[data-count='5'] .thumb,
-.order[data-count='5'] .thumbImg {
-  width: 46px;
-  height: 46px;
-}
-
-/* ⚠️ `word-break: keep-all`이었는데 그것 때문에 **두 줄이 되지 않았습니다.** keep-all은
-   한국어를 공백에서만 끊는데 `양지암조각공원`에는 공백이 없어, 62px 칸에 77px짜리 이름이
-   한 줄로 버티다 `양지암조…`로 잘렸습니다. anywhere로 끊고, balance로 줄 길이를 맞춰
-   `학동몽돌해/변`처럼 한 글자만 넘어가는 것을 막습니다. */
-.order[data-count='4'] .stopName,
-.order[data-count='5'] .stopName {
-  font: var(--type-label);
-  white-space: normal;
-  word-break: normal;
-  overflow-wrap: anywhere;
-  text-wrap: balance;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-/* 화살표가 빠지므로 칸 사이를 벌려 붙어 보이지 않게 합니다. */
-.order[data-count='4'],
-.order[data-count='5'] {
-  justify-content: space-between;
-}
-
-.arrow {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 33px;
-  height: 60px;
+/* 소개 16/24 Regular — 서버 intro(Claude 초안 · 사용자가 고칠 수 있음) */
+.intro {
   font: var(--type-body);
-  color: var(--text-disabled);
+  color: var(--text-primary);
+  word-break: keep-all;
 }
 
-/* 5-01과 5-07처럼 스팟이 거의 같은 코스가 있어, 카드에 시각을 적어 구별합니다. */
-.cardFoot {
-  font: var(--type-caption);
-  color: var(--text-secondary);
-}
-
-.caption {
-  margin: 0;
-  font: var(--type-label);
-  color: var(--text-secondary);
-  text-align: center;
-}
-
-.actions {
+.tags {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.actions > * {
-  flex: 1;
-  min-width: 0;
-}
-
-/* 코스가 없을 때 — 카드 자리를 대신하고 **이유**를 적습니다. */
-.empty {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  padding: var(--space-xl) var(--space-lg);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-card);
+/* 태그 — surface 면 · radius 8 · px12 py8 · 14/20 Medium */
+.tag {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
   background: var(--bg-surface);
-  text-align: center;
-}
-
-.emptyTitle {
-  margin: 0;
-  font: var(--type-body-strong);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
   color: var(--text-primary);
+  white-space: nowrap;
 }
 
-.emptyText {
-  margin: 0;
-  font: var(--type-caption);
-  color: var(--text-secondary);
-  word-break: keep-all;
+/* 하단 고정 바(585:483) — 고른 게 있을 때만 그립니다. 화면(Screen) 아래에 붙고 본문의 아래 104 가 그 자리를 비워 둡니다.
+   h80 = py16 + 버튼 48. 그림자는 그림 값 그대로(--elevation-sheet 보다 옅습니다). */
+.bar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  padding: 16px 20px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-page);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
 }

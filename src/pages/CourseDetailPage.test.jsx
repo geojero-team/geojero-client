@@ -197,6 +197,16 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     expect(screen.queryByText(/^ · 3곳/)).not.toBeInTheDocument()
   })
 
+  it('서버가 title 을 주면 제목은 그것 — 규칙 제목은 쓰지 않는다(코스 추천 카드와 같은 이름이어야 고른 카드를 알아본다)', async () => {
+    api.course.mockResolvedValue({ ...COURSE_301, title: '환승 없이 남부 9경 세 곳' })
+    renderCourse(101)
+
+    expect(await screen.findByRole('heading', { level: 1, name: '환승 없이 남부 9경 세 곳' })).toBeInTheDocument()
+    expect(screen.queryByText('학동몽돌해변에서 바람의언덕까지')).not.toBeInTheDocument()
+    // 체인 부제는 그대로 — 제목이 사람 말이 되면 가운데 스팟은 여기서만 보입니다
+    expect(screen.getByText((_, el) => el.tagName === 'P' && el.textContent === '학동몽돌해변 · 해금강 · 바람의언덕')).toBeInTheDocument()
+  })
+
   it('제목 규칙은 두 곳 이상일 때만 — 한 곳이면 「해금강에서 해금강까지」 대신 이름 그대로', async () => {
     api.course.mockResolvedValue({
       ...COURSE_301,
