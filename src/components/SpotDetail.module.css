@@ -189,6 +189,44 @@
   gap: var(--space-md);
 }
 
+/* 613:11 — 내리는 곳 줄은 줄 전체가 시간표로 가는 버튼입니다(「시간표 보기」 버튼을 대체, 2026-09-14 밤).
+   글 모양은 infoRow 와 같고 오른쪽 끝에 › 만 붙습니다. */
+.infoRowTap {
+  composes: infoRow;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.infoRowTap:active .infoMain {
+  color: var(--brand-strong);
+}
+
+/* 613:23 — › 18/22 secondary, 폭 6 */
+.infoChev {
+  flex-shrink: 0;
+  font: 400 18px/22px var(--font-sans);
+  color: var(--text-secondary);
+}
+
+/* 읽기 도구에만 들리는 「시간표 보기」 — 줄의 글만 읽으면 누르면 뭐가 되는지 알 수 없습니다. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* 아이콘 20px 이 22px 줄 안에 오도록 1px 내립니다. */
 .infoIcon {
   flex-shrink: 0;
@@ -200,6 +238,7 @@
 }
 
 .infoText {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Button from './Button'
 import VisitorPhotos from './VisitorPhotos'
 import { t } from '../i18n'
 import { loadSpotDetail } from '../lib/spots'
 import { courseImage, onImageError } from '../lib/courseImage'
+import { ICON_PATHS } from '../lib/spotIcons'
 import { useDragScroll } from '../lib/useDragScroll'
 import styles from './SpotDetail.module.css'
 
@@ -82,6 +82,18 @@ function BusIcon() {
 }
 
 /**
+ * 정류장이 없는 외도보타니아의 선착장 줄 — 그림에 없어 정한 것. 분류 칩·지도 핀의 유람선 아이콘(lib/spotIcons CRUISE, Figma SpotMarker)을
+ * 같은 20px 칸에 넣습니다. 그 패스는 28 칸의 6~22 안에 그려져 있어 그 영역만 잘라 씁니다.
+ */
+function FerryIcon() {
+  return (
+    <svg className={styles.infoIcon} width="20" height="20" viewBox="6 6 16 16" fill="none" aria-hidden="true">
+      <path d={ICON_PATHS.CRUISE} stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/**
  * @param poiId   서버 poi_id. 주소의 :spotId가 곧 이 값입니다
  * @param seed    목록에서 이미 아는 것(이름·권역·분류). 있으면 사진을 기다리는 동안에도
  *                제목이 먼저 뜹니다 — 시트는 누른 즉시 이름이 보여야 합니다
@@ -148,6 +160,22 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, uploadIn
   // 장수 칩·인디케이터는 두 장 이상일 때만 띄웁니다 — 없는 장수를 적지 않습니다.
   // 출처 칩은 실제 TourAPI 응답일 때만 답니다(자체 소개문 폴백이면 출처가 다릅니다).
   const isTerminal = spot.kind === 'TERMINAL'
+  /* 시간표로 가는 줄(613:11) — 내리는 곳 / 정류장이 없는 외도보타니아는 배를 타는 선착장 넷 / 둘 다 모르면(옛 응답) 「시간표 보기」만 남깁니다.
+     고현터미널은 줄이 없습니다(2026-09-13 사용자 결정 — 터미널에서 가는 버스는 각 스팟 시간표의 「고현터미널 → 스팟」이 말합니다). */
+  const docks = spot.ferryDocks ?? []
+  const stopRow = isTerminal
+    ? null
+    : spot.alightLabel
+      ? {
+          icon: <BusIcon />,
+          main: t('spotDetail.alight', { label: spot.alightLabel }),
+          sub: spot.boardStopDiffers && spot.timetableStop
+            ? t('spotDetail.timetableBasis', { stop: spot.timetableStop })
+            : null,
+        }
+      : docks.length > 0
+        ? { icon: <FerryIcon />, main: t('spotDetail.docks', { docks: docks.join(' · ') }), sub: null }
+        : { icon: <BusIcon />, main: t('spotDetail.openTimetable'), sub: null }
   const photos = spot.photos ?? []
   const hasPhotos = photos.length > 0
   const fromTourApi = spot.overviewSource === 'TourAPI'
@@ -240,10 +268,11 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, uploadIn
           </p>
         </div>
 
-        {/* 주소 · 내리는 곳(607:4, 2026-09-14 밤). 주소는 TourAPI addr1 런타임 값 그대로, 내리는 곳은 V18 alight_label.
+        {/* 주소 · 내리는 곳(613:3, 2026-09-14 밤). 주소는 TourAPI addr1 런타임 값 그대로, 내리는 곳은 V18 alight_label.
             둘째 줄은 내리는 정류장과 시간표를 읽는 정류장이 다를 때만(씨월드 — 신촌에서 내리고 시각은 지세포).
+            **내리는 곳 줄은 줄 전체가 시간표로 가는 버튼**(613:11, 오른쪽 ›)이고 「시간표 보기」 버튼은 없어졌습니다.
             값이 없으면 그 줄을 그리지 않습니다 — 아이콘만 남는 빈 줄이 곧 '이유 없는 빈칸'입니다. */}
-        {(spot.address || spot.alightLabel) && (
+        {(spot.address || stopRow) && (
           <div className={styles.info} data-info="">
             {spot.address && (
               <div className={styles.infoRow}>
@@ -251,28 +280,28 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, uploadIn
                 <p className={styles.infoMain}>{spot.address}</p>
               </div>
             )}
-            {spot.alightLabel && (
-              <div className={styles.infoRow}>
-                <BusIcon />
-                <div className={styles.infoText}>
-                  <p className={styles.infoMain}>{t('spotDetail.alight', { label: spot.alightLabel })}</p>
-                  {spot.boardStopDiffers && spot.timetableStop && (
-                    <p className={styles.infoSub}>
-                      {t('spotDetail.timetableBasis', { stop: spot.timetableStop })}
-                    </p>
+            {stopRow && (
+              <button
+                type="button"
+                className={styles.infoRowTap}
+                onClick={openTimetable}
+                data-api="GET /api/pois/{id}/departures"
+              >
+                {stopRow.icon}
+                <span className={styles.infoText}>
+                  <span className={styles.infoMain}>{stopRow.main}</span>
+                  {stopRow.sub && <span className={styles.infoSub}>{stopRow.sub}</span>}
+                  {/* 읽기 도구용 — 줄의 글만으로는 누르면 시간표가 열린다는 걸 알 수 없습니다. */}
+                  {stopRow.main !== t('spotDetail.openTimetable') && (
+                    <span className={styles.srOnly}>{t('spotDetail.openTimetable')}</span>
                   )}
-                </div>
-              </div>
+                </span>
+                <span className={styles.infoChev} aria-hidden="true">
+                  ›
+                </span>
+              </button>
             )}
           </div>
-        )}
-
-        {/* 고현터미널은 스팟처럼 펼치지만 버스 시간표 버튼이 없습니다(2026-09-13 사용자 결정) —
-            터미널에서 가는 버스는 각 스팟 시간표의 「고현터미널 → 스팟」이 말합니다. */}
-        {!isTerminal && (
-          <Button onClick={openTimetable} data-api="GET /api/pois/{id}/departures">
-            {t('spotDetail.openTimetable')}
-          </Button>
         )}
 
         {/* 소개는 TourAPI overview 원문입니다. 수정·요약하지 않습니다(저작권).

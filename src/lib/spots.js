@@ -112,11 +112,12 @@ export async function loadSpotDetail(poiId) {
     overviewSource: detail.source ?? null,
     // 대표 사진이 첫 장이고 저작권(Type3)은 서버가 이미 걸렀습니다.
     photos: images.length > 0 ? images : detail.imageUrl ? [detail.imageUrl] : [],
-    // 주소 · 내리는 곳(Figma 607:4). 주소는 TourAPI addr1 런타임 값이라 폴백이면 없고, 내리는 곳은 V18 하차 이름입니다.
-    // 없으면 null — 화면이 그 줄을 그리지 않습니다.
+    // 주소 · 내리는 곳(Figma 613:3). 주소는 TourAPI addr1 런타임 값이라 폴백이면 없고, 내리는 곳은 V18 하차 이름입니다.
+    // 하차 이름 셋은 목록(/api/pois)에도 같은 값이 있어 상세 호출이 실패해도 목록 값으로 그립니다 — 그 줄이 시간표로 가는 길입니다.
+    // 없으면 null — 화면이 그 줄을 그리지 않습니다. ferryDocks(외도보타니아의 선착장 넷)는 목록에서 옵니다(...base).
     address: detail.address ?? null,
-    alightLabel: res?.alightLabel ?? null,
-    timetableStop: res?.timetableStop ?? null,
-    boardStopDiffers: Boolean(res?.boardStopDiffers),
+    alightLabel: res?.alightLabel ?? base?.alightLabel ?? null,
+    timetableStop: res?.timetableStop ?? base?.timetableStop ?? null,
+    boardStopDiffers: Boolean(res?.boardStopDiffers ?? base?.boardStopDiffers),
   }
 }
