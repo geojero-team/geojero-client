@@ -241,7 +241,8 @@ export default {
   'boarding.summary': '{where} · {routes}',
   'boarding.routeOne': '{route}번',
   'boarding.routeMore': '{first}번 외 {count}',
-  'boarding.sameStop': '노선 {count}개가 같은 정류장',
+  // 541:436(2026-09-14 저녁 수정) — 펼친 카드 둘째 줄. 노선을 다 적는다(「노선 3개가 같은 정류장」은 옛 그림). {routes}는 「55·67-1·67」.
+  'boarding.allHere': '{routes}번 모두 여기서 타요',
   // 그림(정류장 한 곳)에 없는 경우 — 한 이름으로 뭉개지 않습니다.
   'boarding.stopsCount': '정류장 {count}곳',
   'boarding.perRoute': '노선마다 타는 정류장이 달라요',
@@ -249,7 +250,8 @@ export default {
   'boarding.directions': '카카오맵으로 길찾기 ↗',
   'boarding.directionsA11y': '{name} 정류장 카카오맵 길찾기 — 새 창에서 열려요',
   // 지도 마커 아래 태그(530:324 「55」 · 541:451 「55 +2」)
-  'boarding.pinMore': '{first} +{count}',
+  // 541:451(2026-09-14 저녁 수정) — 지도 마커 태그. 접힌 줄의 routeMore 와 같은 말(「55번 외 2」). 노선 하나면 번호만(「55」, 530:282).
+  'boarding.pinMore': '{first}번 외 {count}',
   'boarding.opposite': '{route}번 {time} 버스는 길 건너편 정류장에서 타요.',
   'boarding.otherStop': '{route}번 {time} 버스는 {name} 정류장(약 {dist} 떨어진 곳)에서 타요.',
   'boarding.split': '{route}번은 편마다 타는 쪽이 달라요 — {list}',

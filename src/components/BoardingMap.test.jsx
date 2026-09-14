@@ -206,12 +206,14 @@ describe('BoardingMap — 펼친 카드(530:282 · 541:408)', () => {
     expect(await screen.findByText('지도를 불러오지 못했어요')).toBeInTheDocument()
   })
 
-  it('정류장 하나에 노선 여럿: 「노선 5개가 같은 정류장」 · 목록 줄(이름 · 약 거리 · 노선 뱃지) · 버튼 하나', async () => {
+  it('정류장 하나에 노선 여럿: 「33·32-1·33-2·33-1·32번 모두 여기서 타요」 · 목록 줄(이름 · 약 거리 · 노선 뱃지) · 버튼 하나', async () => {
     const user = userEvent.setup()
     render(<BoardingMap boarding={MAEMI} />)
 
     await expand(user)
-    expect(toggle()).toHaveTextContent('노선 5개가 같은 정류장')
+    // 541:436(2026-09-14 저녁 수정) — 노선 번호를 다 적는다. 「노선 5개가 같은 정류장」은 옛 그림.
+    expect(toggle()).toHaveTextContent('33·32-1·33-2·33-1·32번 모두 여기서 타요')
+    expect(toggle()).not.toHaveTextContent('같은 정류장')
     const row = screen.getByRole('listitem')
     expect(within(row).getByText('대금교차로 정류장')).toBeInTheDocument()
     // 어디서 잰 거리인지 — 접힌 카드와 같은 말투(2026-09-14 사용자 결정: 「약 210m」만으로는 기준을 모른다)
@@ -281,7 +283,7 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     await expand(user)
 
     await waitFor(() => expect(overlays).toHaveLength(3))
-    expect(overlays.map((o) => o.options.content.textContent)).toEqual(['33 +4', '32 20:37', '매미성'])
+    expect(overlays.map((o) => o.options.content.textContent)).toEqual(['33번 외 4', '32 20:37', '매미성'])
     expect(overlays[0].options.content.querySelector('svg')).not.toBeNull()
     expect(overlays[0].options.yAnchor).toBeCloseTo(ICON_CENTER)
     expect(map.setBounds).toHaveBeenCalledTimes(1)
@@ -358,8 +360,8 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     const at = (text) => overlays.find((o) => o.options.content.textContent === text).options
     const stays = (text) => at(text).xAnchor === 0.5 && Math.abs(at(text).yAnchor - ICON_CENTER) < 1e-6
     expect(stays('4000')).toBe(true)
-    expect(stays('63 +1')).toBe(false)
-    expect(stays('22 +1')).toBe(true)
+    expect(stays('63번 외 1')).toBe(false)
+    expect(stays('22번 외 1')).toBe(true)
   })
 
   it('세로로 40px 떨어진 마커도 겹침으로 본다 — 아이콘 + 태그가 51px라 알약(24px) 기준이면 포개진다', async () => {
@@ -395,7 +397,7 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     await expand(user)
 
     await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
-    expect(overlays.map((o) => o.options.content.textContent)).toEqual(['55 +1'])
+    expect(overlays.map((o) => o.options.content.textContent)).toEqual(['55번 외 1'])
     expect(map.setLevel).not.toHaveBeenCalled()
   })
 
@@ -475,9 +477,9 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
     const at = (text) => overlays.find((o) => o.options.content.textContent === text).options
     expect(at('4000').xAnchor).toBe(0.5)
-    expect(at('23-1 +5').xAnchor).toBe(0.5)
-    expect(at('63 +1').yAnchor).toBeCloseTo(ICON_CENTER) // 높이는 그대로
-    expect(at('63 +1').xAnchor).not.toBe(0.5) // 옆으로
+    expect(at('23-1번 외 5').xAnchor).toBe(0.5)
+    expect(at('63번 외 1').yAnchor).toBeCloseTo(ICON_CENTER) // 높이는 그대로
+    expect(at('63번 외 1').xAnchor).not.toBe(0.5) // 옆으로
   })
 
   it('비킨 마커가 지도 칸(180px) 밖으로 나가면 반대쪽으로 — 매미성 대금교차로가 지도 아래쪽에 있을 때', async () => {
@@ -557,7 +559,7 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
       await expand(user)
 
       await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
-      const sinchon = overlays.find((o) => o.options.content.textContent === '23-1 +5')
+      const sinchon = overlays.find((o) => o.options.content.textContent === '23-1번 외 5')
       expect(sinchon.options.yAnchor).toBeCloseTo(ICON_CENTER)
       expect(sinchon.options.xAnchor).toBe(0.5)
     } finally {

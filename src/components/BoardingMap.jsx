@@ -55,8 +55,8 @@ const anchorOf = (slot, height, center) =>
   slot === 'below' ? -BELOW_TOP / height : slot === 'above' ? (ABOVE_BOTTOM + height) / height : center / height
 /** SDK가 투영을 주지 않을 때의 거리 기준. 길 건너편 정류장은 대표 핀에서 6~8m입니다(매미성·김영삼 생가 실측). */
 const STACK_M = 25
-/** 태그 폭 어림(11px Bold 한 글자 ≈ 6.5px + 좌우 여백·테두리 16px) — 운영 실측 「55」 29 · 「4000」 42 · 「32 20:37」 62px. */
-const tagWidth = (text) => Math.max(28, 16 + text.length * 6.5)
+/** 태그 폭 어림(11px Bold 숫자·기호 ≈ 6.5px · 한글 ≈ 11px + 좌우 여백·테두리 16px) — 운영 실측 「55」 29 · 「4000」 42 · 「32 20:37」 62px. 「55번 외 2」(541:451)에 한글이 들어왔다. */
+const tagWidth = (text) => Math.max(28, 16 + [...text].reduce((w, ch) => w + (/[가-힣]/.test(ch) ? 11 : 6.5), 0))
 /** 출발 곳 이름표 폭 어림(11px Medium 한글 ≈ 11px) — 점 오른쪽 13px에서 시작합니다. */
 const fromLabelWidth = (text) => 13 + text.length * 11
 /**
@@ -344,7 +344,7 @@ export default function BoardingMap({ boarding, route = null }) {
     ? single.split || (open && single.badges.length === 1)
       ? where(single.stop)
       : open
-        ? t('boarding.sameStop', { count: single.badges.length })
+        ? t('boarding.allHere', { routes: single.badges.join('·') })
         : t('boarding.summary', { where: where(single.stop), routes: routesText(single.badges) })
     : places.every((p) => p.split)
       ? t('boarding.perTrip')

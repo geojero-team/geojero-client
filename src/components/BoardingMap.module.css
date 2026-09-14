@@ -60,6 +60,7 @@
   line-height: 18px;
   color: var(--text-secondary);
   word-break: keep-all;
+  overflow-wrap: anywhere; /* 「23-1·23·22·…번 모두 여기서 타요」처럼 띄어쓰기 없는 노선 사슬이 한 줄을 넘으면 거기서라도 끊습니다(양지암 고현발 14노선) */
 }
 
 /* 꺾쇠는 누르는 곳이라는 표시일 뿐이라 흐린 색(530:242 · 530:312) */
