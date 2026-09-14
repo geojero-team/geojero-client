@@ -1,0 +1,194 @@
+/* 「거제9경이란?」 시트 — Figma 프레임 없음(2026-09-14). 로그인 시트(240:209)의 틀을 그대로 씁니다:
+   스크림 값 · z 순서 · 손잡이 · 안쪽 여백 · 모서리. 새로 정한 건 주황 범례와 목록뿐입니다. */
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  padding: 0;
+  border: 0;
+  background: rgba(16, 24, 40, 0.4); /* 로그인 시트와 같은 scrim(02-1 274:570) */
+  animation: fadeIn 160ms ease-out;
+}
+
+/* 목록이 아홉 줄이라 작은 폰에서는 넘칠 수 있습니다. 위에 32px 을 남기고 시트 안에서 스크롤합니다 —
+   남긴 틈이 "뒤에 지도가 있다"를 말해줍니다. */
+.sheet {
+  position: absolute;
+  z-index: 7;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-height: calc(100% - var(--space-2xl));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-sm) 20px calc(env(safe-area-inset-bottom, 0px) + var(--space-xl));
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--bg-page);
+  box-shadow: var(--elevation-sheet);
+  transition: transform 160ms ease;
+  animation: slideUp 200ms ease-out;
+}
+
+.handleRow {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 24px;
+  margin: -10px 0;
+  cursor: grab;
+}
+
+.handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-default);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-title);
+  color: var(--text-primary);
+}
+
+/* 제목은 열릴 때 포커스를 받지만 눌러서 쓰는 요소가 아니라 테두리를 그리지 않습니다. */
+.title:focus {
+  outline: none;
+}
+
+/* caption(14px)인 이유: 16px 이면 문장마다 두 줄로 넘어가 말 중간에서 끊깁니다(ko.js 주석). */
+.lead {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+/* 범례 — 연한 주황 면. 마커 모양의 원 + 두 문장. */
+.legend {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: var(--space-md);
+  border-radius: var(--radius-card);
+  background: var(--nine-scenic-tint);
+}
+
+/* 지도의 9경 마커(MapView .pinNineScenic)와 같은 모양: 흰 면 + 2px 주황 테두리. 첫 줄 가운데에 맞춥니다. */
+.legendRing {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border: 2px solid var(--nine-scenic);
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+}
+
+.legendText {
+  display: flex;
+  flex-direction: column;
+  font: var(--type-caption);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border-default);
+}
+
+/* 한 줄 — 누르는 줄은 44px 이상(손가락 기준). 눌리지 않는 줄도 같은 높이라 목록이 고르게 읽힙니다. */
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-sm) var(--space-xs);
+  border: 0;
+  border-bottom: 1px solid var(--border-default);
+  background: transparent;
+  font: var(--type-body);
+  color: var(--text-primary);
+  text-align: left;
+}
+
+/* 줄 전체가 스팟 상세로 가는 링크입니다(사용자 요청 — 하이퍼링크 '방식'). 겉모습은 목록 그대로라
+   링크 기본 밑줄을 지웁니다. 누를 수 있다는 건 줄 끝 화살표(.chevron)가 말합니다. */
+.itemLink {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.itemLink:active {
+  background: var(--bg-pressed);
+}
+
+.rank {
+  flex: none;
+  width: 28px;
+  font: var(--type-label);
+  font-weight: 700;
+  color: var(--nine-scenic-text);
+}
+
+.name {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  word-break: keep-all;
+}
+
+.mapName {
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.chevron {
+  flex: none;
+  color: var(--text-secondary);
+}
+
+.offMap {
+  flex: none;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.itemOff .name {
+  color: var(--text-secondary);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .backdrop {
+    animation: none;
+  }
+}

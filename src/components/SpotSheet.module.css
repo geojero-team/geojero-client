@@ -1,14 +1,25 @@
 /* 스팟 시트 — 지도에서 핀을 누르면 아래에서 올라옵니다.
-   높이는 JS가 정합니다(peek 188px / full 100% / 끄는 중에는 px). 여기서는 모양만 잡습니다.
+   시트는 늘 틀(.clip)을 꽉 채우고, 보이는 높이(--sheet-visible — JS 가 정합니다: peek 244px ·
+   터미널 96px · full 100% · 끄는 중에는 px)만큼만 드러나게 아래로 밀어 둡니다.
 
    부모가 `position: relative`여야 합니다. 부모 높이가 곧 full 높이입니다. */
 
+/* 틀 — 부모(지도 영역)를 덮지만 눌리지 않습니다. 아래로 밀린 시트가 부모 밖(탭바 쪽)으로
+   삐져나오지 않게 여기서 자릅니다. */
+.clip {
+  position: absolute;
+  inset: 0;
+  z-index: 3; /* 카카오 지도가 자기 z-index를 씁니다 */
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* height 대신 transform 으로 올리고 내립니다(2026-09-14). height 를 애니메이션하면 매 프레임
+   레이아웃을 다시 계산해 폰에서 버벅입니다. translateY 의 100% 는 시트 자신의 높이(= 틀 높이)라
+   JS 가 부모 높이를 잴 필요가 없습니다. full 이면 100% - 100% = 0 입니다. */
 .root {
   position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 3; /* 카카오 지도가 자기 z-index를 씁니다 */
+  inset: 0;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -17,7 +28,15 @@
   /* 지도 위에 떠 있다는 것을 그림자로만 말합니다 — 테두리를 두르면 지도가 갇혀 보입니다. */
   box-shadow: 0 -2px 16px rgb(0 0 0 / 12%);
   overflow: hidden;
-  transition: height 0.22s ease;
+  pointer-events: auto;
+  transform: translateY(calc(100% - var(--sheet-visible, 0px)));
+  transition: transform 0.22s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    transition: none;
+  }
 }
 
 /* 끄는 동안에는 전환을 끕니다. 켜두면 시트가 손을 늦게 따라옵니다. */
@@ -99,6 +118,20 @@
 .category {
   font: var(--type-caption);
   color: var(--text-secondary);
+}
+
+/* 거제9경 배지 — 분류 줄(20px) 안에 16px 로 들어가 peek 높이(spotSheetHeight.js)를 바꾸지 않습니다.
+   글씨는 흰 바탕 위 주황 글씨용 토큰(nine-scenic-text, 4.5:1 이상)입니다. */
+.nineBadge {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--nine-scenic-tint);
+  font: var(--type-label);
+  font-weight: 700;
+  color: var(--nine-scenic-text);
+  vertical-align: 1px;
 }
 
 /* 사진 — 이름 아래 한 장. 「자세히 보기」 버튼이 있던 자리입니다.

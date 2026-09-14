@@ -159,7 +159,7 @@ export default function MapView({
     pinsRef.current = spots.map((spot) => {
       const order = orderBySpotId?.get(spot.spotId) ?? null
       const isStop = order != null
-      const { element, label, badge, isTerminal } = createPinElement(spot, { order })
+      const { element, label, badge, isTerminal, isNineScenic } = createPinElement(spot, { order })
       const position = new kakao.maps.LatLng(spot.lat, spot.lng)
 
       element.addEventListener('click', (event) => {
@@ -185,7 +185,7 @@ export default function MapView({
         clickable: true,
       })
 
-      return { spotId: spot.spotId, isStop, isTerminal, overlay, element, label, badge }
+      return { spotId: spot.spotId, isStop, isTerminal, isNineScenic, overlay, element, label, badge }
     })
 
     // 화면 맞추기는 아래 전용 이펙트가 합니다 — 시트 높이가 정해진 뒤에 맞춰야 해서.

@@ -27,10 +27,12 @@
 /* 지도 위에 떠 있는 '코스 추천 받기'. 탭바 바로 위에 붙습니다.
    z-index 가 필요합니다 — 카카오 지도가 타일·오버레이에 자기 z-index 를 쓰기 때문에
    빼면 버튼이 지도에 덮여 **안 보입니다**(2026-09-12 실제로 그랬습니다).
-   지운 MapPage 의 .entryTag 도 같은 이유로 z-index: 2 였습니다. */
+   2 → 4(2026-09-14): MapView 의 로딩·오류 화면(.overlayState)이 z 3 이라, 지도가 안 뜨면 이 버튼까지
+   덮였습니다. 위 HomePage.jsx 주석대로 지도가 비어도 코스 추천은 눌려야 합니다. 스팟 시트(z 3)가
+   올라오면 이 버튼은 감추므로 시트 위에 뜨는 일은 없습니다. */
 .cta {
   position: absolute;
-  z-index: 2;
+  z-index: 4;
   right: 20px;
   bottom: 16px;
   left: 20px;
@@ -42,4 +44,33 @@
 .cta .ctaButton {
   border-radius: var(--radius-md);
   box-shadow: var(--elevation-pin);
+}
+
+/* 「거제9경이란?」 — 지도 왼쪽 위(2026-09-14 사용자 결정, Figma 프레임 없음).
+   top·높이는 MapView 확대·축소 묶음(.controls: top = topReserved 16 + 16, 버튼 40px)과 맞춥니다.
+   left 는 그 묶음의 right(space-md)와 대칭입니다. 지도 첫 화면은 위쪽을 76px 비워 두고
+   섬을 맞추므로(MapView FIT_TOP_EXTRA) 이 버튼이 처음부터 핀을 덮지는 않습니다.
+   z-index 는 .cta 와 같은 값·같은 이유(카카오 지도 · 로딩·오류 화면 위)로 4 입니다. */
+.nineButton {
+  position: absolute;
+  z-index: 4;
+  top: 32px;
+  left: var(--space-md);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px 0 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--nine-scenic);
+  color: var(--text-on-brand);
+  font: var(--type-caption);
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: var(--elevation-chip);
+}
+
+.nineButton:active {
+  filter: brightness(0.94);
 }

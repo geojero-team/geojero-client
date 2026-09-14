@@ -84,18 +84,23 @@ const LABEL_BELOW_GAP = 2
 export function createPinElement(spot, { order }) {
   const isStop = order != null
   const isTerminal = spot.kind === 'TERMINAL'
+  // 거제9경 — 홈만 spot.nineScenic 을 붙입니다(2026-09-14). 코스 정류소는 번호 마커가 우선입니다.
+  const isNineScenic = spot.nineScenic != null && !isStop && !isTerminal
 
   const element = document.createElement('button')
   element.type = 'button'
   element.className = [
     styles.pin,
     isTerminal ? styles.pinTerminal : isStop ? styles.pinStop : styles.pinSpot,
+    isNineScenic && styles.pinNineScenic,
   ]
     .filter(Boolean)
     .join(' ')
 
   // 겹쳤을 때 "외 2곳"을 덧붙여야 해서 원본을 따로 들고 있습니다.
-  element.dataset.label = `${spot.shortName ?? spot.name}`
+  // 9경은 테두리 색으로만 말하므로, 화면 읽기 프로그램에는 이름 뒤에 글로 붙입니다.
+  const name = spot.shortName ?? spot.name
+  element.dataset.label = isNineScenic ? `${name}, ${t('map.nineScenicSuffix')}` : `${name}`
   element.setAttribute('aria-label', element.dataset.label)
 
   const dot = document.createElement('span')
@@ -128,7 +133,7 @@ export function createPinElement(spot, { order }) {
   badge.hidden = true
 
   element.append(dot, label, badge)
-  return { element, label, badge, isTerminal }
+  return { element, label, badge, isTerminal, isNineScenic }
 }
 
 /**
@@ -164,12 +169,14 @@ export function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
     pin.overlay.setZIndex(isSelected ? 9999 : 100 + Math.round(point.y))
   })
 
-  // 2) 우선순위 — 선택한 스팟, 코스 정류소, 고현터미널, 나머지 순.
+  // 2) 우선순위 — 선택한 스팟, 코스 정류소, 고현터미널, 거제9경, 나머지 순.
   //    겹친 무리의 대표와 이름표 자리를 둘 다 이 순서로 정합니다.
   //    터미널은 모든 코스의 출발 지점이라 스팟에 묻히면 안 됩니다 — 섬 전체 배율에서 포로수용소와
   //    포개져 「포로수용소 외 1곳」 뒤로 숨던 것을 운영에서 잡았습니다(2026-09-13).
+  //    9경은 홈에서 주황으로 짚어 주는 곳이라, 겹치면 9경이 대표로 남아야 주황이 보입니다
+  //    (바람의언덕이 도장포유람선 뒤로 숨지 않게 — 2026-09-14).
   const rank = (pin) =>
-    pin.spotId === selectedId ? 0 : pin.isStop ? 1 : pin.isTerminal ? 2 : 3
+    pin.spotId === selectedId ? 0 : pin.isStop ? 1 : pin.isTerminal ? 2 : pin.isNineScenic ? 3 : 4
   const ordered = [...pins].sort((a, b) => rank(a) - rank(b))
 
   /* 3) 포개진 마커 정리.

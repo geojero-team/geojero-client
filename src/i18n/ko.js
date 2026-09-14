@@ -18,6 +18,25 @@ export default {
   // 홈 — 02-2에서 조건·판정 카드가 빠지고 이 버튼 하나가 남았습니다(446:453).
   'home.getCourses': '코스 추천 받기',
 
+  /* ── 거제9경 — 홈 왼쪽 위 버튼 · 설명 시트 · 스팟 시트 배지 (2026-09-14 사용자 결정) ──
+     9경 이름 목록은 여기 두지 않습니다. 거제시가 정한 데이터라 lib/nineScenic.js 에 있습니다.
+     설명은 문장마다 키를 나눕니다 — 시트가 문장마다 줄을 바꿉니다.
+     한 문장이 390 화면에서 **한 줄**에 들어가게 줄였습니다. 두 줄로 넘어가면 "아홉 / 곳이에요"처럼
+     말 중간에서 끊겨 문장마다 줄을 바꾼 의미가 없어집니다. */
+  'nineScenic.title': '거제9경이란?',
+  'nineScenic.lead1': '2024년 거제시가 새로 뽑은 대표 경관 아홉 곳이에요.',
+  'nineScenic.lead2': '시민 여론조사와 전문가 위원 평가를 함께 반영했어요.',
+  'nineScenic.lead3': '현지인이 인정한 곳이라 자신 있게 추천해요.',
+  'nineScenic.legend1': '지도의 주황색 테두리 스팟이 거제9경이에요.',
+  'nineScenic.legend2': '누르면 자세한 정보를 볼 수 있어요.',
+  'nineScenic.rank': '{rank}경',
+  // 9경 이름과 스팟 이름이 다를 때(정글돔 → 상세 제목은 거제식물원) 이름 아래 한 줄.
+  'nineScenic.mapName': '{name} 안',
+  'nineScenic.offMap': '지도에 없음',
+  'nineScenic.linkAria': '{rank}경 {name} 상세 보기',
+  'nineScenic.badge': '거제9경 · {rank}경',
+  'nineScenic.confirm': '확인',
+
   'nav.aria': '주요 화면',
   'nav.home': '홈',
   'nav.spots': '스팟',
@@ -331,6 +350,7 @@ export default {
   'map.errorSdk':
     'SDK를 불러오지 못했습니다. 카카오 개발자 콘솔에서 ① 제품 설정 > 카카오맵이 ON인지, ② 플랫폼 > Web에 현재 도메인이 등록됐는지, ③ 앱키가 JavaScript 키가 맞는지 순서로 확인하세요.',
   'map.clusterLabel': '{name} 외 {count}곳 — 눌러서 확대',
+  'map.nineScenicSuffix': '거제9경',
 
   /* ── 코스 스트립 (285:251) ────────────────────────────────────────────── */
 

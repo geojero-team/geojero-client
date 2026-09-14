@@ -1,14 +1,16 @@
-import { Route } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { BadgeCheck, Route } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import Button from '../components/Button'
 import MapView from '../components/MapView'
+import NineScenicSheet from '../components/NineScenicSheet'
 import Screen from '../components/Screen'
 import SpotSheet from '../components/SpotSheet'
 import { peekHeightOf } from '../components/spotSheetHeight'
 import { t } from '../i18n'
 import { api } from '../lib/api'
+import { nineScenicRankOf } from '../lib/nineScenic'
 import styles from './HomePage.module.css'
 
 /**
@@ -23,12 +25,22 @@ import styles from './HomePage.module.css'
  *
  * 지도에 핀을 다 찍는 이유: 기준문서 §1이 "관광지는 섬 전역에 분산돼 있다"이고
  * §8이 "관광지가 남부에 몰려 있다"를 금지합니다. 첫 화면이 그 사실을 보여줍니다.
+ *
+ * 2026-09-14: 거제9경을 지도에 주황 테두리로 표시하고, 왼쪽 위 「거제9경이란?」 버튼이 그 뜻을
+ * 설명하는 시트를 엽니다(사용자 결정, Figma 프레임 없음).
  */
 export default function HomePage() {
   const navigate = useNavigate()
   const [result, setResult] = useState({ status: 'loading', spots: [], error: '' })
   // 핀을 누른 스팟. 화면을 옮기지 않고 시트만 올립니다(2026-09-13).
   const [picked, setPicked] = useState(null)
+  /* 9경 시트가 열려 있는지는 **주소**(`?nine=1`)에 둡니다. 시트의 9경 이름은 스팟 상세로 가는 링크라,
+     상세에서 뒤로 오면 홈이 새로 그려집니다 — 상태를 useState 에 두면 시트가 닫힌 채로 돌아와
+     다음 9경을 보려면 버튼부터 다시 눌러야 합니다. 열고 닫을 때는 replace 라 기록이 쌓이지 않습니다. */
+  const [searchParams, setSearchParams] = useSearchParams()
+  const nineOpen = searchParams.get('nine') === '1'
+  // 시트를 닫으면 연 버튼으로 포커스를 돌려줍니다 — 키보드로 쓰는 사람이 제자리를 잃지 않게.
+  const nineButtonRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
@@ -40,9 +52,15 @@ export default function HomePage() {
         // 고현터미널(kind TERMINAL, theme 없음)은 모든 코스의 출발 지점이라 함께 찍습니다 —
         // Figma 02-2 `501:213`, 좌표는 서버 V22(TAGO 정류소 '터미널(일반)').
         // MapView는 `spotId`로 핀을 식별하므로 poiId를 그 자리에 넣습니다.
+        // nineScenic(몇 경)은 홈에서만 붙입니다 — 코스 지도는 코스가 주제라 주황 테두리를 쓰지 않습니다.
         const spots = (pois ?? [])
           .filter((poi) => (poi.theme || poi.kind === 'TERMINAL') && poi.lat != null && poi.lng != null)
-          .map((poi) => ({ ...poi, spotId: poi.poiId, thumbnailUrl: poi.imageUrl }))
+          .map((poi) => ({
+            ...poi,
+            spotId: poi.poiId,
+            thumbnailUrl: poi.imageUrl,
+            nineScenic: nineScenicRankOf(poi.poiId),
+          }))
         setResult({ status: 'ready', spots, error: '' })
       })
       .catch((error) => {
@@ -56,6 +74,22 @@ export default function HomePage() {
   }, [])
 
   const spots = useMemo(() => result.spots, [result.spots])
+
+  const setNine = (on) =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (on) next.set('nine', '1')
+        else next.delete('nine')
+        return next
+      },
+      { replace: true },
+    )
+
+  const closeNine = () => {
+    setNine(false)
+    nineButtonRef.current?.focus()
+  }
 
   return (
     <Screen data-api="GET /api/pois">
@@ -80,6 +114,23 @@ export default function HomePage() {
           />
         </div>
 
+        {/* 「거제9경이란?」 — 왼쪽 위. 오른쪽 위 확대·축소와 같은 높이·같은 top 이라 지도 위 컨트롤이
+            한 줄로 읽힙니다. 주황은 지도의 9경 테두리와 같은 색이라 버튼 자체가 범례입니다.
+            스팟 시트가 올라오면 '코스 추천 받기'와 같은 이유로 감춥니다 — 지금 할 일은 이 스팟을 보는 것이고,
+            시트를 끝까지 올리면 시트(z 3)보다 위(z 4)라 상세 위에 떠 버립니다. */}
+        {!picked && (
+          <button
+            ref={nineButtonRef}
+            type="button"
+            className={styles.nineButton}
+            onClick={() => setNine(true)}
+            aria-haspopup="dialog"
+          >
+            <BadgeCheck size={16} strokeWidth={2.25} aria-hidden="true" />
+            {t('nineScenic.title')}
+          </button>
+        )}
+
         {/* 버튼은 지도 위에 떠 있습니다(프레임 이름의 "버튼은 지도 위에 떠 있음").
             시트가 올라오면 감춥니다 — 시트가 덮을 자리이고, 지금 할 일은 이 스팟을 보는 것입니다. */}
         {!picked && (
@@ -103,6 +154,9 @@ export default function HomePage() {
       </div>
 
       <BottomNav />
+
+      {/* 탭바까지 덮도록 지도 영역 밖(화면 껍데기 바로 아래)에 둡니다 — 로그인 시트와 같은 자리입니다. */}
+      <NineScenicSheet open={nineOpen} onClose={closeNine} />
     </Screen>
   )
 }

@@ -43,7 +43,8 @@ describe('SpotSheet — 고현터미널(출발 지점)', () => {
     expect(sheet).toHaveTextContent('고현터미널')
     expect(sheet).toHaveTextContent('모든 코스의 출발 지점')
     expect(sheet.querySelector('img')).toBeNull()
-    expect(sheet.style.height).toBe(`${peekHeightOf(TERMINAL)}px`)
+    // 높이가 아니라 '보이는 높이'를 넘깁니다 — 시트는 틀을 꽉 채우고 그만큼만 드러나게 밀려 있습니다.
+    expect(sheet.style.getPropertyValue('--sheet-visible')).toBe(`${peekHeightOf(TERMINAL)}px`)
     expect(peekHeightOf(TERMINAL)).toBeLessThan(PEEK_HEIGHT)
     expect(peekHeightOf(SPOT)).toBe(PEEK_HEIGHT)
   })

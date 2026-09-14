@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import SpotDetail from './SpotDetail'
 import { t } from '../i18n'
 import { courseImage, onImageError } from '../lib/courseImage'
+import { nineScenicRankOf } from '../lib/nineScenic'
 import { peekHeightOf } from './spotSheetHeight'
 import styles from './SpotSheet.module.css'
 
@@ -23,6 +24,10 @@ import styles from './SpotSheet.module.css'
  *         고현터미널은 이름 · 「모든 코스의 출발 지점」뿐이라 더 낮습니다
  *   full  스팟 상세 전체(사진 캐러셀·소개·시간표 보기)
  * 중간에 멈추지 않습니다 — 반쯤 열린 시트는 사진도 글도 못 읽는 상태입니다.
+ *
+ * 올리고 내리는 방식(2026-09-14): 시트는 늘 틀을 꽉 채우고, 보이는 높이만큼만 드러나게 **아래로 밀어 둡니다**.
+ * 전에는 시트의 height 를 바꿨는데, height 애니메이션은 매 프레임 레이아웃을 다시 계산해 폰에서 버벅입니다.
+ * transform 은 이미 그린 것을 옮기기만 합니다.
  */
 
 /** 이만큼 끌면 다음 단계로 넘어갑니다. 짧으면 손 떨림에도 열리고, 길면 안 열립니다. */
@@ -30,11 +35,12 @@ const SNAP_THRESHOLD = 56
 
 export default function SpotSheet({ spot, onClose }) {
   const [full, setFull] = useState(false)
-  // 끄는 동안의 높이(px). null이면 단계가 정한 높이를 씁니다.
+  // 끄는 동안 보이는 높이(px). null이면 단계가 정한 높이를 씁니다.
   const [dragHeight, setDragHeight] = useState(null)
-  // 끄는 동안에는 높이 전환 애니메이션을 끕니다 — 켜두면 손을 따라오지 않고 늦게 옵니다.
+  // 끄는 동안에는 전환 애니메이션을 끕니다 — 켜두면 손을 따라오지 않고 늦게 옵니다.
   const [dragging, setDragging] = useState(false)
-  const rootRef = useRef(null)
+  // 시트를 담는 틀. 끝까지 끌어올린 높이(= full)를 이 틀의 높이로 잽니다.
+  const clipRef = useRef(null)
   const dragRef = useRef(null)
   /* 끌고 나면 브라우저가 pointerup 뒤에 click 도 보냅니다. 그걸 그대로 받으면 onClick 이
      방금 끌어서 정한 단계를 **다시 뒤집습니다**(끌어올려 full → click 이 peek 으로).
@@ -46,7 +52,9 @@ export default function SpotSheet({ spot, onClose }) {
      하지 않고 **부모가 `key={poiId}` 로 다시 마운트**해서 합니다. */
 
   const peek = peekHeightOf(spot)
-  const maxHeight = () => rootRef.current?.parentElement?.clientHeight ?? peek
+  const maxHeight = () => clipRef.current?.clientHeight ?? peek
+  // 배지는 어느 지도에서 열든 붙입니다 — 테두리와 달리 글이라 코스 지도에서도 방해되지 않습니다.
+  const nineRank = spot ? nineScenicRankOf(spot.poiId) : null
 
   const onPointerDown = (event) => {
     // 손잡이에서만 끕니다. 본문에서 끌면 사진 캐러셀·본문 스크롤과 싸웁니다.
@@ -82,91 +90,101 @@ export default function SpotSheet({ spot, onClose }) {
     }
   }
 
-  // full에서는 시트가 부모를 꽉 채웁니다. peek·끄는 중에는 px로 잠급니다.
-  const height = dragHeight != null ? `${dragHeight}px` : full ? '100%' : `${peek}px`
+  // 화면에 드러나는 높이. CSS 가 `translateY(100% - 이 값)`으로 시트를 밀어 둡니다. full 이면 100% — 밀지 않습니다.
+  const visible = dragHeight != null ? `${dragHeight}px` : full ? '100%' : `${peek}px`
 
   if (!spot) return null
 
   return (
-    <div
-      ref={rootRef}
-      className={dragging ? `${styles.root} ${styles.dragging}` : styles.root}
-      style={{ height }}
-      role="dialog"
-      aria-label={spot.shortName ?? spot.name}
-    >
-      {/* 손잡이. 끌어도 되고 눌러도 됩니다 — 마우스만 쓰는 사람에게는 끄는 것이 어렵습니다. */}
-      <button
-        type="button"
-        className={styles.grabber}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onClick={() => {
-          // 끈 뒤에 따라오는 click 한 번은 버립니다(위 movedRef 주석).
-          if (movedRef.current) {
-            movedRef.current = false
-            return
-          }
-          setFull((on) => !on)
-        }}
-        aria-label={t(full ? 'spotSheet.collapse' : 'spotSheet.expand')}
-        aria-expanded={full}
+    /* 틀 — 지도 영역을 덮되 눌리지 않습니다(pointer-events: none). 아래로 밀린 시트가 틀 밖(탭바 쪽)으로
+       삐져나오지 않게 여기서 자릅니다. 부모 화면(홈·코스 지도)의 CSS 에 기대지 않으려고 시트가 직접 둡니다. */
+    <div ref={clipRef} className={styles.clip}>
+      <div
+        className={dragging ? `${styles.root} ${styles.dragging}` : styles.root}
+        style={{ '--sheet-visible': visible }}
+        role="dialog"
+        aria-label={spot.shortName ?? spot.name}
       >
-        <span className={styles.grabberBar} aria-hidden="true" />
-      </button>
-
-      <button
-        type="button"
-        className={styles.close}
-        onClick={onClose}
-        aria-label={t('common.close')}
-      >
-        ✕
-      </button>
-
-      {full ? (
-        /* 끌어올리면 스팟 상세가 그대로 나옵니다. 시트에 손잡이와 닫기가 있으므로
-           onBack은 주지 않습니다 — 닫는 방법이 둘이면 어느 게 뭘 닫는지 알 수 없습니다. */
-        <SpotDetail key={spot.poiId} poiId={spot.poiId} seed={spot} />
-      ) : (
-        /* peek — 이름 · 권역·분류 · 사진 한 장.
-           「자세히 보기」 버튼을 뺐습니다(2026-09-13). 손잡이로 바로 올릴 수 있어 버튼이
-           같은 일을 두 번 하고, 그 자리를 사진에 주는 편이 "여기가 어딘지"를 훨씬 빨리
-           말해줍니다. 대신 **이 덩어리 전체가 눌립니다** — 끄는 동작이 어려운 사람에게
-           열 방법이 남아야 합니다. */
+        {/* 손잡이. 끌어도 되고 눌러도 됩니다 — 마우스만 쓰는 사람에게는 끄는 것이 어렵습니다. */}
         <button
           type="button"
-          className={styles.peek}
-          onClick={() => setFull(true)}
-          aria-label={t('spotSheet.expand')}
+          className={styles.grabber}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          onClick={() => {
+            // 끈 뒤에 따라오는 click 한 번은 버립니다(위 movedRef 주석).
+            if (movedRef.current) {
+              movedRef.current = false
+              return
+            }
+            setFull((on) => !on)
+          }}
+          aria-label={t(full ? 'spotSheet.collapse' : 'spotSheet.expand')}
+          aria-expanded={full}
         >
-          <span className={styles.name}>{spot.shortName ?? spot.name}</span>
-          {spot.kind === 'TERMINAL' ? (
-            /* 고현터미널 — 권역·분류 자리에 무엇인지 말합니다. 사진은 없습니다(TourAPI 장소가 아님). */
-            <span className={styles.category}>{t('terminal.startPoint')}</span>
-          ) : (
-            <>
-              {/* 권역·분류가 없으면 줄을 아예 그리지 않습니다 — 값 없이 `·` 만 남으면
-                  그게 곧 우리가 기준문서 §4에서 비판하는 '이유 없는 빈칸'입니다. */}
-              {(spot.region || spot.category) && (
-                <span className={styles.category}>
-                  {[spot.region, spot.category].filter(Boolean).join(' · ')}
-                </span>
-              )}
-              {/* 사진이 없는 스팟(저작권 Type3)은 courseImage가 테마 자리그림을 줍니다 —
-                  0장은 버그가 아니라 사실이므로 빈 자리로 두지 않습니다. */}
-              <img
-                className={styles.photo}
-                src={courseImage(spot)}
-                alt=""
-                onError={onImageError(spot)}
-              />
-            </>
-          )}
+          <span className={styles.grabberBar} aria-hidden="true" />
         </button>
-      )}
+
+        <button
+          type="button"
+          className={styles.close}
+          onClick={onClose}
+          aria-label={t('common.close')}
+        >
+          ✕
+        </button>
+
+        {full ? (
+          /* 끌어올리면 스팟 상세가 그대로 나옵니다. 시트에 손잡이와 닫기가 있으므로
+             onBack은 주지 않습니다 — 닫는 방법이 둘이면 어느 게 뭘 닫는지 알 수 없습니다. */
+          <SpotDetail key={spot.poiId} poiId={spot.poiId} seed={spot} />
+        ) : (
+          /* peek — 이름 · 권역·분류 · 사진 한 장.
+             「자세히 보기」 버튼을 뺐습니다(2026-09-13). 손잡이로 바로 올릴 수 있어 버튼이
+             같은 일을 두 번 하고, 그 자리를 사진에 주는 편이 "여기가 어딘지"를 훨씬 빨리
+             말해줍니다. 대신 **이 덩어리 전체가 눌립니다** — 끄는 동작이 어려운 사람에게
+             열 방법이 남아야 합니다. */
+          <button
+            type="button"
+            className={styles.peek}
+            onClick={() => setFull(true)}
+            aria-label={t('spotSheet.expand')}
+          >
+            <span className={styles.name}>{spot.shortName ?? spot.name}</span>
+            {spot.kind === 'TERMINAL' ? (
+              /* 고현터미널 — 권역·분류 자리에 무엇인지 말합니다. 사진은 없습니다(TourAPI 장소가 아님). */
+              <span className={styles.category}>{t('terminal.startPoint')}</span>
+            ) : (
+              <>
+                {/* 권역·분류가 없으면 줄을 아예 그리지 않습니다 — 값 없이 `·` 만 남으면
+                    그게 곧 우리가 기준문서 §4에서 비판하는 '이유 없는 빈칸'입니다.
+                    거제9경이면 분류 줄 맨 앞에 주황 배지(2026-09-14). 주황 테두리 핀을 눌렀을 때
+                    "그래서 이게 몇 경인지"를 바로 말합니다. 같은 줄 안이라 peek 높이는 그대로입니다. */}
+                {(spot.region || spot.category || nineRank) && (
+                  <span className={styles.category}>
+                    {nineRank && (
+                      <span className={styles.nineBadge}>
+                        {t('nineScenic.badge', { rank: nineRank })}
+                      </span>
+                    )}
+                    {[spot.region, spot.category].filter(Boolean).join(' · ')}
+                  </span>
+                )}
+                {/* 사진이 없는 스팟(저작권 Type3)은 courseImage가 테마 자리그림을 줍니다 —
+                    0장은 버그가 아니라 사실이므로 빈 자리로 두지 않습니다. */}
+                <img
+                  className={styles.photo}
+                  src={courseImage(spot)}
+                  alt=""
+                  onError={onImageError(spot)}
+                />
+              </>
+            )}
+          </button>
+        )}
+      </div>
     </div>
   )
 }
