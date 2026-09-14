@@ -175,6 +175,53 @@
   color: var(--text-secondary);
 }
 
+/* info(607:4) — 주소 · 내리는 곳. 줄 사이 14, 아이콘 20과 글 사이 12, 본문과 부제 사이 2.
+   글자 15/22 · 13/18은 타입 토큰(16/24 · 14/20)에 없는 크기라 그림 값을 그대로 적습니다. */
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.infoRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+/* 아이콘 20px 이 22px 줄 안에 오도록 1px 내립니다. */
+.infoIcon {
+  flex-shrink: 0;
+  display: block;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  color: var(--text-secondary);
+}
+
+.infoText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.infoMain,
+.infoSub {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.infoMain {
+  font: 400 15px/22px var(--font-sans);
+  color: var(--text-primary);
+}
+
+.infoSub {
+  font: 400 13px/18px var(--font-sans);
+  color: var(--text-secondary);
+}
+
 /* intro(264:256) — gap 6, overview는 2줄에서 자르고 '더보기'로 폅니다. */
 .intro {
   display: flex;

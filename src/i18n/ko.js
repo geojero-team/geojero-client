@@ -115,6 +115,10 @@ export default {
   // 2026-09-14 「버스」를 뗐습니다(사용자 결정) — 외도보타니아·도장포유람선은 배 시간표도 엽니다.
   'spotDetail.openTimetable': '시간표 보기',
   'spotDetail.introHead': '소개',
+  // 주소 · 내리는 곳(607:4, 2026-09-14 밤). 둘째 줄은 내리는 곳과 시간표 기준 정류장이 다를 때만 —
+  // 스팟 시간표의 boardDiffers 와 같은 말입니다.
+  'spotDetail.alight': '{label}에서 내려요',
+  'spotDetail.timetableBasis': '시간표는 {stop} 정류장 기준이에요',
 
   /* ── 방문자 사진 (02-2 · 484:212 섹션 · 268:499 뷰어) ── */
   // 제목·더보기·타일·빈 사진 칸은 Figma 원문 그대로입니다. 작성자 줄은 날짜만 씁니다 —

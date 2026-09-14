@@ -50,6 +50,38 @@ function PhotoCountIcon() {
 }
 
 /**
+ * 주소 줄 핀 · 내리는 곳 버스 — Figma 607:6 · 607:12 내보낸 자산 그대로(20×20, stroke 1.5).
+ * 색은 CSS(text/secondary)에서 받습니다. 버스는 원본의 조각 7개를 한 path 로 이었습니다(선 끝 round 는 조각마다 그대로).
+ */
+function PinIcon() {
+  return (
+    <svg className={styles.infoIcon} width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M16.6667 8.33333C16.6667 13.3333 10 18.3333 10 18.3333C10 18.3333 3.33333 13.3333 3.33333 8.33333C3.33333 6.56522 4.03571 4.86953 5.28595 3.61929C6.5362 2.36905 8.23189 1.66667 10 1.66667C11.7681 1.66667 13.4638 2.36905 14.714 3.61929C15.9643 4.86953 16.6667 6.56522 16.6667 8.33333Z M10 10.8333C11.3807 10.8333 12.5 9.71405 12.5 8.33333C12.5 6.95262 11.3807 5.83333 10 5.83333C8.61929 5.83333 7.5 6.95262 7.5 8.33333C7.5 9.71405 8.61929 10.8333 10 10.8333Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function BusIcon() {
+  return (
+    <svg className={styles.infoIcon} width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M6.66667 5V10 M12.5 5V10 M1.66667 10H18 M15 15H17.5C17.5 15 17.9167 13.5833 18.1667 12.6667C18.25 12.3333 18.3333 12 18.3333 11.6667C18.3333 11.3333 18.25 11 18.1667 10.6667L17 6.5C16.75 5.66667 15.9167 5 15 5H3.33333C2.89131 5 2.46738 5.17559 2.15482 5.48816C1.84226 5.80072 1.66667 6.22464 1.66667 6.66667V15H4.16667 M5.83333 16.6667C6.75381 16.6667 7.5 15.9205 7.5 15C7.5 14.0795 6.75381 13.3333 5.83333 13.3333C4.91286 13.3333 4.16667 14.0795 4.16667 15C4.16667 15.9205 4.91286 16.6667 5.83333 16.6667Z M7.5 15H11.6667 M13.3333 16.6667C14.2538 16.6667 15 15.9205 15 15C15 14.0795 14.2538 13.3333 13.3333 13.3333C12.4129 13.3333 11.6667 14.0795 11.6667 15C11.6667 15.9205 12.4129 16.6667 13.3333 16.6667Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/**
  * @param poiId   서버 poi_id. 주소의 :spotId가 곧 이 값입니다
  * @param seed    목록에서 이미 아는 것(이름·권역·분류). 있으면 사진을 기다리는 동안에도
  *                제목이 먼저 뜹니다 — 시트는 누른 즉시 이름이 보여야 합니다
@@ -207,6 +239,33 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, uploadIn
             {isTerminal ? t('terminal.startPoint') : `${spot.region} · ${spot.category}`}
           </p>
         </div>
+
+        {/* 주소 · 내리는 곳(607:4, 2026-09-14 밤). 주소는 TourAPI addr1 런타임 값 그대로, 내리는 곳은 V18 alight_label.
+            둘째 줄은 내리는 정류장과 시간표를 읽는 정류장이 다를 때만(씨월드 — 신촌에서 내리고 시각은 지세포).
+            값이 없으면 그 줄을 그리지 않습니다 — 아이콘만 남는 빈 줄이 곧 '이유 없는 빈칸'입니다. */}
+        {(spot.address || spot.alightLabel) && (
+          <div className={styles.info} data-info="">
+            {spot.address && (
+              <div className={styles.infoRow}>
+                <PinIcon />
+                <p className={styles.infoMain}>{spot.address}</p>
+              </div>
+            )}
+            {spot.alightLabel && (
+              <div className={styles.infoRow}>
+                <BusIcon />
+                <div className={styles.infoText}>
+                  <p className={styles.infoMain}>{t('spotDetail.alight', { label: spot.alightLabel })}</p>
+                  {spot.boardStopDiffers && spot.timetableStop && (
+                    <p className={styles.infoSub}>
+                      {t('spotDetail.timetableBasis', { stop: spot.timetableStop })}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 고현터미널은 스팟처럼 펼치지만 버스 시간표 버튼이 없습니다(2026-09-13 사용자 결정) —
             터미널에서 가는 버스는 각 스팟 시간표의 「고현터미널 → 스팟」이 말합니다. */}

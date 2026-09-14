@@ -111,7 +111,10 @@ export const api = {
 
   /**
    * PoiDetailRes { poiId, name, kind, tier, lang, langFallback,
-   *                detail: { source, overview, imageUrl }, checkUrl, lastDeparture }
+   *                detail: { source, overview, imageUrl, images, address }, checkUrl, lastDeparture,
+   *                alightLabel, timetableStop, boardStopDiffers }
+   * address 는 TourAPI addr1 런타임 값(폴백이면 없음). alightLabel·timetableStop 은 V18 하차 이름 둘 —
+   * 스팟 상세의 「내리는 곳」 줄(Figma 607:4). boardStopDiffers 는 스팟 시간표와 같은 규칙입니다.
    */
   poi: (poiId, lang = 'ko') => request(`/api/pois/${poiId}?lang=${lang}`),
 

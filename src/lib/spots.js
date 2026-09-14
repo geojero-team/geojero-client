@@ -87,14 +87,15 @@ export async function loadSpotDetail(poiId) {
   const id = Number(poiId)
   const base = (await loadSpots()).get(id) ?? null
 
+  let res = null
   let detail = {}
   let name = base?.name ?? null
   try {
-    const data = await api.poi(id)
-    detail = data.detail ?? {}
-    name = name ?? data.name ?? null
+    res = await api.poi(id)
+    detail = res.detail ?? {}
+    name = name ?? res.name ?? null
   } catch {
-    // 소개문·사진 없이 그립니다. 아래 photos가 빈 배열이라 자리 그림으로 떨어집니다.
+    // 소개문·사진·주소·내리는 곳 없이 그립니다. 아래 photos가 빈 배열이라 자리 그림으로 떨어집니다.
   }
 
   if (!base && !name) return null
@@ -111,5 +112,11 @@ export async function loadSpotDetail(poiId) {
     overviewSource: detail.source ?? null,
     // 대표 사진이 첫 장이고 저작권(Type3)은 서버가 이미 걸렀습니다.
     photos: images.length > 0 ? images : detail.imageUrl ? [detail.imageUrl] : [],
+    // 주소 · 내리는 곳(Figma 607:4). 주소는 TourAPI addr1 런타임 값이라 폴백이면 없고, 내리는 곳은 V18 하차 이름입니다.
+    // 없으면 null — 화면이 그 줄을 그리지 않습니다.
+    address: detail.address ?? null,
+    alightLabel: res?.alightLabel ?? null,
+    timetableStop: res?.timetableStop ?? null,
+    boardStopDiffers: Boolean(res?.boardStopDiffers),
   }
 }

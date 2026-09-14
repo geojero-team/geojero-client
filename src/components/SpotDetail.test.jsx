@@ -99,3 +99,46 @@ describe('SpotDetail — 방문자 사진 자리', () => {
     expect(button.nextElementSibling).toBe(section)
   })
 })
+
+/** Figma 02-2 `607:4`(2026-09-14 밤) — 제목 아래 주소 줄 + 내리는 곳 줄, 그 다음이 「시간표 보기」. */
+describe('SpotDetail — 주소 · 내리는 곳', () => {
+  const WITH_INFO = {
+    ...SPOT,
+    address: '경상남도 거제시 남부면 어딘가길 1',
+    alightLabel: '학동 정류장',
+    timetableStop: '학동',
+    boardStopDiffers: false,
+  }
+  const follows = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+
+  it('제목 → 주소 → 「학동 정류장에서 내려요」 → 「시간표 보기」 순이고, 기준 정류장이 같으면 둘째 줄이 없다', async () => {
+    renderDetail(WITH_INFO)
+
+    const addr = await screen.findByText('경상남도 거제시 남부면 어딘가길 1')
+    const alight = screen.getByText('학동 정류장에서 내려요')
+    const title = screen.getByRole('heading', { name: '학동몽돌해변' })
+    const button = screen.getByRole('button', { name: '시간표 보기' })
+    expect(follows(title, addr)).toBe(true)
+    expect(follows(addr, alight)).toBe(true)
+    expect(follows(alight, button)).toBe(true)
+    expect(screen.queryByText(/시간표는 .* 정류장 기준이에요/)).not.toBeInTheDocument()
+  })
+
+  it('내리는 곳과 시간표 기준 정류장이 다르면 둘째 줄로 말한다 (거제씨월드 — 신촌에서 내리고 시각은 지세포)', async () => {
+    renderDetail({
+      ...WITH_INFO, poiId: 18, name: '거제씨월드', shortName: '거제씨월드',
+      alightLabel: '신촌 정류장', timetableStop: '지세포', boardStopDiffers: true,
+    })
+
+    expect(await screen.findByText('신촌 정류장에서 내려요')).toBeInTheDocument()
+    expect(screen.getByText('시간표는 지세포 정류장 기준이에요')).toBeInTheDocument()
+  })
+
+  it('주소도 내리는 곳도 없으면(TourAPI 폴백 · 터미널) 그 덩어리를 그리지 않는다 — 아이콘만 남는 빈 줄 금지', async () => {
+    const { container } = renderDetail({ ...WITH_INFO, address: null, alightLabel: null, timetableStop: null })
+
+    await screen.findByRole('button', { name: '시간표 보기' })
+    expect(screen.queryByText(/에서 내려요$/)).not.toBeInTheDocument()
+    expect(container.querySelector('[data-info]')).toBeNull()
+  })
+})
