@@ -358,7 +358,8 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
 
     await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
     const at = (text) => overlays.find((o) => o.options.content.textContent === text).options
-    const stays = (text) => at(text).xAnchor === 0.5 && Math.abs(at(text).yAnchor - ICON_CENTER) < 1e-6
+    // 옆으로 비킨 마커는 앵커가 아니라 px 이동(transform)으로 옮깁니다 — 태그 실제 폭이 어림과 달라도 자리가 어긋나지 않게.
+    const stays = (text) => !at(text).content.style.transform && Math.abs(at(text).yAnchor - ICON_CENTER) < 1e-6
     expect(stays('4000')).toBe(true)
     expect(stays('63번 외 1')).toBe(false)
     expect(stays('22번 외 1')).toBe(true)
@@ -476,10 +477,11 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
 
     await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
     const at = (text) => overlays.find((o) => o.options.content.textContent === text).options
-    expect(at('4000').xAnchor).toBe(0.5)
-    expect(at('23-1번 외 5').xAnchor).toBe(0.5)
+    expect(at('4000').content.style.transform).toBe('')
+    expect(at('23-1번 외 5').content.style.transform).toBe('')
     expect(at('63번 외 1').yAnchor).toBeCloseTo(ICON_CENTER) // 높이는 그대로
-    expect(at('63번 외 1').xAnchor).not.toBe(0.5) // 옆으로
+    expect(at('63번 외 1').content.style.transform).toMatch(/^translateX\(/) // 옆으로
+    expect(at('63번 외 1').xAnchor).toBe(0.5) // 앵커는 늘 가운데 — 옆 이동은 px 로
   })
 
   it('비킨 마커가 지도 칸(180px) 밖으로 나가면 반대쪽으로 — 매미성 대금교차로가 지도 아래쪽에 있을 때', async () => {
@@ -561,7 +563,7 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
       await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
       const sinchon = overlays.find((o) => o.options.content.textContent === '23-1번 외 5')
       expect(sinchon.options.yAnchor).toBeCloseTo(ICON_CENTER)
-      expect(sinchon.options.xAnchor).toBe(0.5)
+      expect(sinchon.options.content.style.transform).toBe('')
     } finally {
       if (height) Object.defineProperty(HTMLElement.prototype, 'clientHeight', height)
       else delete HTMLElement.prototype.clientHeight
@@ -594,7 +596,10 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
     const b = overlays.find((o) => o.options.content.textContent === '67-1').options
     expect(b.yAnchor).toBeCloseTo(ICON_CENTER)
-    expect(b.xAnchor).toBeLessThan(0.5) // 내용이 좌표보다 오른쪽으로
+    // 내용이 좌표보다 오른쪽으로 — 앵커(내용 폭의 비율)로 옮기면 실제 폭이 어림과 다른 만큼 자리가 어긋나서(운영 거제씨월드 「63번 외 1」이
+    // 「4000」에 1px 걸쳤다, 2026-09-14 저녁) px 로 옮깁니다.
+    expect(b.xAnchor).toBe(0.5)
+    expect(b.content.style.transform).toMatch(/^translateX\(\d+(\.\d+)?px\)$/)
   })
 })
 

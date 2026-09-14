@@ -55,8 +55,12 @@ const anchorOf = (slot, height, center) =>
   slot === 'below' ? -BELOW_TOP / height : slot === 'above' ? (ABOVE_BOTTOM + height) / height : center / height
 /** SDK가 투영을 주지 않을 때의 거리 기준. 길 건너편 정류장은 대표 핀에서 6~8m입니다(매미성·김영삼 생가 실측). */
 const STACK_M = 25
-/** 태그 폭 어림(11px Bold 숫자·기호 ≈ 6.5px · 한글 ≈ 11px + 좌우 여백·테두리 16px) — 운영 실측 「55」 29 · 「4000」 42 · 「32 20:37」 62px. 「55번 외 2」(541:451)에 한글이 들어왔다. */
-const tagWidth = (text) => Math.max(28, 16 + [...text].reduce((w, ch) => w + (/[가-힣]/.test(ch) ? 11 : 6.5), 0))
+/**
+ * 태그 폭 어림(11px Bold 숫자·기호 ≈ 6.5px · 한글 ≈ 10px · 띄어쓰기 ≈ 3px + 좌우 여백·테두리 16px) — 겹침 상자용입니다.
+ * 운영 실측 「55」 29 · 「4000」 42 · 「32 20:37」 62 · 「63번 외 1」 62 · 「23-1번 외 5」 72px(「55번 외 2」 541:451 에 한글이 들어왔다).
+ */
+const tagWidth = (text) =>
+  Math.max(28, 16 + [...text].reduce((w, ch) => w + (/[가-힣]/.test(ch) ? 10 : ch === ' ' ? 3 : 6.5), 0))
 /** 출발 곳 이름표 폭 어림(11px Medium 한글 ≈ 11px) — 점 오른쪽 13px에서 시작합니다. */
 const fromLabelWidth = (text) => 13 + text.length * 11
 /**
@@ -91,7 +95,8 @@ const SIDE_GAP = 2
 /**
  * 한 칸(제자리 · 위 · 아래 · 왼쪽 · 오른쪽)에 달았을 때의 화면 상자(px)와 앵커. 마커는 태그 폭 × 51px, 출발 곳은 점 + 오른쪽 이름표.
  * 좌표(point)가 아이콘 가운데(출발 곳은 점 가운데)라는 anchorOf 규칙과 같은 기하입니다. 옆으로는 겹친 상대(hit) 상자 옆에 붙입니다.
- * xAnchor는 내용 폭의 비율이라 가운데를 cx로 옮기려면 0.5 - (cx - point.x) / 폭 입니다.
+ * 옆 이동은 **px(dx)** 로 돌려줍니다 — xAnchor(내용 폭의 비율)로 옮기면 태그 실제 폭이 어림과 다른 만큼 자리가 어긋납니다
+ * (운영 거제씨월드 「63번 외 1」이 「4000」에 1px 걸쳤다, 2026-09-14 저녁).
  */
 function placement(item, point, slot, hit) {
   const vertical = slot === 'above' || slot === 'below' ? slot : 'center'
@@ -100,12 +105,12 @@ function placement(item, point, slot, hit) {
   if (item.kind === 'from') {
     const r = FROM_HEIGHT / 2
     // 이름표(17px)가 점 가운데 높이에 걸립니다.
-    return { slot, xAnchor: 0.5, yAnchor, box: { x0: point.x - r, x1: point.x + r + item.width, y0: top + r - 8.5, y1: top + r + 8.5 } }
+    return { slot, dx: 0, yAnchor, box: { x0: point.x - r, x1: point.x + r + item.width, y0: top + r - 8.5, y1: top + r + 8.5 } }
   }
   const w = Math.max(item.width, 28)
   const cx =
     slot === 'right' ? hit.box.x1 + SIDE_GAP + w / 2 : slot === 'left' ? hit.box.x0 - SIDE_GAP - w / 2 : point.x
-  return { slot, xAnchor: 0.5 - (cx - point.x) / w, yAnchor, box: { x0: cx - w / 2, x1: cx + w / 2, y0: top, y1: top + item.height } }
+  return { slot, dx: cx - point.x, yAnchor, box: { x0: cx - w / 2, x1: cx + w / 2, y0: top, y1: top + item.height } }
 }
 
 const intersects = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1
@@ -154,7 +159,7 @@ function placeByDistance(item, placed) {
     const [preferred, other] = north ? ['above', 'below'] : ['below', 'above']
     slot = !used.has(preferred) ? preferred : !used.has(other) ? other : preferred
   }
-  return { slot, xAnchor: 0.5, yAnchor: anchorOf(slot, item.height, item.center), box: null }
+  return { slot, dx: 0, yAnchor: anchorOf(slot, item.height, item.center), box: null }
 }
 
 /** 고른 노선만 남깁니다. 서버가 노선마다 대표 정류장을 한 곳만 주므로 결과가 늘 정해집니다. */
@@ -288,9 +293,11 @@ function MapCanvas({ stops, exceptions, from, showFrom }) {
     const placed = []
     const overlays = items.map((item) => {
       const point = projection?.containerPointFromCoords(item.position)
-      const { slot, xAnchor, yAnchor, box } = point ? placeByBox(item, point, placed, mapSize) : placeByDistance(item, placed)
+      const { slot, dx, yAnchor, box } = point ? placeByBox(item, point, placed, mapSize) : placeByDistance(item, placed)
       placed.push({ at: item.at, point, slot, box })
-      return new kakao.maps.CustomOverlay({ map, position: item.position, content: item.content, xAnchor, yAnchor })
+      // 옆으로 비킨 만큼은 내용을 px 로 밀어 둡니다(앵커는 늘 가운데).
+      if (dx) item.content.style.transform = `translateX(${Math.round(dx)}px)`
+      return new kakao.maps.CustomOverlay({ map, position: item.position, content: item.content, xAnchor: 0.5, yAnchor })
     })
 
     return () => overlays.forEach((overlay) => overlay.setMap(null))
