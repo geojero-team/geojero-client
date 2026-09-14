@@ -21,6 +21,7 @@ import styles from './BoardingMap.module.css'
  *    펼치면 정류장마다 목록 줄과 길찾기(버튼 하나로는 어디로 보낼지 정할 수 없습니다).
  *  · 노선 칩을 고르면(route) 그 노선의 정류장 · 예외 · 못 찍은 노선만 남깁니다.
  *  · 길 건너편에서 타는 편(매미성 32번 20:37)은 **접혀 있어도** 알립니다 — 그 편이 곧 「다음 버스」일 수 있습니다.
+ *    타는 곳을 못 찍은 노선(맹종죽 37번)의 안내도 같은 이유로 접혀 있어도 보입니다.
  *
  * **지도는 펼칠 때 만듭니다.** 접힌 칸에서 만들면 크기가 0이라 화면 맞추기가 틀어지고, 대부분은 펼치지 않습니다.
  * 지도가 못 떠도 이름 · 거리 · 길찾기는 그대로 나옵니다(카카오 JS 키는 도메인 제한).
@@ -40,14 +41,18 @@ const OPPOSITE_M = 50
 
 /**
  * 마커 기하 — Figma 530:318: 버스 아이콘 28 + 간격 2 + 태그 21 = 51px, **좌표는 아이콘 가운데**(위에서 14px).
- * 마커끼리 가까우면 좌표는 옮기지 않고(위치가 정확하다는 전제) 겹친 마커만 아래 · 위로 번갈아 답니다.
- * 아래로 달 때는 앞 마커 박스(좌표 기준 -14 ~ +37) 밑 2px에서, 위로 달 때는 위 2px에서 시작합니다.
+ * 마커끼리 가까우면 좌표는 옮기지 않고(위치가 정확하다는 전제) 겹친 마커만 비켜 답니다. 아래로 달 때는 앞 마커 박스
+ * (좌표 기준 -14 ~ +37px) 밑 2px에서, 위로 달 때는 위 2px에서 끝나게 합니다.
+ * yAnchor는 **자기 높이**의 비율이라 높이가 다른 출발 곳 점(9px)은 따로 계산합니다 — 마커 비율을 그대로 쓰면 7px만
+ * 움직여 이름표가 마커를 덮었습니다(2026-09-14 리뷰).
  */
 const MARKER_HEIGHT = 51
 const ICON_CENTER = 14
-const ANCHOR_CENTER = ICON_CENTER / MARKER_HEIGHT
-const ANCHOR_BELOW = -(MARKER_HEIGHT - ICON_CENTER + 2) / MARKER_HEIGHT
-const ANCHOR_ABOVE = (MARKER_HEIGHT + ICON_CENTER + 2) / MARKER_HEIGHT
+const FROM_HEIGHT = 9
+const BELOW_TOP = MARKER_HEIGHT - ICON_CENTER + 2 // 좌표에서 비킨 박스 윗변까지
+const ABOVE_BOTTOM = ICON_CENTER + 2 // 비킨 박스 아랫변에서 좌표까지
+const anchorOf = (slot, height, center) =>
+  slot === 'below' ? -BELOW_TOP / height : slot === 'above' ? (ABOVE_BOTTOM + height) / height : center / height
 /** 지도 화면 좌표로 잴 때 — 마커 폭(태그 「32 20:37」 ≈ 60px) · 높이(51 + 2px). */
 const STACK_PX_X = 60
 const STACK_PX_Y = MARKER_HEIGHT + 2
@@ -184,10 +189,11 @@ function MapCanvas({ stops, exceptions, from, showFrom }) {
 
     // 1) 찍을 것을 모으고 2) 화면을 맞춘 뒤 3) 그 배율의 화면 좌표로 겹침을 잰다.
     //    미터(25m)로만 재면 운영 거제씨월드에서 26m 떨어진 두 지세포 핀이 몇 px 안에 겹쳐 4000 핀이 가려졌다(2026-09-14).
+    const marker = { height: MARKER_HEIGHT, center: ICON_CENTER }
     const items = [
-      ...stops.map((stop) => ({ at: stop, content: markerElement(tagText(stop.routes)), anchor: ANCHOR_CENTER })),
-      ...exceptions.map((ex) => ({ at: ex, content: markerElement(`${ex.routeNo} ${ex.depart}`), anchor: ANCHOR_CENTER })),
-      ...(showFrom ? [{ at: from, content: fromElement(from.name), anchor: 0.5 }] : []),
+      ...stops.map((stop) => ({ at: stop, content: markerElement(tagText(stop.routes)), ...marker })),
+      ...exceptions.map((ex) => ({ at: ex, content: markerElement(`${ex.routeNo} ${ex.depart}`), ...marker })),
+      ...(showFrom ? [{ at: from, content: fromElement(from.name), height: FROM_HEIGHT, center: FROM_HEIGHT / 2 }] : []),
     ].map((item) => ({ ...item, position: new kakao.maps.LatLng(item.at.lat, item.at.lng) }))
 
     const bounds = new kakao.maps.LatLngBounds()
@@ -199,14 +205,24 @@ function MapCanvas({ stops, exceptions, from, showFrom }) {
     const placed = []
     const overlays = items.map((item) => {
       const point = projection?.containerPointFromCoords(item.position)
-      // 먼저 찍힌 핀(대표 핀이 먼저입니다) 중 겹치는 것의 수로 높이를 정합니다: 0 제자리, 홀수 아래, 짝수 위.
+      // 먼저 찍힌 핀(대표 핀이 먼저입니다) 중 겹치는 것이 있으면 비킵니다. 방향은 **실제로 있는 쪽** — 북쪽이면 위,
+      // 남쪽(또는 같은 높이)이면 아래. 그쪽을 이미 다른 핀이 썼으면 반대쪽. 방향을 보지 않고 번갈아 달면
+      // 북쪽 정류장이 남쪽에 그려졌습니다(고현터미널 → 김영삼 생가 2000번, 2026-09-14 리뷰).
       const near = placed.filter((p) =>
         point && p.point
           ? Math.abs(p.point.x - point.x) < STACK_PX_X && Math.abs(p.point.y - point.y) < STACK_PX_Y
           : distanceMeters(p.at, item.at) < STACK_M,
-      ).length
-      const yAnchor = near === 0 ? item.anchor : near % 2 === 1 ? ANCHOR_BELOW : ANCHOR_ABOVE
-      placed.push({ at: item.at, point })
+      )
+      let slot = 'center'
+      if (near.length > 0) {
+        const ref = near[0]
+        const north = point && ref.point ? point.y < ref.point.y : item.at.lat > ref.at.lat
+        const used = new Set(near.map((p) => p.slot))
+        const [preferred, other] = north ? ['above', 'below'] : ['below', 'above']
+        slot = !used.has(preferred) ? preferred : !used.has(other) ? other : preferred
+      }
+      placed.push({ at: item.at, point, slot })
+      const yAnchor = anchorOf(slot, item.height, item.center)
       return new kakao.maps.CustomOverlay({ map, position: item.position, content: item.content, xAnchor: 0.5, yAnchor })
     })
 
@@ -337,13 +353,14 @@ export default function BoardingMap({ boarding, route = null }) {
             </p>
           ))}
 
-          {unresolvedNote}
-
           {single && <DirectionsLink stop={single.stop} className={styles.directions} />}
         </div>
       )}
 
-      {/* 대표 정류장이 아닌 곳에서 타는 편 — 접혀 있어도 보입니다. 매미성 20:30에는 이 편이 곧 다음 버스입니다. */}
+      {/* 접혀 있어도 보이는 안내 둘 — 다음 버스가 이 편·이 노선일 수 있습니다.
+          · 대표 정류장이 아닌 곳에서 타는 편(매미성 20:30에는 32번 20:37 길 건너편이 곧 다음 버스)
+          · 타는 곳을 못 찍은 노선(맹종죽 10:32에는 37번이 다음 버스인데 카드가 와항마을만 말하면 거기서 타는 줄 안다) */}
+      {unresolvedNote}
       {withMain.map((ex) => (
         <p key={`${ex.routeNo}-${ex.depart}-${ex.nodeId}`} className={styles.note}>
           {ex.gapM <= OPPOSITE_M

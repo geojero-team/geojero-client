@@ -159,6 +159,8 @@ export default {
   'spotTime.dir': '{from} → {to}',
   'spotTime.next': '다음 버스 {time} · {route}번',
   'spotTime.noNext': '오늘 남은 버스가 없어요',
+  // 노선 칩을 골랐을 때 — 그 노선만 끝났는데 오늘 전체가 끝났다고 말하면 막차를 틀리게 알리는 셈입니다(§4).
+  'spotTime.noNextRoute': '오늘 남은 {route}번 버스가 없어요',
   // 다음 버스 카드 둘째 줄(530:299) — 오늘을 볼 때만. 출발 시각이 추정이면 「시간표 기준」 대신 추정이라고 말합니다.
   'spotTime.nextSub': '{when} · {basis}',
   'spotTime.inTime': '약 {time} 뒤',
@@ -175,6 +177,7 @@ export default {
   // 노선 칩을 골랐을 때만(541:371). 같은 노선인데 편마다 다르면 범위로 — 한 값으로 뭉개면 늦은 차를 놓칩니다(부록 D).
   'spotTime.duration': '약 {min}분',
   'spotTime.durationRange': '약 {low}~{high}분',
+  'spotTime.durationEstimated': '{duration} · 앞뒤 정류장 시각으로 추정',
   'spotTime.hour': '{h}시',
   'spotTime.nextTag': '다음',
   // ★ 출발 시각이 앞뒤 정류장으로 감싼 값일 때(departures[].departEstimated). 감싼 방향이 정해져 있어
@@ -271,6 +274,7 @@ export default {
   'courseDetail.legApprox': '{route}번 · 약 {min}분',
   'courseDetail.legSameStop': '같은 정류장 · 바로 이동',
   'courseDetail.timetable': '시간표',
+  'courseDetail.timetableA11y': '{name} 시간표',
   // 추정 구간이 있을 때만 — 확정값뿐인 코스에 쓰면 정확한 분을 「짧다」고 말하게 됩니다.
   'courseDetail.estimatedNote': '실제 이동 시간은 적힌 것보다 짧습니다 — 버스를 놓치지 않는 쪽으로만 어긋납니다.',
   'courseDetail.source': '출처 {source} · {date}',

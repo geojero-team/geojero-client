@@ -246,13 +246,13 @@ describe('BoardingMap — 펼친 카드(530:282 · 541:408)', () => {
     expect(within(rows[1]).getByText('32 20:55')).toBeInTheDocument()
   })
 
-  it('타는 곳을 못 찍은 노선은 펼치면 한 문장(겹친 노선은 한 번)', async () => {
+  it('타는 곳을 못 찍은 노선은 접혀 있어도 한 문장(겹친 노선은 한 번) — 다음 버스가 그 노선이면 엉뚱한 정류장을 안내하게 된다', async () => {
     const user = userEvent.setup()
     render(<BoardingMap boarding={MAENGJONG} />)
 
-    expect(screen.queryByText(/표시하지 못했어요/)).not.toBeInTheDocument()
-    await expand(user)
     expect(screen.getByText('37·37-2번은 타는 곳을 지도에 표시하지 못했어요.')).toBeInTheDocument()
+    await expand(user)
+    expect(screen.getAllByText('37·37-2번은 타는 곳을 지도에 표시하지 못했어요.')).toHaveLength(1)
   })
 
   it('다시 누르면 접힌다', async () => {
@@ -302,7 +302,7 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     expect(from.options.yAnchor).toBe(0.5) // 출발 곳은 점 가운데 · 213m 떨어져 겹치지 않는다
   })
 
-  it('편마다 다른 마커 셋이 몇 m 안에 모이면 제자리 · 아래 · 위로 번갈아 단다', async () => {
+  it('편마다 다른 마커 셋이 몇 m 안에 모이면 제자리 · 실제로 있는 쪽(북쪽이면 위) · 남은 쪽으로 단다', async () => {
     const user = userEvent.setup()
     const { kakao, map, overlays } = fakeKakao({ level: 3 })
     loadKakaoMaps.mockResolvedValue(kakao)
@@ -325,8 +325,8 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     const anchors = overlays.map((o) => o.options.yAnchor)
     expect(overlays.map((o) => o.options.content.textContent)).toEqual(['32 06:00', '32 13:10', '32 20:55', '김영삼 생가'])
     expect(anchors[0]).toBeCloseTo(ICON_CENTER)
-    expect(anchors[1]).toBeLessThan(0)
-    expect(anchors[2]).toBeGreaterThan(1)
+    expect(anchors[1]).toBeGreaterThan(1) // A2는 A1보다 북쪽 — 위로
+    expect(anchors[2]).toBeLessThan(0) // A3도 북쪽이지만 위는 A2가 썼다 — 아래로
     expect(anchors[3]).toBe(0.5)
   })
 
@@ -395,4 +395,56 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     expect(overlays.map((o) => o.options.content.textContent)).toEqual(['55 +1'])
     expect(map.setLevel).not.toHaveBeenCalled()
   })
+
+  it('고현터미널 → 김영삼 생가 — 북동쪽 70m 2000번 마커는 위로 비킨다(아래로 내리면 북쪽 정류장이 남쪽에 그려진다)', async () => {
+    const user = userEvent.setup()
+    const { kakao, map, overlays } = fakeKakao({ level: 3, pxPerDeg: 80000 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(
+      <BoardingMap
+        boarding={{
+          from: { name: '고현터미널', kind: 'TERMINAL', lat: 34.8906148, lng: 128.6242507 },
+          stops: [
+            { nodeId: 'GJB500', name: '터미널(일반)', lat: 34.89061475, lng: 128.62425069, distanceM: 0, routes: ['32'] },
+            { nodeId: 'GJB362', name: '터미널(순환)', lat: 34.8910729, lng: 128.62478237, distanceM: 70, routes: ['2000'] },
+          ],
+          exceptions: [],
+          unresolved: [],
+          source: SOURCE,
+        }}
+      />,
+    )
+    await expand(user)
+
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    const byText = Object.fromEntries(overlays.map((o) => [o.options.content.textContent, o.options.yAnchor]))
+    expect(byText['32']).toBeCloseTo(ICON_CENTER)
+    expect(byText['2000']).toBeGreaterThan(1)
+  })
+
+  it('출발 곳 점이 마커와 겹치면 점 자기 높이(9px)로 비킨다 — 마커 비율로 재면 7px만 움직여 이름표가 마커를 덮는다', async () => {
+    const user = userEvent.setup()
+    const { kakao, map, overlays } = fakeKakao({ level: 3, pxPerDeg: 100000 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(
+      <BoardingMap
+        boarding={{
+          from: { name: '고현터미널', kind: 'TERMINAL', lat: 34.8906, lng: 128.6242 },
+          stops: [{ nodeId: 'GJB370', name: '터미널(순환)', lat: 34.89063, lng: 128.62458, distanceM: 42, routes: ['100-1', '100', '110', '111'] }],
+          exceptions: [],
+          unresolved: [],
+          source: SOURCE,
+        }}
+      />,
+    )
+    await expand(user)
+
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    const from = overlays.find((o) => o.options.content.textContent === '고현터미널')
+    // 마커 박스(좌표 기준 -14 ~ +37px) 밖으로: 아래면 점 윗변이 +39px(= -39/9), 위면 점 아랫변이 -16px(= 25/9)
+    expect(Math.abs(from.options.yAnchor - -39 / 9) < 1e-6 || Math.abs(from.options.yAnchor - 25 / 9) < 1e-6).toBe(true)
+  })
 })
+

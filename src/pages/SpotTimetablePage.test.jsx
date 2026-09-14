@@ -1,7 +1,7 @@
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../lib/api'
 import { loadSpots } from '../lib/spots'
 import SpotTimetablePage from './SpotTimetablePage'
@@ -41,11 +41,11 @@ function busOf(poiId, overrides = {}) {
     to: { stop: '고현', name: '고현터미널' },
     date: DATE,
     dayClass: 'WEEKDAY',
-    departures: [{ routeNo: '55', depart: '13:00', arrive: '13:40', durationMin: 40 }],
+    departures: [{ routeNo: '55', depart: '13:00', arrive: '13:40', durationMin: 40, estimated: false, departEstimated: false }],
     count: 1,
     firstDeparture: '13:00',
     lastDeparture: '13:00',
-    next: { routeNo: '55', depart: '13:00', durationMin: 40 },
+    next: { routeNo: '55', depart: '13:00', durationMin: 40, estimated: false, departEstimated: false },
     byRoute: [{ routeNo: '55', count: 1, durationMin: 40, durationMinLow: 40, durationVaries: false }],
     emptyReason: null,
     unknownTimeRoutes: [],
@@ -628,4 +628,106 @@ describe('SpotTimetablePage — 버스 시간표 09-14 개정(530:213 · 541:213
     expect(await screen.findByText('약 25분 뒤 · 시간표 기준')).toBeInTheDocument()
     expect(container).not.toHaveTextContent('추정')
   })
+
+  it('노선 칩을 고른 뒤 그 노선만 끝났으면 「오늘 남은 67-1번 버스가 없어요」 — 오늘 전체가 끝났다고 말하지 않는다', async () => {
+    const user = userEvent.setup()
+    api.spotDepartures.mockImplementation(async (poiId) => busOf(poiId, HAKDONG))
+    renderAt(`/timetable/4?date=${DATE}&now=12:00`)
+
+    await user.click(await screen.findByRole('button', { name: '67-1번 1' }))
+    expect(screen.getByText('오늘 남은 67-1번 버스가 없어요')).toBeInTheDocument()
+    expect(screen.queryByText('오늘 남은 버스가 없어요')).not.toBeInTheDocument()
+  })
+
+  it('도착이 추정인 편으로 만든 소요시간은 추정이라고 적는다 — 고현 → 바람의언덕 55번', async () => {
+    const user = userEvent.setup()
+    api.spotDepartures.mockImplementation(async (poiId) =>
+      busOf(poiId, {
+        departures: [
+          dep('55', '06:25', 50, { estimated: true, departEstimated: false }),
+          dep('55-1', '15:05', 65, { estimated: true, departEstimated: false }),
+        ],
+        count: 2,
+        byRoute: [
+          { routeNo: '55', count: 1, durationMin: 50, durationMinLow: 50, durationVaries: false },
+          { routeNo: '55-1', count: 1, durationMin: 65, durationMinLow: 65, durationVaries: false },
+        ],
+      }),
+    )
+    renderAt(`/timetable/1?dir=fromOrigin&date=${DATE}&now=06:00`)
+
+    await user.click(await screen.findByRole('button', { name: '55번 1' }))
+    expect(screen.getByText('약 50분 · 앞뒤 정류장 시각으로 추정')).toBeInTheDocument()
+  })
+
+  it('서버가 departEstimated를 주지 않으면(옛 서버) 「시간표 기준」이라고 단정하지 않는다', async () => {
+    api.spotDepartures.mockImplementation(async (poiId) =>
+      busOf(poiId, {
+        departures: [{ routeNo: '55', depart: '12:48', arrive: '13:40', durationMin: 52, estimated: true }],
+        next: { routeNo: '55', depart: '12:48', arrive: '13:40', durationMin: 52, estimated: true },
+      }),
+    )
+    renderAt(`/timetable/1?date=${DATE}&now=12:20`)
+
+    expect(await screen.findByText('약 28분 뒤')).toBeInTheDocument()
+    expect(screen.queryByText(/시간표 기준/)).not.toBeInTheDocument()
+  })
 })
+
+describe('SpotTimetablePage — 시계(주소에 now가 없을 때)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(new Date('2026-09-14T12:30:00+09:00'))
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('「약 N분 뒤」가 시간이 흐르면 따라간다 — 다시 부르지 않는다', async () => {
+    renderAt('/timetable/4')
+
+    expect(await screen.findByText('약 30분 뒤 · 시간표 기준')).toBeInTheDocument()
+    await act(async () => {
+      vi.advanceTimersByTime(10 * 60 * 1000)
+    })
+    expect(screen.getByText('약 20분 뒤 · 시간표 기준')).toBeInTheDocument()
+    expect(api.spotDepartures).toHaveBeenCalledTimes(1)
+  })
+
+  it('분이 바뀐 뒤 노선 칩을 눌러도 표가 「불러오는 중」으로 사라지지 않고, 펼친 타는 곳 카드도 그대로다', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    api.spotDepartures.mockImplementation(async (poiId) =>
+      busOf(poiId, {
+        departures: [
+          { routeNo: '67-1', depart: '13:25', arrive: '14:20', durationMin: 55, estimated: false, departEstimated: false },
+          { routeNo: '55', depart: '15:00', arrive: '15:40', durationMin: 40, estimated: false, departEstimated: false },
+        ],
+        count: 2,
+        byRoute: [
+          { routeNo: '55', count: 1, durationMin: 40, durationMinLow: 40, durationVaries: false },
+          { routeNo: '67-1', count: 1, durationMin: 55, durationMinLow: 55, durationVaries: false },
+        ],
+        boarding: {
+          from: { name: '학동몽돌해변', kind: 'SPOT', lat: 34.7747, lng: 128.6415 },
+          stops: [{ nodeId: 'GJB876', name: '학동', lat: 34.775, lng: 128.641, distanceM: 311, routes: ['55', '67-1'] }],
+          exceptions: [],
+          unresolved: [],
+          source: '정류소 좌표 국토교통부 TAGO · 2026-09-13',
+        },
+      }),
+    )
+    renderAt('/timetable/4')
+
+    await user.click(await screen.findByRole('button', { expanded: false }))
+    await act(async () => {
+      vi.advanceTimersByTime(90 * 1000)
+    })
+    await user.click(screen.getByRole('button', { name: '55번 1' }))
+
+    expect(screen.queryByText('시간표를 불러오는 중')).not.toBeInTheDocument()
+    expect(screen.getByText('15:00')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: '타는 곳' }).querySelector('button[aria-expanded]')).toHaveAttribute('aria-expanded', 'true')
+    expect(api.spotDepartures).toHaveBeenCalledTimes(1)
+  })
+})
+

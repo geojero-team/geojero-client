@@ -41,18 +41,23 @@ import styles from './SpotTimetablePage.module.css'
 /** 시각 문자열("HH:MM")을 분으로. 지난 차를 흐리게 하려면 비교가 필요합니다. */
 const toMin = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5))
 
-/** 오늘 날짜(로컬). 서버가 이 날짜로 요일을 판정합니다 — 주말이면 버스가 달라집니다. */
+/**
+ * 오늘 날짜 · 지금 시각 — **한국 시간** 기준입니다. 서버가 이 날짜로 요일을 판정하고(주말이면 버스가 달라집니다)
+ * 시간표도 한국 시각입니다. 기기 시간대를 따르면 해외에서 여행 전에 볼 때 이미 떠난 버스를 「다음」이라고 합니다
+ * (2026-09-14 리뷰). 배 응답의 asOf도 Asia/Seoul 입니다.
+ */
+const KST = 'Asia/Seoul'
+
 function today() {
-  const d = new Date()
-  const p = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+  return new Intl.DateTimeFormat('en-CA', { timeZone: KST, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 }
 
 function nowHm() {
-  const d = new Date()
-  const p = (n) => String(n).padStart(2, '0')
-  return `${p(d.getHours())}:${p(d.getMinutes())}`
+  return new Intl.DateTimeFormat('en-GB', { timeZone: KST, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date())
 }
+
+/** 「약 N분 뒤」를 따라가게 하는 간격. 분 단위 문구라 30초면 늦어도 반 분입니다. */
+const CLOCK_MS = 30 * 1000
 
 /** 고현터미널 — 모든 코스의 출발·복귀 지점입니다. 스팟이 아니라서 poiId가 없습니다. */
 const ORIGIN = '고현터미널'
@@ -112,8 +117,12 @@ function ferryFor(dir, ferry) {
  * 버스 응답이 **어느 요청의 답인지**. 칩을 바꾼 직후에는 앞 칩의 답이 아직 state에 남아 있어,
  * 그대로 그리면 새 칩 아래에 길 건너편 정류장 핀·다른 방향의 다음 버스가 나옵니다(2026-09-14 리뷰).
  * 키가 다르면 그 답은 없는 것으로 보고 불러오는 중으로 그립니다.
+ *
+ * 흐르는 시계는 키에 넣지 않습니다(주소의 now만 넣습니다). 넣으면 분이 바뀐 뒤 노선 칩만 눌러도 키가 어긋나
+ * 표 전체가 「불러오는 중」으로 사라지고 펼쳐 둔 타는 곳 카드가 접혔습니다(2026-09-14 리뷰). 다음 버스는
+ * 응답의 하루치 departures에서 지금 시각으로 고르므로 다시 물을 필요가 없습니다.
  */
-const busRequestKey = ({ dir, poiId, nextId, date, now }) => [dir, poiId, nextId, date, now].join('|')
+const busRequestKey = ({ dir, poiId, nextId, date, nowParam }) => [dir, poiId, nextId, date, nowParam].join('|')
 
 const BUS_LOADING = { key: null, status: 'loading', data: null, error: '' }
 
@@ -132,7 +141,20 @@ export default function SpotTimetablePage() {
 
   // 날짜·시각을 쿼리로 덮어쓸 수 있게 둡니다 — 화면 확인과 회귀에 필요합니다.
   const date = searchParams.get('date') ?? today()
-  const now = searchParams.get('now') ?? nowHm()
+  const nowParam = searchParams.get('now')
+  // 주소에 now가 없으면 흐르는 시계 — 「약 N분 뒤」 · 「다음」 태그가 화면을 켜 둔 동안 따라갑니다.
+  const [clock, setClock] = useState(nowHm)
+  useEffect(() => {
+    if (nowParam) return
+    const tick = () => setClock(nowHm())
+    const timer = setInterval(tick, CLOCK_MS)
+    document.addEventListener('visibilitychange', tick)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', tick)
+    }
+  }, [nowParam])
+  const now = nowParam ?? clock
   // 코스의 다음 스팟 poiId. 코스 상세에서 넘어올 때만 붙습니다.
   const nextId = searchParams.get('to')
 
@@ -171,7 +193,7 @@ export default function SpotTimetablePage() {
   useEffect(() => {
     let cancelled = false
     api
-      .spotFerries(poiId, { date, after: now, toPoiId: nextId })
+      .spotFerries(poiId, { date, after: nowParam ?? nowHm(), toPoiId: nextId })
       .then((data) => {
         if (!cancelled) setFerry({ status: 'ready', data, error: '' })
       })
@@ -181,14 +203,14 @@ export default function SpotTimetablePage() {
     return () => {
       cancelled = true
     }
-  }, [poiId, nextId, date, now])
+  }, [poiId, nextId, date, nowParam])
 
   // 버스는 버스 칩일 때만 묻습니다. 배 칩에 버스를 물으면 외도(`toPoiId=5`)처럼 서버가 400을 줍니다.
   useEffect(() => {
     if (!busChip) return
     let cancelled = false
-    const key = busRequestKey({ dir, poiId, nextId, date, now })
-    fetchDirection(dir, { poiId, nextId, date, after: now })
+    const key = busRequestKey({ dir, poiId, nextId, date, nowParam })
+    fetchDirection(dir, { poiId, nextId, date, after: nowParam ?? nowHm() })
       .then((data) => {
         if (!cancelled) setResult({ key, status: 'ready', data, error: '' })
       })
@@ -198,10 +220,10 @@ export default function SpotTimetablePage() {
     return () => {
       cancelled = true
     }
-  }, [poiId, nextId, dir, date, now, busChip])
+  }, [poiId, nextId, dir, date, nowParam, busChip])
 
   // 지금 칩의 요청에 대한 답만 씁니다. 배 칩이거나 답이 아직이면 d가 null입니다.
-  const bus = result.key === busRequestKey({ dir, poiId, nextId, date, now }) ? result : BUS_LOADING
+  const bus = result.key === busRequestKey({ dir, poiId, nextId, date, nowParam }) ? result : BUS_LOADING
   const d = busChip && bus.status === 'ready' ? bus.data : null
   const dayLabel = t(d?.dayClass === 'HOLIDAY' ? 'courseDetail.holiday' : 'courseDetail.weekday')
   // 제목은 늘 **이 스팟**입니다. fromNext 응답은 다음 스팟 기준이라 응답 이름을 쓰면 제목이 바뀝니다.
@@ -258,25 +280,40 @@ export default function SpotTimetablePage() {
   const route = routes.some((r) => r.routeNo === picked) ? picked : null
   const routeSummary = routes.find((r) => r.routeNo === route) ?? null
   const shown = (d?.departures ?? []).filter((x) => route == null || x.routeNo === route)
-  // 노선을 고르면 다음 버스도 그 노선입니다. 서버 next 는 after(지금) 이후 첫 편이라 같은 규칙으로 고릅니다.
-  const nextDep = route == null ? (d?.next ?? null) : (shown.find((x) => toMin(x.depart) >= nowMin) ?? null)
+  // 다음 버스 = 보이는 편 중 지금 이후 첫 편(서버 next 와 같은 규칙). 노선을 고르면 그 노선입니다.
+  // 서버 next 를 쓰지 않는 이유: 요청할 때의 시각에 묶여 시계가 흘러도 따라가지 않습니다.
+  const nextDep = shown.find((x) => toMin(x.depart) >= nowMin) ?? null
   const isNext = (x) => nextDep != null && x.routeNo === nextDep.routeNo && x.depart === nextDep.depart
 
   // 「몇 분 뒤」는 오늘을 볼 때만 — 다른 날짜를 주소로 열었으면 지금 시각과 무관합니다(now를 주소로 주면 그 시각이 지금).
   const dateParam = searchParams.get('date')
-  const showsNow = searchParams.get('now') != null || dateParam == null || dateParam === today()
+  const showsNow = nowParam != null || dateParam == null || dateParam === today()
   const minutesLeft = nextDep ? toMin(nextDep.depart) - nowMin : null
-  const nextSub =
-    showsNow && minutesLeft != null
-      ? t('spotTime.nextSub', {
-          when: minutesLeft <= 0 ? t('spotTime.soon') : t('spotTime.inTime', { time: formatDuration(minutesLeft) }),
-          basis: t(nextDep.departEstimated ? 'spotTime.basisEstimated' : 'spotTime.basisTimetable'),
-        })
-      : null
+  const when =
+    minutesLeft == null ? null : minutesLeft <= 0 ? t('spotTime.soon') : t('spotTime.inTime', { time: formatDuration(minutesLeft) })
+  // 근거: 출발이 추정이면 추정, 원문 칸이면 시간표 기준. 서버가 departEstimated를 안 주면(옛 서버) 근거를 단정하지 않습니다.
+  const basis =
+    nextDep?.departEstimated === true
+      ? t('spotTime.basisEstimated')
+      : nextDep?.departEstimated === false
+        ? t('spotTime.basisTimetable')
+        : null
+  const nextSub = showsNow && when ? (basis ? t('spotTime.nextSub', { when, basis }) : when) : null
 
   const estimatedCount = shown.filter((x) => x.departEstimated).length
   const allEstimated = shown.length > 0 && estimatedCount === shown.length
   const someEstimated = estimatedCount > 0 && !allEstimated
+
+  // 노선을 고르면 소요시간 줄. 그 노선 편 중 하나라도 승차·하차가 앞뒤 정류장으로 감싼 값이면 소요시간도 추정입니다
+  // (고현 → 바람의언덕 55번 「약 50분」은 도장포 도착이 추정). 출발만 보는 departEstimated가 아니라 estimated를 봅니다.
+  const duration =
+    routeSummary?.durationMin == null
+      ? null
+      : routeSummary.durationVaries && routeSummary.durationMinLow != null
+        ? t('spotTime.durationRange', { low: routeSummary.durationMinLow, high: routeSummary.durationMin })
+        : t('spotTime.duration', { min: routeSummary.durationMin })
+  const durationText =
+    duration && shown.some((x) => x.estimated) ? t('spotTime.durationEstimated', { duration }) : duration
 
   const summary = routeSummary
     ? t('spotTime.summaryRoute', { route: routeSummary.routeNo, count: routeSummary.count })
@@ -358,7 +395,11 @@ export default function SpotTimetablePage() {
           {d?.count > 0 && (
             <div className={styles.nextCard}>
               <p className={styles.nextLine}>
-                {nextDep ? t('spotTime.next', { time: nextDep.depart, route: nextDep.routeNo }) : t('spotTime.noNext')}
+                {nextDep
+                  ? t('spotTime.next', { time: nextDep.depart, route: nextDep.routeNo })
+                  : route
+                    ? t('spotTime.noNextRoute', { route })
+                    : t('spotTime.noNext')}
               </p>
               {nextSub && <p className={styles.nextSub}>{nextSub}</p>}
             </div>
@@ -425,11 +466,9 @@ export default function SpotTimetablePage() {
               )}
 
               {/* 소요시간 줄(541:370) — 노선을 골랐을 때만. 「전체」에서 섞어 한 값을 내면 실제로 운행하지 않는 값이 됩니다. */}
-              {routeSummary?.durationMin != null && (
+              {durationText && (
                 <p className={styles.duration}>
-                  {routeSummary.durationVaries && routeSummary.durationMinLow != null
-                    ? t('spotTime.durationRange', { low: routeSummary.durationMinLow, high: routeSummary.durationMin })
-                    : t('spotTime.duration', { min: routeSummary.durationMin })}
+                  {durationText}
                 </p>
               )}
 

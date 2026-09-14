@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { t } from '../i18n'
+import { distanceMeters } from '../lib/geo'
 import { loadKakaoMaps } from '../lib/kakaoLoader'
 import styles from './CourseMiniMap.module.css'
 
@@ -18,6 +19,14 @@ import styles from './CourseMiniMap.module.css'
  */
 
 const FIT_PADDING = 32
+/**
+ * 화면에서 이보다 가까운 번호 핀은 한 핀에 번호를 합쳐 적습니다(「2·3」). 조선해양문화관과 거제씨월드는 113m라
+ * 섬 절반을 담는 배율에서 1px 남짓 떨어져 한 핀이 다른 핀을 통째로 가립니다(코스 8개, 2026-09-14 리뷰).
+ * 끌기·확대를 막아 두어 사용자가 떼어 볼 방법도 없습니다. 16px는 홈 지도(mapPins CLUSTER_GAP)와 같은 기준입니다.
+ */
+const MERGE_PX = 16
+/** SDK가 투영을 주지 않을 때의 거리 기준. */
+const MERGE_M = 150
 const GEOJE_CENTER = { lat: 34.88, lng: 128.62 }
 const INITIAL_LEVEL = 9
 
@@ -66,20 +75,38 @@ export default function CourseMiniMap({ stops, terminal }) {
     const map = mapRef.current
     if (phase !== 'ready' || !kakao || !map) return
 
-    // 고현터미널을 먼저 찍습니다 — 번호 핀이 겹치면 번호가 위에 보이게.
-    const items = [
-      ...(terminal ? [{ at: terminal, content: pin(styles.terminal, '') }] : []),
-      ...stops.map((stop) => ({ at: stop, content: pin(styles.stop, String(stop.seq)) })),
-    ].filter(({ at }) => Number.isFinite(at.lat) && Number.isFinite(at.lng))
-    if (items.length === 0) return
+    const valid = (at) => at && Number.isFinite(at.lat) && Number.isFinite(at.lng)
+    const spots = stops.filter(valid).map((stop) => ({ stop, position: new kakao.maps.LatLng(stop.lat, stop.lng) }))
+    const terminalPosition = valid(terminal) ? new kakao.maps.LatLng(terminal.lat, terminal.lng) : null
+    if (spots.length === 0 && !terminalPosition) return
 
     const bounds = new kakao.maps.LatLngBounds()
-    const overlays = items.map(({ at, content }) => {
-      const position = new kakao.maps.LatLng(at.lat, at.lng)
-      bounds.extend(position)
-      return new kakao.maps.CustomOverlay({ map, position, content, xAnchor: 0.5, yAnchor: 0.5 })
-    })
+    if (terminalPosition) bounds.extend(terminalPosition)
+    spots.forEach(({ position }) => bounds.extend(position))
     map.setBounds(bounds, FIT_PADDING, FIT_PADDING, FIT_PADDING, FIT_PADDING)
+
+    // 맞춘 배율의 화면 좌표로 포개지는 번호 핀을 묶습니다.
+    const projection = map.getProjection?.()
+    const groups = []
+    for (const { stop, position } of spots) {
+      const point = projection?.containerPointFromCoords(position)
+      const group = groups.find((g) =>
+        point && g.point
+          ? Math.hypot(g.point.x - point.x, g.point.y - point.y) < MERGE_PX
+          : distanceMeters(g.stop, stop) < MERGE_M,
+      )
+      if (group) group.seqs.push(stop.seq)
+      else groups.push({ stop, position, point, seqs: [stop.seq] })
+    }
+
+    // 고현터미널을 먼저 찍습니다 — 번호 핀이 겹치면 번호가 위에 보이게.
+    const items = [
+      ...(terminalPosition ? [{ position: terminalPosition, content: pin(styles.terminal, '') }] : []),
+      ...groups.map((g) => ({ position: g.position, content: pin(styles.stop, g.seqs.join('·')) })),
+    ]
+    const overlays = items.map(
+      ({ position, content }) => new kakao.maps.CustomOverlay({ map, position, content, xAnchor: 0.5, yAnchor: 0.5 }),
+    )
 
     return () => overlays.forEach((overlay) => overlay.setMap(null))
   }, [phase, stops, terminal])

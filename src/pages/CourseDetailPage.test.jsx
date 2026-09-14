@@ -176,7 +176,7 @@ describe('CourseDetailPage — 09-14 개정(532:318 폴백)', () => {
     const user = userEvent.setup()
     renderCourse(101)
 
-    const links = await screen.findAllByRole('button', { name: /시간표/ })
+    const links = await screen.findAllByRole('button', { name: / 시간표$/ })
     expect(links).toHaveLength(3)
     await user.click(links[0])
     expect(screen.getByTestId('loc')).toHaveTextContent('/timetable/4?to=3')
@@ -186,7 +186,7 @@ describe('CourseDetailPage — 09-14 개정(532:318 폴백)', () => {
     const user = userEvent.setup()
     renderCourse(101)
 
-    const links = await screen.findAllByRole('button', { name: /시간표/ })
+    const links = await screen.findAllByRole('button', { name: / 시간표$/ })
     await user.click(links[2])
     expect(screen.getByTestId('loc').textContent).toBe('/timetable/1')
   })
@@ -236,5 +236,33 @@ describe('CourseDetailPage — 09-14 개정(532:318 폴백)', () => {
 
     expect(await screen.findByText('지도를 불러오지 못했어요')).toBeInTheDocument()
     expect(screen.getByText('55번 · 40분')).toBeInTheDocument()
+  })
+
+  it('「시간표 ›」 버튼은 읽기 도구에 스팟 이름까지 말한다 — 같은 이름 버튼이 셋이면 어느 스팟인지 모른다', async () => {
+    renderCourse(101)
+
+    expect(await screen.findByRole('button', { name: '학동몽돌해변 시간표' })).toHaveTextContent('시간표 ›')
+    expect(screen.getByRole('button', { name: '해금강 시간표' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '바람의언덕 시간표' })).toBeInTheDocument()
+  })
+
+  it('구간이 없는 옛 코스에는 저장 버튼을 두지 않는다 — 출발·복귀 시각이 없어 서버가 늘 400을 준다', async () => {
+    api.course.mockResolvedValue({
+      courseId: 1,
+      name: '부산발 당일치기',
+      stops: [],
+      legs: [],
+      legCount: 0,
+      estimatedLegCount: 0,
+      busMinTotal: 0,
+      service: null,
+      source: null,
+      baseDate: null,
+      originName: null,
+    })
+    renderCourse(1)
+
+    await screen.findByText('이 코스는 구간별 버스 정보가 없어요.')
+    expect(screen.queryByRole('button', { name: '이 코스 저장하기' })).not.toBeInTheDocument()
   })
 })

@@ -95,10 +95,12 @@ function StopRow({ stop, nextPoiId, onOpenTimetable }) {
         <span className={styles.badge}>{stop.seq}</span>
       </span>
       <span className={styles.stopName}>{stop.shortName ?? stop.name}</span>
+      {/* 읽기 도구에는 스팟 이름까지 — 「시간표」 버튼이 서너 개라 이름이 없으면 어느 스팟인지 모릅니다. */}
       <button
         type="button"
         className={styles.timetableLink}
         onClick={() => onOpenTimetable(stop.poiId, nextPoiId)}
+        aria-label={t('courseDetail.timetableA11y', { name: stop.shortName ?? stop.name })}
       >
         {t('courseDetail.timetable')} ›
       </button>
@@ -281,28 +283,31 @@ export default function CourseDetailPage() {
             <p className={styles.subtitle}>{t('courseDetail.noLegs')}</p>
           )}
 
-          {/* 저장 — 본문 흐름 안(532:420). 저장 직후에는 결과와 '내 일정 보기'로 바뀝니다(446:1120). */}
-          <div className={styles.saveArea}>
-            {saveState.status === 'saved' ? (
-              <div className={styles.savedRow}>
-                <span className={styles.savedText}>{t('courseDetail.saved')}</span>
-                <button type="button" className={styles.savedLink} onClick={() => navigate('/my')}>
-                  {t('courseDetail.savedGo')} ›
-                </button>
-              </div>
-            ) : (
-              <>
-                {saveState.status === 'error' && (
-                  <p className={styles.saveError}>
-                    {t('courseDetail.saveFailed', { error: saveState.error })}
-                  </p>
-                )}
-                <Button onClick={save} disabled={saveState.status === 'saving'}>
-                  {t(saveState.status === 'saving' ? 'courseDetail.saving' : 'courseDetail.save')}
-                </Button>
-              </>
-            )}
-          </div>
+          {/* 저장 — 본문 흐름 안(532:420). 저장 직후에는 결과와 '내 일정 보기'로 바뀝니다(446:1120).
+              구간이 없는 옛 코스는 출발·복귀 시각이 없어 서버가 늘 400을 주므로 버튼을 두지 않습니다. */}
+          {hasLegs && (
+            <div className={styles.saveArea}>
+              {saveState.status === 'saved' ? (
+                <div className={styles.savedRow}>
+                  <span className={styles.savedText}>{t('courseDetail.saved')}</span>
+                  <button type="button" className={styles.savedLink} onClick={() => navigate('/my')}>
+                    {t('courseDetail.savedGo')} ›
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {saveState.status === 'error' && (
+                    <p className={styles.saveError}>
+                      {t('courseDetail.saveFailed', { error: saveState.error })}
+                    </p>
+                  )}
+                  <Button onClick={save} disabled={saveState.status === 'saving'}>
+                    {t(saveState.status === 'saving' ? 'courseDetail.saving' : 'courseDetail.save')}
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
