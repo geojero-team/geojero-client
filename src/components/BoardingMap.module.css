@@ -103,7 +103,7 @@
   color: var(--text-secondary);
 }
 
-/* 541:452 — 목록 줄: 이름 · 오른쪽 거리 / 연파랑 뱃지 */
+/* 541:452 — 목록 줄: 이름 / 「학동몽돌해변에서 약 310m」 / 연파랑 뱃지 */
 .list {
   display: flex;
   flex-direction: column;
@@ -115,20 +115,12 @@
 .row {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
   padding: 10px 0;
   border-bottom: 1px solid var(--border-default);
 }
 
-.rowHead {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .rowName {
-  flex: 1;
-  min-width: 0;
   font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 700;
@@ -136,8 +128,9 @@
   color: var(--text-primary);
 }
 
+/* 어디서 잰 거리인지까지 — 이름 아래 한 줄. 뱃지와는 2px 더 띄웁니다. */
 .rowDistance {
-  flex: none;
+  margin-bottom: 2px;
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 400;

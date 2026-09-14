@@ -317,8 +317,6 @@ export default function BoardingMap({ boarding, route = null }) {
     isNear(stop.distanceM)
       ? t('boarding.near', { place: from.name })
       : t('boarding.distance', { place: from.name, dist: formatDistance(stop.distanceM) })
-  const shortWhere = (stop) =>
-    isNear(stop.distanceM) ? t('boarding.near', { place: from.name }) : t('boarding.distanceOnly', { dist: formatDistance(stop.distanceM) })
 
   const withMain = exceptions.filter((ex) => ex.mainNodeId != null)
   const split = exceptions.filter((ex) => ex.mainNodeId == null)
@@ -391,10 +389,10 @@ export default function BoardingMap({ boarding, route = null }) {
             <ul className={styles.list}>
               {listed.map((place) => (
                 <li key={place.key} className={styles.row}>
-                  <span className={styles.rowHead}>
-                    <span className={styles.rowName}>{t('boarding.stopName', { name: place.stop.name })}</span>
-                    <span className={styles.rowDistance}>{shortWhere(place.stop)}</span>
-                  </span>
+                  <span className={styles.rowName}>{t('boarding.stopName', { name: place.stop.name })}</span>
+                  {/* 어디서 잰 거리인지 붙입니다 — 「약 310m」만으로는 기준을 모릅니다(2026-09-14 사용자 결정).
+                      그림(541:456)은 이름 오른쪽에 「약 ○○m」였는데, 스팟 이름이 붙어 길어져 이름 아래 줄로 옮겼습니다. */}
+                  <span className={styles.rowDistance}>{where(place.stop)}</span>
                   <span className={styles.badges}>
                     {place.badges.map((badge) => (
                       <span key={badge} className={styles.badge}>

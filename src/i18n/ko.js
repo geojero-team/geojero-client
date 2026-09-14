@@ -236,7 +236,6 @@ export default {
   'boarding.title': '타는 곳', // 카드의 읽기 도구 이름(화면 제목은 그림에서 빠졌다)
   'boarding.stopName': '{name} 정류장',
   'boarding.distance': '{place}에서 약 {dist}',
-  'boarding.distanceOnly': '약 {dist}',
   // 고현터미널에서 30m 안 — 「약 0m」 대신
   'boarding.near': '{place} 앞',
   'boarding.summary': '{where} · {routes}',
