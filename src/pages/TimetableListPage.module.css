@@ -1,0 +1,68 @@
+/* 시간표 탭 목록 — Figma 451:614 실측. 한 줄 72(위아래 12) · 사진 48 원 · 사진과 글 사이 12 ·
+   이름 16/24 Bold · 정류장 14/20 secondary(사이 2) · 오른쪽 끝 › 16/24 secondary · 줄마다 아래 구분선.
+   머리·안내·분류 칩은 스팟 탭 CSS(SpotsPage.module.css)를 같이 씁니다. */
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-page);
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:active {
+  background: var(--bg-pressed);
+}
+
+/* 451:616 — 48 원. 사진이 없으면 분류 자리그림(courseImage)이 같은 원 안에 들어갑니다. */
+.thumb {
+  flex-shrink: 0;
+  display: block;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.thumbImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.name {
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+/* 「신촌 정류장 · 시간표는 지세포 기준」처럼 길어지면 두 줄로 — 잘라서 뜻을 숨기지 않습니다. */
+.sub {
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.chev {
+  flex-shrink: 0;
+  font: var(--type-body);
+  color: var(--text-secondary);
+}

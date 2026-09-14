@@ -101,7 +101,11 @@ async function request(path, { method = 'GET', body, session = false, timeoutMs 
 export const api = {
   /**
    * PoisRes { pois: [{ poiId, name, shortName, kind, theme, region, category,
-   *                    tier, hasEnglish, lat, lng, imageUrl }] }
+   *                    tier, hasEnglish, lat, lng, imageUrl,
+   *                    alightLabel, timetableStop, boardStopDiffers, ferryDocks[] }] }
+   *
+   * alightLabel·timetableStop·boardStopDiffers 는 상세와 같은 값(시간표 탭 목록 둘째 줄).
+   * ferryDocks 는 배로만 가는 곳(외도보타니아)의 선착장 이름 넷, 나머지는 빈 배열입니다.
    *
    * withImages=true면 서버가 POI마다 TourAPI를 부릅니다(24h 캐시). 사진이 필요한 화면만
    * 켭니다 — 이름→id 해석은 사진이 필요 없고, 켜면 첫 요청이 느려집니다.
