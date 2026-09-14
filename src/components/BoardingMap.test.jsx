@@ -353,10 +353,11 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     await expand(user)
 
     await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
-    const byText = Object.fromEntries(overlays.map((o) => [o.options.content.textContent, o.options.yAnchor]))
-    expect(byText['4000']).toBeCloseTo(ICON_CENTER)
-    expect(byText['63 +1']).not.toBeCloseTo(ICON_CENTER)
-    expect(byText['22 +1']).toBeCloseTo(ICON_CENTER)
+    const at = (text) => overlays.find((o) => o.options.content.textContent === text).options
+    const stays = (text) => at(text).xAnchor === 0.5 && Math.abs(at(text).yAnchor - ICON_CENTER) < 1e-6
+    expect(stays('4000')).toBe(true)
+    expect(stays('63 +1')).toBe(false)
+    expect(stays('22 +1')).toBe(true)
   })
 
   it('세로로 40px 떨어진 마커도 겹침으로 본다 — 아이콘 + 태그가 51px라 알약(24px) 기준이면 포개진다', async () => {
@@ -447,7 +448,7 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     expect(Math.abs(from.options.yAnchor - -39 / 9) < 1e-6 || Math.abs(from.options.yAnchor - 25 / 9) < 1e-6).toBe(true)
   })
 
-  it('거제씨월드 — 위로 비킨 「63 +1」이 신촌 마커와 부딪히면 반대쪽(아래)으로(운영 실측, 2026-09-14)', async () => {
+  it('거제씨월드 — 26m 떨어진 두 지세포(거의 같은 높이)는 옆으로 나란히 · 위로 비키면 신촌 마커와 부딪힌다(운영 실측, 2026-09-14)', async () => {
     const user = userEvent.setup()
     const { kakao, map, overlays } = fakeKakao({ level: 5, pxPerDeg: 10000 })
     loadKakaoMaps.mockResolvedValue(kakao)
@@ -470,10 +471,11 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     await expand(user)
 
     await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
-    const byText = Object.fromEntries(overlays.map((o) => [o.options.content.textContent, o.options.yAnchor]))
-    expect(byText['4000']).toBeCloseTo(ICON_CENTER)
-    expect(byText['23-1 +5']).toBeCloseTo(ICON_CENTER)
-    expect(byText['63 +1']).toBeLessThan(0)
+    const at = (text) => overlays.find((o) => o.options.content.textContent === text).options
+    expect(at('4000').xAnchor).toBe(0.5)
+    expect(at('23-1 +5').xAnchor).toBe(0.5)
+    expect(at('63 +1').yAnchor).toBeCloseTo(ICON_CENTER) // 높이는 그대로
+    expect(at('63 +1').xAnchor).not.toBe(0.5) // 옆으로
   })
 
   it('비킨 마커가 지도 칸(180px) 밖으로 나가면 반대쪽으로 — 매미성 대금교차로가 지도 아래쪽에 있을 때', async () => {
@@ -529,17 +531,20 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     const { kakao, map, overlays } = fakeKakao({ level: 5, pxPerDeg: 10000 })
     loadKakaoMaps.mockResolvedValue(kakao)
     const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight')
+    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')
     Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 180 })
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 110 })
     try {
-      // y = (35 - 위도) × 12000 · x = (경도 - 128.6) × 10000
-      // 4000: (1000, 79) · 신촌: (981, 40) — 위로 비키면 칸 밖(40 - 67 < 0), 아래로 비키면 4000과 37px 겹침, 제자리는 12px
+      // y = (35 - 위도) × 12000 · x = (경도 - 128.6) × 10000, 지도 칸 110 × 180
+      // 4000: (40, 79) · 신촌: (21, 40) — 위로 비키면 칸 밖(40 - 67 < 0), 아래로 비키면 4000과 37px 겹침,
+      // 왼쪽 · 오른쪽으로 비키면 칸 밖(폭 110), 제자리는 12px 겹침
       render(
         <BoardingMap
           boarding={{
             from: { name: '거제씨월드', kind: 'SPOT', lat: 35 - 170 / 12000, lng: 128.74 },
             stops: [
-              { nodeId: 'GJB1657', name: '지세포', lat: 35 - 79 / 12000, lng: 128.7, distanceM: 788, routes: ['4000'] },
-              { nodeId: 'GJB901', name: '신촌', lat: 35 - 40 / 12000, lng: 128.6981, distanceM: 217, routes: ['23-1', '23', '22', '25-1', '25', '24-1'] },
+              { nodeId: 'GJB1657', name: '지세포', lat: 35 - 79 / 12000, lng: 128.604, distanceM: 788, routes: ['4000'] },
+              { nodeId: 'GJB901', name: '신촌', lat: 35 - 40 / 12000, lng: 128.6021, distanceM: 217, routes: ['23-1', '23', '22', '25-1', '25', '24-1'] },
             ],
             exceptions: [],
             unresolved: [],
@@ -552,10 +557,40 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
       await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
       const sinchon = overlays.find((o) => o.options.content.textContent === '23-1 +5')
       expect(sinchon.options.yAnchor).toBeCloseTo(ICON_CENTER)
+      expect(sinchon.options.xAnchor).toBe(0.5)
     } finally {
       if (height) Object.defineProperty(HTMLElement.prototype, 'clientHeight', height)
       else delete HTMLElement.prototype.clientHeight
+      if (width) Object.defineProperty(HTMLElement.prototype, 'clientWidth', width)
+      else delete HTMLElement.prototype.clientWidth
     }
+  })
+
+  it('가로로 더 떨어져 겹친 마커는 옆으로 비킨다 — 동쪽이면 오른쪽, 높이는 그대로', async () => {
+    const user = userEvent.setup()
+    const { kakao, map, overlays } = fakeKakao({ level: 5, pxPerDeg: 10000 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+    // A: (1000, 600) · B: 동쪽 20px · 남쪽 5px — 상자가 겹친다
+    render(
+      <BoardingMap
+        boarding={{
+          from: { name: '어딘가', kind: 'SPOT', lat: 34.9, lng: 128.9 },
+          stops: [
+            { nodeId: 'A', name: 'A', lat: 35 - 600 / 12000, lng: 128.7, distanceM: 100, routes: ['55'] },
+            { nodeId: 'B', name: 'B', lat: 35 - 605 / 12000, lng: 128.702, distanceM: 100, routes: ['67-1'] },
+          ],
+          exceptions: [],
+          unresolved: [],
+          source: SOURCE,
+        }}
+      />,
+    )
+    await expand(user)
+
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    const b = overlays.find((o) => o.options.content.textContent === '67-1').options
+    expect(b.yAnchor).toBeCloseTo(ICON_CENTER)
+    expect(b.xAnchor).toBeLessThan(0.5) // 내용이 좌표보다 오른쪽으로
   })
 })
 

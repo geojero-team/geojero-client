@@ -85,65 +85,76 @@ function busMarkerSvg(size) {
   )
 }
 
+/** 옆으로 비킬 때 상대 상자와 띄우는 간격(px). */
+const SIDE_GAP = 2
+
 /**
- * 한 칸(제자리 · 아래 · 위)에 달았을 때 화면에서 차지하는 상자(px). 마커는 태그 폭 · 51px, 출발 곳은 점 + 오른쪽 이름표.
- * 좌표(point)가 아이콘 가운데(출발 곳은 점 가운데)라는 anchorOf 규칙과 같은 기하입니다.
+ * 한 칸(제자리 · 위 · 아래 · 왼쪽 · 오른쪽)에 달았을 때의 화면 상자(px)와 앵커. 마커는 태그 폭 × 51px, 출발 곳은 점 + 오른쪽 이름표.
+ * 좌표(point)가 아이콘 가운데(출발 곳은 점 가운데)라는 anchorOf 규칙과 같은 기하입니다. 옆으로는 겹친 상대(hit) 상자 옆에 붙입니다.
+ * xAnchor는 내용 폭의 비율이라 가운데를 cx로 옮기려면 0.5 - (cx - point.x) / 폭 입니다.
  */
-function boxOf(item, point, slot) {
-  const top = point.y - anchorOf(slot, item.height, item.center) * item.height
+function placement(item, point, slot, hit) {
+  const vertical = slot === 'above' || slot === 'below' ? slot : 'center'
+  const yAnchor = anchorOf(vertical, item.height, item.center)
+  const top = point.y - yAnchor * item.height
   if (item.kind === 'from') {
     const r = FROM_HEIGHT / 2
     // 이름표(17px)가 점 가운데 높이에 걸립니다.
-    return { x0: point.x - r, x1: point.x + r + item.width, y0: top + r - 8.5, y1: top + r + 8.5 }
+    return { slot, xAnchor: 0.5, yAnchor, box: { x0: point.x - r, x1: point.x + r + item.width, y0: top + r - 8.5, y1: top + r + 8.5 } }
   }
-  const half = Math.max(item.width, 28) / 2
-  return { x0: point.x - half, x1: point.x + half, y0: top, y1: top + item.height }
+  const w = Math.max(item.width, 28)
+  const cx =
+    slot === 'right' ? hit.box.x1 + SIDE_GAP + w / 2 : slot === 'left' ? hit.box.x0 - SIDE_GAP - w / 2 : point.x
+  return { slot, xAnchor: 0.5 - (cx - point.x) / w, yAnchor, box: { x0: cx - w / 2, x1: cx + w / 2, y0: top, y1: top + item.height } }
 }
 
 const intersects = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1
 
 /**
- * 화면 좌표로 칸 고르기. 제자리가 먼저 찍힌 상자와 겹치지 않으면 제자리. 겹치면 **실제로 있는 쪽**(겹친 상대보다 북쪽이면 위)을
- * 먼저, 안 되면 반대쪽. 비킨 상자도 다른 상자와 부딪히거나 지도 칸 밖이면 그 칸은 버립니다.
+ * 화면 좌표로 칸 고르기. 제자리가 먼저 찍힌 상자와 겹치지 않으면 제자리. 겹치면 **실제로 있는 쪽**으로 비킵니다 —
+ * 겹친 상대보다 세로로 더 떨어졌으면 위·아래(북쪽이면 위)부터, 가로로 더 떨어졌으면 옆(동쪽이면 오른쪽)부터.
+ * 비킨 상자도 다른 상자와 부딪히거나 지도 칸 밖이면 그 칸은 버립니다.
  *  · 방향을 보지 않고 번갈아 달면 북쪽 정류장이 남쪽에 그려졌습니다(고현터미널 → 김영삼 생가 2000번).
- *  · 비킨 뒤를 재지 않으면 「63 +1」이 신촌 마커에 부딪혔고(거제씨월드), 매미성 길 건너편 마커는 칸 밖으로 잘렸습니다(운영, 2026-09-14).
- * 어느 칸도 깨끗하지 않으면 칸 안에 드는 칸 중 **가장 덜 겹치는** 칸입니다 — 비켜서 더 크게 덮으면 비키지 않은 것만 못합니다
- * (운영 거제씨월드 신촌: 제자리 12px · 아래 37px 겹침). 칸 안에 드는 칸이 없으면 제자리입니다.
+ *  · 비킨 뒤를 재지 않으면 「63 +1」이 신촌 마커에 부딪혔고(거제씨월드), 매미성 길 건너편 마커는 칸 밖으로 잘렸습니다.
+ *  · 위·아래만 있으면 26m 떨어진 두 지세포(거의 같은 높이)가 비킬 곳이 없었습니다 — 옆으로 나란히 둡니다(운영, 2026-09-14).
+ * 어느 칸도 깨끗하지 않으면 칸 안에 드는 칸 중 **가장 덜 겹치는** 칸(제자리는 늘 후보)입니다 — 비켜서 더 크게 덮으면 비키지 않은 것만 못합니다.
  */
-function slotByBox(item, point, placed, mapHeight) {
+function placeByBox(item, point, placed, mapSize) {
   const others = placed.filter((p) => p.box)
-  const overlap = (slot) => {
-    const a = boxOf(item, point, slot)
-    return others.reduce((sum, p) => {
-      const b = p.box
-      const w = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)
-      const h = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0)
+  const overlap = (box) =>
+    others.reduce((sum, p) => {
+      const w = Math.min(box.x1, p.box.x1) - Math.max(box.x0, p.box.x0)
+      const h = Math.min(box.y1, p.box.y1) - Math.max(box.y0, p.box.y0)
       return w > 0 && h > 0 ? sum + w * h : sum
     }, 0)
-  }
-  const inside = (slot) => {
-    if (!mapHeight) return true
-    const box = boxOf(item, point, slot)
-    return box.y0 >= 0 && box.y1 <= mapHeight
-  }
-  const hit = others.find((p) => intersects(boxOf(item, point, 'center'), p.box))
-  if (!hit) return 'center'
-  const north = point.y < hit.point.y
-  const shifts = north ? ['above', 'below'] : ['below', 'above']
-  const clean = shifts.find((slot) => overlap(slot) === 0 && inside(slot))
+  const inside = (box) =>
+    (!mapSize.height || (box.y0 >= 0 && box.y1 <= mapSize.height)) && (!mapSize.width || (box.x0 >= 0 && box.x1 <= mapSize.width))
+
+  const center = placement(item, point, 'center')
+  const hit = others.find((p) => intersects(center.box, p.box))
+  if (!hit) return center
+  const dx = point.x - hit.point.x
+  const dy = point.y - hit.point.y
+  const vertical = dy < 0 ? ['above', 'below'] : ['below', 'above']
+  const sideways = item.kind === 'from' ? [] : dx < 0 ? ['left', 'right'] : ['right', 'left']
+  const order = Math.abs(dx) > Math.abs(dy) ? [...sideways, ...vertical] : [...vertical, ...sideways]
+  const options = order.map((slot) => placement(item, point, slot, hit))
+  const clean = options.find((o) => overlap(o.box) === 0 && inside(o.box))
   if (clean) return clean
-  const fits = ['center', ...shifts].filter(inside)
-  return fits.length === 0 ? 'center' : fits.reduce((best, slot) => (overlap(slot) < overlap(best) ? slot : best))
+  return [center, ...options.filter((o) => inside(o.box))].reduce((best, o) => (overlap(o.box) < overlap(best.box) ? o : best))
 }
 
 /** SDK가 투영을 주지 않을 때 — 거리로 겹침을 재고, 북쪽이면 위 · 그쪽을 이미 썼으면 반대쪽. */
-function slotByDistance(item, placed) {
+function placeByDistance(item, placed) {
   const near = placed.filter((p) => distanceMeters(p.at, item.at) < STACK_M)
-  if (near.length === 0) return 'center'
-  const north = item.at.lat > near[0].at.lat
-  const used = new Set(near.map((p) => p.slot))
-  const [preferred, other] = north ? ['above', 'below'] : ['below', 'above']
-  return !used.has(preferred) ? preferred : !used.has(other) ? other : preferred
+  let slot = 'center'
+  if (near.length > 0) {
+    const north = item.at.lat > near[0].at.lat
+    const used = new Set(near.map((p) => p.slot))
+    const [preferred, other] = north ? ['above', 'below'] : ['below', 'above']
+    slot = !used.has(preferred) ? preferred : !used.has(other) ? other : preferred
+  }
+  return { slot, xAnchor: 0.5, yAnchor: anchorOf(slot, item.height, item.center), box: null }
 }
 
 /** 고른 노선만 남깁니다. 서버가 노선마다 대표 정류장을 한 곳만 주므로 결과가 늘 정해집니다. */
@@ -273,14 +284,13 @@ function MapCanvas({ stops, exceptions, from, showFrom }) {
     if (map.getLevel() < MIN_LEVEL) map.setLevel(MIN_LEVEL)
 
     const projection = map.getProjection?.()
-    const mapHeight = containerRef.current?.clientHeight ?? 0
+    const mapSize = { width: containerRef.current?.clientWidth ?? 0, height: containerRef.current?.clientHeight ?? 0 }
     const placed = []
     const overlays = items.map((item) => {
       const point = projection?.containerPointFromCoords(item.position)
-      const slot = point ? slotByBox(item, point, placed, mapHeight) : slotByDistance(item, placed)
-      placed.push({ at: item.at, point, slot, box: point ? boxOf(item, point, slot) : null })
-      const yAnchor = anchorOf(slot, item.height, item.center)
-      return new kakao.maps.CustomOverlay({ map, position: item.position, content: item.content, xAnchor: 0.5, yAnchor })
+      const { slot, xAnchor, yAnchor, box } = point ? placeByBox(item, point, placed, mapSize) : placeByDistance(item, placed)
+      placed.push({ at: item.at, point, slot, box })
+      return new kakao.maps.CustomOverlay({ map, position: item.position, content: item.content, xAnchor, yAnchor })
     })
 
     return () => overlays.forEach((overlay) => overlay.setMap(null))
