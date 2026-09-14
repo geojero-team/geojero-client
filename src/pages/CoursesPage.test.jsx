@@ -3,16 +3,17 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../lib/api'
-import { loadSpotPhotos } from '../lib/spots'
+import { loadSpotPhotos, loadSpots } from '../lib/spots'
 import CoursesPage from './CoursesPage'
 import styles from './CoursesPage.module.css'
 
 vi.mock('../lib/api', () => ({ api: { courses: vi.fn() } }))
 
-// withPhotos 는 그대로 쓰고 사진 목록만 흉내 냅니다 — 사진은 /api/pois 에서 오고 코스 API는 사진을 주지 않습니다.
+// withPhotos · regionsOf 는 그대로 쓰고 /api/pois 만 흉내 냅니다 — 사진·권역은 거기서 오고 코스 API는 주지 않습니다.
 vi.mock('../lib/spots', async (importOriginal) => ({
   ...(await importOriginal()),
   loadSpotPhotos: vi.fn(),
+  loadSpots: vi.fn(),
 }))
 
 const spot = (seq, poiId, name, shortName, theme) => ({ seq, poiId, name, shortName, theme, lat: 34.7, lng: 128.6 })
@@ -103,6 +104,14 @@ const PHOTOS = new Map([
   [1, 'https://tong.visitkorea.or.kr/windhill.jpg'],
 ])
 
+/** /api/pois 권역 — TourAPI 주소의 읍·면·동으로 정한 값(기준문서 §6). 권역 태그의 근거. */
+const POIS = new Map(
+  [
+    [1, '남부권'], [3, '남부권'], [4, '남부권'],
+    [16, '동부권'], [18, '동부권'], [20, '동부권'], [21, '동부권'],
+  ].map(([poiId, region]) => [poiId, { poiId, region }]),
+)
+
 function LocationProbe() {
   const location = useLocation()
   return <output data-testid="loc">{location.pathname + location.search}</output>
@@ -126,6 +135,7 @@ const card = (id) => document.querySelector(`[data-course="${id}"]`)
 beforeEach(() => {
   vi.clearAllMocks()
   loadSpotPhotos.mockResolvedValue(PHOTOS)
+  loadSpots.mockResolvedValue(POIS)
   api.courses.mockResolvedValue(TWO)
 })
 
@@ -142,7 +152,7 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
     expect(api.courses).toHaveBeenCalledWith({ featured: true })
   })
 
-  it('카드 — 제목 · 스팟 체인 · 소개 · 태그 넷(단일 노선 · 매일 6회 · 평일·휴일)', async () => {
+  it('카드 — 제목 · 스팟 체인 · 소개 · 태그 넷(버스 시간 · 권역 · 매일 6회 · 평일·휴일)', async () => {
     renderPage()
 
     await screen.findByText('환승 없이 남부 9경 세 곳')
@@ -150,23 +160,31 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
     expect(c.getByText('학동몽돌해변 → 해금강 → 바람의언덕')).toBeInTheDocument()
     expect(c.getByText(COURSE_301.intro)).toBeInTheDocument()
     expect(c.getByText('버스 약 1시간 54분')).toBeInTheDocument()
-    expect(c.getByText('55번 한 노선')).toBeInTheDocument()
-    expect(c.getByText('매일 6회')).toBeInTheDocument()
-    expect(c.getByText('평일·휴일')).toBeInTheDocument()
+    // 노선 번호 태그(「55번 한 노선」)는 2026-09-14 밤 권역으로 바꿨다 — 노선은 코스 상세가 구간마다 말한다
+    expect([...card(101).querySelectorAll(`.${styles.tag}`)].map((e) => e.textContent)).toEqual([
+      '버스 약 1시간 54분', '남부권', '매일 6회', '평일·휴일',
+    ])
     // 코스 name 은 줄임말 체인이라 화면에 내지 않는다(코스 상세와 같은 이유)
     expect(c.queryByText('학동 · 해금강 · 바람의언덕')).not.toBeInTheDocument()
   })
 
-  it('노선이 여럿인 카드 — 「22-1·67-1·55번 3노선」 · 배차 태그 없음 · 「평일만」', async () => {
+  it('권역이 섞인 카드 — 가는 순서대로 「동부권·남부권」 · 배차 태그 없음(노선 여럿) · 「평일만」', async () => {
     renderPage()
 
     await screen.findByText('돌고래 보고 몽돌 밟고 바람의언덕')
-    const c = within(card(104))
-    expect(c.getByText('22-1·67-1·55번 3노선')).toBeInTheDocument()
-    expect(c.getByText('버스 약 2시간 14분')).toBeInTheDocument()
-    expect(c.getByText('평일만')).toBeInTheDocument()
-    expect(c.queryByText(/회$/)).not.toBeInTheDocument()
-    expect(c.queryByText('평일·휴일')).not.toBeInTheDocument()
+    expect([...card(104).querySelectorAll(`.${styles.tag}`)].map((e) => e.textContent)).toEqual([
+      '버스 약 2시간 14분', '동부권·남부권', '평일만',
+    ])
+  })
+
+  it('스팟 목록을 못 받으면 권역 태그만 빠진다 — 빈 태그를 남기지 않는다', async () => {
+    loadSpots.mockResolvedValue(new Map())
+    renderPage()
+
+    await screen.findByText('환승 없이 남부 9경 세 곳')
+    const c = within(card(101))
+    expect(c.queryByText(/권$/)).not.toBeInTheDocument()
+    expect(card(101).querySelectorAll(`.${styles.tag}`)).toHaveLength(3)
   })
 
   it('평일과 휴일 회차가 다르면 「평일 N회」', async () => {

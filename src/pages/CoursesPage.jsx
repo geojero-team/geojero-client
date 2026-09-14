@@ -6,7 +6,7 @@ import { t } from '../i18n'
 import { api } from '../lib/api'
 import { courseTitle } from '../lib/courseTitle'
 import { formatDuration } from '../lib/format'
-import { loadSpotPhotos, withPhotos } from '../lib/spots'
+import { loadSpotPhotos, loadSpots, regionsOf, withPhotos } from '../lib/spots'
 import styles from './CoursesPage.module.css'
 
 /**
@@ -16,8 +16,10 @@ import styles from './CoursesPage.module.css'
  * 어느 10개인지는 서버가 정합니다(`featured=true` — 9경 많은 순 · 버스 시간 짧은 순 · 곳 수 · 코드 순).
  * 여기서 다시 고르거나 정렬하지 않습니다 — 코스를 다시 적재해도 화면이 그대로 따라오게.
  *
- * 카드는 첫 스팟 사진 · 9경 배지 · 제목 · 스팟 체인 · 소개 · 태그 넷(버스 시간 · 노선 · 배차 · 요일)입니다.
+ * 카드는 첫 스팟 사진 · 9경 배지 · 제목 · 스팟 체인 · 소개 · 태그 넷(버스 시간 · 권역 · 배차 · 요일)입니다.
  * 태그 값은 전부 서버 데이터입니다 — 기준문서에 없는 수치를 화면에서 만들지 않습니다(절대규칙 1).
+ * 그림(582:416)의 둘째 태그는 노선 번호(「55번 한 노선」)였는데 2026-09-14 밤 **권역**으로 바꿨습니다(사용자 결정) —
+ * 「55·67-1번 2노선」은 읽히지 않고, 노선은 코스 상세가 구간마다 말합니다.
  * 모든 코스가 고현터미널 출발이고 그 사실을 화면에 적습니다.
  *
  * 코스를 **여러 개** 고를 수 있습니다. 고른 것들은 지도에서 좌우로 넘겨 비교하고
@@ -40,19 +42,14 @@ function Check({ on }) {
 }
 
 /**
- * 태그 넷 — 버스 시간 · 노선 · 배차 · 요일. 배차는 노선이 하나일 때만 서버가 줍니다(tripsPerDay) —
- * 노선이 섞인 코스의 회차를 하나로 합치면 실제로 운행하지 않는 수가 됩니다.
+ * 태그 넷 — 버스 시간 · 권역 · 배차 · 요일. 권역은 /api/pois 를 못 받으면 빠집니다(빈 태그를 남기지 않게).
+ * 배차는 노선이 하나일 때만 서버가 줍니다(tripsPerDay) — 노선이 섞인 코스의 회차를 하나로 합치면 실제로 운행하지 않는 수가 됩니다.
  */
 function tagsOf(course) {
-  const routes = course.busRoutes ?? []
   const trips = course.tripsPerDay
   return [
     t('courses.tagBus', { time: formatDuration(course.busMinTotal) }),
-    routes.length === 1
-      ? t('courses.tagRouteOne', { route: routes[0] })
-      : routes.length > 1
-        ? t('courses.tagRouteMany', { routes: routes.join('·'), count: routes.length })
-        : null,
+    course.regions,
     trips
       ? t(trips.weekday === trips.holiday ? 'courses.tagDaily' : 'courses.tagWeekday', { n: trips.weekday })
       : null,
@@ -122,13 +119,15 @@ export default function CoursesPage() {
 
   useEffect(() => {
     let cancelled = false
-    // 코스와 사진을 함께 기다립니다. 사진은 실패해도 빈 Map으로 와서 코스를 막지 않습니다.
-    Promise.all([api.courses({ featured: true }), loadSpotPhotos()])
-      .then(([data, photos]) => {
+    // 코스와 스팟 목록(사진 · 권역)을 함께 기다립니다. 목록은 실패해도 빈 Map으로 와서 코스를 막지 않습니다.
+    // loadSpotPhotos 와 loadSpots 는 같은 /api/pois 캐시를 씁니다 — 호출은 한 번입니다.
+    Promise.all([api.courses({ featured: true }), loadSpotPhotos(), loadSpots()])
+      .then(([data, photos, pois]) => {
         if (cancelled) return
         const courses = (data.courses ?? []).map((course) => ({
           ...course,
           spots: withPhotos(course.spots, photos),
+          regions: regionsOf(course.spots, pois),
         }))
         setResult({ status: 'ready', data: courses, error: '' })
       })

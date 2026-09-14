@@ -50,6 +50,20 @@ export async function loadSpotPhotos() {
   return images
 }
 
+/**
+ * 코스 스팟의 권역을 방문 순서대로 한 번씩 이어 붙입니다(「남부권」 · 「동부권·남부권」). 권역은 목록(/api/pois)에만
+ * 있습니다(TourAPI 주소의 읍·면·동 — 기준문서 §6). 하나도 모르면 null — 빈 가운뎃점을 남기지 않습니다.
+ * 코스 추천 카드(권역 태그)와 코스 상세(「남부권 · 3곳」)가 같이 씁니다.
+ */
+export function regionsOf(stops, pois) {
+  const seen = []
+  for (const stop of stops) {
+    const region = pois.get(stop.poiId)?.region
+    if (region && !seen.includes(region)) seen.push(region)
+  }
+  return seen.length > 0 ? seen.join('·') : null
+}
+
 /** 스팟 배열에 사진을 얹습니다. 사진이 없는 스팟은 손대지 않습니다. */
 export function withPhotos(spots, photos) {
   if (!photos || photos.size === 0) return spots

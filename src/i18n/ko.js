@@ -303,11 +303,10 @@ export default {
   // 9경 배지 — nineScenicNos 를 「{n}경」으로 띄어 잇습니다(「거제 9경 · 1경 2경 4경」). 0곳이면 배지 자체가 없습니다.
   'courses.nineBadge': '거제 9경 · {list}',
   'courses.nineNo': '{n}경',
-  // 태그 넷 — 값은 전부 서버 데이터(busMinTotal · busRoutes · tripsPerDay · holidayService)에서 옵니다(절대규칙 1).
+  // 태그 넷 — 값은 전부 서버 데이터(busMinTotal · 권역(/api/pois) · tripsPerDay · holidayService)에서 옵니다(절대규칙 1).
+  // 권역 태그는 데이터 값 그대로(「남부권」 · 「동부권·남부권」)라 키가 없습니다. 노선 번호 태그는 2026-09-14 밤 뺐습니다(사용자 결정).
   // {time}은 formatDuration(busMinTotal) — 서버 busTotalText 는 60분 미만이면 「약 0시간 40분」이 되어 쓰지 않습니다.
   'courses.tagBus': '버스 약 {time}',
-  'courses.tagRouteOne': '{route}번 한 노선',
-  'courses.tagRouteMany': '{routes}번 {count}노선',
   // 배차는 노선이 하나일 때만 옵니다(tripsPerDay). 평일·휴일 회차가 같으면 「매일」, 다르면 평일 값만.
   'courses.tagDaily': '매일 {n}회',
   'courses.tagWeekday': '평일 {n}회',

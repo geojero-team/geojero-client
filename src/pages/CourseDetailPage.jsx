@@ -10,7 +10,7 @@ import { courseImage, onImageError } from '../lib/courseImage'
 import { courseTitle } from '../lib/courseTitle'
 import { getToken } from '../lib/session'
 import { formatDuration } from '../lib/format'
-import { loadSpots } from '../lib/spots'
+import { loadSpots, regionsOf } from '../lib/spots'
 import styles from './CourseDetailPage.module.css'
 
 /**
@@ -117,16 +117,6 @@ function StopRow({ stop, nextPoiId, onOpenTimetable }) {
       </button>
     </div>
   )
-}
-
-/** 방문 순서대로 권역을 한 번씩. 하나도 모르면 null — 빈 가운뎃점을 남기지 않습니다. */
-function regionsOf(stops, pois) {
-  const seen = []
-  for (const stop of stops) {
-    const region = pois.get(stop.poiId)?.region
-    if (region && !seen.includes(region)) seen.push(region)
-  }
-  return seen.length > 0 ? seen.join('·') : null
 }
 
 export default function CourseDetailPage() {

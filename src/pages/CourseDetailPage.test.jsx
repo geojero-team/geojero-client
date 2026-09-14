@@ -11,7 +11,8 @@ vi.mock('../lib/api', () => ({
   beginKakaoLogin: vi.fn(),
 }))
 
-vi.mock('../lib/spots', () => ({ loadSpots: vi.fn() }))
+// regionsOf 는 그대로 쓰고 /api/pois 만 흉내 냅니다.
+vi.mock('../lib/spots', async (importOriginal) => ({ ...(await importOriginal()), loadSpots: vi.fn() }))
 
 vi.mock('../lib/session', () => ({ getToken: vi.fn(() => null) }))
 
