@@ -107,21 +107,33 @@ const intersects = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 <
  * 먼저, 안 되면 반대쪽. 비킨 상자도 다른 상자와 부딪히거나 지도 칸 밖이면 그 칸은 버립니다.
  *  · 방향을 보지 않고 번갈아 달면 북쪽 정류장이 남쪽에 그려졌습니다(고현터미널 → 김영삼 생가 2000번).
  *  · 비킨 뒤를 재지 않으면 「63 +1」이 신촌 마커에 부딪혔고(거제씨월드), 매미성 길 건너편 마커는 칸 밖으로 잘렸습니다(운영, 2026-09-14).
- * 모든 칸이 막히면 칸 안에 들어가는 첫 칸, 그것도 없으면 제자리입니다 — 잘려 안 보이는 것보다 겹쳐 보이는 게 낫습니다.
+ * 어느 칸도 깨끗하지 않으면 칸 안에 드는 칸 중 **가장 덜 겹치는** 칸입니다 — 비켜서 더 크게 덮으면 비키지 않은 것만 못합니다
+ * (운영 거제씨월드 신촌: 제자리 12px · 아래 37px 겹침). 칸 안에 드는 칸이 없으면 제자리입니다.
  */
 function slotByBox(item, point, placed, mapHeight) {
   const others = placed.filter((p) => p.box)
-  const clash = (slot) => others.find((p) => intersects(boxOf(item, point, slot), p.box))
+  const overlap = (slot) => {
+    const a = boxOf(item, point, slot)
+    return others.reduce((sum, p) => {
+      const b = p.box
+      const w = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)
+      const h = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0)
+      return w > 0 && h > 0 ? sum + w * h : sum
+    }, 0)
+  }
   const inside = (slot) => {
     if (!mapHeight) return true
     const box = boxOf(item, point, slot)
     return box.y0 >= 0 && box.y1 <= mapHeight
   }
-  const hit = clash('center')
+  const hit = others.find((p) => intersects(boxOf(item, point, 'center'), p.box))
   if (!hit) return 'center'
   const north = point.y < hit.point.y
-  const order = north ? ['above', 'below'] : ['below', 'above']
-  return order.find((slot) => !clash(slot) && inside(slot)) ?? order.find(inside) ?? 'center'
+  const shifts = north ? ['above', 'below'] : ['below', 'above']
+  const clean = shifts.find((slot) => overlap(slot) === 0 && inside(slot))
+  if (clean) return clean
+  const fits = ['center', ...shifts].filter(inside)
+  return fits.length === 0 ? 'center' : fits.reduce((best, slot) => (overlap(slot) < overlap(best) ? slot : best))
 }
 
 /** SDK가 투영을 주지 않을 때 — 거리로 겹침을 재고, 북쪽이면 위 · 그쪽을 이미 썼으면 반대쪽. */

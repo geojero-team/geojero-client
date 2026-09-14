@@ -523,5 +523,39 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     expect(left).toBeGreaterThanOrEqual(28 + 14)
     expect(right).toBeGreaterThanOrEqual(28 + 14)
   })
+
+  it('어느 쪽으로 비켜도 부딪히면 가장 덜 겹치는 칸 — 제자리가 12px 겹치고 아래가 37px 겹치면 제자리(운영 거제씨월드 신촌 · 4000)', async () => {
+    const user = userEvent.setup()
+    const { kakao, map, overlays } = fakeKakao({ level: 5, pxPerDeg: 10000 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+    const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight')
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 180 })
+    try {
+      // y = (35 - 위도) × 12000 · x = (경도 - 128.6) × 10000
+      // 4000: (1000, 79) · 신촌: (981, 40) — 위로 비키면 칸 밖(40 - 67 < 0), 아래로 비키면 4000과 37px 겹침, 제자리는 12px
+      render(
+        <BoardingMap
+          boarding={{
+            from: { name: '거제씨월드', kind: 'SPOT', lat: 35 - 170 / 12000, lng: 128.74 },
+            stops: [
+              { nodeId: 'GJB1657', name: '지세포', lat: 35 - 79 / 12000, lng: 128.7, distanceM: 788, routes: ['4000'] },
+              { nodeId: 'GJB901', name: '신촌', lat: 35 - 40 / 12000, lng: 128.6981, distanceM: 217, routes: ['23-1', '23', '22', '25-1', '25', '24-1'] },
+            ],
+            exceptions: [],
+            unresolved: [],
+            source: SOURCE,
+          }}
+        />,
+      )
+      await expand(user)
+
+      await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+      const sinchon = overlays.find((o) => o.options.content.textContent === '23-1 +5')
+      expect(sinchon.options.yAnchor).toBeCloseTo(ICON_CENTER)
+    } finally {
+      if (height) Object.defineProperty(HTMLElement.prototype, 'clientHeight', height)
+      else delete HTMLElement.prototype.clientHeight
+    }
+  })
 })
 
