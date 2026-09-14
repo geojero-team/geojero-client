@@ -159,11 +159,31 @@ export default {
   'spotTime.dir': '{from} → {to}',
   'spotTime.next': '다음 버스 {time} · {route}번',
   'spotTime.noNext': '오늘 남은 버스가 없어요',
+  // 다음 버스 카드 둘째 줄(530:299) — 오늘을 볼 때만. 출발 시각이 추정이면 「시간표 기준」 대신 추정이라고 말합니다.
+  'spotTime.nextSub': '{when} · {basis}',
+  'spotTime.inTime': '약 {time} 뒤',
+  'spotTime.soon': '곧 출발',
+  'spotTime.basisTimetable': '시간표 기준',
+  'spotTime.basisEstimated': '앞뒤 정류장 시각으로 추정',
   'spotTime.tableTitle': '{day} 시간표',
+  // 요약 셋(530:332 · 541:246 · 541:360) — 노선 하나 / 여럿 · 전체 / 노선 칩을 고름
   'spotTime.summary': '첫차 {first} · 막차 {last} · 하루 {count}회',
+  'spotTime.summaryCount': '하루 {count}회',
+  'spotTime.summaryRoute': '{route}번 {count}회',
+  'spotTime.routeAll': '전체 {count}',
+  'spotTime.routeChip': '{route}번 {count}',
+  // 노선 칩을 골랐을 때만(541:371). 같은 노선인데 편마다 다르면 범위로 — 한 값으로 뭉개면 늦은 차를 놓칩니다(부록 D).
+  'spotTime.duration': '약 {min}분',
+  'spotTime.durationRange': '약 {low}~{high}분',
   'spotTime.hour': '{h}시',
   'spotTime.nextTag': '다음',
-  'spotTime.source': '출처 {source} · {date} · {day} 기준',
+  // ★ 출발 시각이 앞뒤 정류장으로 감싼 값일 때(departures[].departEstimated). 감싼 방향이 정해져 있어
+  //   적힌 출발은 실제보다 이르거나 같습니다 — 그 시각에 나가 있으면 놓치지 않습니다(SpotLayer 규칙 3). 절대규칙 1.
+  'spotTime.estimatedTag': '추정',
+  'spotTime.estimatedAll': '이 정류장 시각은 원문 시간표에 칸이 없어 앞뒤 정류장 시각으로 추정했어요. 적힌 시각에 나가 있으면 버스를 놓치지 않아요.',
+  'spotTime.estimatedSome': '「추정」 시각은 원문 시간표에 칸이 없어 앞뒤 정류장 시각으로 추정했어요. 적힌 시각에 나가 있으면 버스를 놓치지 않아요.',
+  // 맨 아래 출처(530:366). 정류소 좌표 줄은 서버 boarding.source 그대로입니다.
+  'spotTime.sourceTime': '시각 {source} · {date}',
   'spotTime.loading': '시간표를 불러오는 중',
   // ★ 세 갈래. 빈 목록에 이유를 붙이지 않으면 §4에서 비판한 '이유 없는 빈칸'입니다.
   'spotTime.emptyUnknown': '{routes} 버스가 이 정류장에 서지만, 원문 시간표에 이 정류장의 시각 칸이 없어요.',
@@ -207,34 +227,55 @@ export default {
   'ferry.noDock': '{spot} 근처에서 {to}에 가는 배를 타는 선착장을 원문에서 찾지 못했어요.',
   'ferry.noDockHint': '{to} 시간표에서 선착장 4곳의 배를 볼 수 있어요.',
 
-  // ── 타는 곳 (스팟 시간표의 버스 칩 · 방향 칩 아래) ───────────────────────
-  // Figma 프레임 없음 — 2026-09-14 사용자 결정. 정류장 좌표는 서버가 TAGO에서 받아 줍니다.
+  // ── 타는 곳 (스팟 시간표의 버스 칩 · 다음 버스 카드 아래) ─────────────────
+  // Figma 09-14 개정 530:231(접힘) · 530:282 / 541:408(펼침). 정류장 좌표는 서버가 TAGO에서 받아 줍니다.
   // 거리는 좌표 사이 직선이라 「약」을 붙입니다. 이 자리에도 「운행 없음」을 쓰지 않습니다.
-  'boarding.title': '타는 곳',
+  'boarding.title': '타는 곳', // 카드의 읽기 도구 이름(화면 제목은 그림에서 빠졌다)
   'boarding.stopName': '{name} 정류장',
   'boarding.distance': '{place}에서 약 {dist}',
-  'boarding.directions': '카카오맵 길찾기 ↗',
+  'boarding.distanceOnly': '약 {dist}',
+  // 고현터미널에서 30m 안 — 「약 0m」 대신
+  'boarding.near': '{place} 앞',
+  'boarding.summary': '{where} · {routes}',
+  'boarding.routeOne': '{route}번',
+  'boarding.routeMore': '{first}번 외 {count}',
+  'boarding.sameStop': '노선 {count}개가 같은 정류장',
+  // 그림(정류장 한 곳)에 없는 경우 — 한 이름으로 뭉개지 않습니다.
+  'boarding.stopsCount': '정류장 {count}곳',
+  'boarding.perRoute': '노선마다 타는 정류장이 달라요',
+  'boarding.perTrip': '편마다 타는 쪽이 달라요',
+  'boarding.directions': '카카오맵으로 길찾기 ↗',
   'boarding.directionsA11y': '{name} 정류장 카카오맵 길찾기 — 새 창에서 열려요',
-  // 지도 핀의 노선 — 3개가 넘으면 첫 노선 + 나머지 수.
-  'boarding.routesMore': '{first} 외 {count}',
+  // 지도 마커 아래 태그(530:324 「55」 · 541:451 「55 +2」)
+  'boarding.pinMore': '{first} +{count}',
   'boarding.opposite': '{route}번 {time} 버스는 길 건너편 정류장에서 타요.',
   'boarding.otherStop': '{route}번 {time} 버스는 {name} 정류장(약 {dist} 떨어진 곳)에서 타요.',
   'boarding.split': '{route}번은 편마다 타는 쪽이 달라요 — {list}',
   'boarding.splitItem': '{time} 버스',
   'boarding.unresolved': '{routes}번은 타는 곳을 지도에 표시하지 못했어요.',
   'boarding.mapFailed': '지도를 불러오지 못했어요',
-  'boarding.source': '정류장 위치 {source}',
 
-  // ── 코스 상세 (02-2 · Figma 446:929) ─────────────────────────────────────
-  'courseDetail.title': '코스',
-  'courseDetail.range': '{origin}에서 출발해 {origin}로 돌아와요 · {legs}구간',
-  'courseDetail.hint': '시간표를 클릭하면 그 스팟의 버스 시간표를 볼 수 있어요',
+  // ── 코스 상세 (09-14 개정 · Figma 532:213 / 532:318) ─────────────────────
+  'courseDetail.back': '코스',
+  // 권역은 /api/pois 에서 붙입니다. 여러 권역이면 방문 순서대로 한 번씩(「남부권·동부권」).
+  'courseDetail.meta': '{regions} · {count}곳',
+  'courseDetail.metaCount': '{count}곳',
+  'courseDetail.origin': '{origin}에서 출발해 {origin}로 돌아와요',
+  // {time}은 formatDuration(busMinTotal) — 서버 busTotalText는 60분 미만이면 「약 0시간 40분」이 되어 쓰지 않습니다.
+  'courseDetail.busChip': '버스 약 {time}',
+  'courseDetail.legChip': '{n}구간',
   'courseDetail.departNode': '{origin} 출발',
   'courseDetail.arriveNode': '{origin} 도착',
   'courseDetail.leg': '{route}번 · {min}분',
+  // 앞뒤 정류장으로 감싼 구간(leg.estimated)만 「약」. 확정값에 붙이면 정확히 아는 값을 흐립니다.
+  'courseDetail.legApprox': '{route}번 · 약 {min}분',
   'courseDetail.legSameStop': '같은 정류장 · 바로 이동',
   'courseDetail.timetable': '시간표',
+  // 추정 구간이 있을 때만 — 확정값뿐인 코스에 쓰면 정확한 분을 「짧다」고 말하게 됩니다.
+  'courseDetail.estimatedNote': '실제 이동 시간은 적힌 것보다 짧습니다 — 버스를 놓치지 않는 쪽으로만 어긋납니다.',
   'courseDetail.source': '출처 {source} · {date}',
+  'courseDetail.originNote': '모든 첫 출발지는 {origin}로 가정합니다',
+  'courseDetail.noLegs': '이 코스는 구간별 버스 정보가 없어요.',
   'courseDetail.save': '이 코스 저장하기',
   'courseDetail.loading': '코스를 불러오는 중',
   'courseDetail.weekday': '평일',
@@ -253,7 +294,7 @@ export default {
   // ★ 우리가 소유한 숫자. 출발·복귀 시각과 경과 시간(약 8시간 30분)은 2026-09-13에 화면에서
   // 뺐습니다 — 그 대부분이 머무는 시간이고, 얼마나 머물지는 사용자가 정하는 것입니다.
   // {time}은 formatDuration(busMinTotal) — '약'을 붙이지 않습니다('예정'이 그 뜻을 대신합니다).
-  // 코스 추천 카드와 코스 상세 머리가 함께 씁니다.
+  // 코스 추천 카드가 씁니다(코스 상세는 09-14 개정에서 칩 courseDetail.busChip 으로 바뀌었습니다).
   'courses.busTotal': '총 {time} 소요 예정',
   'courses.cardTitle': '코스 {n}',
   'courses.nineScenic': '거제9경 {count}곳',

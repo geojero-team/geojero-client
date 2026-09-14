@@ -1,84 +1,110 @@
-/* 타는 곳 — Figma 프레임 없음(2026-09-14 사용자 결정).
-   180px 작은 지도 + 정류장 목록. 지도가 못 떠도 목록만으로 길을 찾을 수 있어야 합니다.
-   핀 모양은 홈 지도 마커(MapView.module.css)의 브랜드 면·테두리 규칙을 따릅니다. */
+/* 타는 곳 — Figma 09-14 개정 530:231(접힘) · 530:301 / 541:427(펼침).
+   회색 면 카드 하나. 머리줄(버스 아이콘 · 정류장 · 거리 · 노선 · 꺾쇠)을 누르면 지도 · 목록 · 길찾기가 열립니다.
+   토큰에 없는 글자 크기(15/23 · 14/21 · 12/18 · 11/17)는 그림 값을 그대로 둡니다. */
 
-.root {
+.card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  padding: 12px 14px 12px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
 }
 
-.title {
-  margin: 0;
-  font: var(--type-body-strong);
+/* ── 머리줄 ──────────────────────────────────────────────────────────── */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.headIcon {
+  flex: none;
+  display: block;
+  width: 26px;
+  height: 26px;
+}
+
+.headIcon svg {
+  display: block;
+}
+
+.headText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.headTitle {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 23px;
   color: var(--text-primary);
 }
 
+.headLine {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+/* 꺾쇠는 누르는 곳이라는 표시일 뿐이라 흐린 색(530:242 · 530:312) */
+.chevron,
+.chevronOpen {
+  flex: none;
+  font-family: var(--font-sans);
+  font-weight: 400;
+  color: var(--text-disabled);
+}
+
+.chevron {
+  font-size: 20px;
+  line-height: 30px;
+}
+
+.chevronOpen {
+  font-size: 18px;
+  line-height: 27px;
+}
+
+/* ── 펼친 몸 ─────────────────────────────────────────────────────────── */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 530:313 — 카드 폭 × 180, 반경 10 */
 .map {
   height: 180px;
   overflow: hidden;
-  border-radius: var(--radius-card);
+  border-radius: 10px;
   background: var(--map-sea);
 }
 
-/* ── 지도 핀 (CustomOverlay 안의 DOM) ─────────────────────────────────── */
-
-/* 대표 핀 — 브랜드 면 + 흰 노선 번호 / 예외 핀 — 흰 면 + 브랜드 테두리 */
-.pinMain,
-.pinException {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  font: var(--type-label);
-  white-space: nowrap;
-  box-shadow: var(--elevation-pin);
-}
-
-.pinMain {
-  background: var(--brand-strong);
-  color: var(--text-on-brand);
-}
-
-/* 예외 핀 — 흰 바탕 브랜드 테두리 + 노선·시각. 대표 핀과 다른 정류장이라는 뜻입니다. */
-.pinException {
-  border: 1.5px solid var(--brand-strong);
-  background: var(--bg-page);
-  color: var(--brand-strong);
-}
-
-/* 출발 자리 — 작은 진회색 점 + 이름표. 점 중심이 좌표입니다(이름표는 점 박스 밖). */
-.from {
-  position: relative;
-  display: block;
-  width: 10px;
-  height: 10px;
-}
-
-.fromDot {
-  position: absolute;
-  inset: 0;
-  border: 2px solid var(--bg-page);
-  border-radius: var(--radius-pill);
-  background: var(--text-primary);
-  box-sizing: border-box;
-}
-
-.fromLabel {
-  position: absolute;
-  top: 50%;
-  left: 14px;
-  transform: translateY(-50%);
-  padding: 1px 4px;
-  border-radius: var(--radius-xs);
-  background: var(--bg-page);
-  font: var(--type-label);
+.mapFailed {
+  margin: 0;
+  font: var(--type-caption);
   color: var(--text-secondary);
-  white-space: nowrap;
 }
 
-/* ── 목록 ────────────────────────────────────────────────────────────── */
-
-.stops {
+/* 541:452 — 목록 줄: 이름 · 오른쪽 거리 / 연파랑 뱃지 */
+.list {
   display: flex;
   flex-direction: column;
   margin: 0;
@@ -86,61 +112,151 @@
   list-style: none;
 }
 
-.stop {
+.row {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   padding: 10px 0;
   border-bottom: 1px solid var(--border-default);
 }
 
-.stopHead {
+.rowHead {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-.stopName {
-  font: var(--type-body-strong);
+.rowName {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 21px;
   color: var(--text-primary);
 }
 
-/* 노선 배지 — 시간표의 노선 배지와 같은 모양 */
-.badge {
-  padding: 2px 7px;
-  border-radius: 6px;
-  background: var(--brand-strong);
-  font: var(--type-label);
-  color: var(--text-on-brand);
-}
-
-.stopMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 12px;
-}
-
-.distance {
-  font: var(--type-caption);
+.rowDistance {
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
   color: var(--text-secondary);
 }
 
-.directions {
+/* 노선이 많은 정류장(한 곳에 9~12노선)이 있어 줄을 바꿉니다 — 그림은 한 줄에서 잘랐습니다. */
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.badge {
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-tint);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 17px;
+  color: var(--brand-strong);
+  white-space: nowrap;
+}
+
+/* 정류장이 여럿일 때 줄마다 길찾기 — 그림에 없는 자리라 글자 링크로 작게 */
+.rowDirections {
+  align-self: flex-start;
   font: var(--type-label);
   color: var(--brand-strong);
 }
 
+/* 530:327 — 카드 폭 버튼: 흰 면 · 하늘색 테두리 · 반경 10 · 14 Medium */
+.directions {
+  display: block;
+  padding: 9px 0;
+  border: 1px solid var(--brand-surface);
+  border-radius: 10px;
+  background: var(--bg-page);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  color: var(--brand-strong);
+  text-align: center;
+  text-decoration: none;
+}
+
 .note {
   margin: 0;
-  font: var(--type-caption);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
   color: var(--text-secondary);
   word-break: keep-all;
 }
 
-.source {
-  margin: 0;
-  font: var(--type-label);
-  color: var(--text-secondary);
+/* ── 지도 마커 (CustomOverlay 안의 DOM) ─────────────────────────────── */
+
+/* 530:318 — 버스 아이콘 28 + 간격 2 + 태그. 좌표는 아이콘 가운데(BoardingMap.jsx ICON_CENTER). 흰 네모 채움은 따라 그리지 않습니다. */
+.marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.markerIcon {
+  display: block;
+  width: 28px;
+  height: 28px;
+}
+
+.markerIcon svg {
+  display: block;
+}
+
+.markerTag {
+  box-sizing: border-box;
+  height: 21px;
+  padding: 1px 7px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 17px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* 530:316 출발 곳 — 9px 진한 점 + 오른쪽 11 Medium 이름(바탕 없음). 점 가운데가 좌표입니다. */
+.from {
+  position: relative;
+  display: block;
+  width: 9px;
+  height: 9px;
+}
+
+.fromDot {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-pill);
+  background: var(--text-primary);
+}
+
+.fromLabel {
+  position: absolute;
+  top: 50%;
+  left: 13px;
+  transform: translateY(-50%);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 17px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  text-shadow: 0 0 2px var(--bg-page), 0 0 2px var(--bg-page);
 }

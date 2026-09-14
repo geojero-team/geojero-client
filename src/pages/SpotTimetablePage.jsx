@@ -5,6 +5,7 @@ import FerryTimetable from '../components/FerryTimetable'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { api } from '../lib/api'
+import { formatDuration } from '../lib/format'
 import { loadSpots } from '../lib/spots'
 import styles from './SpotTimetablePage.module.css'
 
@@ -25,7 +26,16 @@ import styles from './SpotTimetablePage.module.css'
  *
  * 2026-09-14: **배 칩**이 들어왔습니다(Figma 프레임 없음 — 사용자 결정). 배를 먼저 묻고, 그 답으로 칩을
  * 정한 뒤에야 버스를 묻습니다 — 외도보타니아는 버스 정류장이 없어 배 칩만 있고, 버스를 먼저 부르면
- * 칩이 버스 → 배로 깜빡이며 바뀝니다. 버스 칩에는 방향 칩 아래 「타는 곳」 지도가 붙습니다.
+ * 칩이 버스 → 배로 깜빡이며 바뀝니다.
+ *
+ * 2026-09-14 개정(Figma `530:213` · `530:282` · `541:213` · `541:327` · `541:408`) — 버스 칩:
+ *  · 순서: 타는 문장 → 방향 칩 → **다음 버스 카드**(「약 28분 뒤 · 시간표 기준」) → **타는 곳 카드**(접힘) →
+ *    「평일 시간표」 → 노선 칩 → 한 편에 한 줄 → 맨 아래 출처 두 줄(시각 BIS · 정류소 좌표 TAGO).
+ *  · 노선이 둘 이상이면 **노선 칩**. 고르면 그 노선 편만 보이고 요약 · 소요시간 · 다음 버스 · 타는 곳이 그 노선을 따릅니다.
+ *  · 지난 편을 흐리지 않습니다(그림 그대로). 다음 편만 진한 글자 + 「다음」.
+ *  · ★ 그림에 없는 것 — **출발 시각이 추정인 편**(departEstimated, 도장포 · 대금교차로 등 원문 칸이 없는 정류장)은
+ *    추정이라고 말합니다(절대규칙 1 · 디자인브리프 부록 G 「지켜야 할 것」). 전부 추정이면 표 위 한 줄, 섞이면 그 편에 「추정」.
+ *    estimated 가 아니라 departEstimated 를 봅니다 — 고현 → 바람의언덕 06:25는 도착만 추정이고 출발은 원문 칸입니다.
  */
 
 /** 시각 문자열("HH:MM")을 분으로. 지난 차를 흐리게 하려면 비교가 필요합니다. */
@@ -137,6 +147,10 @@ export default function SpotTimetablePage() {
   const busChip = ferry.status !== 'loading' && chipFerry == null
 
   const [result, setResult] = useState(BUS_LOADING)
+  /* 노선 칩. 방향마다 노선이 달라(바람의언덕 → 고현 55뿐, 고현 → 바람의언덕 55 · 55-1) 방향을 바꾸면 「전체」로 돌아갑니다.
+     키에 now를 넣지 않습니다 — 주소에 now가 없으면 분이 바뀔 때마다 키가 달라져 고른 칩이 풀립니다. */
+  const [routePick, setRoutePick] = useState({ key: null, route: null })
+  const routeKey = [dir, poiId, nextId, date].join('|')
   /* poiId → 짧은 이름. 칩 이름을 **응답과 떼어** 정합니다. 전에는 다음 스팟 칩 이름을
      응답의 `to`에서 읽었는데, 고현터미널 칩을 누르면 응답의 to가 고현터미널로 바뀌어
      **옆 칩 이름까지 '해금강 → 고현터미널'로 바뀌었습니다**(2026-09-13 버그). */
@@ -236,18 +250,39 @@ export default function SpotTimetablePage() {
     )
   }
 
-  // 시간대별로 묶습니다(07시 · 09시 …). 원문이 시간대로 뭉쳐 있어 읽기 쉬운 단위입니다.
-  // 배 칩이면 d가 null이라 아래 버스 조각(다음 버스·빈 결과·시간대 표·출처)은 그리지 않습니다.
-  const byHour = []
-  for (const dep of d?.departures ?? []) {
-    const h = Number(dep.depart.slice(0, 2))
-    const last = byHour[byHour.length - 1]
-    if (last && last.hour === h) last.items.push(dep)
-    else byHour.push({ hour: h, items: [dep] })
-  }
-
+  // ── 버스 표 ─────────────────────────────────────────────────────────────
+  // 배 칩이면 d가 null이라 아래 버스 조각(다음 버스·타는 곳·빈 결과·표·출처)은 그리지 않습니다.
   const nowMin = toMin(now)
-  const nextDepart = d?.next?.depart ?? null
+  const routes = d?.byRoute ?? []
+  const picked = routePick.key === routeKey ? routePick.route : null
+  const route = routes.some((r) => r.routeNo === picked) ? picked : null
+  const routeSummary = routes.find((r) => r.routeNo === route) ?? null
+  const shown = (d?.departures ?? []).filter((x) => route == null || x.routeNo === route)
+  // 노선을 고르면 다음 버스도 그 노선입니다. 서버 next 는 after(지금) 이후 첫 편이라 같은 규칙으로 고릅니다.
+  const nextDep = route == null ? (d?.next ?? null) : (shown.find((x) => toMin(x.depart) >= nowMin) ?? null)
+  const isNext = (x) => nextDep != null && x.routeNo === nextDep.routeNo && x.depart === nextDep.depart
+
+  // 「몇 분 뒤」는 오늘을 볼 때만 — 다른 날짜를 주소로 열었으면 지금 시각과 무관합니다(now를 주소로 주면 그 시각이 지금).
+  const dateParam = searchParams.get('date')
+  const showsNow = searchParams.get('now') != null || dateParam == null || dateParam === today()
+  const minutesLeft = nextDep ? toMin(nextDep.depart) - nowMin : null
+  const nextSub =
+    showsNow && minutesLeft != null
+      ? t('spotTime.nextSub', {
+          when: minutesLeft <= 0 ? t('spotTime.soon') : t('spotTime.inTime', { time: formatDuration(minutesLeft) }),
+          basis: t(nextDep.departEstimated ? 'spotTime.basisEstimated' : 'spotTime.basisTimetable'),
+        })
+      : null
+
+  const estimatedCount = shown.filter((x) => x.departEstimated).length
+  const allEstimated = shown.length > 0 && estimatedCount === shown.length
+  const someEstimated = estimatedCount > 0 && !allEstimated
+
+  const summary = routeSummary
+    ? t('spotTime.summaryRoute', { route: routeSummary.routeNo, count: routeSummary.count })
+    : routes.length > 1
+      ? t('spotTime.summaryCount', { count: d?.count })
+      : t('spotTime.summary', { first: d?.firstDeparture, last: d?.lastDeparture, count: d?.count })
 
   return (
     <Screen data-api="GET /api/pois/{id}/departures">
@@ -284,7 +319,8 @@ export default function SpotTimetablePage() {
             <p className={styles.board}>{t('ferry.loadFailed', { error: ferry.error })}</p>
           )}
 
-          {/* 방향 칩 — 코스에서 왔으면 다음 스팟 왕복 + 고현터미널 왕복 네 개, 아니면 고현터미널 왕복 둘. */}
+          {/* 방향 칩 — 코스에서 왔으면 다음 스팟 왕복 + 고현터미널 왕복 네 개, 아니면 고현터미널 왕복 둘.
+              그림(530:291)은 둘째 칩 이름을 말줄임으로 잘랐지만 칩 이름이 곧 구간이라 자르지 않고 가로로 넘깁니다. */}
           <div className={styles.dirs} role="group">
             {dirs.map((k) => (
               <button
@@ -305,34 +341,39 @@ export default function SpotTimetablePage() {
             </p>
           )}
 
-          {/* 타는 곳 — 버스 칩만. 이 구간의 출발 쪽 정류장입니다(서버가 방향까지 맞춰 줍니다). */}
-          {d?.boarding && <BoardingMap boarding={d.boarding} />}
-
           {chipFerry === NO_DOCK && (
-            <div className={styles.empty} data-api="GET /api/pois/{id}/ferries">
+            <div className={`${styles.empty} ${styles.block}`} data-api="GET /api/pois/{id}/ferries">
               <p className={styles.emptyTitle}>{t('ferry.noDock', { spot, to: nextName })}</p>
               <p className={styles.emptyText}>{t('ferry.noDockHint', { to: nextName })}</p>
             </div>
           )}
 
           {chipFerry && chipFerry !== NO_DOCK && (
-            <FerryTimetable ferry={chipFerry} asOf={ferryData.asOf} days={ferryData.days} />
+            <div className={styles.block}>
+              <FerryTimetable ferry={chipFerry} asOf={ferryData.asOf} days={ferryData.days} />
+            </div>
           )}
 
-          {/* 다음 버스 한 줄만 말합니다(2026-09-13). 노선별 소요시간 줄은 뺐습니다 — 파일 머리 주석 참고. */}
+          {/* 다음 버스 카드(530:297) — 가운데 20px + 둘째 줄 「약 28분 뒤 · 시간표 기준」. */}
           {d?.count > 0 && (
             <div className={styles.nextCard}>
               <p className={styles.nextLine}>
-                {d.next
-                  ? t('spotTime.next', { time: d.next.depart, route: d.next.routeNo })
-                  : t('spotTime.noNext')}
+                {nextDep ? t('spotTime.next', { time: nextDep.depart, route: nextDep.routeNo }) : t('spotTime.noNext')}
               </p>
+              {nextSub && <p className={styles.nextSub}>{nextSub}</p>}
+            </div>
+          )}
+
+          {/* 타는 곳 — 버스 칩만, 다음 버스 카드 아래(530:300). 노선 칩을 고르면 그 노선의 정류장만. */}
+          {d?.boarding && (
+            <div className={styles.boarding}>
+              <BoardingMap boarding={d.boarding} route={route} />
             </div>
           )}
 
           {/* ★ 빈 결과의 이유. 셋을 갈라 말합니다. */}
           {d?.count === 0 && (
-            <div className={styles.empty}>
+            <div className={`${styles.empty} ${styles.block}`}>
               {d.emptyReason === 'UNKNOWN_TIME' ? (
                 <>
                   <p className={styles.emptyTitle}>
@@ -355,48 +396,77 @@ export default function SpotTimetablePage() {
             <>
               <div className={styles.tableHead}>
                 <h2 className={styles.tableTitle}>{t('spotTime.tableTitle', { day: dayLabel })}</h2>
-                <p className={styles.tableSummary}>
-                  {t('spotTime.summary', {
-                    first: d.firstDeparture,
-                    last: d.lastDeparture,
-                    count: d.count,
-                  })}
-                </p>
+                <p className={styles.tableSummary}>{summary}</p>
               </div>
 
-              <ul className={styles.hours}>
-                {byHour.map((group) => (
-                  <li key={group.hour} className={styles.hourRow}>
-                    <span className={styles.hourLabel}>
-                      {t('spotTime.hour', { h: String(group.hour).padStart(2, '0') })}
-                    </span>
-                    <span className={styles.hourItems}>
-                      {group.items.map((dep) => {
-                        const passed = toMin(dep.depart) < nowMin
-                        const isNext = dep.depart === nextDepart
-                        return (
-                          <span key={`${dep.routeNo}-${dep.depart}`} className={styles.dep}>
-                            <span className={passed ? styles.badgeDim : styles.badge}>
-                              {dep.routeNo}
-                            </span>
-                            <span className={passed ? styles.timeDim : styles.time}>
-                              {dep.depart}
-                            </span>
-                            {isNext && <span className={styles.nextTag}>{t('spotTime.nextTag')}</span>}
-                          </span>
-                        )
-                      })}
-                    </span>
-                  </li>
-                ))}
+              {/* 노선 칩(541:361) — 노선이 둘 이상일 때만. 넘치면 방향 칩처럼 가로로 넘깁니다. */}
+              {routes.length > 1 && (
+                <div className={styles.routes} role="group">
+                  <button
+                    type="button"
+                    className={route == null ? `${styles.routeChip} ${styles.routeOn}` : styles.routeChip}
+                    aria-pressed={route == null}
+                    onClick={() => setRoutePick({ key: routeKey, route: null })}
+                  >
+                    {t('spotTime.routeAll', { count: d.count })}
+                  </button>
+                  {routes.map((r) => (
+                    <button
+                      key={r.routeNo}
+                      type="button"
+                      className={r.routeNo === route ? `${styles.routeChip} ${styles.routeOn}` : styles.routeChip}
+                      aria-pressed={r.routeNo === route}
+                      onClick={() => setRoutePick({ key: routeKey, route: r.routeNo })}
+                    >
+                      {t('spotTime.routeChip', { route: r.routeNo, count: r.count })}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* 소요시간 줄(541:370) — 노선을 골랐을 때만. 「전체」에서 섞어 한 값을 내면 실제로 운행하지 않는 값이 됩니다. */}
+              {routeSummary?.durationMin != null && (
+                <p className={styles.duration}>
+                  {routeSummary.durationVaries && routeSummary.durationMinLow != null
+                    ? t('spotTime.durationRange', { low: routeSummary.durationMinLow, high: routeSummary.durationMin })
+                    : t('spotTime.duration', { min: routeSummary.durationMin })}
+                </p>
+              )}
+
+              {(allEstimated || someEstimated) && (
+                <p className={styles.estimatedNote}>
+                  {t(allEstimated ? 'spotTime.estimatedAll' : 'spotTime.estimatedSome')}
+                </p>
+              )}
+
+              {/* 한 편에 한 줄(530:333). 시(時)는 그 시의 첫 줄에만 적습니다. */}
+              <ul className={styles.rows}>
+                {shown.map((x, i) => {
+                  const hour = x.depart.slice(0, 2)
+                  const firstOfHour = i === 0 || shown[i - 1].depart.slice(0, 2) !== hour
+                  const next = isNext(x)
+                  return (
+                    <li key={`${x.routeNo}-${x.depart}`} className={styles.row}>
+                      <span className={styles.hourLabel}>{firstOfHour ? t('spotTime.hour', { h: hour }) : ''}</span>
+                      <span className={styles.badge}>{x.routeNo}</span>
+                      <span className={next ? styles.timeNext : styles.time}>{x.depart}</span>
+                      {next && <span className={styles.nextTag}>{t('spotTime.nextTag')}</span>}
+                      {someEstimated && x.departEstimated && (
+                        <span className={styles.estimatedTag}>{t('spotTime.estimatedTag')}</span>
+                      )}
+                    </li>
+                  )
+                })}
               </ul>
             </>
           )}
 
+          {/* 출처 — 맨 아래 두 줄(530:365). 정류소 좌표 줄은 타는 곳이 있을 때만 원천이 있습니다. */}
           {d && (
-            <p className={styles.source}>
-              {t('spotTime.source', { source: d.source, date: d.baseDate, day: dayLabel })}
-            </p>
+            <div className={styles.sources}>
+              <p className={styles.source}>{t('spotTime.sourceTime', { source: d.source, date: d.baseDate })}</p>
+              {d.boarding?.source && <p className={styles.source}>{d.boarding.source}</p>}
+            </div>
           )}
         </div>
       </div>

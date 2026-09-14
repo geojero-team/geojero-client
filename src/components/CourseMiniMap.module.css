@@ -1,0 +1,54 @@
+/* 코스 상세 지도 — Figma 09-14 개정 532:324. 폭 전체 × 220px, 바다색 바탕. */
+
+.root {
+  position: relative;
+  flex: none;
+  height: 220px;
+  background: var(--map-sea);
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+/* 지도를 못 불러왔을 때 — 칸은 그대로 두고 가운데 한 줄. */
+.failed {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* ── 핀 (CustomOverlay 안의 DOM) ─────────────────────────────────────── */
+
+/* 번호 핀 532:327 — 24px 브랜드 원 + 흰 테두리 2 + 흰 숫자 11 Bold */
+.stop {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--bg-page);
+  border-radius: var(--radius-pill);
+  background: var(--brand-strong);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-on-brand);
+}
+
+/* 고현터미널 532:326 — 22px 브랜드 원 + 흰 테두리 2, 글자 없음 */
+.terminal {
+  display: block;
+  box-sizing: border-box;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--bg-page);
+  border-radius: var(--radius-pill);
+  background: var(--brand-strong);
+}

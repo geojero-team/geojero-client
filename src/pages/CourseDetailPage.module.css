@@ -1,12 +1,13 @@
-/* 코스 상세 — Figma 02-2 446:929.
-   타임라인 구조(44px 거터 + 6px brand 막대)는 VerdictPage(268:351)에서 가져왔습니다.
-   바뀐 것은 둘 — 스팟 노드가 원형 사진 + 순번이 됐고, 구간 텍스트가 `55번 · 40분`처럼
-   **노선 번호**를 답니다(거제시 공식 앱의 "25분 / 13.0km"와 갈라지는 자리, 기준문서 §5). */
+/* 코스 상세 — Figma 09-14 개정 532:318(폴백 제목) · 532:213.
+   머리 → 220px 지도 → 권역 · 제목 · 부제 · 칩 → 구분선 → 22px 번호 타임라인 → 구분선 → 각주 → 저장.
+   토큰에 없는 글자 크기(25/35 제목 · 15 · 13 · 11)는 그림 값을 그대로 둡니다(tokens.css 머리 주석: Figma를 다시 잰다). */
 
+/* 532:320 — 「‹  코스」 + 회색 요일 알약, 양 끝 정렬 */
 .header {
   flex: none;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   min-height: 56px;
   padding: env(safe-area-inset-top, 0px) 20px 0;
@@ -14,33 +15,28 @@
 }
 
 .back {
-  padding: 0;
+  padding: 8px 0;
   border: 0;
   background: transparent;
-  font: var(--type-title);
-  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: pre;
+  cursor: pointer;
 }
 
-.title {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  font: var(--type-title);
-  color: var(--text-primary);
-}
-
-/* 어느 요일 시간표로 계산했는가. 주말은 버스가 달라 이 코스가 성립하지 않습니다. */
+/* 532:322 — 어느 요일 시간표로 계산한 코스인지 */
 .dayPill {
   flex: none;
-  padding: 4px 12px;
+  padding: 5px 10px;
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-pill);
-  background: var(--brand-tint);
+  background: var(--bg-surface);
   font: var(--type-label);
-  color: var(--brand-strong);
+  color: var(--text-secondary);
 }
 
-/* 세로 flex — 코스가 짧아 화면이 남으면 본문(타임라인)이 저장 버튼 위까지 늘어납니다(2026-09-13).
-   코스가 길면 늘어날 자리가 없으니 평소처럼 스크롤됩니다. */
 .scroll {
   flex: 1;
   min-height: 0;
@@ -57,231 +53,218 @@
   color: var(--text-secondary);
 }
 
-/* summary(446:934): 총 소요 + 한 줄 설명 */
-.summary {
-  flex: none;
-  padding: 16px 20px 0;
+/* 532:333 — 본문. 위 24 · 옆 20, 저장 아래 24 */
+.body {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
 }
 
-.big {
+/* 「남부권 · 3곳」 12 Medium */
+.meta {
+  margin: 0 0 8px;
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+/* 제목 — 25 Bold / 35. 줄은 「이름 ·」 덩어리 사이에서만 바꿉니다(그림 532:336은 「바람의 / 언덕」처럼 이름 가운데서 끊었다). */
+.title {
   margin: 0;
-  font: var(--type-display);
+  font-family: var(--font-sans);
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 35px;
   color: var(--text-primary);
+  overflow-wrap: anywhere; /* 옛 코스 이름처럼 덩어리가 아닌 긴 제목의 넘침만 막습니다 */
 }
 
-.range {
-  margin: 4px 0 0;
-  font: var(--type-caption);
+.titleName {
+  white-space: nowrap;
+}
+
+/* 부제 14 / 21 */
+.subtitle {
+  margin: 8px 0 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 21px;
   color: var(--text-secondary);
   word-break: keep-all;
 }
 
-.body {
-  flex: 1 0 auto;
+/* 532:340 — 칩 둘, 간격 6 */
+.chips {
   display: flex;
-  flex-direction: column;
-  padding: 16px 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
-  border-top: 1px solid var(--border-subtle, var(--border-default));
+  flex-wrap: wrap;
+  gap: 6px;
   margin-top: 16px;
 }
 
-.hint {
-  margin: 0;
-  font: var(--type-caption);
+.chipBus,
+.chipLegs {
+  padding: 6px 11px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.chipBus {
+  background: var(--brand-tint);
+  color: var(--brand-strong);
+}
+
+.chipLegs {
+  padding: 5px 10px; /* 테두리 1px 만큼 줄여 두 칩 높이를 맞춥니다 */
+  border: 1px solid var(--border-default);
+  background: var(--bg-page);
   color: var(--text-secondary);
 }
 
+/* 532:348 — 위아래 구분선 사이. 구분선에서 위 8 · 아래 18 */
 .timeline {
-  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  margin-top: 24px;
+  padding: 8px 0 18px;
+  border-top: 1px solid var(--border-default);
+  border-bottom: 1px solid var(--border-default);
+}
+
+/* 레일 24px — 배지·터미널 아이콘·선이 이 폭의 가운데에 섭니다. 글자와 간격 12 */
+.rail {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+}
+
+/* 정류장 줄(터미널 · 스팟) 위아래 5 */
+.stopRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 0;
+}
+
+/* 구간 줄 — 2px × 28 하늘색 선 */
+.legRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.line {
+  display: block;
+  width: 2px;
+  height: 28px;
+  background: var(--map-sea);
+}
+
+/* 같은 정류장(버스를 타지 않음) — 점선. 탄 구간의 선과 갈라 보여야 합니다. */
+.lineDots {
+  display: block;
+  width: 2px;
+  height: 28px;
+  background-image: linear-gradient(var(--map-sea) 50%, transparent 50%);
+  background-size: 2px 6px;
+}
+
+/* terminal-bus 22px 칸 — 자산은 그림자까지 26.125px 박스라 22px 원 기준으로 바깥에 걸칩니다(Figma inset -6.25% / -9.38%). */
+.terminalIcon {
+  display: block;
+  width: 26.125px;
+  height: 26.125px;
+  margin: -1.375px -2.0625px -2.75px;
+}
+
+.terminalName {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+/* 번호 배지 22px — 브랜드 원 + 흰 숫자 11 Bold */
+.badge {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-strong);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-on-brand);
+}
+
+.stopName {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* 「시간표 ›」 13 Medium, 줄 오른쪽 끝 */
+.timetableLink {
+  flex: none;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--brand-strong);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* 「55번 · 40분」 13 Medium */
+.legText {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* 532:415~418 — 각주 11 / 회색. 추정 각주와 출처 사이 8 */
+.notes {
   display: flex;
   flex-direction: column;
   margin-top: 14px;
 }
 
-/* 남는 높이는 구간 줄(버스 막대)이 나눠 가집니다 — 스팟·터미널 줄은 그대로라 사진 간격만 벌어집니다. */
-.legRow {
-  flex: 1 0 auto;
+.estimatedNote,
+.note {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-disabled);
+  word-break: keep-all;
 }
 
-.row {
-  display: flex;
-  gap: 14px;
+.estimatedNote {
+  margin-bottom: 8px;
+  line-height: 17px;
 }
 
-/* 거터는 56px — 스팟 사진(56px)이 들어가는 폭입니다(2026-09-13, 44에서 키움).
-   막대·점선·터미널 노드는 모두 이 폭의 가운데(28px)에 맞춥니다. */
-.gutter {
-  position: relative;
-  flex: none;
-  width: 56px;
-  align-self: stretch;
+.note {
+  line-height: 16px;
 }
 
-/* 버스 구간: 6px brand 막대 */
-.bar,
-.barTop,
-.barBottom {
-  position: absolute;
-  left: 25px;
-  width: 6px;
-  background: var(--brand-strong);
-}
-
-.bar {
-  top: 0;
-  bottom: 0;
-}
-
-.barTop {
-  top: 0;
-  height: 22px;
-}
-
-.barBottom {
-  top: 22px;
-  bottom: 0;
-}
-
-/* 같은 정류장(버스를 타지 않음): 점선. 막대와 갈라 보여야 합니다 — 탄 것과 안 탄 것은 다릅니다. */
-.dots {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 26px;
-  width: 4px;
-  background-image: radial-gradient(circle at 2px 2px, rgba(71, 84, 103, 0.5) 2px, transparent 2.5px);
-  background-size: 4px 12px;
-  background-repeat: repeat-y;
-}
-
-/* 출발·도착 터미널 노드 — 스팟이 아니라 사진이 없습니다. */
-.terminal {
-  position: absolute;
-  top: 8px;
-  left: 14px;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border: 2px solid var(--brand-strong);
-  border-radius: var(--radius-pill);
-  background: var(--bg-page);
-  color: var(--brand-strong);
-}
-
-/* 스팟 노드: 56px 원형 사진 + 좌상단 순번. 누르면 시간표로 갑니다.
-   추정 각주를 뺀 자리만큼 사진을 키웠습니다(44 → 56px, 2026-09-13). */
-.thumb {
-  position: absolute;
-  top: 4px;
-  left: 0;
-  width: 56px;
-  height: 56px;
-}
-
-/* 스팟 줄은 사진 가운데(32px)에서 막대가 갈라집니다. 터미널 줄(22px)과 높이가 달라 따로 둡니다. */
-.gutterStop .barTop {
-  height: 32px;
-}
-
-.gutterStop .barBottom {
-  top: 32px;
-}
-
-.thumbImg {
-  display: block;
-  width: 56px;
-  height: 56px;
-  border: 2px solid var(--bg-page);
-  border-radius: var(--radius-pill);
-  object-fit: cover;
-}
-
-.num {
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--text-on-brand);
-  border-radius: var(--radius-pill);
-  background: var(--brand-strong);
-  font: var(--type-label);
-  color: var(--text-on-brand);
-}
-
-/* ── 구간 줄 ─────────────────────────────────────────────────────────────── */
-
-.legContent {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 2px 0;
-}
-
-.legText {
-  font: var(--type-body);
-  color: var(--text-primary);
-}
-
-.legTextDim {
-  font: var(--type-body);
-  color: var(--text-secondary);
-}
-
-/* ── 스팟 줄 ─────────────────────────────────────────────────────────────── */
-
-.stopContent {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px 0 10px;
-}
-
-/* 스팟 줄은 사진(56px + 위아래 4px) 높이에 맞춰 이름을 가운데에 둡니다. */
-.stopContentSpot {
-  justify-content: center;
-  min-height: 64px;
-  padding: 0;
-}
-
-.stopLine {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-}
-
-.stopName {
-  font: var(--type-body-strong);
-  color: var(--text-primary);
-}
-
-.timetableLink {
-  font: var(--type-caption);
-  color: var(--brand-strong);
-  white-space: nowrap;
-}
-
-.source {
-  margin: 16px 0 0;
-  font: var(--type-label);
-  color: var(--text-secondary);
-}
-
-/* 저장 버튼 — 스크롤과 무관하게 바닥 고정(446:1122) */
-.bottomBar {
-  flex: none;
-  padding: 12px 20px calc(env(safe-area-inset-bottom, 0px) + 12px);
-  border-top: 1px solid var(--border-default);
-  background: var(--bg-page);
+/* 저장 — 각주 아래 20 */
+.saveArea {
+  margin-top: 20px;
 }
 
 /* 저장 완료 — 버튼 자리가 결과 줄로 바뀝니다(446:1120). */

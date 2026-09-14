@@ -1,14 +1,14 @@
-/* 스팟 시간표 — Figma 02-2 453:210 / 453:288 / 453:415.
-   코스가 "요약"이면 이 화면이 "근거"입니다. 그래서 시각을 원문 모양(시간대별 묶음 +
-   노선 배지)에 가깝게 그립니다 — 사용자가 BIS 표와 맞춰 볼 수 있어야 합니다. */
+/* 스팟 시간표 — Figma 09-14 개정 530:213 · 530:282 · 541:213 · 541:327 · 541:408.
+   코스가 "요약"이면 이 화면이 "근거"입니다. 시각을 원문 모양(한 편 한 줄 + 노선 배지)에 가깝게 그립니다.
+   토큰에 없는 글자 크기(20/30 · 15 · 13 · 11)는 그림 값을 그대로 둡니다. */
 
+/* 530:283 — ← · 스팟 이름 · (빈 칸) · 요일 알약. 위 14 · 아래 10 · 왼쪽 20 · 오른쪽 16, 간격 10 */
 .header {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 56px;
-  padding: env(safe-area-inset-top, 0px) 20px 0;
+  gap: 10px;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 10px 20px;
   background: var(--bg-page);
 }
 
@@ -16,24 +16,35 @@
   padding: 0;
   border: 0;
   background: transparent;
-  font: var(--type-title);
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 30px;
   color: var(--text-primary);
+  cursor: pointer;
 }
 
 .title {
   flex: 1;
   min-width: 0;
   margin: 0;
-  font: var(--type-title);
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 30px;
   color: var(--text-primary);
 }
 
+/* 530:287 — 연파랑 알약 12 Medium / 18 */
 .dayPill {
   flex: none;
-  padding: 4px 12px;
+  padding: 3px 8px;
   border-radius: var(--radius-pill);
   background: var(--brand-tint);
-  font: var(--type-label);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
   color: var(--brand-strong);
 }
 
@@ -44,11 +55,11 @@
   background: var(--bg-page);
 }
 
+/* 조각마다 아래 여백을 따로 줍니다(그림의 pb 값). 옆 20은 여기서 한 번. */
 .body {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 8px 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
+  padding: 0 20px env(safe-area-inset-bottom, 0px);
 }
 
 .notice {
@@ -60,161 +71,98 @@
 
 /* 칩 아래 버스 불러오는 중·실패 한 줄 — 칩은 남겨 둡니다(배 칩으로 돌아갈 수 있게). */
 .busStatus {
-  margin: 0;
+  margin: 0 0 12px;
   font: var(--type-caption);
   color: var(--text-secondary);
   word-break: keep-all;
 }
 
-/* "학동 정류장에서 타요." — 스팟이 아니라 정류장에서 탑니다.
-   내리는 곳과 시간표 기준이 다르면 두 문장이 됩니다(신촌에서 내리고 지세포 기준). */
+/* 530:290 「도장포 정류장에서 타요.」 14 / 21, 아래 12.
+   내리는 곳과 시간표 기준이 다르면 두 문장이 됩니다(신촌에서 내리고 지세포 기준) — 줄바꿈을 막지 않습니다. */
 .board {
-  margin: 0;
-  font: var(--type-caption);
+  margin: 0 0 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 21px;
   color: var(--text-secondary);
   word-break: keep-all;
 }
 
-/* 방향 칩(453:291): 가로 스크롤. 칩이 길어 두 개도 390px를 넘습니다. */
+/* 530:291 방향 칩 — 간격 8, 아래 16. 칩 이름이 곧 구간이라 자르지 않고 가로로 넘깁니다. */
 .dirs {
   display: flex;
   gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
-  margin: 0 -20px;
+  margin: 0 -20px 16px;
   padding: 0 20px;
 }
 
-.dirs::-webkit-scrollbar {
+.dirs::-webkit-scrollbar,
+.routes::-webkit-scrollbar {
   display: none;
 }
 
 .dirChip {
   flex: none;
-  padding: 9px 16px;
+  padding: 9px 14px;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-pill);
   background: var(--bg-page);
-  font: var(--type-caption);
-  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  color: var(--text-secondary);
   white-space: nowrap;
   cursor: pointer;
 }
 
 .dirOn {
-  border-color: var(--brand-strong);
-  background: var(--brand-tint);
-  font: var(--type-body-strong);
+  border-color: var(--brand-surface);
   color: var(--brand-strong);
 }
 
-/* 다음 버스 카드(453:297): brand tint 면 */
+/* 배 · 빈 결과처럼 그림에 없는 덩어리 — 다음 조각과 16 띄웁니다. */
+.block {
+  margin-bottom: 16px;
+}
+
+/* 530:297 다음 버스 카드 — 연파랑, 반경 12, 가운데 정렬, 아래 12 */
 .nextCard {
-  padding: 12px 14px;
-  border-radius: var(--radius-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
   background: var(--brand-tint);
+  color: var(--brand-strong);
+  text-align: center;
 }
 
 .nextLine {
   margin: 0;
-  font: var(--type-body-strong);
-  color: var(--brand-strong);
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 30px;
 }
 
-.tableHead {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding-top: 4px;
-}
-
-.tableTitle {
-  flex: none;
+.nextSub {
   margin: 0;
-  font: var(--type-body-strong);
-  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  word-break: keep-all;
 }
 
-.tableSummary {
-  flex: 1;
-  margin: 0;
-  font: var(--type-label);
-  color: var(--text-secondary);
-  text-align: right;
-}
-
-/* 시간대 행 — 왼쪽에 '07시', 오른쪽에 그 시간대 출발들 */
-.hours {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.hourRow {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 11px 0;
-  border-bottom: 1px solid var(--border-default);
-}
-
-.hourLabel {
-  flex: none;
-  width: 34px;
-  font: var(--type-caption);
-  color: var(--text-secondary);
-}
-
-.hourItems {
-  display: flex;
-  flex: 1;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 14px;
-}
-
-.dep {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-/* 노선 배지. 지난 차는 흐리게 — 지나간 것과 남은 것은 다른 정보입니다. */
-.badge,
-.badgeDim {
-  padding: 2px 7px;
-  border-radius: 6px;
-  font: var(--type-label);
-}
-
-.badge {
-  background: var(--brand-strong);
-  color: var(--text-on-brand);
-}
-
-.badgeDim {
-  background: var(--bg-surface);
-  color: var(--text-secondary);
-}
-
-.time {
-  font: var(--type-time);
-  color: var(--text-primary);
-}
-
-.timeDim {
-  font: var(--type-time);
-  color: var(--text-disabled);
-}
-
-.nextTag {
-  padding: 2px 7px;
-  border-radius: var(--radius-pill);
-  background: var(--brand-tint);
-  font: var(--type-label);
-  color: var(--brand-strong);
+/* 530:300 타는 곳 카드 자리 — 아래 18 */
+.boarding {
+  margin-bottom: 18px;
 }
 
 /* ★ 빈 결과 — 이유를 적습니다. 운행 없음 / 시각 미상 / 정류장 칸 없음은 다른 답입니다. */
@@ -242,8 +190,181 @@
   word-break: keep-all;
 }
 
-.source {
-  margin: 4px 0 0;
-  font: var(--type-label);
+/* 530:329 「평일 시간표」 16 Bold · 오른쪽 요약 12, 아래 8 */
+.tableHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+.tableTitle {
+  flex: none;
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.tableSummary {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
   color: var(--text-secondary);
+  text-align: right;
+}
+
+/* 541:361 노선 칩 — 위 2 · 아래 12, 간격 6. 넘치면 가로로. */
+.routes {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -20px;
+  padding: 2px 20px 12px;
+}
+
+.routeChip {
+  flex: none;
+  padding: 5px 11px; /* 테두리 1px 만큼 줄여 고른 칩(테두리 없음)과 높이를 맞춥니다 */
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.routeOn {
+  padding: 6px 12px;
+  border: 0;
+  background: var(--brand-surface);
+  font-weight: 700;
+  color: var(--text-on-brand);
+}
+
+/* 541:370 「약 40분」 12 / 19, 아래 12 */
+.duration {
+  margin: 0;
+  padding-bottom: 12px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 19px;
+  color: var(--text-secondary);
+}
+
+/* ★ 추정 알림 — 그림에 없는 줄. 소요시간 줄과 같은 결로 둡니다. */
+.estimatedNote {
+  margin: 0;
+  padding-bottom: 12px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+/* 530:333 한 편 한 줄 — 화면 끝까지 닿는 아래 테두리, 안쪽 옆 20 · 위아래 11, 간격 12 */
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0 -20px;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 20px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.hourLabel {
+  flex: none;
+  width: 34px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+
+/* 노선 배지 — 브랜드 면 알약, 흰 11 Bold. 폭은 30부터(541:374) */
+.badge {
+  flex: none;
+  box-sizing: border-box;
+  min-width: 30px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-surface);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 17px;
+  color: var(--text-on-brand);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* 시각 — 지난 편도 흐리지 않습니다(그림 그대로). 다음 편만 진한 글자. */
+.time,
+.timeNext {
+  font: var(--type-time);
+  color: var(--text-secondary);
+}
+
+.timeNext {
+  color: var(--text-primary);
+}
+
+.nextTag,
+.estimatedTag {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 17px;
+  white-space: nowrap;
+}
+
+.nextTag {
+  background: var(--brand-tint);
+  color: var(--brand-strong);
+}
+
+/* 추정 태그 — 「다음」과 헷갈리지 않게 면 없이 테두리만 */
+.estimatedTag {
+  padding: 2px 7px;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+}
+
+/* 530:365 출처 — 맨 아래, 위 16 · 아래 20, 줄 간격 3 */
+.sources {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 16px 0 20px;
+}
+
+.source {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  color: var(--text-disabled);
 }

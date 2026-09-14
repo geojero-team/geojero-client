@@ -6,17 +6,28 @@ import { loadKakaoMaps } from '../lib/kakaoLoader'
 import styles from './BoardingMap.module.css'
 
 /**
- * 타는 곳 — 스팟 시간표의 버스 칩 아래(2026-09-14 · Figma 프레임 없음, 사용자 결정).
+ * 타는 곳 — 스팟 시간표의 버스 칩, 다음 버스 카드 아래.
  *
  * 「학동 정류장에서 타요」만으로는 **어느 쪽 정류장인지** 모릅니다. 같은 이름 정류장이 길 양쪽에 있고,
  * 매미성처럼 스팟 이름과 정류장 이름이 다른 곳도 있습니다. 서버가 TAGO 좌표로 노선·방향에 맞는
- * 정류장을 골라 주고, 여기서는 그것을 작은 지도와 목록으로 보여줍니다.
+ * 정류장을 골라 주고, 여기서는 그것을 접었다 펴는 카드로 보여줍니다.
  *
- * **지도가 못 떠도 목록은 나옵니다.** 카카오 JS 키는 도메인 제한이라 로컬·jsdom에서는 SDK가 없고,
- * 길찾기는 카카오맵 링크가 대신합니다(우리는 '시간'을 소유하고 '길'은 카카오가 그립니다 — 기준문서 §6).
+ * 2026-09-14 개정(Figma `530:231` 접힘 · `530:282` / `541:408` 펼침): 늘 펼쳐 두던 제목 + 지도 + 목록을
+ * **접힌 카드 한 줄**(버스 아이콘 · 정류장 이름 · 거리 · 노선)로 바꿨습니다. 펼치면 지도 · (노선이 여럿이면) 목록 줄 · 길찾기.
+ * 지도 핀은 노선 글자 알약에서 **버스 마커 + 아래 태그**(「55」 · 「55 +2」)로 바뀌었고, 출처 줄은 페이지 맨 아래로 갔습니다.
  *
- * @param boarding  서버 departures 응답의 boarding { from, stops, exceptions, unresolved, source }.
- *                  from은 이 구간의 **출발 쪽**입니다(고현터미널 → 스팟이면 고현터미널).
+ * 그림은 정류장 한 곳만 그렸습니다. 그 밖은 같은 규칙으로 넓혔습니다(디자인브리프 부록 G에 적음):
+ *  · 정류장이 여럿(학동 55 학동 · 67-1 학동삼거리) — 한 이름으로 뭉개지 않고 「정류장 2곳 · 노선마다 타는 정류장이 달라요」,
+ *    펼치면 정류장마다 목록 줄과 길찾기(버튼 하나로는 어디로 보낼지 정할 수 없습니다).
+ *  · 노선 칩을 고르면(route) 그 노선의 정류장 · 예외 · 못 찍은 노선만 남깁니다.
+ *  · 길 건너편에서 타는 편(매미성 32번 20:37)은 **접혀 있어도** 알립니다 — 그 편이 곧 「다음 버스」일 수 있습니다.
+ *
+ * **지도는 펼칠 때 만듭니다.** 접힌 칸에서 만들면 크기가 0이라 화면 맞추기가 틀어지고, 대부분은 펼치지 않습니다.
+ * 지도가 못 떠도 이름 · 거리 · 길찾기는 그대로 나옵니다(카카오 JS 키는 도메인 제한).
+ *
+ * @param boarding 서버 departures 응답의 boarding { from, stops, exceptions, unresolved, source }.
+ *                 from은 이 구간의 **출발 쪽**입니다(고현터미널 → 스팟이면 고현터미널).
+ * @param route    노선 칩으로 고른 노선. 없으면 전체.
  */
 
 /** 섬 전체가 아니라 정류장 몇 개를 보는 지도라 이보다 당기면 길 이름도 안 보이게 됩니다. */
@@ -26,39 +37,100 @@ const FIT_PADDING = 28
 const TERMINAL_NEAR_M = 30
 /** 이 안이면 대표 정류장의 길 건너편으로 봅니다. */
 const OPPOSITE_M = 50
+
 /**
- * 핀이 이보다 가까우면 글자가 포개집니다. 길 건너편 정류장은 대표 핀에서 6~8m, 편마다 다른
- * 정류장끼리도 8m 남짓이라(매미성·김영삼 생가 실측) 가장 당긴 배율에서도 핀 글자가 겹칩니다.
- * 좌표는 옮기지 않고(위치가 정확하다는 전제) 겹친 핀만 점의 아래 · 위로 번갈아 답니다.
- * 핀 높이가 20~23px이라 0.5에 달린 핀(위아래 10px)과 떨어지려면 절반을 넘겨 -0.6 / 1.6입니다.
+ * 마커 기하 — Figma 530:318: 버스 아이콘 28 + 간격 2 + 태그 21 = 51px, **좌표는 아이콘 가운데**(위에서 14px).
+ * 마커끼리 가까우면 좌표는 옮기지 않고(위치가 정확하다는 전제) 겹친 마커만 아래 · 위로 번갈아 답니다.
+ * 아래로 달 때는 앞 마커 박스(좌표 기준 -14 ~ +37) 밑 2px에서, 위로 달 때는 위 2px에서 시작합니다.
  */
+const MARKER_HEIGHT = 51
+const ICON_CENTER = 14
+const ANCHOR_CENTER = ICON_CENTER / MARKER_HEIGHT
+const ANCHOR_BELOW = -(MARKER_HEIGHT - ICON_CENTER + 2) / MARKER_HEIGHT
+const ANCHOR_ABOVE = (MARKER_HEIGHT + ICON_CENTER + 2) / MARKER_HEIGHT
+/** 지도 화면 좌표로 잴 때 — 마커 폭(태그 「32 20:37」 ≈ 60px) · 높이(51 + 2px). */
+const STACK_PX_X = 60
+const STACK_PX_Y = MARKER_HEIGHT + 2
+/** SDK가 투영을 주지 않을 때의 거리 기준. 길 건너편 정류장은 대표 핀에서 6~8m입니다(매미성·김영삼 생가 실측). */
 const STACK_M = 25
-/** 지도 화면 좌표로 잴 때(SDK가 투영을 줄 때) — 핀 글자 폭(노선 두어 개 ≈ 65px)·높이(≈ 22px)만큼. */
-const STACK_PX_X = 72
-const STACK_PX_Y = 24
-const ANCHOR_CENTER = 0.5
-const ANCHOR_BELOW = -0.6
-const ANCHOR_ABOVE = 1.6
 
 /** 초기 중심(거제 대략 가운데). 곧바로 setBounds가 옮깁니다. */
 const GEOJE_CENTER = { lat: 34.88, lng: 128.62 }
 
-/** 핀 노선 글자 — 셋까지 늘어놓고, 넘으면 첫 노선 + 나머지 수. 핀이 길어지면 이웃 핀을 덮습니다. */
-function routesLabel(routes) {
-  return routes.length > 3
-    ? t('boarding.routesMore', { first: routes[0], count: routes.length - 1 })
-    : routes.join(' · ')
+/** Figma BusMarker(530:319 · 530:303) — 하늘색 원 + 흰 테두리 + 채운 흰 버스. 크기만 다르고 같은 그림입니다. */
+function busMarkerSvg(size) {
+  const k = size / 28
+  const n = (v) => +(v * k).toFixed(2)
+  return (
+    `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none" aria-hidden="true">` +
+    `<rect x="1" y="1" width="${size - 2}" height="${size - 2}" rx="${(size - 2) / 2}" fill="#00A1FF" stroke="white" stroke-width="2"/>` +
+    `<rect x="${n(7.84)}" y="${n(7.28)}" width="${n(12.32)}" height="${n(11.2)}" rx="${n(1.96)}" fill="white"/>` +
+    `<rect x="${n(9.52)}" y="${n(8.68)}" width="${n(8.96)}" height="${n(3.36)}" fill="#00A1FF"/>` +
+    `<circle cx="${n(10.22)}" cy="${n(18.62)}" r="${n(1.26)}" fill="white"/>` +
+    `<circle cx="${n(17.78)}" cy="${n(18.62)}" r="${n(1.26)}" fill="white"/>` +
+    '</svg>'
+  )
+}
+
+/** 고른 노선만 남깁니다. 서버가 노선마다 대표 정류장을 한 곳만 주므로 결과가 늘 정해집니다. */
+function forRoute(boarding, route) {
+  if (route == null) return boarding
+  return {
+    ...boarding,
+    stops: boarding.stops.filter((s) => s.routes.includes(route)).map((s) => ({ ...s, routes: [route] })),
+    exceptions: boarding.exceptions.filter((ex) => ex.routeNo === route),
+    unresolved: boarding.unresolved.filter((u) => u.routeNo === route),
+  }
+}
+
+/** 카드에 한 줄씩 서는 곳 — 대표 정류장(노선 묶음)과, 대표가 없는 노선의 편마다 정류장. */
+function placesOf({ stops, exceptions }) {
+  return [
+    ...stops.map((s) => ({ key: s.nodeId, stop: s, badges: s.routes, split: false })),
+    ...exceptions
+      .filter((ex) => ex.mainNodeId == null)
+      .map((ex) => ({ key: `${ex.routeNo}-${ex.depart}-${ex.nodeId}`, stop: ex, badges: [`${ex.routeNo} ${ex.depart}`], split: true })),
+  ]
+}
+
+function routesText(routes) {
+  return routes.length === 1
+    ? t('boarding.routeOne', { route: routes[0] })
+    : t('boarding.routeMore', { first: routes[0], count: routes.length - 1 })
+}
+
+function tagText(routes) {
+  return routes.length === 1 ? routes[0] : t('boarding.pinMore', { first: routes[0], count: routes.length - 1 })
 }
 
 function directionsUrl({ name, lat, lng }) {
   return `https://map.kakao.com/link/to/${encodeURIComponent(name)},${lat},${lng}`
 }
 
-/** CustomOverlay는 DOM을 그대로 받습니다. */
-function pinElement(text, className) {
+function DirectionsLink({ stop, className }) {
+  return (
+    <a
+      className={className}
+      href={directionsUrl(stop)}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={t('boarding.directionsA11y', { name: stop.name })}
+    >
+      {t('boarding.directions')}
+    </a>
+  )
+}
+
+function markerElement(tag) {
   const element = document.createElement('span')
-  element.className = className
-  element.textContent = text
+  element.className = styles.marker
+  const icon = document.createElement('span')
+  icon.className = styles.markerIcon
+  icon.innerHTML = busMarkerSvg(28)
+  const label = document.createElement('span')
+  label.className = styles.markerTag
+  label.textContent = tag
+  element.append(icon, label)
   return element
 }
 
@@ -74,50 +146,13 @@ function fromElement(name) {
   return element
 }
 
-function StopRow({ stop, badges, place, showDistance }) {
-  return (
-    <li className={styles.stop}>
-      <div className={styles.stopHead}>
-        <span className={styles.stopName}>{t('boarding.stopName', { name: stop.name })}</span>
-        {badges.map((badge) => (
-          <span key={badge} className={styles.badge}>
-            {badge}
-          </span>
-        ))}
-      </div>
-      <div className={styles.stopMeta}>
-        {showDistance && (
-          <span className={styles.distance}>
-            {t('boarding.distance', { place, dist: formatDistance(stop.distanceM) })}
-          </span>
-        )}
-        <a
-          className={styles.directions}
-          href={directionsUrl(stop)}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={t('boarding.directionsA11y', { name: stop.name })}
-        >
-          {t('boarding.directions')}
-        </a>
-      </div>
-    </li>
-  )
-}
-
-export default function BoardingMap({ boarding }) {
+/** 펼쳤을 때만 마운트되는 지도 — 접으면 사라집니다. */
+function MapCanvas({ stops, exceptions, from, showFrom }) {
   const containerRef = useRef(null)
   const kakaoRef = useRef(null)
   const mapRef = useRef(null)
   const [phase, setPhase] = useState('loading') // 'loading' | 'ready' | 'error'
-  const titleId = useId()
 
-  const { from, stops, exceptions, unresolved } = boarding
-  const isTerminal = from.kind === 'TERMINAL'
-  const nearestM = Math.min(...[...stops, ...exceptions].map((p) => p.distanceM))
-  const showDistance = (meters) => !(isTerminal && meters < TERMINAL_NEAR_M)
-
-  // ── SDK 로드 + 지도 한 번 만들기 ────────────────────────────────────────
   useEffect(() => {
     const container = containerRef.current
     let cancelled = false
@@ -142,18 +177,17 @@ export default function BoardingMap({ boarding }) {
     }
   }, [])
 
-  // ── 핀 + 화면 맞추기. 칩을 바꾸면 boarding이 바뀌어 핀만 다시 찍습니다. ───────
   useEffect(() => {
     const kakao = kakaoRef.current
     const map = mapRef.current
     if (phase !== 'ready' || !kakao || !map) return
 
     // 1) 찍을 것을 모으고 2) 화면을 맞춘 뒤 3) 그 배율의 화면 좌표로 겹침을 잰다.
-    //    처음엔 미터(25m)로 쟀는데, 운영 거제씨월드에서 26m 떨어진 두 지세포 핀이 몇 px 안에 겹쳐 4000 핀이 가려졌다(2026-09-14).
+    //    미터(25m)로만 재면 운영 거제씨월드에서 26m 떨어진 두 지세포 핀이 몇 px 안에 겹쳐 4000 핀이 가려졌다(2026-09-14).
     const items = [
-      ...stops.map((stop) => ({ at: stop, content: pinElement(routesLabel(stop.routes), styles.pinMain) })),
-      ...exceptions.map((ex) => ({ at: ex, content: pinElement(`${ex.routeNo} ${ex.depart}`, styles.pinException) })),
-      ...(isTerminal && nearestM < TERMINAL_NEAR_M ? [] : [{ at: from, content: fromElement(from.name) }]),
+      ...stops.map((stop) => ({ at: stop, content: markerElement(tagText(stop.routes)), anchor: ANCHOR_CENTER })),
+      ...exceptions.map((ex) => ({ at: ex, content: markerElement(`${ex.routeNo} ${ex.depart}`), anchor: ANCHOR_CENTER })),
+      ...(showFrom ? [{ at: from, content: fromElement(from.name), anchor: 0.5 }] : []),
     ].map((item) => ({ ...item, position: new kakao.maps.LatLng(item.at.lat, item.at.lng) }))
 
     const bounds = new kakao.maps.LatLngBounds()
@@ -171,54 +205,145 @@ export default function BoardingMap({ boarding }) {
           ? Math.abs(p.point.x - point.x) < STACK_PX_X && Math.abs(p.point.y - point.y) < STACK_PX_Y
           : distanceMeters(p.at, item.at) < STACK_M,
       ).length
-      const yAnchor = near === 0 ? ANCHOR_CENTER : near % 2 === 1 ? ANCHOR_BELOW : ANCHOR_ABOVE
+      const yAnchor = near === 0 ? item.anchor : near % 2 === 1 ? ANCHOR_BELOW : ANCHOR_ABOVE
       placed.push({ at: item.at, point })
       return new kakao.maps.CustomOverlay({ map, position: item.position, content: item.content, xAnchor: 0.5, yAnchor })
     })
 
     return () => overlays.forEach((overlay) => overlay.setMap(null))
-  }, [phase, stops, exceptions, from, isTerminal, nearestM])
+  }, [phase, stops, exceptions, from, showFrom])
 
-  // 대표 핀이 있는 예외는 문장 하나, 대표 핀이 없는 노선(편마다 다름)은 노선별로 묶은 문장 + 편마다 목록 줄.
+  // 지도는 이름 · 거리 · 길찾기와 같은 내용을 그림으로 보여줄 뿐이라 읽기 도구에서는 숨깁니다.
+  return phase === 'error' ? (
+    <p className={styles.mapFailed}>{t('boarding.mapFailed')}</p>
+  ) : (
+    <div ref={containerRef} className={styles.map} aria-hidden="true" />
+  )
+}
+
+export default function BoardingMap({ boarding, route = null }) {
+  const [open, setOpen] = useState(false)
+  const bodyId = useId()
+
+  const { from, stops, exceptions, unresolved } = forRoute(boarding, route)
+  const places = placesOf({ stops, exceptions })
+  const isTerminal = from.kind === 'TERMINAL'
+  const isNear = (meters) => isTerminal && meters < TERMINAL_NEAR_M
+  const nearestM = Math.min(...[...stops, ...exceptions].map((p) => p.distanceM))
+  const where = (stop) =>
+    isNear(stop.distanceM)
+      ? t('boarding.near', { place: from.name })
+      : t('boarding.distance', { place: from.name, dist: formatDistance(stop.distanceM) })
+  const shortWhere = (stop) =>
+    isNear(stop.distanceM) ? t('boarding.near', { place: from.name }) : t('boarding.distanceOnly', { dist: formatDistance(stop.distanceM) })
+
   const withMain = exceptions.filter((ex) => ex.mainNodeId != null)
   const split = exceptions.filter((ex) => ex.mainNodeId == null)
   const splitRoutes = [...new Set(split.map((ex) => ex.routeNo))]
   const unresolvedRoutes = [...new Set(unresolved.map((u) => u.routeNo))]
+  const unresolvedNote =
+    unresolvedRoutes.length > 0 ? (
+      <p className={styles.note}>{t('boarding.unresolved', { routes: unresolvedRoutes.join('·') })}</p>
+    ) : null
+
+  // 고른 노선의 타는 곳을 하나도 못 찍었으면 펼칠 것이 없습니다 — 이유 한 줄만.
+  if (places.length === 0) {
+    if (!unresolvedNote) return null
+    return (
+      <section className={styles.card} aria-label={t('boarding.title')}>
+        {unresolvedNote}
+      </section>
+    )
+  }
+
+  const single = places.length === 1 ? places[0] : null
+  const names = [...new Set(places.map((p) => p.stop.name))]
+  const title = single || names.length === 1 ? t('boarding.stopName', { name: names[0] }) : t('boarding.stopsCount', { count: places.length })
+  const line = single
+    ? single.split || (open && single.badges.length === 1)
+      ? where(single.stop)
+      : open
+        ? t('boarding.sameStop', { count: single.badges.length })
+        : t('boarding.summary', { where: where(single.stop), routes: routesText(single.badges) })
+    : places.every((p) => p.split)
+      ? t('boarding.perTrip')
+      : t('boarding.perRoute')
+  // 목록 줄: 정류장이 여럿이면 곳마다(길찾기 포함), 한 곳이면 노선이 여럿일 때만(541:452 — 노선 하나면 머리줄이 전부 말한다).
+  const listed = single ? (single.badges.length > 1 ? [single] : []) : places
 
   return (
-    <section className={styles.root} aria-labelledby={titleId}>
-      <h2 id={titleId} className={styles.title}>
-        {t('boarding.title')}
-      </h2>
+    <section className={styles.card} aria-label={t('boarding.title')}>
+      <button
+        type="button"
+        className={styles.head}
+        aria-expanded={open}
+        aria-controls={bodyId}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span
+          className={styles.headIcon}
+          aria-hidden="true"
+          // Figma BusMarker 26px(530:303)
+          dangerouslySetInnerHTML={{ __html: busMarkerSvg(26) }}
+        />
+        <span className={styles.headText}>
+          <span className={styles.headTitle}>{title}</span>
+          <span className={styles.headLine}>{line}</span>
+        </span>
+        <span className={open ? styles.chevronOpen : styles.chevron} aria-hidden="true">
+          {open ? '⌄' : '›'}
+        </span>
+      </button>
 
-      {/* 지도는 목록과 같은 내용을 그림으로 보여줄 뿐이라 읽기 도구에서는 숨깁니다. */}
-      {phase === 'error' ? (
-        <p className={styles.note}>{t('boarding.mapFailed')}</p>
-      ) : (
-        <div ref={containerRef} className={styles.map} aria-hidden="true" />
+      {open && (
+        <div id={bodyId} className={styles.body}>
+          <MapCanvas
+            stops={stops}
+            exceptions={exceptions}
+            from={from}
+            showFrom={!(isTerminal && nearestM < TERMINAL_NEAR_M)}
+          />
+
+          {listed.length > 0 && (
+            <ul className={styles.list}>
+              {listed.map((place) => (
+                <li key={place.key} className={styles.row}>
+                  <span className={styles.rowHead}>
+                    <span className={styles.rowName}>{t('boarding.stopName', { name: place.stop.name })}</span>
+                    <span className={styles.rowDistance}>{shortWhere(place.stop)}</span>
+                  </span>
+                  <span className={styles.badges}>
+                    {place.badges.map((badge) => (
+                      <span key={badge} className={styles.badge}>
+                        {badge}
+                      </span>
+                    ))}
+                  </span>
+                  {!single && <DirectionsLink stop={place.stop} className={styles.rowDirections} />}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {splitRoutes.map((r) => (
+            <p key={r} className={styles.note}>
+              {t('boarding.split', {
+                route: r,
+                list: split
+                  .filter((ex) => ex.routeNo === r)
+                  .map((ex) => t('boarding.splitItem', { time: ex.depart }))
+                  .join(' · '),
+              })}
+            </p>
+          ))}
+
+          {unresolvedNote}
+
+          {single && <DirectionsLink stop={single.stop} className={styles.directions} />}
+        </div>
       )}
 
-      <ul className={styles.stops}>
-        {stops.map((stop) => (
-          <StopRow
-            key={stop.nodeId}
-            stop={stop}
-            badges={stop.routes}
-            place={from.name}
-            showDistance={showDistance(stop.distanceM)}
-          />
-        ))}
-        {split.map((ex) => (
-          <StopRow
-            key={`${ex.routeNo}-${ex.depart}-${ex.nodeId}`}
-            stop={ex}
-            badges={[`${ex.routeNo} ${ex.depart}`]}
-            place={from.name}
-            showDistance={showDistance(ex.distanceM)}
-          />
-        ))}
-      </ul>
-
+      {/* 대표 정류장이 아닌 곳에서 타는 편 — 접혀 있어도 보입니다. 매미성 20:30에는 이 편이 곧 다음 버스입니다. */}
       {withMain.map((ex) => (
         <p key={`${ex.routeNo}-${ex.depart}-${ex.nodeId}`} className={styles.note}>
           {ex.gapM <= OPPOSITE_M
@@ -231,24 +356,6 @@ export default function BoardingMap({ boarding }) {
               })}
         </p>
       ))}
-
-      {splitRoutes.map((route) => (
-        <p key={route} className={styles.note}>
-          {t('boarding.split', {
-            route,
-            list: split
-              .filter((ex) => ex.routeNo === route)
-              .map((ex) => t('boarding.splitItem', { time: ex.depart }))
-              .join(' · '),
-          })}
-        </p>
-      ))}
-
-      {unresolvedRoutes.length > 0 && (
-        <p className={styles.note}>{t('boarding.unresolved', { routes: unresolvedRoutes.join('·') })}</p>
-      )}
-
-      <p className={styles.source}>{t('boarding.source', { source: boarding.source })}</p>
     </section>
   )
 }
