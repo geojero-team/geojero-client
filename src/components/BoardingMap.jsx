@@ -53,11 +53,19 @@ const BELOW_TOP = MARKER_HEIGHT - ICON_CENTER + 2 // 좌표에서 비킨 박스 
 const ABOVE_BOTTOM = ICON_CENTER + 2 // 비킨 박스 아랫변에서 좌표까지
 const anchorOf = (slot, height, center) =>
   slot === 'below' ? -BELOW_TOP / height : slot === 'above' ? (ABOVE_BOTTOM + height) / height : center / height
-/** 지도 화면 좌표로 잴 때 — 마커 폭(태그 「32 20:37」 ≈ 60px) · 높이(51 + 2px). */
-const STACK_PX_X = 60
-const STACK_PX_Y = MARKER_HEIGHT + 2
 /** SDK가 투영을 주지 않을 때의 거리 기준. 길 건너편 정류장은 대표 핀에서 6~8m입니다(매미성·김영삼 생가 실측). */
 const STACK_M = 25
+/** 태그 폭 어림(11px Bold 한 글자 ≈ 6.5px + 좌우 여백·테두리 16px) — 운영 실측 「55」 29 · 「4000」 42 · 「32 20:37」 62px. */
+const tagWidth = (text) => Math.max(28, 16 + text.length * 6.5)
+/** 출발 곳 이름표 폭 어림(11px Medium 한글 ≈ 11px) — 점 오른쪽 13px에서 시작합니다. */
+const fromLabelWidth = (text) => 13 + text.length * 11
+/**
+ * 화면 맞추기 여백. 좌표는 아이콘 가운데라 마커 몸통이 위로 14px · 아래로 37px · 옆으로 태그 반 폭만큼 나옵니다.
+ * 몸통을 넣지 않으면 가장자리 정류장의 태그가 칸 밖으로 잘리거나 카카오 축척 막대에 덮였습니다(운영 매미성, 2026-09-14).
+ */
+const FIT_TOP = FIT_PADDING + ICON_CENTER
+const FIT_BOTTOM = FIT_PADDING + (MARKER_HEIGHT - ICON_CENTER)
+const FIT_SIDE = FIT_PADDING + 31
 
 /** 초기 중심(거제 대략 가운데). 곧바로 setBounds가 옮깁니다. */
 const GEOJE_CENTER = { lat: 34.88, lng: 128.62 }
@@ -75,6 +83,55 @@ function busMarkerSvg(size) {
     `<circle cx="${n(17.78)}" cy="${n(18.62)}" r="${n(1.26)}" fill="white"/>` +
     '</svg>'
   )
+}
+
+/**
+ * 한 칸(제자리 · 아래 · 위)에 달았을 때 화면에서 차지하는 상자(px). 마커는 태그 폭 · 51px, 출발 곳은 점 + 오른쪽 이름표.
+ * 좌표(point)가 아이콘 가운데(출발 곳은 점 가운데)라는 anchorOf 규칙과 같은 기하입니다.
+ */
+function boxOf(item, point, slot) {
+  const top = point.y - anchorOf(slot, item.height, item.center) * item.height
+  if (item.kind === 'from') {
+    const r = FROM_HEIGHT / 2
+    // 이름표(17px)가 점 가운데 높이에 걸립니다.
+    return { x0: point.x - r, x1: point.x + r + item.width, y0: top + r - 8.5, y1: top + r + 8.5 }
+  }
+  const half = Math.max(item.width, 28) / 2
+  return { x0: point.x - half, x1: point.x + half, y0: top, y1: top + item.height }
+}
+
+const intersects = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1
+
+/**
+ * 화면 좌표로 칸 고르기. 제자리가 먼저 찍힌 상자와 겹치지 않으면 제자리. 겹치면 **실제로 있는 쪽**(겹친 상대보다 북쪽이면 위)을
+ * 먼저, 안 되면 반대쪽. 비킨 상자도 다른 상자와 부딪히거나 지도 칸 밖이면 그 칸은 버립니다.
+ *  · 방향을 보지 않고 번갈아 달면 북쪽 정류장이 남쪽에 그려졌습니다(고현터미널 → 김영삼 생가 2000번).
+ *  · 비킨 뒤를 재지 않으면 「63 +1」이 신촌 마커에 부딪혔고(거제씨월드), 매미성 길 건너편 마커는 칸 밖으로 잘렸습니다(운영, 2026-09-14).
+ * 모든 칸이 막히면 칸 안에 들어가는 첫 칸, 그것도 없으면 제자리입니다 — 잘려 안 보이는 것보다 겹쳐 보이는 게 낫습니다.
+ */
+function slotByBox(item, point, placed, mapHeight) {
+  const others = placed.filter((p) => p.box)
+  const clash = (slot) => others.find((p) => intersects(boxOf(item, point, slot), p.box))
+  const inside = (slot) => {
+    if (!mapHeight) return true
+    const box = boxOf(item, point, slot)
+    return box.y0 >= 0 && box.y1 <= mapHeight
+  }
+  const hit = clash('center')
+  if (!hit) return 'center'
+  const north = point.y < hit.point.y
+  const order = north ? ['above', 'below'] : ['below', 'above']
+  return order.find((slot) => !clash(slot) && inside(slot)) ?? order.find(inside) ?? 'center'
+}
+
+/** SDK가 투영을 주지 않을 때 — 거리로 겹침을 재고, 북쪽이면 위 · 그쪽을 이미 썼으면 반대쪽. */
+function slotByDistance(item, placed) {
+  const near = placed.filter((p) => distanceMeters(p.at, item.at) < STACK_M)
+  if (near.length === 0) return 'center'
+  const north = item.at.lat > near[0].at.lat
+  const used = new Set(near.map((p) => p.slot))
+  const [preferred, other] = north ? ['above', 'below'] : ['below', 'above']
+  return !used.has(preferred) ? preferred : !used.has(other) ? other : preferred
 }
 
 /** 고른 노선만 남깁니다. 서버가 노선마다 대표 정류장을 한 곳만 주므로 결과가 늘 정해집니다. */
@@ -189,39 +246,27 @@ function MapCanvas({ stops, exceptions, from, showFrom }) {
 
     // 1) 찍을 것을 모으고 2) 화면을 맞춘 뒤 3) 그 배율의 화면 좌표로 겹침을 잰다.
     //    미터(25m)로만 재면 운영 거제씨월드에서 26m 떨어진 두 지세포 핀이 몇 px 안에 겹쳐 4000 핀이 가려졌다(2026-09-14).
-    const marker = { height: MARKER_HEIGHT, center: ICON_CENTER }
+    const markerItem = (at, tag) => ({ at, content: markerElement(tag), kind: 'marker', width: tagWidth(tag), height: MARKER_HEIGHT, center: ICON_CENTER })
     const items = [
-      ...stops.map((stop) => ({ at: stop, content: markerElement(tagText(stop.routes)), ...marker })),
-      ...exceptions.map((ex) => ({ at: ex, content: markerElement(`${ex.routeNo} ${ex.depart}`), ...marker })),
-      ...(showFrom ? [{ at: from, content: fromElement(from.name), height: FROM_HEIGHT, center: FROM_HEIGHT / 2 }] : []),
+      ...stops.map((stop) => markerItem(stop, tagText(stop.routes))),
+      ...exceptions.map((ex) => markerItem(ex, `${ex.routeNo} ${ex.depart}`)),
+      ...(showFrom
+        ? [{ at: from, content: fromElement(from.name), kind: 'from', width: fromLabelWidth(from.name), height: FROM_HEIGHT, center: FROM_HEIGHT / 2 }]
+        : []),
     ].map((item) => ({ ...item, position: new kakao.maps.LatLng(item.at.lat, item.at.lng) }))
 
     const bounds = new kakao.maps.LatLngBounds()
     items.forEach((item) => bounds.extend(item.position))
-    map.setBounds(bounds, FIT_PADDING, FIT_PADDING, FIT_PADDING, FIT_PADDING)
+    map.setBounds(bounds, FIT_TOP, FIT_SIDE, FIT_BOTTOM, FIT_SIDE)
     if (map.getLevel() < MIN_LEVEL) map.setLevel(MIN_LEVEL)
 
     const projection = map.getProjection?.()
+    const mapHeight = containerRef.current?.clientHeight ?? 0
     const placed = []
     const overlays = items.map((item) => {
       const point = projection?.containerPointFromCoords(item.position)
-      // 먼저 찍힌 핀(대표 핀이 먼저입니다) 중 겹치는 것이 있으면 비킵니다. 방향은 **실제로 있는 쪽** — 북쪽이면 위,
-      // 남쪽(또는 같은 높이)이면 아래. 그쪽을 이미 다른 핀이 썼으면 반대쪽. 방향을 보지 않고 번갈아 달면
-      // 북쪽 정류장이 남쪽에 그려졌습니다(고현터미널 → 김영삼 생가 2000번, 2026-09-14 리뷰).
-      const near = placed.filter((p) =>
-        point && p.point
-          ? Math.abs(p.point.x - point.x) < STACK_PX_X && Math.abs(p.point.y - point.y) < STACK_PX_Y
-          : distanceMeters(p.at, item.at) < STACK_M,
-      )
-      let slot = 'center'
-      if (near.length > 0) {
-        const ref = near[0]
-        const north = point && ref.point ? point.y < ref.point.y : item.at.lat > ref.at.lat
-        const used = new Set(near.map((p) => p.slot))
-        const [preferred, other] = north ? ['above', 'below'] : ['below', 'above']
-        slot = !used.has(preferred) ? preferred : !used.has(other) ? other : preferred
-      }
-      placed.push({ at: item.at, point, slot })
+      const slot = point ? slotByBox(item, point, placed, mapHeight) : slotByDistance(item, placed)
+      placed.push({ at: item.at, point, slot, box: point ? boxOf(item, point, slot) : null })
       const yAnchor = anchorOf(slot, item.height, item.center)
       return new kakao.maps.CustomOverlay({ map, position: item.position, content: item.content, xAnchor: 0.5, yAnchor })
     })

@@ -396,9 +396,9 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     expect(map.setLevel).not.toHaveBeenCalled()
   })
 
-  it('고현터미널 → 김영삼 생가 — 북동쪽 70m 2000번 마커는 위로 비킨다(아래로 내리면 북쪽 정류장이 남쪽에 그려진다)', async () => {
+  it('고현터미널 → 김영삼 생가 — 북동쪽 70m 2000번 마커가 겹치면 위로 비킨다(아래로 내리면 북쪽 정류장이 남쪽에 그려진다)', async () => {
     const user = userEvent.setup()
-    const { kakao, map, overlays } = fakeKakao({ level: 3, pxPerDeg: 80000 })
+    const { kakao, map, overlays } = fakeKakao({ level: 3, pxPerDeg: 30000 })
     loadKakaoMaps.mockResolvedValue(kakao)
 
     render(
@@ -445,6 +445,83 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     const from = overlays.find((o) => o.options.content.textContent === '고현터미널')
     // 마커 박스(좌표 기준 -14 ~ +37px) 밖으로: 아래면 점 윗변이 +39px(= -39/9), 위면 점 아랫변이 -16px(= 25/9)
     expect(Math.abs(from.options.yAnchor - -39 / 9) < 1e-6 || Math.abs(from.options.yAnchor - 25 / 9) < 1e-6).toBe(true)
+  })
+
+  it('거제씨월드 — 위로 비킨 「63 +1」이 신촌 마커와 부딪히면 반대쪽(아래)으로(운영 실측, 2026-09-14)', async () => {
+    const user = userEvent.setup()
+    const { kakao, map, overlays } = fakeKakao({ level: 5, pxPerDeg: 10000 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(
+      <BoardingMap
+        boarding={{
+          from: { name: '거제씨월드', kind: 'SPOT', lat: 34.8358552, lng: 128.7014662 },
+          stops: [
+            { nodeId: 'GJB1657', name: '지세포', lat: 34.828869, lng: 128.702914, distanceM: 788, routes: ['4000'] },
+            { nodeId: 'GJB901', name: '신촌', lat: 34.8345, lng: 128.69975167, distanceM: 217, routes: ['23-1', '23', '22', '25-1', '25', '24-1'] },
+            { nodeId: 'GJB849', name: '지세포', lat: 34.82895333, lng: 128.70264333, distanceM: 775, routes: ['63', '67-1'] },
+          ],
+          exceptions: [],
+          unresolved: [],
+          source: SOURCE,
+        }}
+      />,
+    )
+    await expand(user)
+
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    const byText = Object.fromEntries(overlays.map((o) => [o.options.content.textContent, o.options.yAnchor]))
+    expect(byText['4000']).toBeCloseTo(ICON_CENTER)
+    expect(byText['23-1 +5']).toBeCloseTo(ICON_CENTER)
+    expect(byText['63 +1']).toBeLessThan(0)
+  })
+
+  it('비킨 마커가 지도 칸(180px) 밖으로 나가면 반대쪽으로 — 매미성 대금교차로가 지도 아래쪽에 있을 때', async () => {
+    const user = userEvent.setup()
+    const { kakao, map, overlays } = fakeKakao({ level: 3, pxPerDeg: 10000 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+    const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight')
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 180 })
+    try {
+      // y = (35 - 위도) × 12000 → 대표 정류장 150px, 길 건너편은 0.6px 남쪽
+      render(
+        <BoardingMap
+          boarding={{
+            from: { name: '매미성', kind: 'SPOT', lat: 34.99, lng: 128.62 },
+            stops: [{ nodeId: 'GJB1599', name: '대금교차로', lat: 34.9875, lng: 128.61, distanceM: 213, routes: ['33', '32'] }],
+            exceptions: [
+              { routeNo: '32', depart: '20:37', nodeId: 'GJB1621', name: '대금교차로', lat: 34.98745, lng: 128.61, distanceM: 218, mainNodeId: 'GJB1599', gapM: 6 },
+            ],
+            unresolved: [],
+            source: SOURCE,
+          }}
+        />,
+      )
+      await expand(user)
+
+      await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+      const opposite = overlays.find((o) => o.options.content.textContent === '32 20:37')
+      expect(opposite.options.yAnchor).toBeGreaterThan(1) // 아래(150 + 39 ~ 90px)는 칸 밖이라 위로
+    } finally {
+      if (height) Object.defineProperty(HTMLElement.prototype, 'clientHeight', height)
+      else delete HTMLElement.prototype.clientHeight
+    }
+  })
+
+  it('화면 맞추기 여백에 마커 몸통을 넣는다 — 좌표는 아이콘 가운데라 태그가 아래로 37px 내려온다', async () => {
+    const user = userEvent.setup()
+    const { kakao, map } = fakeKakao({ level: 5 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(<BoardingMap boarding={BARAM} />)
+    await expand(user)
+
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    const [, top, right, bottom, left] = map.setBounds.mock.calls[0]
+    expect(bottom).toBeGreaterThanOrEqual(28 + 37)
+    expect(top).toBeGreaterThanOrEqual(28 + 14)
+    expect(left).toBeGreaterThanOrEqual(28 + 14)
+    expect(right).toBeGreaterThanOrEqual(28 + 14)
   })
 })
 
