@@ -257,12 +257,14 @@ export default {
   'boarding.unresolved': '{routes}번은 타는 곳을 지도에 표시하지 못했어요.',
   'boarding.mapFailed': '지도를 불러오지 못했어요',
 
-  // ── 코스 상세 (09-14 개정 · Figma 532:213 / 532:318) ─────────────────────
+  // ── 코스 상세 (09-14 확정 · Figma 547:200) ───────────────────────────────
   'courseDetail.back': '코스',
   // 권역은 /api/pois 에서 붙입니다. 여러 권역이면 방문 순서대로 한 번씩(「남부권·동부권」).
   'courseDetail.meta': '{regions} · {count}곳',
   'courseDetail.metaCount': '{count}곳',
-  'courseDetail.origin': '{origin}에서 출발해 {origin}로 돌아와요',
+  // 제목 규칙 — 첫 스팟과 끝 스팟의 짧은 이름(2026-09-14 사용자 결정). 그림의 「몽돌에서 바람의언덕까지」처럼 줄이진 못합니다.
+  // 코스에 진짜 이름이 생기면 그걸 먼저 쓰고 없을 때만 이 규칙입니다.
+  'courseDetail.titleRange': '{first}에서 {last}까지',
   // {time}은 formatDuration(busMinTotal) — 서버 busTotalText는 60분 미만이면 「약 0시간 40분」이 되어 쓰지 않습니다.
   'courseDetail.busChip': '버스 약 {time}',
   'courseDetail.legChip': '{n}구간',

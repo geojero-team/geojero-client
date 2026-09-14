@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { loadKakaoMaps } from '../lib/kakaoLoader'
 import CourseMiniMap from './CourseMiniMap'
@@ -14,8 +14,20 @@ const TERMINAL = { lat: 34.8906148, lng: 128.6242507 }
 
 function fakeKakao({ pxPerDeg = null } = {}) {
   const overlays = []
+  const polylines = []
   const created = []
-  const map = { setBounds: vi.fn() }
+  // SDK 흉내: 지도 안쪽에서 휠을 듣고(onWheel), 확대 컨트롤은 칸 안에 <button>을 넣습니다(실제 SDK 4.5: title 「확대」·「축소」).
+  const map = {
+    setBounds: vi.fn(),
+    onWheel: vi.fn(),
+    container: null,
+    addControl: vi.fn(() => {
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.title = '확대'
+      map.container.append(button)
+    }),
+  }
   if (pxPerDeg) {
     map.getProjection = () => ({
       containerPointFromCoords: (latLng) => ({ x: (latLng.lng - 128.6) * pxPerDeg, y: (35.0 - latLng.lat) * pxPerDeg }),
@@ -26,6 +38,8 @@ function fakeKakao({ pxPerDeg = null } = {}) {
       Map: class {
         constructor(container, options) {
           created.push(options)
+          map.container = container
+          container.addEventListener('wheel', map.onWheel)
           return map
         }
       },
@@ -48,10 +62,21 @@ function fakeKakao({ pxPerDeg = null } = {}) {
           overlays.push(this)
         }
       },
+      Polyline: class {
+        constructor(options) {
+          this.options = options
+          this.setMap = vi.fn()
+          polylines.push(this)
+        }
+      },
+      ZoomControl: class {},
+      ControlPosition: { RIGHT: 'RIGHT' },
     },
   }
-  return { kakao, map, overlays, created }
+  return { kakao, map, overlays, polylines, created }
 }
+
+const pathOf = (polyline) => polyline.options.path.map(({ lat, lng }) => [lat, lng])
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -71,14 +96,84 @@ describe('CourseMiniMap — 코스 상세 220px 지도(532:324)', () => {
     expect(map.setBounds.mock.calls[0][0].points).toHaveLength(4)
   })
 
-  it('요약 지도라 끌거나 확대하지 않는다 — 페이지 스크롤을 뺏지 않게', async () => {
-    const { kakao, created } = fakeKakao()
+  it('끌기 · 두 손가락 확대 · 더블탭 · +/- 버튼은 된다 — 잠그는 옵션을 쓰지 않는다', async () => {
+    const { kakao, map, created } = fakeKakao()
     loadKakaoMaps.mockResolvedValue(kakao)
 
     render(<CourseMiniMap stops={STOPS} terminal={TERMINAL} />)
 
     await waitFor(() => expect(created).toHaveLength(1))
-    expect(created[0]).toMatchObject({ draggable: false, scrollwheel: false, disableDoubleClickZoom: true })
+    // scrollwheel:false 는 SDK가 마우스 휠과 두 손가락 확대를 한 스위치로 묶은 옵션이라 쓰면 폰에서 확대가 안 된다.
+    expect(created[0].scrollwheel).not.toBe(false)
+    expect(created[0].draggable).not.toBe(false)
+    expect(created[0].disableDoubleClickZoom).not.toBe(true)
+    expect(map.addControl).toHaveBeenCalledTimes(1)
+    expect(map.addControl.mock.calls[0][0]).toBeInstanceOf(kakao.maps.ZoomControl)
+    expect(map.addControl.mock.calls[0][1]).toBe('RIGHT')
+  })
+
+  it('마우스 휠은 지도에 닿기 전에 멈추고 페이지 스크롤은 그대로 — PC에서 스크롤이 지도에 잡히지 않게', async () => {
+    const { kakao, map, created } = fakeKakao()
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(<CourseMiniMap stops={STOPS} terminal={TERMINAL} />)
+
+    await waitFor(() => expect(created).toHaveLength(1))
+    // fireEvent 는 preventDefault 가 불리면 false 를 돌려준다 — 기본 동작(페이지 스크롤)은 살아 있어야 한다.
+    expect(fireEvent.wheel(map.container, { deltaY: 120 })).toBe(true)
+    expect(map.onWheel).not.toHaveBeenCalled()
+  })
+
+  it('SDK 확대·축소 버튼은 읽기 도구에 숨긴 칸 안에 있으므로 탭 순서에서 뺀다', async () => {
+    const { kakao, map, created } = fakeKakao()
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    const { container } = render(<CourseMiniMap stops={STOPS} terminal={TERMINAL} />)
+
+    await waitFor(() => expect(created).toHaveLength(1))
+    const buttons = container.querySelectorAll('[aria-hidden="true"] button')
+    expect(buttons).toHaveLength(1)
+    expect(map.container.querySelector('button').tabIndex).toBe(-1)
+  })
+
+  it('고현터미널 → 1 → 2 → 3 → 고현터미널을 한 선으로 잇는다 — 코스 지도와 같은 파란 선', async () => {
+    const { kakao, map, polylines } = fakeKakao()
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    const { unmount } = render(<CourseMiniMap stops={STOPS} terminal={TERMINAL} />)
+
+    await waitFor(() => expect(polylines).toHaveLength(1))
+    expect(pathOf(polylines[0])).toEqual([
+      [TERMINAL.lat, TERMINAL.lng],
+      [STOPS[0].lat, STOPS[0].lng],
+      [STOPS[1].lat, STOPS[1].lng],
+      [STOPS[2].lat, STOPS[2].lng],
+      [TERMINAL.lat, TERMINAL.lng],
+    ])
+    expect(polylines[0].options).toMatchObject({ map, strokeWeight: 2.5, strokeColor: '#0069b3', strokeStyle: 'solid' })
+
+    unmount()
+    expect(polylines[0].setMap).toHaveBeenCalledWith(null)
+  })
+
+  it('고현터미널 좌표가 없으면 스팟끼리만 잇는다', async () => {
+    const { kakao, polylines } = fakeKakao()
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(<CourseMiniMap stops={STOPS} terminal={null} />)
+
+    await waitFor(() => expect(polylines).toHaveLength(1))
+    expect(pathOf(polylines[0])).toEqual(STOPS.map(({ lat, lng }) => [lat, lng]))
+  })
+
+  it('이을 점이 하나뿐이면 선을 긋지 않는다', async () => {
+    const { kakao, overlays, polylines } = fakeKakao()
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(<CourseMiniMap stops={[STOPS[0]]} terminal={null} />)
+
+    await waitFor(() => expect(overlays).toHaveLength(1))
+    expect(polylines).toHaveLength(0)
   })
 
   it('고현터미널 좌표가 없으면 스팟 핀만', async () => {

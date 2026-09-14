@@ -6,13 +6,14 @@ import LoginSheet from '../components/LoginSheet'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { api, beginKakaoLogin } from '../lib/api'
+import { courseImage, onImageError } from '../lib/courseImage'
 import { getToken } from '../lib/session'
 import { formatDuration } from '../lib/format'
 import { loadSpots } from '../lib/spots'
 import styles from './CourseDetailPage.module.css'
 
 /**
- * 코스 상세 — Figma 09-14 개정 `532:318`(코스 이름 없음 · 폴백). 이전 판은 02-2 `446:929`.
+ * 코스 상세 — Figma 09-14 확정 `547:200`(썸네일 · 제목 + 스팟 체인). 이전 판은 개정 `532:318`, 그 전은 02-2 `446:929`.
  *
  * 이 화면이 이 서비스의 주장을 담습니다. 거제시 공식 앱은 코스에 `25분 / 13.0km`를 적고
  * **버스인지 자차인지 밝히지 않습니다**(기준문서 §5). 우리는 구간마다 **노선 번호와
@@ -20,11 +21,15 @@ import styles from './CourseDetailPage.module.css'
  *
  * 2026-09-13에 시각을 전부 뺐습니다(몇 시에 머물지는 사용자가 정한다 — 디자인브리프 부록 E).
  *
- * 2026-09-14 개정(Figma):
- *  · 머리에 **220px 지도**(번호 핀 + 고현터미널), 제목·권역·칩 둘(버스 합계 · 구간 수), 사진 없는 22px 번호 타임라인.
- *  · **제목은 늘 폴백(스팟 짧은 이름 체인)** 입니다. 코스 이름이 있는 그림(532:213 「몽돌에서 바람의언덕까지」)도 있지만
- *    서버 코스 name 은 23개 전부 줄임말 체인이고(「학동 · 기성관 · …」) 그중 「기성관」·「맹종죽테마파크」는 TourAPI
- *    정본 이름이 아닙니다(절대규칙 5). 그래서 name 대신 stops[].shortName 을 잇습니다.
+ * 2026-09-14 개정 → 확정(Figma):
+ *  · 머리에 **220px 지도**(번호 핀 + 고현터미널 + 순서 선, 끌기·확대 됨), 권역, 제목, 스팟 체인, 칩 둘(버스 합계 · 구간 수).
+ *  · **제목은 규칙으로 짓습니다 — 「{첫 스팟}에서 {끝 스팟}까지」**(2026-09-14 사용자 결정). 그림의 「몽돌에서 바람의언덕까지」는
+ *    사람이 지은 이름인데 코스 23개에 그런 이름이 없고, 서버 코스 name 은 전부 줄임말 체인이라(「학동 · 기성관 · …」,
+ *    「기성관」·「맹종죽테마파크」는 TourAPI 정본 이름이 아님 — 절대규칙 5) 쓰지 않습니다. 진짜 이름이 생기면 그걸 먼저 씁니다.
+ *    체인(「학동몽돌해변 · 해금강 · 바람의언덕」)은 제목 아래 부제로 — 그래서 가운데 스팟도 빠지지 않습니다.
+ *    그림에 있던 「고현터미널에서 출발해 고현터미널로 돌아와요」 문장은 확정 그림에서 빠졌습니다(타임라인 양 끝과 각주가 같은 말을 합니다).
+ *  · 타임라인 스팟 줄은 **40px 둥근 사진 + 왼쪽 위 20px 번호**. 사진은 /api/pois 대표 사진(코스 API는 사진을 주지 않는다 — TourAPI
+ *    장애에 코스 조회가 묶이지 않게), 없으면 분류 자리그림(저작권 Type3 로 0장인 스팟은 버그가 아니라 사실 — 기준문서 §5).
  *  · **추정 구간에 「약」** 과 각주가 돌아왔습니다(9/13에 팀원 커밋이 뺀 각주를 그림이 되살렸다). 각주는 추정 구간이
  *    있는 코스에만 — 확정값뿐인 코스(3-03 등 6개)에 쓰면 정확한 분을 「짧다」고 말하게 됩니다.
  *  · 저장 버튼이 바닥 고정 바에서 본문 흐름으로 들어갔습니다.
@@ -87,12 +92,16 @@ function LegRow({ leg }) {
   )
 }
 
-/** 스팟 줄 — 22px 번호 배지 + 이름, 오른쪽 끝 「시간표 ›」. */
+/** 스팟 줄 — 40px 둥근 사진(왼쪽 위에 20px 번호) + 이름, 오른쪽 끝 「시간표 ›」(547:247). */
 function StopRow({ stop, nextPoiId, onOpenTimetable }) {
   return (
     <div className={styles.stopRow} data-stop={stop.poiId}>
       <span className={styles.rail}>
-        <span className={styles.badge}>{stop.seq}</span>
+        <span className={styles.thumb}>
+          {/* 이름이 바로 옆에 있어 사진은 장식입니다. 링크가 죽으면 자리그림으로. */}
+          <img className={styles.thumbImage} src={courseImage(stop)} alt="" onError={onImageError(stop)} />
+          <span className={styles.badge}>{stop.seq}</span>
+        </span>
       </span>
       <span className={styles.stopName}>{stop.shortName ?? stop.name}</span>
       {/* 읽기 도구에는 스팟 이름까지 — 「시간표」 버튼이 서너 개라 이름이 없으면 어느 스팟인지 모릅니다. */}
@@ -131,9 +140,11 @@ export default function CourseDetailPage() {
       .then(([data, pois]) => {
         if (cancelled) return
         const terminal = [...pois.values()].find((poi) => poi.kind === 'TERMINAL') ?? null
+        // 대표 사진은 목록(/api/pois)에만 있습니다. 못 받았거나(빈 Map) 없으면 null — 자리그림으로 떨어집니다.
+        const stops = (data.stops ?? []).map((stop) => ({ ...stop, thumbnailUrl: pois.get(stop.poiId)?.imageUrl ?? null }))
         setResult({
           status: 'ready',
-          data: { ...data, regions: regionsOf(data.stops ?? [], pois), terminal },
+          data: { ...data, stops, regions: regionsOf(stops, pois), terminal },
           error: '',
         })
       })
@@ -214,15 +225,17 @@ export default function CourseDetailPage() {
   const stops = course.stops ?? []
   const legs = course.legs ?? []
   const hasLegs = stops.length > 0 && legs.length > 0
-  // 제목 체인은 스팟 이름을 쪼개지 않습니다(「해 / 금강」). 이름마다 한 덩어리로 묶고 가운뎃점은 앞 이름에 붙여,
+  // 스팟 체인은 이름을 쪼개지 않습니다(「해 / 금강」). 이름마다 한 덩어리로 묶고 가운뎃점은 앞 이름에 붙여,
   // 줄이 「· 거제씨월드」처럼 가운뎃점으로 시작하지 않게 합니다. 읽기 도구에는 「학동몽돌해변 · 해금강 · …」 그대로입니다.
   const names = stops.map((stop) => stop.shortName ?? stop.name)
   const chain = names.map((name, i) => (
     <Fragment key={`${i}-${name}`}>
       {i > 0 && ' '}
-      <span className={styles.titleName}>{i < names.length - 1 ? `${name} ·` : name}</span>
+      <span className={styles.chainName}>{i < names.length - 1 ? `${name} ·` : name}</span>
     </Fragment>
   ))
+  // 제목 — 「학동몽돌해변에서 바람의언덕까지」. 한 곳뿐이면 「해금강에서 해금강까지」가 되므로 이름 그대로.
+  const title = names.length >= 2 ? t('courseDetail.titleRange', { first: names[0], last: names[names.length - 1] }) : chain
   const hasEstimate = legs.some((leg) => leg.estimated)
 
   return (
@@ -240,11 +253,11 @@ export default function CourseDetailPage() {
                 : t('courseDetail.metaCount', { count: stops.length })}
             </p>
           )}
-          <h1 className={styles.title}>{hasLegs ? chain : course.name}</h1>
+          <h1 className={styles.title}>{hasLegs ? title : course.name}</h1>
 
           {hasLegs ? (
             <>
-              <p className={styles.subtitle}>{t('courseDetail.origin', { origin })}</p>
+              <p className={styles.subtitle}>{chain}</p>
 
               <div className={styles.chips}>
                 <span className={styles.chipBus}>

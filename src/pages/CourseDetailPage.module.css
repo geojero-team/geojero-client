@@ -1,6 +1,6 @@
-/* 코스 상세 — Figma 09-14 개정 532:318(폴백 제목) · 532:213.
-   머리 → 220px 지도 → 권역 · 제목 · 부제 · 칩 → 구분선 → 22px 번호 타임라인 → 구분선 → 각주 → 저장.
-   토큰에 없는 글자 크기(25/35 제목 · 15 · 13 · 11)는 그림 값을 그대로 둡니다(tokens.css 머리 주석: Figma를 다시 잰다). */
+/* 코스 상세 — Figma 09-14 확정 547:200(썸네일 · 제목 + 스팟 체인).
+   머리 → 220px 지도 → 권역 · 제목 · 스팟 체인 · 칩 → 구분선 → 40px 사진 타임라인(레일 44) → 구분선 → 각주 → 저장.
+   토큰에 없는 글자 크기(30/40 제목 · 15 · 13 · 11)는 그림 값을 그대로 둡니다(tokens.css 머리 주석: Figma를 다시 잰다). */
 
 /* 532:320 — 「‹  코스」 + 회색 요일 알약, 양 끝 정렬 */
 .header {
@@ -67,22 +67,19 @@
   color: var(--text-secondary);
 }
 
-/* 제목 — 25 Bold / 35. 줄은 「이름 ·」 덩어리 사이에서만 바꿉니다(그림 532:336은 「바람의 / 언덕」처럼 이름 가운데서 끊었다). */
+/* 제목 547:218 — 30 Bold / 40. 「옥포대첩기념공원에서 조선해양문화관까지」는 띄어쓰기에서 두 줄이 됩니다 — 이름 가운데서 끊지 않습니다. */
 .title {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 25px;
+  font-size: 30px;
   font-weight: 700;
-  line-height: 35px;
+  line-height: 40px;
   color: var(--text-primary);
-  overflow-wrap: anywhere; /* 옛 코스 이름처럼 덩어리가 아닌 긴 제목의 넘침만 막습니다 */
+  word-break: keep-all;
+  overflow-wrap: anywhere; /* 옛 코스 이름처럼 띄어쓰기 없는 긴 제목의 넘침만 막습니다 */
 }
 
-.titleName {
-  white-space: nowrap;
-}
-
-/* 부제 14 / 21 */
+/* 부제 547:220 — 스팟 체인 14 / 21. 줄은 「이름 ·」 덩어리 사이에서만 바꿉니다. 옛 코스의 안내 한 줄도 같은 모양 */
 .subtitle {
   margin: 8px 0 0;
   font-family: var(--font-sans);
@@ -91,6 +88,10 @@
   line-height: 21px;
   color: var(--text-secondary);
   word-break: keep-all;
+}
+
+.chainName {
+  white-space: nowrap;
 }
 
 /* 532:340 — 칩 둘, 간격 6 */
@@ -134,13 +135,13 @@
   border-bottom: 1px solid var(--border-default);
 }
 
-/* 레일 24px — 배지·터미널 아이콘·선이 이 폭의 가운데에 섭니다. 글자와 간격 12 */
+/* 레일 44px(547:233) — 사진 · 터미널 아이콘 · 선이 이 폭의 가운데에 섭니다. 글자와 간격 12 */
 .rail {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
+  width: 44px;
 }
 
 /* 정류장 줄(터미널 · 스팟) 위아래 5 */
@@ -189,12 +190,34 @@
   color: var(--text-secondary);
 }
 
-/* 번호 배지 22px — 브랜드 원 + 흰 숫자 11 Bold */
+/* 스팟 사진 547:250 — 40px 원. 번호가 원 밖(-2px)으로 걸치므로 여기서는 자르지 않고 사진만 둥글게 자릅니다 */
+.thumb {
+  position: relative;
+  display: block;
+  width: 40px;
+  height: 40px;
+}
+
+.thumbImage {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+  background: var(--brand-tint); /* 사진이 오기 전 · 자리그림 뒤 */
+}
+
+/* 번호 547:251 — 사진 왼쪽 위에 20px 브랜드 원 + 흰 테두리 2 + 흰 숫자 11 Bold */
 .badge {
+  position: absolute;
+  top: -2px;
+  left: -2px;
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--bg-page);
   border-radius: var(--radius-pill);
   background: var(--brand-strong);
   font-family: var(--font-sans);

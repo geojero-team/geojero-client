@@ -18,16 +18,19 @@ vi.mock('../lib/session', () => ({ getToken: vi.fn(() => null) }))
 // 코스 지도는 카카오 SDK가 필요합니다 — jsdom에는 없어 늘 실패 상태로 봅니다.
 vi.mock('../lib/kakaoLoader', () => ({ loadKakaoMaps: vi.fn(() => Promise.reject(new Error('no sdk'))) }))
 
-/** /api/pois — 권역과 고현터미널 좌표는 목록에만 있습니다. */
+/** /api/pois — 권역 · 고현터미널 좌표 · 대표 사진은 목록에만 있습니다. 해금강은 사진이 없는 경우(저작권 Type3). */
 const POIS = new Map(
   [
-    [1, '바람의언덕', '남부권'],
-    [3, '해금강', '남부권'],
-    [4, '학동몽돌해변', '남부권'],
-    [18, '거제씨월드', '동부권'],
-    [20, '조선해양문화관', '동부권'],
+    [1, '바람의언덕', '남부권', 'https://tong.visitkorea.or.kr/windhill.jpg'],
+    [3, '해금강', '남부권', null],
+    [4, '학동몽돌해변', '남부권', 'https://tong.visitkorea.or.kr/hakdong.jpg'],
+    [18, '거제씨월드', '동부권', null],
+    [20, '조선해양문화관', '동부권', null],
   ]
-    .map(([poiId, shortName, region]) => [poiId, { poiId, shortName, name: shortName, region, theme: 'VIEW', kind: 'SPOT' }])
+    .map(([poiId, shortName, region, imageUrl]) => [
+      poiId,
+      { poiId, shortName, name: shortName, region, theme: 'VIEW', kind: 'SPOT', imageUrl },
+    ])
     .concat([[23, { poiId: 23, shortName: '고현터미널', name: '고현터미널', kind: 'TERMINAL', lat: 34.8906148, lng: 128.6242507 }]]),
 )
 
@@ -112,19 +115,41 @@ beforeEach(() => {
   api.course.mockImplementation(async (id) => (String(id) === '110' ? COURSE_308 : COURSE_301))
 })
 
-describe('CourseDetailPage — 09-14 개정(532:318 폴백)', () => {
-  it('머리 · 권역 · 제목(스팟 짧은 이름 체인) · 부제 · 칩 둘', async () => {
+describe('CourseDetailPage — 09-14 확정(547:200)', () => {
+  it('머리 · 권역 · 제목(첫 스팟에서 끝 스팟까지) · 스팟 체인 · 칩 둘 — 출발지 문장은 그림에 없다', async () => {
     renderCourse(101)
 
-    expect(await screen.findByRole('heading', { level: 1, name: '학동몽돌해변 · 해금강 · 바람의언덕' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: '학동몽돌해변에서 바람의언덕까지' })).toBeInTheDocument()
+    // 체인은 이름마다 nowrap 조각이라 한 문단의 textContent 로 봅니다.
+    expect(screen.getByText((_, el) => el.tagName === 'P' && el.textContent === '학동몽돌해변 · 해금강 · 바람의언덕')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '뒤로' })).toHaveTextContent('코스')
     expect(screen.getByText('평일')).toBeInTheDocument()
     expect(screen.getByText('남부권 · 3곳')).toBeInTheDocument()
-    expect(screen.getByText('고현터미널에서 출발해 고현터미널로 돌아와요')).toBeInTheDocument()
+    expect(screen.queryByText('고현터미널에서 출발해 고현터미널로 돌아와요')).not.toBeInTheDocument()
     expect(screen.getByText('버스 약 1시간 54분')).toBeInTheDocument()
     expect(screen.getByText('4구간')).toBeInTheDocument()
     // 코스 name 은 줄임말(「학동」 · 「기성관」)이라 제목으로 쓰지 않는다 — TourAPI 정본은 shortName 쪽이다
     expect(screen.queryByText('학동 · 해금강 · 바람의언덕')).not.toBeInTheDocument()
+  })
+
+  it('타임라인 스팟 줄 — 40px 둥근 사진에 번호. 사진이 없는 스팟은 분류 자리그림', async () => {
+    renderCourse(101)
+
+    const hakdong = (await screen.findByText('학동몽돌해변', { selector: '[data-stop] *' })).closest('[data-stop]')
+    const haegeumgang = screen.getByText('해금강', { selector: '[data-stop] *' }).closest('[data-stop]')
+    expect(hakdong.querySelector('img')).toHaveAttribute('src', 'https://tong.visitkorea.or.kr/hakdong.jpg')
+    expect(hakdong.querySelector('img')).toHaveAttribute('alt', '')
+    expect(haegeumgang.querySelector('img').getAttribute('src')).toMatch(/^data:image\/svg\+xml/)
+    expect(within(hakdong).getByText('1')).toBeInTheDocument()
+    expect(within(haegeumgang).getByText('2')).toBeInTheDocument()
+  })
+
+  it('스팟 목록을 못 받아도 스팟 줄은 자리그림으로 그린다', async () => {
+    loadSpots.mockResolvedValue(new Map())
+    renderCourse(101)
+
+    const row = (await screen.findByText('학동몽돌해변', { selector: '[data-stop] *' })).closest('[data-stop]')
+    expect(row.querySelector('img').getAttribute('src')).toMatch(/^data:image\/svg\+xml/)
   })
 
   it('타임라인 — 구간마다 노선 번호와 분, 추정 구간만 「약」', async () => {
@@ -170,6 +195,18 @@ describe('CourseDetailPage — 09-14 개정(532:318 폴백)', () => {
 
     expect(await screen.findByText('3곳')).toBeInTheDocument()
     expect(screen.queryByText(/^ · 3곳/)).not.toBeInTheDocument()
+  })
+
+  it('제목 규칙은 두 곳 이상일 때만 — 한 곳이면 「해금강에서 해금강까지」 대신 이름 그대로', async () => {
+    api.course.mockResolvedValue({
+      ...COURSE_301,
+      stops: [COURSE_301.stops[1]],
+      legs: COURSE_301.legs.slice(0, 2),
+      legCount: 2,
+    })
+    renderCourse(101)
+
+    expect(await screen.findByRole('heading', { level: 1, name: '해금강' })).toBeInTheDocument()
   })
 
   it('「시간표 ›」 — 다음 스팟을 목적지로 넘긴다, 마지막 스팟은 넘기지 않는다', async () => {
