@@ -245,9 +245,12 @@
   min-width: 0;
 }
 
+/* 한국어는 띄어쓰기에서만 끊습니다(keep-all) — 운영에서 「선착장에서 타 / 요」로 갈라진 것을 잡았습니다.
+   띄어쓰기 없는 긴 낱말(주소 번지 등)만 마지막 수단으로 아무 데서나 끊습니다. */
 .infoMain,
 .infoSub {
   margin: 0;
+  word-break: keep-all;
   overflow-wrap: anywhere;
 }
 
