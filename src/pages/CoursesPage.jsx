@@ -6,6 +6,7 @@ import { t } from '../i18n'
 import { api } from '../lib/api'
 import { courseTitle } from '../lib/courseTitle'
 import { formatDuration } from '../lib/format'
+import { getToken } from '../lib/session'
 import { loadSpotPhotos, loadSpots, regionsOf, withPhotos } from '../lib/spots'
 import styles from './CoursesPage.module.css'
 
@@ -115,24 +116,35 @@ export default function CoursesPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [selected, setSelected] = useState(() => new Set())
-  const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
+  // hidden — 이미 저장해서 뺀 코스 수. 뺀 이유를 한 줄로 말하려고 셉니다.
+  const [result, setResult] = useState({ status: 'loading', data: null, hidden: 0, error: '' })
 
   useEffect(() => {
     let cancelled = false
+    /* 이미 저장한 코스는 추천에서 뺍니다(2026-09-15 사용자 요청 — 저장했으면 다시 추천받을 때 안 나와야 한다).
+       로그인했을 때만 묻습니다. 저장 목록을 못 받아도(만료 · 서버 장애) 추천은 막지 않습니다 — 그때는 빼지 않고 다 보이고,
+       같은 코스를 또 저장하려 하면 서버가 409로 막습니다. */
+    const savedIds = getToken()
+      ? api
+          .savedTrips()
+          .then((trips) => new Set((trips ?? []).map((trip) => trip.courseId).filter(Boolean)))
+          .catch(() => new Set())
+      : Promise.resolve(new Set())
     // 코스와 스팟 목록(사진 · 권역)을 함께 기다립니다. 목록은 실패해도 빈 Map으로 와서 코스를 막지 않습니다.
     // loadSpotPhotos 와 loadSpots 는 같은 /api/pois 캐시를 씁니다 — 호출은 한 번입니다.
-    Promise.all([api.courses({ featured: true }), loadSpotPhotos(), loadSpots()])
-      .then(([data, photos, pois]) => {
+    Promise.all([api.courses({ featured: true }), loadSpotPhotos(), loadSpots(), savedIds])
+      .then(([data, photos, pois, saved]) => {
         if (cancelled) return
-        const courses = (data.courses ?? []).map((course) => ({
+        const all = (data.courses ?? []).map((course) => ({
           ...course,
           spots: withPhotos(course.spots, photos),
           regions: regionsOf(course.spots, pois),
         }))
-        setResult({ status: 'ready', data: courses, error: '' })
+        const courses = all.filter((course) => !saved.has(course.courseId))
+        setResult({ status: 'ready', data: courses, hidden: all.length - courses.length, error: '' })
       })
       .catch((error) => {
-        if (!cancelled) setResult({ status: 'error', data: null, error: error.message })
+        if (!cancelled) setResult({ status: 'error', data: null, hidden: 0, error: error.message })
       })
     return () => {
       cancelled = true
@@ -184,10 +196,29 @@ export default function CoursesPage() {
           ) : result.status === 'loading' ? (
             <p className={styles.notice}>{t('courses.loading')}</p>
           ) : courses.length === 0 ? (
-            <p className={styles.notice}>{t('courses.empty')}</p>
+            result.hidden > 0 ? (
+              // 추천 코스를 전부 저장했다 — 빈 목록의 이유와 갈 곳을 말합니다.
+              <p className={styles.savedNote}>
+                <span>{t('courses.allSaved')}</span>
+                <button type="button" className={styles.savedLink} onClick={() => navigate('/my')}>
+                  {t('courses.goMyPlans')} ›
+                </button>
+              </p>
+            ) : (
+              <p className={styles.notice}>{t('courses.empty')}</p>
+            )
           ) : (
             <>
               <p className={styles.total}>{t('courses.total', { count: courses.length })}</p>
+              {/* 저장한 코스를 뺐으면 한 줄 — 대표 코스가 이유 없이 줄어 보이지 않게(2026-09-15). */}
+              {result.hidden > 0 && (
+                <p className={styles.savedNote}>
+                  <span>{t('courses.savedHidden', { count: result.hidden })}</span>
+                  <button type="button" className={styles.savedLink} onClick={() => navigate('/my')}>
+                    {t('courses.goMyPlans')} ›
+                  </button>
+                </p>
+              )}
               <div className={styles.list}>
                 {courses.map((course) => (
                   <CourseCard

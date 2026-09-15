@@ -173,6 +173,8 @@ export default {
   // ── 저장 (02-2 · Figma 446:1112 로그인 시트 · 446:1120 하단 바) ───────────
   'courseDetail.saving': '저장하는 중',
   'courseDetail.saved': '내 일정에 저장했어요',
+  // 이미 저장한 코스(2026-09-15 — 같은 코스는 한 번만 저장. 서버도 409로 막습니다).
+  'courseDetail.alreadySaved': '이미 내 일정에 저장한 코스예요',
   'courseDetail.savedGo': '내 일정 보기',
   'courseDetail.saveFailed': '저장하지 못했어요 — {error}',
 
@@ -390,6 +392,10 @@ export default {
   'courses.selectN': '코스 {count}개 선택하기',
   'courses.loading': '코스를 불러오는 중',
   'courses.empty': '코스가 아직 없어요',
+  // 저장한 코스는 추천에서 뺍니다(2026-09-15 사용자 요청). 뺀 이유를 한 줄로 — 목록이 이유 없이 줄어 보이지 않게.
+  'courses.savedHidden': '저장한 코스 {count}개는 빼고 보여줘요',
+  'courses.allSaved': '추천 코스를 모두 내 일정에 저장했어요',
+  'courses.goMyPlans': '내 일정 보기',
 
 
   /* ── 지도 (285:208 / 240:164) ─────────────────────────────────────────── */

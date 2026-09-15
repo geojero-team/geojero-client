@@ -1,13 +1,15 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { t } from '../i18n'
 import { api } from '../lib/api'
+import { getToken } from '../lib/session'
 import { loadSpots } from '../lib/spots'
 import CourseDetailPage from './CourseDetailPage'
 
 vi.mock('../lib/api', () => ({
-  api: { course: vi.fn(), saveTrip: vi.fn() },
+  api: { course: vi.fn(), saveTrip: vi.fn(), savedTrips: vi.fn() },
   beginKakaoLogin: vi.fn(),
 }))
 
@@ -114,6 +116,45 @@ beforeEach(() => {
   vi.clearAllMocks()
   loadSpots.mockResolvedValue(POIS)
   api.course.mockImplementation(async (id) => (String(id) === '110' ? COURSE_308 : COURSE_301))
+  // 로그인 상태면 화면이 저장 목록을 묻습니다(이미 저장한 코스인지). 기본은 빈 목록.
+  api.savedTrips.mockResolvedValue([])
+})
+
+describe('CourseDetailPage — 같은 코스는 한 번만 저장(2026-09-15 사용자 요청)', () => {
+  afterEach(() => {
+    getToken.mockReturnValue(null)
+  })
+
+  it('이미 내 일정에 있는 코스면 저장 버튼 대신 「이미 내 일정에 저장한 코스예요」 · 내 일정 보기', async () => {
+    getToken.mockReturnValue('token')
+    api.savedTrips.mockResolvedValue([{ savedTripId: 9, courseId: 101 }])
+    renderCourse(101)
+
+    expect(await screen.findByText('이미 내 일정에 저장한 코스예요')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: `${t('courseDetail.savedGo')} ›` })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: t('courseDetail.save') })).not.toBeInTheDocument()
+  })
+
+  it('다른 코스만 저장했으면 저장 버튼은 그대로', async () => {
+    getToken.mockReturnValue('token')
+    api.savedTrips.mockResolvedValue([{ savedTripId: 9, courseId: 110 }])
+    renderCourse(101)
+
+    expect(await screen.findByRole('button', { name: t('courseDetail.save') })).toBeInTheDocument()
+    expect(screen.queryByText('이미 내 일정에 저장한 코스예요')).not.toBeInTheDocument()
+  })
+
+  it('서버가 409(이미 저장)를 주면 오류가 아니라 저장된 상태로 — 다른 기기에서 저장했거나 목록을 못 받았을 때', async () => {
+    const user = userEvent.setup()
+    getToken.mockReturnValue('token')
+    api.saveTrip.mockRejectedValue(Object.assign(new Error('POST /api/saved-trips → 409'), { status: 409 }))
+    renderCourse(101)
+
+    await user.click(await screen.findByRole('button', { name: t('courseDetail.save') }))
+
+    expect(await screen.findByText('이미 내 일정에 저장한 코스예요')).toBeInTheDocument()
+    expect(screen.queryByText(/저장하지 못했어요/)).not.toBeInTheDocument()
+  })
 })
 
 describe('CourseDetailPage — 09-14 확정(547:200)', () => {

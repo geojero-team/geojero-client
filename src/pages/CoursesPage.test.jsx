@@ -1,13 +1,17 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../lib/api'
+import { getToken } from '../lib/session'
 import { loadSpotPhotos, loadSpots } from '../lib/spots'
 import CoursesPage from './CoursesPage'
 import styles from './CoursesPage.module.css'
 
-vi.mock('../lib/api', () => ({ api: { courses: vi.fn() } }))
+vi.mock('../lib/api', () => ({ api: { courses: vi.fn(), savedTrips: vi.fn() } }))
+
+// 로그인 여부 — 기본은 비로그인(저장 목록을 묻지 않습니다). 저장한 코스 빼기 테스트만 로그인으로 바꿉니다.
+vi.mock('../lib/session', () => ({ getToken: vi.fn(() => null) }))
 
 // withPhotos · regionsOf 는 그대로 쓰고 /api/pois 만 흉내 냅니다 — 사진·권역은 거기서 오고 코스 API는 주지 않습니다.
 vi.mock('../lib/spots', async (importOriginal) => ({
@@ -137,6 +141,8 @@ beforeEach(() => {
   loadSpotPhotos.mockResolvedValue(PHOTOS)
   loadSpots.mockResolvedValue(POIS)
   api.courses.mockResolvedValue(TWO)
+  // 로그인 상태면 화면이 저장 목록을 묻습니다(저장한 코스는 추천에서 뺌). 기본은 빈 목록.
+  api.savedTrips.mockResolvedValue([])
 })
 
 describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)', () => {
@@ -306,5 +312,45 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
     await user.click(screen.getByRole('button', { name: '뒤로' }))
     expect(screen.getByTestId('loc')).toHaveTextContent('/')
     expect(screen.getByText('홈 화면')).toBeInTheDocument()
+  })
+})
+
+describe('CoursesPage — 저장한 코스는 추천에서 뺀다(2026-09-15 사용자 요청)', () => {
+  beforeEach(() => {
+    getToken.mockReturnValue('token')
+  })
+
+  afterEach(() => {
+    getToken.mockReturnValue(null)
+  })
+
+  it('내 일정에 저장한 코스는 카드가 없고, 뺀 이유를 한 줄로 말한다', async () => {
+    api.courses.mockResolvedValue({ courses: [COURSE_301, COURSE_302] })
+    api.savedTrips.mockResolvedValue([{ savedTripId: 9, courseId: 101 }])
+    renderPage()
+
+    expect(await screen.findByText('돌고래 보고 몽돌 밟고 바람의언덕')).toBeInTheDocument()
+    expect(screen.queryByText('환승 없이 남부 9경 세 곳')).not.toBeInTheDocument()
+    expect(screen.getByText('저장한 코스 1개는 빼고 보여줘요')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '내 일정 보기 ›' })).toBeInTheDocument()
+  })
+
+  it('추천 코스를 전부 저장했으면 빈 목록 대신 그 사실과 내 일정으로 가는 길', async () => {
+    api.courses.mockResolvedValue({ courses: [COURSE_301] })
+    api.savedTrips.mockResolvedValue([{ savedTripId: 9, courseId: 101 }])
+    renderPage()
+
+    expect(await screen.findByText('추천 코스를 모두 내 일정에 저장했어요')).toBeInTheDocument()
+    expect(screen.queryByText('코스가 아직 없어요')).not.toBeInTheDocument()
+  })
+
+  it('저장 목록을 못 받으면(만료 · 장애) 빼지 않고 다 보여준다 — 추천을 막지 않는다', async () => {
+    api.courses.mockResolvedValue({ courses: [COURSE_301, COURSE_302] })
+    api.savedTrips.mockRejectedValue(new Error('401'))
+    renderPage()
+
+    expect(await screen.findByText('환승 없이 남부 9경 세 곳')).toBeInTheDocument()
+    expect(screen.getByText('돌고래 보고 몽돌 밟고 바람의언덕')).toBeInTheDocument()
+    expect(screen.queryByText(/빼고 보여줘요/)).not.toBeInTheDocument()
   })
 })

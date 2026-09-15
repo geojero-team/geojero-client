@@ -125,6 +125,23 @@ export default function CourseDetailPage() {
   const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
   const [sheetOpen, setSheetOpen] = useState(false)
   const [saveState, setSaveState] = useState({ status: 'idle', error: '' })
+  // 이미 내 일정에 있는 코스인지 — 있으면 저장 버튼 대신 「이미 저장한 코스예요」(2026-09-15 사용자 요청: 중복 저장 막기).
+  const [alreadySaved, setAlreadySaved] = useState(false)
+
+  /* 로그인했을 때만 묻습니다. 못 받으면(만료 · 서버 장애) 버튼을 그대로 두고, 눌렀을 때 서버가 409로 한 번 더 막습니다. */
+  useEffect(() => {
+    if (!getToken()) return
+    let cancelled = false
+    api
+      .savedTrips()
+      .then((trips) => {
+        if (!cancelled && (trips ?? []).some((trip) => trip.courseId === Number(courseId))) setAlreadySaved(true)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [courseId])
 
   useEffect(() => {
     let cancelled = false
@@ -183,7 +200,10 @@ export default function CourseDetailPage() {
     api
       .saveTrip({ courseId: Number(courseId), travelDate })
       .then(() => setSaveState({ status: 'saved', error: '' }))
-      .catch((error) => setSaveState({ status: 'error', error: error.message }))
+      // 409 — 이미 저장한 코스(다른 탭 · 다른 기기에서 저장했거나 목록을 못 받았을 때). 오류가 아니라 저장된 상태로 보입니다.
+      .catch((error) =>
+        setSaveState(error.status === 409 ? { status: 'already', error: '' } : { status: 'error', error: error.message }),
+      )
   }
 
   const header = (
@@ -292,9 +312,11 @@ export default function CourseDetailPage() {
               구간이 없는 옛 코스는 출발·복귀 시각이 없어 서버가 늘 400을 주므로 버튼을 두지 않습니다. */}
           {hasLegs && (
             <div className={styles.saveArea}>
-              {saveState.status === 'saved' ? (
+              {saveState.status === 'saved' || saveState.status === 'already' || alreadySaved ? (
                 <div className={styles.savedRow}>
-                  <span className={styles.savedText}>{t('courseDetail.saved')}</span>
+                  <span className={styles.savedText}>
+                    {t(saveState.status === 'saved' ? 'courseDetail.saved' : 'courseDetail.alreadySaved')}
+                  </span>
                   <button type="button" className={styles.savedLink} onClick={() => navigate('/my')}>
                     {t('courseDetail.savedGo')} ›
                   </button>

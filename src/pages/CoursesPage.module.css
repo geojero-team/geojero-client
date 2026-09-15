@@ -71,6 +71,28 @@
   color: var(--text-secondary);
 }
 
+/* 저장한 코스를 추천에서 뺐다는 한 줄(2026-09-15) + 오른쪽 「내 일정 보기」 글자 버튼 */
+.savedNote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+.savedLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--type-caption);
+  font-weight: 500;
+  color: var(--brand-strong);
+  cursor: pointer;
+}
+
 /* course-list — 카드 사이 16 */
 .list {
   display: flex;
