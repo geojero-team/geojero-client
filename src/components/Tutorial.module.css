@@ -1,0 +1,135 @@
+/* 첫 방문 튜토리얼 — Figma 02-2 558:200(09-14) 설계 값 그대로.
+   화면(390 프레임) 안에 그립니다 — Screen 이 position: relative · overflow: hidden 입니다.
+   z-index 30: 스팟 시트(3) · 지도 위 버튼(4) · 시트(6~7)보다 위. */
+
+.root {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+}
+
+/* 뒤 화면을 누르지 못하게 하는 투명한 층(창 안 포함). */
+.catcher {
+  position: absolute;
+  inset: 0;
+}
+
+/* 558:202 흐림 3px + 558:248 scrim(본문색 40% — 로그인 시트 배경과 같은 값). 창은 clip-path 로 뚫습니다(Tutorial.jsx). */
+.dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.4);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  pointer-events: none;
+}
+
+/* 561:306 등 — 짚는 창의 테두리: 2px 브랜드 · 모서리 12 */
+.ring {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid var(--brand-strong);
+  border-radius: 12px;
+  pointer-events: none;
+  transition:
+    left 200ms ease,
+    top 200ms ease,
+    width 200ms ease,
+    height 200ms ease;
+}
+
+/* 561:1785 설명 카드 — 350(좌우 20) · 안쪽 20 · 간격 12 · 반경 sheet · 그림자는 조건 칩과 같은 값 */
+.card {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: var(--radius-sheet);
+  background: var(--bg-page);
+  box-shadow: var(--elevation-chip);
+  animation: cardIn 180ms ease-out;
+}
+
+/* 561:1786 단계 점 — 8px 넷 · 간격 6(폭 50). 지금 단계만 브랜드. */
+.dots {
+  display: flex;
+  gap: 6px;
+  height: 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--border-default);
+}
+
+.dotOn {
+  background: var(--brand-strong);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-title);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+}
+
+.lines p {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+/* 561:1793 actions — 위 4 · 간격 8 · 「건너뛰기」(본문 · 보조색) … 「다음」 Button primary 폭 120 */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.skip {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--type-body);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* Button 의 폭 100% 를 그림의 120 으로 — .actions 를 붙여 Button.module.css 보다 확실히 이깁니다. */
+.actions .next {
+  flex: none;
+  width: 120px;
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+  }
+
+  .ring {
+    transition: none;
+  }
+}

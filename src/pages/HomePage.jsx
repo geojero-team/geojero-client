@@ -146,6 +146,7 @@ export default function HomePage() {
               className={styles.ctaButton}
               onClick={() => navigate('/courses')}
               data-api="GET /api/courses"
+              data-tour="get-courses"
             >
               <Route size={18} strokeWidth={2} aria-hidden="true" />
               {t('home.getCourses')}

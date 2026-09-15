@@ -23,9 +23,9 @@ import styles from './SpotsPage.module.css'
  * 그래서 Figma 02-1이 그려둔 불성립 표현 세 가지(사진 40% · disabled 제목 ·
  * 둘째 줄 '오늘 버스로 안 돼요')를 의도적으로 뺐습니다.
  */
-function SpotCard({ spot, onOpen }) {
+function SpotCard({ spot, onOpen, tour }) {
   return (
-    <button type="button" className={styles.card} onClick={() => onOpen(spot)}>
+    <button type="button" className={styles.card} onClick={() => onOpen(spot)} data-tour={tour}>
       <div className={styles.photo}>
         <img className={styles.photoImg} src={courseImage(spot)} alt="" onError={onImageError(spot)} />
       </div>
@@ -78,11 +78,13 @@ export default function SpotsPage() {
           <p className={styles.notice}>{t('spots.loading')}</p>
         ) : (
           <div className={styles.grid}>
-            {spots.map((spot) => (
+            {spots.map((spot, index) => (
               <SpotCard
                 key={spot.poiId}
                 spot={spot}
                 onOpen={({ poiId }) => navigate(`/spots/${poiId}`)}
+                // 첫 방문 튜토리얼 3단계가 짚는 첫 카드
+                tour={index === 0 ? 'first-spot' : undefined}
               />
             ))}
           </div>

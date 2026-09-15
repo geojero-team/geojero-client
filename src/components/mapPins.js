@@ -96,6 +96,8 @@ export function createPinElement(spot, { order }) {
   ]
     .filter(Boolean)
     .join(' ')
+  // 첫 방문 튜토리얼 1단계가 짚는 곳(Tutorial — 핀 + 이름표를 감쌉니다).
+  if (isTerminal) element.dataset.tour = 'terminal'
 
   // 겹쳤을 때 "외 2곳"을 덧붙여야 해서 원본을 따로 들고 있습니다.
   // 9경은 테두리 색으로만 말하므로, 화면 읽기 프로그램에는 이름 뒤에 글로 붙입니다.

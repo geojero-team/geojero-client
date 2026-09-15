@@ -16,7 +16,8 @@ export default function Screen({ children, ...rest }) {
 
   return (
     <ScreenNodeContext.Provider value={node}>
-      <div ref={setNode} className={styles.screen} {...rest}>
+      {/* data-screen — 첫 방문 튜토리얼(Tutorial)이 지금 화면 프레임을 찾아 그 안에 그립니다. */}
+      <div ref={setNode} className={styles.screen} data-screen="" {...rest}>
         {children}
       </div>
     </ScreenNodeContext.Provider>

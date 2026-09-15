@@ -39,10 +39,10 @@ function stopLine(spot) {
   return [spot.region, spot.category].filter(Boolean).join(' · ') || null
 }
 
-function SpotRow({ spot, onOpen }) {
+function SpotRow({ spot, onOpen, tour }) {
   const sub = stopLine(spot)
   return (
-    <button type="button" className={styles.row} onClick={() => onOpen(spot)}>
+    <button type="button" className={styles.row} onClick={() => onOpen(spot)} data-tour={tour}>
       <span className={styles.thumb}>
         <img className={styles.thumbImg} src={courseImage(spot)} alt="" onError={onImageError(spot)} />
       </span>
@@ -101,11 +101,13 @@ export default function TimetableListPage() {
           <p className={shared.notice}>{t('spots.loading')}</p>
         ) : (
           <div className={styles.list}>
-            {spots.map((spot) => (
+            {spots.map((spot, index) => (
               <SpotRow
                 key={spot.poiId}
                 spot={spot}
                 onOpen={({ poiId }) => navigate(`/timetable/${poiId}`)}
+                // 첫 방문 튜토리얼 4단계가 짚는 첫 줄
+                tour={index === 0 ? 'first-timetable' : undefined}
               />
             ))}
           </div>

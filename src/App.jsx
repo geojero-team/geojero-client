@@ -10,6 +10,7 @@ import SpotDetailPage from './pages/SpotDetailPage'
 import SpotsPage from './pages/SpotsPage'
 import SpotTimetablePage from './pages/SpotTimetablePage'
 import TimetableListPage from './pages/TimetableListPage'
+import Tutorial from './components/Tutorial'
 
 /**
  * 하단 탭 4개 — 홈 / 스팟 / 시간표 / 내 일정 (Figma 02-2 TabBar4).
@@ -49,6 +50,9 @@ export default function App() {
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      {/* 첫 방문 튜토리얼(Figma 02-2 558:200) — 홈에 처음 올 때 한 번. 지금 화면 프레임 안에 그립니다. */}
+      <Tutorial />
 
       {/* 개발용 API 오버레이(`?debug=api`). DEV 분기라 프로덕션 번들에서는 통째로 빠집니다. */}
       {import.meta.env.DEV && <ApiOverlay />}

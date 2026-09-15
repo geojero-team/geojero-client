@@ -37,6 +37,26 @@ export default {
   'nineScenic.badge': '거제9경 · {rank}경',
   'nineScenic.confirm': '확인',
 
+  /* ── 첫 방문 튜토리얼 — Figma 02-2 558:200(09-14). 문장마다 키를 나눕니다(문장마다 한 줄). ──
+     4단계 셋째 줄은 그림의 「모든 시간표는 거제시가 직접 제공하는 데이터예요.」에서 고쳤습니다(2026-09-15) —
+     배 시간표(외도 · 내도 · 지심도)는 운항사 자료라 「모든」이 틀린 말이 됐습니다. 둘째 줄의 「버스 시간표」도 「버스·배 시간표」로. */
+  'tutorial.progress': '{total}단계 중 {n}단계',
+  'tutorial.skip': '건너뛰기',
+  'tutorial.next': '다음',
+  'tutorial.start': '시작하기',
+  'tutorial.1.title': '고현터미널에서 출발해요',
+  'tutorial.1.line1': '거제로 들어오는 시외버스가 도착하고, 섬 곳곳으로 가는 시내버스가 출발하는 곳이에요.',
+  'tutorial.1.line2': '그래서 모든 코스는 고현터미널에서 시작해요.',
+  'tutorial.2.title': '여행 코스를 추천받을 수 있어요',
+  'tutorial.2.line1': '버스 시간표에 맞춰 코스를 짜 드려요.',
+  'tutorial.2.line2': '차가 없어도 걱정하지 마세요.',
+  'tutorial.3.title': '스팟을 둘러보세요',
+  'tutorial.3.line1': '관광지를 누르면 상세 정보와 방문자들이 직접 찍은 사진 후기까지 볼 수 있어요.',
+  'tutorial.4.title': '스팟마다 버스 시간표가 있어요',
+  'tutorial.4.line1': '추천 코스가 아니어도 괜찮아요.',
+  'tutorial.4.line2': '가고 싶은 스팟을 누르면 그곳의 버스·배 시간표를 볼 수 있어요.',
+  'tutorial.4.line3': '버스 시간표는 거제시가 직접 제공하는 데이터예요.',
+
   'nav.aria': '주요 화면',
   'nav.home': '홈',
   'nav.spots': '스팟',
