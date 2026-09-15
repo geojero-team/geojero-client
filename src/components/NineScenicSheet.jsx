@@ -16,14 +16,16 @@ const TITLE_ID = 'nine-scenic-title'
  * 카드 선택까지 같이 눌립니다. 사용자가 홈으로 옮겼습니다 — 지도의 주황 테두리를 처음 보는 곳이 홈입니다.
  *
  * 설명만 하고 끝내지 않고 **아홉 곳을 목록으로** 보여줍니다. 앱에 있는 곳은 줄이 **스팟 상세로 가는
- * 링크**입니다(사용자 요청 — 하이퍼링크 '방식', 겉모습은 목록 그대로). 상세가 스스로 데이터를 불러오므로 지도 핀을 못 불러왔어도
- * 링크는 삽니다. 상세에서 뒤로 오면 시트가 다시 열려 있습니다 — 홈이 열림 상태를 주소(`?nine=1`)에 둡니다.
- * 앱에 없는 곳(공곶이·내도·지심도)은 링크가 아니고 「지도에 없음」이라고 말합니다.
- * 말없이 빼면 "9경인데 왜 일곱 곳뿐이지"가 됩니다.
+ * 링크**입니다(사용자 요청 — 하이퍼링크 '방식', 겉모습은 목록 그대로). 상세에서 뒤로 오면 시트가 다시 열려
+ * 있습니다 — 홈이 열림 상태를 주소(`?nine=1`)에 둡니다.
+ *
+ *   links  Map(몇 경 → poiId) — 서버 스팟 목록의 nineScenicNo(V28)로 홈이 만듭니다. 앱에 poiId 를 박지 않습니다.
+ *          null 이면 목록을 아직 못 받은 것 — 줄은 눌리지 않고 「지도에 없음」도 적지 않습니다.
+ *          목록에 번호가 없는 곳은 「지도에 없음」이라고 말합니다. 말없이 빼면 "9경인데 왜 일곱 곳뿐이지"가 됩니다.
  *
  * 모양은 로그인 시트(LoginSheet)와 같습니다 — 스크림 · 손잡이(끌어내리면 닫힘) · 같은 z 순서.
  */
-export default function NineScenicSheet({ open, onClose }) {
+export default function NineScenicSheet({ open, onClose, links = null }) {
   const { handleProps, sheetStyle } = useSheetDismiss(onClose)
   const titleRef = useRef(null)
   // 부모가 onClose 를 매번 새로 만들어도 아래 이펙트가 다시 돌지 않게 ref 로 읽습니다 —
@@ -88,7 +90,8 @@ export default function NineScenicSheet({ open, onClose }) {
 
         <ol className={styles.list}>
           {NINE_SCENIC.map((item) => {
-            const inApp = item.poiId != null
+            const poiId = links?.get(item.rank) ?? null
+            const inApp = poiId != null
             const body = (
               <>
                 <span className={styles.rank}>{t('nineScenic.rank', { rank: item.rank })}</span>
@@ -103,7 +106,7 @@ export default function NineScenicSheet({ open, onClose }) {
                 {inApp ? (
                   <ChevronRight size={18} className={styles.chevron} aria-hidden="true" />
                 ) : (
-                  <span className={styles.offMap}>{t('nineScenic.offMap')}</span>
+                  links != null && <span className={styles.offMap}>{t('nineScenic.offMap')}</span>
                 )}
               </>
             )
@@ -113,7 +116,7 @@ export default function NineScenicSheet({ open, onClose }) {
                     누를 수 있다는 건 줄 끝 화살표가 말합니다. */}
                 {inApp ? (
                   <Link
-                    to={`/spots/${item.poiId}`}
+                    to={`/spots/${poiId}`}
                     className={`${styles.item} ${styles.itemLink}`}
                     aria-label={t('nineScenic.linkAria', { rank: item.rank, name: item.name })}
                   >

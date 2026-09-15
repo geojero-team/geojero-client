@@ -10,7 +10,7 @@ import SpotSheet from '../components/SpotSheet'
 import { peekHeightOf } from '../components/spotSheetHeight'
 import { t } from '../i18n'
 import { api } from '../lib/api'
-import { nineScenicRankOf } from '../lib/nineScenic'
+import { poiIdsByNineScenic } from '../lib/nineScenic'
 import styles from './HomePage.module.css'
 
 /**
@@ -52,14 +52,15 @@ export default function HomePage() {
         // 고현터미널(kind TERMINAL, theme 없음)은 모든 코스의 출발 지점이라 함께 찍습니다 —
         // Figma 02-2 `501:213`, 좌표는 서버 V22(TAGO 정류소 '터미널(일반)').
         // MapView는 `spotId`로 핀을 식별하므로 poiId를 그 자리에 넣습니다.
-        // nineScenic(몇 경)은 홈에서만 붙입니다 — 코스 지도는 코스가 주제라 주황 테두리를 쓰지 않습니다.
+        // nineScenic(몇 경)은 서버 값(nineScenicNo, V28)이고 홈에서만 핀에 붙입니다 —
+        // 코스 지도는 코스가 주제라 주황 테두리를 쓰지 않습니다.
         const spots = (pois ?? [])
           .filter((poi) => (poi.theme || poi.kind === 'TERMINAL') && poi.lat != null && poi.lng != null)
           .map((poi) => ({
             ...poi,
             spotId: poi.poiId,
             thumbnailUrl: poi.imageUrl,
-            nineScenic: nineScenicRankOf(poi.poiId),
+            nineScenic: poi.nineScenicNo ?? null,
           }))
         setResult({ status: 'ready', spots, error: '' })
       })
@@ -74,6 +75,12 @@ export default function HomePage() {
   }, [])
 
   const spots = useMemo(() => result.spots, [result.spots])
+  // 설명 시트의 9경 줄 → 스팟 상세 링크(몇 경 → poiId). 목록을 받기 전·실패하면 null —
+  // 시트가 링크도 「지도에 없음」도 그리지 않습니다(없는 걸 없다고 말하지 않게).
+  const nineLinks = useMemo(
+    () => (result.status === 'ready' ? poiIdsByNineScenic(result.spots) : null),
+    [result.status, result.spots],
+  )
 
   const setNine = (on) =>
     setSearchParams(
@@ -156,7 +163,7 @@ export default function HomePage() {
       <BottomNav />
 
       {/* 탭바까지 덮도록 지도 영역 밖(화면 껍데기 바로 아래)에 둡니다 — 로그인 시트와 같은 자리입니다. */}
-      <NineScenicSheet open={nineOpen} onClose={closeNine} />
+      <NineScenicSheet open={nineOpen} onClose={closeNine} links={nineLinks} />
     </Screen>
   )
 }

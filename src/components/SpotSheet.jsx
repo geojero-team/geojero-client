@@ -2,7 +2,6 @@ import { useRef, useState } from 'react'
 import SpotDetail from './SpotDetail'
 import { t } from '../i18n'
 import { courseImage, onImageError } from '../lib/courseImage'
-import { nineScenicRankOf } from '../lib/nineScenic'
 import { peekHeightOf } from './spotSheetHeight'
 import styles from './SpotSheet.module.css'
 
@@ -53,8 +52,9 @@ export default function SpotSheet({ spot, onClose }) {
 
   const peek = peekHeightOf(spot)
   const maxHeight = () => clipRef.current?.clientHeight ?? peek
-  // 배지는 어느 지도에서 열든 붙입니다 — 테두리와 달리 글이라 코스 지도에서도 방해되지 않습니다.
-  const nineRank = spot ? nineScenicRankOf(spot.poiId) : null
+  // 9경 번호는 서버 값(/api/pois nineScenicNo, V28). 배지는 어느 지도에서 열든 붙입니다 —
+  // 테두리와 달리 글이라 코스 지도에서도 방해되지 않습니다.
+  const nineRank = spot?.nineScenicNo ?? null
 
   const onPointerDown = (event) => {
     // 손잡이에서만 끕니다. 본문에서 끌면 사진 캐러셀·본문 스크롤과 싸웁니다.
