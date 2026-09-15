@@ -48,15 +48,14 @@ export default {
   /* ── 분류 ─────────────────────────────────────────────────────────────── */
   'category.aria': '분류',
   'category.all': '전체',
-  'theme.VIEW': '언덕·전망',
-  'theme.CRUISE': '유람선',
-  'theme.BEACH': '해수욕장',
-  'theme.GARDEN': '식물원',
-  'theme.CASTLE': '성',
-  'theme.HISTORY': '유적',
-  // 전시관·기념관·체험시설·조각공원을 묶습니다. 칩 칸이 38px이라 '전시·체험'(약 60px)은
-  // 넘칩니다 — '유적'·'성'과 같은 짧은 라벨로 맞췄습니다.
-  'theme.EXHIBIT': '전시',
+  // 2026-09-15 여행자 관점 6칸(사용자 결정 · 서버 V29). 코드는 그대로, 이름표만 바꿨습니다 — CASTLE(성)은 없어졌습니다.
+  // 칩은 가로 스크롤이라(CategoryBar) 네 글자 라벨도 들어갑니다.
+  'theme.BEACH': '바다·해변',
+  'theme.CRUISE': '섬·유람선',
+  'theme.VIEW': '전망·명소',
+  'theme.GARDEN': '정원·숲',
+  'theme.HISTORY': '역사·유적',
+  'theme.EXHIBIT': '전시·체험',
 
   /* ── 서식 ─────────────────────────────────────────────────────────────── */
   'format.empty': '—',
@@ -227,11 +226,11 @@ export default {
   'spotTime.emptyUnknownHint': '시각은 BIS에서 확인해 주세요 — 없는 시각을 지어내지 않습니다.',
   'spotTime.emptyNoService': '이 날은 이 구간을 가는 버스가 없어요.',
   'spotTime.emptyNoStop': '원문 시간표에 이 스팟의 정류장 칸이 없어요.',
+  'spotTime.emptyNoStopHint': '버스가 지나가더라도 몇 시에 닿는지는 원문에 적혀 있지 않습니다.',
   // 정류장도 배 연결도 없는 스팟(서버 emptyReason TIMETABLE_PENDING · 2026-09-15 공곶이·내도 · 지심도) —
   // 시각을 아직 모으지 못했습니다. 위 「정류장 칸이 없어요」(원문에 칸이 없음)와 다른 이유라 문구를 가릅니다.
   'spotTime.pendingTitle': '이 스팟의 시간표는 아직 준비 중이에요.',
   'spotTime.pendingText': '가는 배와 버스 시각을 모으고 있어요.',
-  'spotTime.emptyNoStopHint': '버스가 지나가더라도 몇 시에 닿는지는 원문에 적혀 있지 않습니다.',
 
   // ── 유람선 시간표 (스팟 시간표의 배 칩) ──────────────────────────────────
   // Figma 프레임 없음 — 2026-09-14 사용자 결정. 원천은 외도유람선 예약센터 배시간표입니다.

@@ -112,13 +112,12 @@ export function formatDateDay(isoDate) {
 
 export { WEEKDAYS }
 
-/** 코스 테마 코드 -> 판정 조건 화면의 필터 라벨 */
+/** 스팟 테마 코드 -> 카테고리 칩 라벨 (2026-09-15 여행자 관점 6칸 — CASTLE 은 없어졌습니다, 서버 V29). */
 export const THEME_LABELS = {
   VIEW: t('theme.VIEW'),
   CRUISE: t('theme.CRUISE'),
   BEACH: t('theme.BEACH'),
   GARDEN: t('theme.GARDEN'),
-  CASTLE: t('theme.CASTLE'),
   HISTORY: t('theme.HISTORY'),
   EXHIBIT: t('theme.EXHIBIT'),
 }

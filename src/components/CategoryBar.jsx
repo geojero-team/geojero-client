@@ -17,10 +17,16 @@ import styles from './CategoryBar.module.css'
  * 이제 칸이 글자만큼만 차지하고 넘치면 스크롤합니다(CSS 주석 참고). 분류가 더 늘어도
  * 안 깨집니다. Figma 02-1의 균등 분할에서 이탈한 것이고, 그 배치가 8칸에서 읽히지
  * 않는다는 사실이 근거입니다.
+ *
+ * 2026-09-15: **여행자 관점 6칸으로 다시 묶었습니다**(사용자 결정). 전에는 칸이 스팟의 종류(해수욕장·식물원·성 …)라
+ * 성(매미성 한 곳)처럼 한 곳뿐인 칸이 있었습니다. 이제 여행자가 고르는 기준이고 칸마다 2~4곳입니다 —
+ * 바다·해변 / 섬·유람선 / 전망·명소 / 정원·숲 / 역사·유적 / 전시·체험. 서버 theme 코드는 그대로 두고 이름표만
+ * 바꿨고, 칸을 옮긴 스팟은 둘입니다(서버 V29 — 매미성 CASTLE → VIEW, 외도보타니아 GARDEN → CRUISE).
+ * 이름 아래 「권역 · 분류」 줄의 세부 분류(해수욕장 · 테마공원 …)는 서버 category 그대로입니다.
  */
 const ITEMS = [
   { theme: null, label: t('category.all'), icon: 'ALL' },
-  ...['VIEW', 'CRUISE', 'BEACH', 'GARDEN', 'CASTLE', 'HISTORY', 'EXHIBIT'].map((theme) => ({
+  ...['BEACH', 'CRUISE', 'VIEW', 'GARDEN', 'HISTORY', 'EXHIBIT'].map((theme) => ({
     theme,
     label: THEME_LABELS[theme],
     icon: theme,
