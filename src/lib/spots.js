@@ -107,6 +107,8 @@ export async function loadSpotDetail(poiId) {
     name,
     thumbnailUrl: base?.imageUrl ?? null,
     overview: detail.overview ?? null,
+    // 우리가 쓴 요약(서버 pois.summary · V29 Claude 초안). 원문(overview) 위에 따로 붙습니다. 상세 호출이 실패하면 null.
+    summary: res?.summary ?? null,
     // detail.source가 'TourAPI'가 아니면 자체 소개문(intro_text) 폴백입니다 —
     // 그때는 '출처 TourAPI' 칩을 달면 안 됩니다.
     overviewSource: detail.source ?? null,

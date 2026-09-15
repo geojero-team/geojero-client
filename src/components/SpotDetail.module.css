@@ -278,6 +278,19 @@
   color: var(--text-primary);
 }
 
+/* 우리가 쓴 요약(V29 · 2026-09-15) — 원문(.overview, 보조색) 위에 본문색으로 둬서 먼저 읽히게 합니다.
+   문장마다 줄바꿈(pre-line). 원문과는 한 칸 더 띄웁니다(intro gap 6 + 4). */
+.summary {
+  margin: 0 0 var(--space-xs);
+  width: 100%;
+  font: var(--type-body);
+  color: var(--text-primary);
+  word-break: keep-all;
+  white-space: pre-line;
+}
+
+/* pre-line — 문장마다 넣은 줄바꿈(lib/format sentenceLines)을 그대로 그립니다(2026-09-15 사용자 요청).
+   띄어쓰기 여러 칸은 한 칸으로 접히고, 5줄 접기(-webkit-line-clamp)도 줄바꿈을 한 줄로 셉니다. */
 .overview,
 .overviewFull {
   margin: 0;
@@ -285,6 +298,7 @@
   font: var(--type-body);
   color: var(--text-secondary);
   word-break: keep-all;
+  white-space: pre-line;
 }
 
 /* 접었을 때 5줄. 피그마(264:258)는 2줄이지만 TourAPI overview 원문이 길어

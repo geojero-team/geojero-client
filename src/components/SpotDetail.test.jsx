@@ -57,6 +57,31 @@ function renderDetail(spot = SPOT) {
   )
 }
 
+/** 문단의 날 글(textContent) 그대로 찾습니다 — 기본 매처는 줄바꿈을 공백으로 접어서 개행을 확인할 수 없습니다. */
+const paragraphWithText = (text) => (_, el) => el?.tagName === 'P' && el.textContent === text
+
+describe('SpotDetail — 소개 (2026-09-15: 우리 요약 + TourAPI 원문)', () => {
+  it('요약이 원문 위에 오고, 둘 다 문장마다 줄이 바뀐다 — 원문 글자는 그대로', async () => {
+    renderDetail({
+      ...SPOT,
+      summary: '검은 몽돌이 깔린 해변입니다. 유람선도 탈 수 있습니다.',
+      overview: '몽돌이 깔린 해변이다.소리가 아름답다.',
+    })
+
+    const summary = await screen.findByText(paragraphWithText('검은 몽돌이 깔린 해변입니다.\n유람선도 탈 수 있습니다.'))
+    const original = screen.getByText(paragraphWithText('몽돌이 깔린 해변이다.\n소리가 아름답다.'))
+    expect(summary.compareDocumentPosition(original) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByRole('button', { name: '더보기' })).toBeInTheDocument()
+  })
+
+  it('요약이 없으면(예전 서버) 원문만 그린다', async () => {
+    renderDetail(SPOT)
+
+    expect(await screen.findByText(paragraphWithText('몽돌이 깔린 해변입니다.'))).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '소개' })).toBeInTheDocument()
+  })
+})
+
 describe('SpotDetail — 방문자 사진 자리', () => {
   it('소개 뒤에 방문자 사진 섹션이 오고, TourAPI 사진과 섞이지 않는다', async () => {
     const { container } = renderDetail()

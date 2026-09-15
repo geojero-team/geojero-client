@@ -4,6 +4,7 @@ import VisitorPhotos from './VisitorPhotos'
 import { t } from '../i18n'
 import { loadSpotDetail } from '../lib/spots'
 import { courseImage, onImageError } from '../lib/courseImage'
+import { sentenceLines } from '../lib/format'
 import { ICON_PATHS } from '../lib/spotIcons'
 import { useDragScroll } from '../lib/useDragScroll'
 import styles from './SpotDetail.module.css'
@@ -304,22 +305,30 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, uploadIn
           </div>
         )}
 
-        {/* 소개는 TourAPI overview 원문입니다. 수정·요약하지 않습니다(저작권).
-            서버가 안 떠 있으면 이 덩어리 자체를 그리지 않습니다. */}
-        {spot.overview && (
+        {/* 소개 — 두 칸입니다(2026-09-15 사용자 결정).
+              · 요약: 우리가 쓴 2~3문장(서버 pois.summary · V29 Claude 초안). 맨 위, 본문색.
+              · 원문: TourAPI overview. 글자는 수정·요약하지 않습니다(공모전 조건 — 원문 무수정). 5줄로 접고 「더보기」.
+            둘 다 문장마다 줄만 바꿉니다(lib/format sentenceLines, CSS pre-line).
+            둘 다 없으면(서버가 안 떠 있으면) 이 덩어리 자체를 그리지 않습니다. */}
+        {(spot.summary || spot.overview) && (
           <section className={styles.intro}>
             <h2 className={styles.introHead}>{t('spotDetail.introHead')}</h2>
-            <p className={expanded ? styles.overviewFull : styles.overview}>
-              {spot.overview}
-            </p>
-            {!expanded && (
-              <button
-                type="button"
-                className={styles.more}
-                onClick={() => setExpanded(true)}
-              >
-                {t('common.more')}
-              </button>
+            {spot.summary && <p className={styles.summary}>{sentenceLines(spot.summary)}</p>}
+            {spot.overview && (
+              <>
+                <p className={expanded ? styles.overviewFull : styles.overview}>
+                  {sentenceLines(spot.overview)}
+                </p>
+                {!expanded && (
+                  <button
+                    type="button"
+                    className={styles.more}
+                    onClick={() => setExpanded(true)}
+                  >
+                    {t('common.more')}
+                  </button>
+                )}
+              </>
             )}
           </section>
         )}

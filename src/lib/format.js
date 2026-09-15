@@ -21,6 +21,23 @@ export function formatDistance(meters) {
   return t('format.distance.km', { km: (meters / 1000).toFixed(1) })
 }
 
+/**
+ * 소개문을 문장마다 한 줄로 — 스팟 상세(2026-09-15 사용자 요청 「문장 간 개행」).
+ *
+ * 글자는 **한 자도 바꾸지 않습니다.** TourAPI overview 는 원문 무수정이 공모전 조건입니다(서버 HttpTourApiGateway).
+ * 바꾸는 건 공백뿐입니다 — 문장 끝(한글 뒤 . ? !, 뒤따르는 닫는 따옴표·괄호까지) 다음의 띄어쓰기를 줄바꿈으로.
+ *  · 「입었다.섬도」처럼 마침표 뒤에 띄어쓰기가 없는 원문도 끊습니다
+ *  · 숫자 뒤 점(1.5km)은 문장 끝이 아니라 끊지 않습니다 — 한글 뒤 점만 봅니다
+ *  · 원문의 줄바꿈(「(출처 : …)」 앞 빈 줄)은 그대로, `<br>` 태그는 줄바꿈으로 둡니다
+ * 화면은 `white-space: pre-line` 으로 그립니다.
+ */
+export function sentenceLines(text) {
+  if (!text) return text
+  return text
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/([가-힣][.?!]+['"’”)]*)[ \t]*(?=\S)/g, '$1\n')
+}
+
 /** 41200 -> "41,200원" — 자릿수 구분은 아직 ko-KR 고정입니다(쓰는 곳 없음). */
 export function formatCost(won) {
   if (won == null) return t('format.empty')
