@@ -320,6 +320,9 @@ describe('FerryTimetable — 타는 곳 · 주의 · 출처', () => {
     const { unmount } = renderFerry(destination())
 
     const caution = screen.getByText(/출항은 기상·인원에 따라 10~30분/)
+    // 문장마다 줄바꿈(사용자 요청) — 출처 표시 「(예약센터 안내)」는 둘째 문장에 붙어 있다
+    expect(caution.textContent).toBe('출항은 기상·인원에 따라 10~30분 앞당겨지거나 늦어질 수 있어요.\n복귀 시각은 그래서 "약"이에요. (예약센터 안내)')
+    expect(caution).toHaveClass(styles.lines)
     const source = screen.getByText('출처 외도유람선 예약센터 · 9/13 확인 · 10/31까지 공개 · 도장포유람선 누리집과 대조')
     const info = screen.getByRole('region', { name: '이용 안내' })
     expect(info.compareDocumentPosition(caution) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()

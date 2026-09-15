@@ -145,7 +145,7 @@ export default function ShuttleTimetable({ shuttle, way, now, showsNow }) {
 
       {/* 6. 주의 · 출처 — 버스 출처 자리 */}
       <div className={page.sources}>
-        <p className={page.source}>{t('shuttle.caution')}</p>
+        <p className={`${page.source} ${styles.lines}`}>{t('shuttle.caution')}</p>
         <p className={page.source}>
           {t('shuttle.source', { source: shuttle.source, entered: formatShortDate(shuttle.enteredOn) })}
         </p>

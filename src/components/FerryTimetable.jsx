@@ -256,7 +256,7 @@ export default function FerryTimetable({ ferry, asOf, days }) {
 
       {/* 6. 주의 · 출처 — 버스 출처 자리 */}
       <div className={page.sources}>
-        <p className={page.source}>{t('ferry.caution')}</p>
+        <p className={`${page.source} ${styles.lines}`}>{t('ferry.caution')}</p>
         {fetched && (
           <p className={page.source}>
             {t('ferry.source', {

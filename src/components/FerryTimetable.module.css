@@ -23,6 +23,11 @@
   line-height: 1;
 }
 
+/* 주의 문구 — 문장마다 줄을 바꿉니다(ko.js 의 \n, 2026-09-15 사용자 요청). 출처 줄(page.source)과 함께 씁니다. */
+.lines {
+  white-space: pre-line;
+}
+
 /* ── 행동 — 다음 배 카드 바로 아래. 버스 타는 곳 카드의 「카카오맵으로 길찾기」와 같은 버튼 모양. ── */
 .actions {
   display: flex;

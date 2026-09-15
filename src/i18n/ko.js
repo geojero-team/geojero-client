@@ -266,7 +266,8 @@ export default {
   'ferry.range': '{from}~{to}',
   'ferry.book': '예약센터에서 예약 ↗',
   'ferry.bookA11y': '{course} 예약 — 새 창에서 열려요',
-  'ferry.caution': '출항은 기상·인원에 따라 10~30분 앞당겨지거나 늦어질 수 있어요. 복귀 시각은 그래서 "약"이에요. (예약센터 안내)',
+  // 문장마다 줄을 바꿉니다(\n — 화면이 pre-line 으로 그림, 2026-09-15 사용자 요청). 「(예약센터 안내)」는 출처라 둘째 문장에 붙입니다.
+  'ferry.caution': '출항은 기상·인원에 따라 10~30분 앞당겨지거나 늦어질 수 있어요.\n복귀 시각은 그래서 "약"이에요. (예약센터 안내)',
   // {source}는 서버 coverage.source(원천 이름) — 데이터라 사전에 박지 않습니다.
   'ferry.source': '출처 {source} · {fetched} 확인 · {through}까지 공개',
   'ferry.crossChecked': '도장포유람선 누리집과 대조',
@@ -292,7 +293,7 @@ export default {
   'shuttle.callA11y': '{operator}에 전화 걸기 {phone}',
   'shuttle.book': '예약하기 ↗',
   'shuttle.bookA11y': '{operator} 예약 — 새 창에서 열려요',
-  'shuttle.caution': '배 시각은 운항사 사정으로 바뀔 수 있어요. 가기 전에 전화로 확인해 주세요.',
+  'shuttle.caution': '배 시각은 운항사 사정으로 바뀔 수 있어요.\n가기 전에 전화로 확인해 주세요.',
   'shuttle.source': '출처 {source} · {entered} 입력',
 
   /* ── 배 칩 공통 — 선착장 타는 곳 카드(DockCard) · 이용 안내 (2026-09-15 재배치) ── */

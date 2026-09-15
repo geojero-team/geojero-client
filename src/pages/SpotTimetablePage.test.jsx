@@ -230,6 +230,10 @@ describe('SpotTimetablePage — 도선 (2026-09-15 내도 · 지심도)', () => 
     expect(screen.getByText('관광시간 10분')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '도선(구조라)에 전화 걸기 055-681-1624' })).toHaveAttribute('href', 'tel:0556811624')
     expect(screen.getByText('주말·공휴일 — 5번~8번 (주말 수시운행)')).toBeInTheDocument()
+    // 주의 문구는 문장마다 줄바꿈(사용자 요청)
+    expect(screen.getByText(/배 시각은 운항사 사정으로/).textContent).toBe(
+      '배 시각은 운항사 사정으로 바뀔 수 있어요.\n가기 전에 전화로 확인해 주세요.',
+    )
     expect(screen.getAllByText('평일').length).toBeGreaterThan(0)
     expect(api.spotDepartures).not.toHaveBeenCalled()
 
