@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { t } from '../i18n'
+import { courseImage, courseImageFallback } from '../lib/courseImage'
 import { formatDistance } from '../lib/format'
 import { distanceMeters } from '../lib/geo'
 import { loadKakaoMaps } from '../lib/kakaoLoader'
@@ -29,6 +30,9 @@ import styles from './BoardingMap.module.css'
  * @param boarding 서버 departures 응답의 boarding { from, stops, exceptions, unresolved, source }.
  *                 from은 이 구간의 **출발 쪽**입니다(고현터미널 → 스팟이면 고현터미널).
  * @param route    노선 칩으로 고른 노선. 없으면 전체.
+ * @param fromSpot 출발 쪽이 스팟일 때 그 스팟({ thumbnailUrl, theme }) — 지도에 점 + 이름 대신 **썸네일**(24px 원)을 찍습니다
+ *                 (2026-09-15 사용자 결정: 글자 라벨이 카카오 지도 라벨과 겹쳐 두 번 말했고, 홈 지도의 사진 핀과 같은 모양이 맞다).
+ *                 없으면(목록 실패 · 고현터미널 출발) 점 + 이름 그대로 — 거리만으론 방향을 모르니 기준점을 비우지 않습니다.
  */
 
 /** 섬 전체가 아니라 정류장 몇 개를 보는 지도라 이보다 당기면 길 이름도 안 보이게 됩니다. */
@@ -49,6 +53,8 @@ const OPPOSITE_M = 50
 const MARKER_HEIGHT = 51
 const ICON_CENTER = 14
 const FROM_HEIGHT = 9
+/** 출발 곳 썸네일 지름 — 버스 마커(28)가 주인공이라 그보다 작게. */
+const FROM_THUMB = 24
 const BELOW_TOP = MARKER_HEIGHT - ICON_CENTER + 2 // 좌표에서 비킨 박스 윗변까지
 const ABOVE_BOTTOM = ICON_CENTER + 2 // 비킨 박스 아랫변에서 좌표까지
 const anchorOf = (slot, height, center) =>
@@ -103,7 +109,10 @@ function placement(item, point, slot, hit) {
   const yAnchor = anchorOf(vertical, item.height, item.center)
   const top = point.y - yAnchor * item.height
   if (item.kind === 'from') {
-    const r = FROM_HEIGHT / 2
+    const r = item.height / 2
+    if (item.shape === 'thumb') {
+      return { slot, dx: 0, yAnchor, box: { x0: point.x - r, x1: point.x + r, y0: top, y1: top + item.height } }
+    }
     // 이름표(17px)가 점 가운데 높이에 걸립니다.
     return { slot, dx: 0, yAnchor, box: { x0: point.x - r, x1: point.x + r + item.width, y0: top + r - 8.5, y1: top + r + 8.5 } }
   }
@@ -236,8 +245,33 @@ function fromElement(name) {
   return element
 }
 
+/** 스팟 썸네일 — 홈 지도의 사진 핀과 같은 그림. 사진이 없거나(저작권 Type3) 링크가 죽으면 분류 자리그림입니다. */
+function fromThumbElement(spot) {
+  const element = document.createElement('span')
+  element.className = styles.fromThumb
+  const img = document.createElement('img')
+  img.className = styles.fromThumbImg
+  img.src = courseImage(spot)
+  img.alt = ''
+  img.draggable = false
+  img.addEventListener('error', () => {
+    const fallback = courseImageFallback(spot)
+    if (img.src !== fallback) img.src = fallback
+  })
+  element.append(img)
+  return element
+}
+
+/** 출발 곳 오버레이 항목 — 스팟이고 스팟 정보가 있으면 썸네일, 아니면 점 + 이름. 기하(높이 · 가운데)가 달라 겹침 계산도 따라갑니다. */
+function fromItem(from, fromSpot) {
+  if (from.kind === 'SPOT' && fromSpot) {
+    return { at: from, content: fromThumbElement(fromSpot), kind: 'from', shape: 'thumb', width: FROM_THUMB, height: FROM_THUMB, center: FROM_THUMB / 2 }
+  }
+  return { at: from, content: fromElement(from.name), kind: 'from', shape: 'dot', width: fromLabelWidth(from.name), height: FROM_HEIGHT, center: FROM_HEIGHT / 2 }
+}
+
 /** 펼쳤을 때만 마운트되는 지도 — 접으면 사라집니다. */
-function MapCanvas({ stops, exceptions, from, showFrom }) {
+function MapCanvas({ stops, exceptions, from, showFrom, fromSpot }) {
   const containerRef = useRef(null)
   const kakaoRef = useRef(null)
   const mapRef = useRef(null)
@@ -278,9 +312,7 @@ function MapCanvas({ stops, exceptions, from, showFrom }) {
     const items = [
       ...stops.map((stop) => markerItem(stop, tagText(stop.routes))),
       ...exceptions.map((ex) => markerItem(ex, `${ex.routeNo} ${ex.depart}`)),
-      ...(showFrom
-        ? [{ at: from, content: fromElement(from.name), kind: 'from', width: fromLabelWidth(from.name), height: FROM_HEIGHT, center: FROM_HEIGHT / 2 }]
-        : []),
+      ...(showFrom ? [fromItem(from, fromSpot)] : []),
     ].map((item) => ({ ...item, position: new kakao.maps.LatLng(item.at.lat, item.at.lng) }))
 
     const bounds = new kakao.maps.LatLngBounds()
@@ -301,7 +333,7 @@ function MapCanvas({ stops, exceptions, from, showFrom }) {
     })
 
     return () => overlays.forEach((overlay) => overlay.setMap(null))
-  }, [phase, stops, exceptions, from, showFrom])
+  }, [phase, stops, exceptions, from, showFrom, fromSpot])
 
   // 지도는 이름 · 거리 · 길찾기와 같은 내용을 그림으로 보여줄 뿐이라 읽기 도구에서는 숨깁니다.
   return phase === 'error' ? (
@@ -311,7 +343,7 @@ function MapCanvas({ stops, exceptions, from, showFrom }) {
   )
 }
 
-export default function BoardingMap({ boarding, route = null }) {
+export default function BoardingMap({ boarding, route = null, fromSpot = null }) {
   const [open, setOpen] = useState(false)
   const bodyId = useId()
 
@@ -390,6 +422,7 @@ export default function BoardingMap({ boarding, route = null }) {
             exceptions={exceptions}
             from={from}
             showFrom={!(isTerminal && nearestM < TERMINAL_NEAR_M)}
+            fromSpot={fromSpot}
           />
 
           {listed.length > 0 && (

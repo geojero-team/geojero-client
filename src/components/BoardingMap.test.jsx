@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { loadKakaoMaps } from '../lib/kakaoLoader'
 import BoardingMap from './BoardingMap'
+import { courseImageFallback } from '../lib/courseImage'
 
 // jsdom에는 카카오 SDK가 없습니다. 기본은 실패 — 지도가 못 떠도 정류장 이름·거리·길찾기가 나오는지가 이 카드의 바닥입니다.
 vi.mock('../lib/kakaoLoader', () => ({ loadKakaoMaps: vi.fn() }))
@@ -603,3 +604,105 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
   })
 })
 
+
+/**
+ * 출발 곳이 스팟이면 점 + 이름 대신 **스팟 썸네일**(24px 원, 글자 없음) — 2026-09-15 사용자 결정.
+ * 글자 라벨은 카카오 지도 자체 라벨(「학동 흑진주몽돌」)과 겹쳐 두 번 말했고, 홈 지도가 스팟을 사진 핀으로 그리므로 같은 모양으로 맞춘다.
+ * 고현터미널 출발은 그대로 점 + 이름이고, 스팟 정보를 못 받으면(목록 실패) 점 + 이름으로 남는다 — 기준점을 비우지 않는다.
+ */
+describe('BoardingMap — 출발 곳 썸네일', () => {
+  const PHOTO = 'https://tong.visitkorea.or.kr/maemi.jpg'
+  const CASTLE = { thumbnailUrl: PHOTO, theme: 'CASTLE' }
+
+  it('스팟 출발 + 스팟 정보 → 사진 원 하나 · 이름 글자 없음 · 앵커는 가운데 · 화면 맞추기에 든다', async () => {
+    const user = userEvent.setup()
+    const { kakao, map, overlays } = fakeKakao({ level: 3 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(<BoardingMap boarding={MAEMI} fromSpot={CASTLE} />)
+    await expand(user)
+
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    const from = overlays[2]
+    const img = from.options.content.querySelector('img')
+    expect(img.getAttribute('src')).toBe(PHOTO)
+    expect(img.getAttribute('alt')).toBe('')
+    expect(from.options.content.textContent).toBe('')
+    expect(from.options.yAnchor).toBe(0.5)
+    expect(map.setBounds.mock.calls[0][0].points).toHaveLength(3)
+  })
+
+  it('사진이 없는 스팟(저작권 Type3)은 분류 자리그림이고, 사진 링크가 죽어도 자리그림으로 돌아온다', async () => {
+    const user = userEvent.setup()
+    const { kakao, map, overlays } = fakeKakao({ level: 3 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    const { unmount } = render(<BoardingMap boarding={MAEMI} fromSpot={{ thumbnailUrl: null, theme: 'CASTLE' }} />)
+    await expand(user)
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    expect(overlays[2].options.content.querySelector('img').getAttribute('src')).toBe(courseImageFallback({ theme: 'CASTLE' }))
+    unmount()
+
+    overlays.length = 0
+    map.setBounds.mockClear()
+    render(<BoardingMap boarding={MAEMI} fromSpot={CASTLE} />)
+    await expand(user)
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    const img = overlays[2].options.content.querySelector('img')
+    img.dispatchEvent(new Event('error'))
+    expect(img.getAttribute('src')).toBe(courseImageFallback({ theme: 'CASTLE' }))
+  })
+
+  it('스팟 정보가 없으면 점 + 이름 그대로 · 고현터미널 출발은 스팟 정보가 와도 점 + 이름', async () => {
+    const user = userEvent.setup()
+    const { kakao, map, overlays } = fakeKakao({ level: 3 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    const { unmount } = render(<BoardingMap boarding={MAEMI} />)
+    await expand(user)
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    expect(overlays[2].options.content.textContent).toBe('매미성')
+    expect(overlays[2].options.content.querySelector('img')).toBeNull()
+    unmount()
+
+    overlays.length = 0
+    map.setBounds.mockClear()
+    render(
+      <BoardingMap
+        boarding={{ ...FROM_TERMINAL, stops: [{ nodeId: 'GJB370', name: '터미널(순환)', lat: 34.8916, lng: 128.6242, distanceM: 110, routes: ['100'] }] }}
+        fromSpot={CASTLE}
+      />,
+    )
+    await expand(user)
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    const terminal = overlays.find((o) => o.options.content.textContent === '고현터미널')
+    expect(terminal).toBeDefined()
+    expect(terminal.options.content.querySelector('img')).toBeNull()
+  })
+
+  it('썸네일이 마커와 겹치면 자기 높이(24px)로 비킨다', async () => {
+    const user = userEvent.setup()
+    const { kakao, map, overlays } = fakeKakao({ level: 3, pxPerDeg: 100000 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(
+      <BoardingMap
+        boarding={{
+          from: { name: '어딘가', kind: 'SPOT', lat: 34.8906, lng: 128.6242 },
+          // 5px 옆 · 4px 위 — 점 + 이름표는 오른쪽으로 길어 38px 옆 정류장과도 겹쳤지만, 썸네일은 24px 원이라 더 붙어야 겹친다
+          stops: [{ nodeId: 'GJB370', name: '어딘가 앞', lat: 34.89063, lng: 128.62425, distanceM: 6, routes: ['100'] }],
+          exceptions: [],
+          unresolved: [],
+          source: SOURCE,
+        }}
+        fromSpot={CASTLE}
+      />,
+    )
+    await expand(user)
+
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    const from = overlays.find((o) => o.options.content.querySelector('img'))
+    // 마커 박스(좌표 기준 -14 ~ +37px) 밖으로: 아래면 원 윗변이 +39px(= -39/24), 위면 원 아랫변이 -16px(= 40/24)
+    expect(Math.abs(from.options.yAnchor - -39 / 24) < 1e-6 || Math.abs(from.options.yAnchor - 40 / 24) < 1e-6).toBe(true)
+  })
+})

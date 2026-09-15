@@ -177,12 +177,15 @@ export default function SpotTimetablePage() {
      응답의 `to`에서 읽었는데, 고현터미널 칩을 누르면 응답의 to가 고현터미널로 바뀌어
      **옆 칩 이름까지 '해금강 → 고현터미널'로 바뀌었습니다**(2026-09-13 버그). */
   const [names, setNames] = useState(() => new Map())
+  // 타는 곳 지도의 출발 곳 썸네일용(사진 · 분류). 목록을 못 받으면 비어 있고 지도는 점 + 이름으로 그립니다.
+  const [spotsById, setSpotsById] = useState(() => new Map())
 
   useEffect(() => {
     let cancelled = false
     loadSpots().then((spots) => {
       if (cancelled) return
       setNames(new Map([...spots].map(([id, poi]) => [String(id), poi.shortName ?? poi.name])))
+      setSpotsById(spots)
     })
     return () => {
       cancelled = true
@@ -230,6 +233,9 @@ export default function SpotTimetablePage() {
   // 배 칩이면 버스 응답이 없어 배 응답의 이름을 씁니다(배는 늘 이 스팟 기준으로 묻습니다).
   const spotFromResponse = dir === 'fromNext' ? null : (d?.shortName ?? d?.name ?? null)
   const spot = names.get(String(poiId)) ?? spotFromResponse ?? ferryData?.shortName ?? ''
+  // 타는 곳 지도의 출발 곳 — 이 스팟(스팟 → …) 또는 다음 스팟(다음 스팟 → 이 스팟). 고현터미널 출발이면 없다.
+  const fromPoi = dir === 'fromOrigin' ? null : (spotsById.get(Number(dir === 'fromNext' ? nextId : poiId)) ?? null)
+  const fromSpot = fromPoi ? { thumbnailUrl: fromPoi.imageUrl ?? null, theme: fromPoi.theme } : null
   const nextFromResponse =
     dir === 'next' ? d?.to?.name : dir === 'fromNext' ? (d?.shortName ?? d?.name) : null
   const nextName = (nextId ? names.get(String(nextId)) : null) ?? nextFromResponse ?? ''
@@ -405,10 +411,11 @@ export default function SpotTimetablePage() {
             </div>
           )}
 
-          {/* 타는 곳 — 버스 칩만, 다음 버스 카드 아래(530:300). 노선 칩을 고르면 그 노선의 정류장만. */}
+          {/* 타는 곳 — 버스 칩만, 다음 버스 카드 아래(530:300). 노선 칩을 고르면 그 노선의 정류장만.
+              출발 쪽 스팟(다음 스팟 → 이 스팟이면 다음 스팟)의 사진을 넘겨 지도에 점 대신 썸네일을 찍습니다. 고현터미널 출발은 없습니다. */}
           {d?.boarding && (
             <div className={styles.boarding}>
-              <BoardingMap boarding={d.boarding} route={route} />
+              <BoardingMap boarding={d.boarding} route={route} fromSpot={fromSpot} />
             </div>
           )}
 
