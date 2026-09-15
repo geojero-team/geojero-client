@@ -1,0 +1,31 @@
+/* OptionChip(Figma 49:32) — h40 · px14 · radius pill · 테두리 1.
+   글자는 고름에서 Regular → Bold 로 바뀝니다(49:29 → 49:31, 둘 다 16/24). */
+.chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+  font: var(--type-body);
+  color: var(--text-primary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.on {
+  border-color: var(--brand-strong);
+  background: var(--brand-tint);
+  font: var(--type-body-strong);
+  color: var(--brand-strong);
+}
+
+/* 메모 623:520 — Figma 에 disabled 변형이 없어 「여기선 투명도 0.4」 */
+.chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Button from '../components/Button'
+import OptionChip from '../components/OptionChip'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { api } from '../lib/api'
@@ -17,6 +18,11 @@ import styles from './CoursesPage.module.css'
  * 어느 10개인지는 서버가 정합니다(`featured=true` — 9경 많은 순 · 버스 시간 짧은 순 · 곳 수 · 코드 순).
  * 여기서 다시 고르거나 정렬하지 않습니다 — 코스를 다시 적재해도 화면이 그대로 따라오게.
  *
+ * 2026-09-16 **개수 칩(전체 · 3곳 · 4곳 · 5곳)을 되살렸습니다**(팀원 의견 → Figma `623:444` · 메모 `623:520`).
+ * 칩은 **대표 코스 10개 안에서** 거릅니다(사용자 결정 A) — 「전체」가 3곳 + 4곳 + 5곳의 합이어야 칩 이름이 맞고,
+ * 대표 밖 코스는 제목 · 소개가 없습니다. 서버에 다시 묻지 않고 받은 목록을 화면에서 거릅니다.
+ * 저장해서 뺀 코스는 칩 개수에서도 빠지고, 0개인 칩은 지우지 않고 비활성으로 남깁니다.
+ *
  * 카드는 첫 스팟 사진 · 9경 배지 · 제목 · 스팟 체인 · 소개 · 태그 넷(버스 시간 · 권역 · 배차 · 요일)입니다.
  * 태그 값은 전부 서버 데이터입니다 — 기준문서에 없는 수치를 화면에서 만들지 않습니다(절대규칙 1).
  * 그림(582:416)의 둘째 태그는 노선 번호(「55번 한 노선」)였는데 2026-09-14 밤 **권역**으로 바꿨습니다(사용자 결정) —
@@ -28,6 +34,12 @@ import styles from './CoursesPage.module.css'
  * (그래서 저장 버튼이 없습니다. 저장은 코스 상세 한 곳입니다 — 저장 계약이 코스 하나 + 날짜를
  * 요구하는데 이 화면엔 둘 다 없습니다.)
  */
+
+const SPOT_COUNTS = [3, 4, 5]
+
+/* 칩 줄(sticky 띠)의 아래 끝과 상태줄 사이 — 띠 margin-bottom −8 + 본문 gap 16. 칩(40)과 상태줄 사이가 그림처럼 16 이 됩니다.
+   CoursesPage.module.css 의 .chips 를 바꾸면 같이 바꿉니다. */
+const CHIPS_TO_TOTAL = 8
 
 /** 고름 표시 — 32px 원. 안 고름은 테두리만, 고름은 brand 면 + 흰 체크(인라인 SVG). */
 function Check({ on }) {
@@ -114,10 +126,14 @@ function CourseCard({ course, selected, onToggle }) {
 
 export default function CoursesPage() {
   const navigate = useNavigate()
-  const location = useLocation()
+  // 고른 개수는 주소에 둡니다(?spots=3) — 지도에서 뒤로 왔을 때 칩이 제자리에 있어야 합니다.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const scrollRef = useRef(null)
+  const chipsRef = useRef(null)
+  const totalRef = useRef(null)
   const [selected, setSelected] = useState(() => new Set())
-  // hidden — 이미 저장해서 뺀 코스 수. 뺀 이유를 한 줄로 말하려고 셉니다.
-  const [result, setResult] = useState({ status: 'loading', data: null, hidden: 0, error: '' })
+  // hidden — 이미 저장해서 뺀 코스들의 곳 수(spotCount) 목록. 뺀 이유를 한 줄로 말하려고 두고, 칩으로 거르면 그 곳 수만 셉니다.
+  const [result, setResult] = useState({ status: 'loading', data: null, hidden: [], error: '' })
 
   useEffect(() => {
     let cancelled = false
@@ -141,20 +157,54 @@ export default function CoursesPage() {
           regions: regionsOf(course.spots, pois),
         }))
         const courses = all.filter((course) => !saved.has(course.courseId))
-        setResult({ status: 'ready', data: courses, hidden: all.length - courses.length, error: '' })
+        const hidden = all.filter((course) => saved.has(course.courseId)).map((course) => course.spotCount)
+        setResult({ status: 'ready', data: courses, hidden, error: '' })
       })
       .catch((error) => {
-        if (!cancelled) setResult({ status: 'error', data: null, hidden: 0, error: error.message })
+        if (!cancelled) setResult({ status: 'error', data: null, hidden: [], error: error.message })
       })
     return () => {
       cancelled = true
     }
   }, [])
 
+  /* 바로 연 화면이면(앞 기록이 없으면) 홈으로. `location.key === 'default'`로는 가를 수 없습니다 — 칩이 주소를
+     replace 로 바꾸면 key 가 바뀌어 바로 연 화면에서도 navigate(-1)이 앱 밖으로 나갑니다(SpotDetailPage 와 같은 함정).
+     라우터가 history.state 에 적는 idx 는 replace 로 바뀌지 않습니다. */
   const goBack = () =>
-    location.key === 'default' ? navigate('/', { replace: true }) : navigate(-1)
+    (window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate('/', { replace: true })
 
   const courses = result.data ?? []
+  const countOf = (n) => courses.filter((course) => course.spotCount === n).length
+  // 주소 값이 3·4·5 가 아니거나 그 개수 코스가 0개면 「전체」 — 비활성 칩이 골라진 채로 빈 목록을 보이지 않게.
+  const wanted = Number(searchParams.get('spots'))
+  const spotCount = SPOT_COUNTS.includes(wanted) && countOf(wanted) > 0 ? wanted : null
+  const shown = spotCount ? courses.filter((course) => course.spotCount === spotCount) : courses
+  // 칩으로 걸렀으면 그 곳 수에서 뺀 코스만 셉니다 — 4곳 코스를 뺐는데 3곳 목록 아래 「1개는 빼고」라 적지 않게.
+  const hiddenCount = spotCount ? result.hidden.filter((n) => n === spotCount).length : result.hidden.length
+
+  // 칩을 누르면 목록 맨 위로(메모 623:520). 칩 줄은 붙어 있으므로, 상태줄이 칩 줄 아래 제자리 간격에 오게 올립니다.
+  // 상태줄이 칩 줄 뒤에 가려 있으면 그만큼 내리고, 이미 그 아래에 보이면 움직이지 않습니다.
+  // 데스크톱은 화면 틀에 CSS zoom 이 걸려(lib/frameZoom) 잰 상자만 확대되고 offsetHeight · scrollTop 은 확대 전 값이라,
+  // 잰 거리를 확대 배율로 나눠 단위를 맞춥니다(useDragScroll · Tutorial 과 같은 방식).
+  const scrollToList = () => {
+    const scroller = scrollRef.current
+    if (!scroller || !chipsRef.current || !totalRef.current) return
+    const box = scroller.getBoundingClientRect()
+    const scale = box.height && scroller.clientHeight ? box.height / scroller.clientHeight : 1
+    const offset =
+      (totalRef.current.getBoundingClientRect().top - box.top) / scale -
+      chipsRef.current.offsetHeight -
+      CHIPS_TO_TOTAL
+    if (offset < 0) scroller.scrollTop += offset
+  }
+
+  // 고른 코스는 칩을 바꿔도 그대로입니다 — 3곳 둘 + 5곳 하나를 골라 함께 비교할 수 있습니다.
+  const pickCount = (n) => {
+    if (n === spotCount) return
+    scrollToList()
+    setSearchParams(n ? { spots: String(n) } : {}, { replace: true })
+  }
 
   const toggle = (courseId) => {
     setSelected((prev) => {
@@ -166,6 +216,7 @@ export default function CoursesPage() {
   }
 
   // 지도가 고른 코스들을 받아 좌우로 넘겨 보여줍니다. 순서는 누른 순서가 아니라 카드 순서입니다.
+  // 칩으로 가려진 카드도 고른 것이면 넘깁니다(courses 는 거르기 전 목록).
   const openMap = () => {
     const ids = courses.filter((c) => selected.has(c.courseId)).map((c) => c.courseId)
     navigate(`/course-map?courses=${ids.join(',')}`)
@@ -180,7 +231,7 @@ export default function CoursesPage() {
         <h1 className={styles.title}>{t('courses.title')}</h1>
       </header>
 
-      <div className={styles.scroll}>
+      <div className={styles.scroll} ref={scrollRef}>
         <div className={styles.body}>
           <h2 className={styles.headline}>
             {t('courses.headline1')}
@@ -196,7 +247,7 @@ export default function CoursesPage() {
           ) : result.status === 'loading' ? (
             <p className={styles.notice}>{t('courses.loading')}</p>
           ) : courses.length === 0 ? (
-            result.hidden > 0 ? (
+            result.hidden.length > 0 ? (
               // 추천 코스를 전부 저장했다 — 빈 목록의 이유와 갈 곳을 말합니다.
               <p className={styles.savedNote}>
                 <span>{t('courses.allSaved')}</span>
@@ -209,18 +260,39 @@ export default function CoursesPage() {
             )
           ) : (
             <>
-              <p className={styles.total}>{t('courses.total', { count: courses.length })}</p>
+              {/* 623:451 — OptionChip 넷. 헤더 아래 붙습니다(카드 한 장이 500px 를 넘어 — 메모 623:520). */}
+              <div className={styles.chips} role="group" aria-label={t('courses.countAria')} ref={chipsRef}>
+                <OptionChip selected={spotCount === null} onClick={() => pickCount(null)}>
+                  {t('courses.countAll')}
+                </OptionChip>
+                {SPOT_COUNTS.map((n) => (
+                  <OptionChip
+                    key={n}
+                    selected={spotCount === n}
+                    disabled={countOf(n) === 0}
+                    onClick={() => pickCount(n)}
+                  >
+                    {t('courses.countN', { n })}
+                  </OptionChip>
+                ))}
+              </div>
+              {/* role="status" — 칩을 누르면 바뀐 코스 수를 읽기 도구가 읽습니다(목록이 제자리에서 바뀌므로). */}
+              <p className={styles.total} ref={totalRef} role="status">
+                {spotCount
+                  ? t('courses.totalN', { n: spotCount, count: shown.length })
+                  : t('courses.total', { count: courses.length })}
+              </p>
               {/* 저장한 코스를 뺐으면 한 줄 — 대표 코스가 이유 없이 줄어 보이지 않게(2026-09-15). */}
-              {result.hidden > 0 && (
+              {hiddenCount > 0 && (
                 <p className={styles.savedNote}>
-                  <span>{t('courses.savedHidden', { count: result.hidden })}</span>
+                  <span>{t('courses.savedHidden', { count: hiddenCount })}</span>
                   <button type="button" className={styles.savedLink} onClick={() => navigate('/my')}>
                     {t('courses.goMyPlans')} ›
                   </button>
                 </p>
               )}
               <div className={styles.list}>
-                {courses.map((course) => (
+                {shown.map((course) => (
                   <CourseCard
                     key={course.courseId}
                     course={course}

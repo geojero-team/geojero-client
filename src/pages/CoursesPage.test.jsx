@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -121,9 +121,9 @@ function LocationProbe() {
   return <output data-testid="loc">{location.pathname + location.search}</output>
 }
 
-function renderPage() {
+function renderPage(entry = '/courses', { entries = [entry], index = entries.length - 1 } = {}) {
   return render(
-    <MemoryRouter initialEntries={['/courses']}>
+    <MemoryRouter initialEntries={entries} initialIndex={index}>
       <Routes>
         <Route path="/" element={<p>홈 화면</p>} />
         <Route path="/courses" element={<CoursesPage />} />
@@ -146,14 +146,13 @@ beforeEach(() => {
 })
 
 describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)', () => {
-  it('머리 · 헤드라인 두 줄 · 출처 한 줄 · 「대표 코스 2가지」 — 3/4/5곳 칩은 없다', async () => {
+  it('머리 · 헤드라인 두 줄 · 출처 한 줄 · 「대표 코스 2가지」', async () => {
     renderPage()
 
     expect(await screen.findByText('대표 코스 2가지 · 여러 개 고를 수 있어요')).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 1, name: '코스 추천' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('거제 9경을 버스로 잇는대표 코스')
     expect(screen.getByText('출발은 고현터미널 · 노선과 시간은 거제시 BIS 원문 기준')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '3곳' })).not.toBeInTheDocument()
     expect(screen.queryByText(/총 코스/)).not.toBeInTheDocument()
     expect(api.courses).toHaveBeenCalledWith({ featured: true })
   })
@@ -295,12 +294,13 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
     expect(screen.queryByText(/대표 코스 \d+가지/)).not.toBeInTheDocument()
   })
 
-  it('코스가 0개면 「코스가 아직 없어요」 한 줄 — 3/4/5곳 빈 상태 문구는 없다', async () => {
+  it('코스가 0개면 「코스가 아직 없어요」 한 줄 — 개수 칩도 없다', async () => {
     api.courses.mockResolvedValue({ counts: { 3: 0, 4: 0, 5: 0 }, courses: [] })
     renderPage()
 
     expect(await screen.findByText('코스가 아직 없어요')).toBeInTheDocument()
     expect(screen.queryByText(/아직 안내할 수 없어요/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '전체' })).not.toBeInTheDocument()
     expect(screen.queryByText(/대표 코스 \d+가지/)).not.toBeInTheDocument()
   })
 
@@ -352,5 +352,229 @@ describe('CoursesPage — 저장한 코스는 추천에서 뺀다(2026-09-15 사
     expect(await screen.findByText('환승 없이 남부 9경 세 곳')).toBeInTheDocument()
     expect(screen.getByText('돌고래 보고 몽돌 밟고 바람의언덕')).toBeInTheDocument()
     expect(screen.queryByText(/빼고 보여줘요/)).not.toBeInTheDocument()
+  })
+})
+
+describe('CoursesPage — 개수 칩(Figma 623:444 · 메모 623:520, 2026-09-16 되살림)', () => {
+  // 대표 코스 안에서 거릅니다(사용자 결정 A) — 3곳 둘(101 · 104) · 4곳 하나(120) · 5곳 없음
+  const THREE = { counts: { 3: 10, 4: 10, 5: 3 }, courses: [COURSE_301, COURSE_302, COURSE_NO_NINE] }
+  const chip = (name) => screen.getByRole('button', { name })
+
+  beforeEach(() => {
+    api.courses.mockResolvedValue(THREE)
+  })
+
+  it('「전체 · 3곳 · 4곳 · 5곳」 — 「전체」가 기본이고 대표 코스가 다 보인다 · 코스가 0개인 5곳은 비활성', async () => {
+    renderPage()
+
+    expect(await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')).toBeInTheDocument()
+    const group = screen.getByRole('group', { name: '코스 곳 수' })
+    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual(['전체', '3곳', '4곳', '5곳'])
+    expect(chip('전체')).toHaveAttribute('aria-pressed', 'true')
+    expect(chip('3곳')).toHaveAttribute('aria-pressed', 'false')
+    expect(chip('3곳')).toBeEnabled()
+    expect(chip('5곳')).toBeDisabled()
+    expect(card(101)).toBeInTheDocument()
+    expect(card(104)).toBeInTheDocument()
+    expect(card(120)).toBeInTheDocument()
+    // 서버에 다시 묻지 않는다 — 대표 코스 응답 하나를 화면에서 거른다
+    expect(api.courses).toHaveBeenCalledTimes(1)
+    expect(api.courses).toHaveBeenCalledWith({ featured: true })
+  })
+
+  it('3곳을 누르면 3곳 코스만 · 상태줄이 「3곳 코스 2가지」 · 주소에 남는다 → 전체로 돌아오면 다시 전부', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')
+    await user.click(chip('3곳'))
+    expect(screen.getByText('3곳 코스 2가지 · 여러 개 고를 수 있어요')).toBeInTheDocument()
+    expect(chip('3곳')).toHaveAttribute('aria-pressed', 'true')
+    expect(chip('전체')).toHaveAttribute('aria-pressed', 'false')
+    expect(card(101)).toBeInTheDocument()
+    expect(card(104)).toBeInTheDocument()
+    expect(card(120)).toBeNull()
+    expect(screen.getByTestId('loc')).toHaveTextContent('/courses?spots=3')
+
+    await user.click(chip('전체'))
+    expect(screen.getByText('대표 코스 3가지 · 여러 개 고를 수 있어요')).toBeInTheDocument()
+    expect(card(120)).toBeInTheDocument()
+    expect(screen.getByTestId('loc').textContent).toBe('/courses')
+  })
+
+  it('고른 코스는 칩을 바꿔도 풀리지 않는다 — 하단 바는 고른 전체 수, 지도는 카드 순서로 전부 넘긴다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')
+    await user.click(card(104))
+    await user.click(chip('4곳'))
+    expect(card(104)).toBeNull()
+    expect(screen.getByRole('button', { name: '코스 1개 선택하기' })).toBeInTheDocument()
+
+    await user.click(card(120))
+    expect(screen.getByRole('button', { name: '코스 2개 선택하기' })).toBeInTheDocument()
+
+    await user.click(chip('3곳'))
+    expect(card(104)).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(screen.getByRole('button', { name: '코스 2개 선택하기' }))
+    expect(screen.getByTestId('loc')).toHaveTextContent('/course-map?courses=104,120')
+  })
+
+  it('주소의 개수로 들어오면 그 칩 — 지도에서 뒤로 왔을 때 제자리 · 0개인 개수나 엉뚱한 값이면 전체', async () => {
+    const { unmount } = renderPage('/courses?spots=4')
+    expect(await screen.findByText('4곳 코스 1가지 · 여러 개 고를 수 있어요')).toBeInTheDocument()
+    expect(chip('4곳')).toHaveAttribute('aria-pressed', 'true')
+    expect(card(101)).toBeNull()
+    unmount()
+
+    const second = renderPage('/courses?spots=5')
+    expect(await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')).toBeInTheDocument()
+    expect(chip('전체')).toHaveAttribute('aria-pressed', 'true')
+    second.unmount()
+
+    renderPage('/courses?spots=abc')
+    expect(await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')).toBeInTheDocument()
+  })
+
+  it('저장해서 뺀 코스는 칩 개수에서도 빠진다 — 4곳 코스를 저장했으면 4곳이 비활성', async () => {
+    getToken.mockReturnValue('token')
+    api.savedTrips.mockResolvedValue([{ savedTripId: 9, courseId: 120 }])
+    try {
+      renderPage()
+
+      expect(await screen.findByText('대표 코스 2가지 · 여러 개 고를 수 있어요')).toBeInTheDocument()
+      expect(chip('4곳')).toBeDisabled()
+      expect(chip('3곳')).toBeEnabled()
+    } finally {
+      getToken.mockReturnValue(null)
+    }
+  })
+
+  /** 스크롤 칸 · 칩 줄 · 상태줄의 잰 값을 흉내 냅니다(jsdom 은 배치를 하지 않습니다). zoom 은 데스크톱 프레임 확대(lib/frameZoom). */
+  function fakeLayout(total, { zoom = 1, scrollTop = 0 } = {}) {
+    const scroller = document.querySelector(`.${styles.scroll}`)
+    const chips = screen.getByRole('group', { name: '코스 곳 수' })
+    const state = { scrollTop }
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, get: () => state.scrollTop, set: (v) => { state.scrollTop = v } })
+    Object.defineProperty(scroller, 'clientHeight', { configurable: true, get: () => 788 })
+    Object.defineProperty(chips, 'offsetHeight', { configurable: true, get: () => 56 })
+    // 잰 상자(getBoundingClientRect)만 확대되고 offsetHeight · clientHeight · scrollTop 은 확대 전 값이다
+    scroller.getBoundingClientRect = () => ({ top: 56 * zoom, height: 788 * zoom })
+    const place = (localTop) => {
+      total.getBoundingClientRect = () => ({ top: 56 * zoom + localTop * zoom })
+    }
+    return { state, place }
+  }
+
+  it('칩을 누르면 목록 맨 위로 — 내려가 있으면 상태줄을 칩 줄 아래 제자리 간격(16)으로, 이미 보이면 그대로', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const total = await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')
+    const { state, place } = fakeLayout(total, { scrollTop: 1200 })
+    // 상태줄이 스크롤 칸 위로 300px 지나가 있다 → 칩 줄(56) + 8 아래로 오려면 300 + 64 만큼 올린다.
+    // 칩 줄 띠의 아래 8 은 음수 마진이라 칩(40)과 상태줄 사이가 그림처럼 16 이 된다.
+    place(-300)
+    await user.click(chip('3곳'))
+    expect(state.scrollTop).toBe(1200 - 364)
+
+    // 이미 칩 줄 아래에 제자리 간격으로 보이면 움직이지 않는다
+    state.scrollTop = 0
+    place(180)
+    await act(async () => {
+      await user.click(chip('4곳'))
+    })
+    expect(state.scrollTop).toBe(0)
+  })
+
+  it('데스크톱 프레임 확대(zoom 1.5)에서도 같은 자리로 — 잰 상자 값을 확대 전 값으로 나눠 계산한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const total = await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')
+    const { state, place } = fakeLayout(total, { zoom: 1.5, scrollTop: 1200 })
+    place(-300)
+    await user.click(chip('3곳'))
+    expect(state.scrollTop).toBe(1200 - 364)
+
+    // 칩 줄이 막 붙은 자리 — 상태줄이 칩 줄 뒤(확대 전 40)에 가려 있으면 보이게 내린다
+    state.scrollTop = 150
+    place(40)
+    await user.click(chip('4곳'))
+    expect(state.scrollTop).toBe(150 - 24)
+  })
+
+  it('상태줄은 읽기 도구가 바뀔 때 읽는 자리(role="status") — 칩을 누르면 새 코스 수를 말한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')
+    await user.click(chip('3곳'))
+    // (테스트의 주소 표시 <output> 도 status 역할이라 글로 찾고 역할을 확인합니다)
+    expect(screen.getByText('3곳 코스 2가지 · 여러 개 고를 수 있어요')).toHaveAttribute('role', 'status')
+  })
+
+  it('바로 연 화면에서 칩을 누른 뒤 「뒤로」 — 앱 밖이 아니라 홈으로(칩이 주소를 replace 해도)', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')
+    await user.click(chip('3곳'))
+    await user.click(screen.getByRole('button', { name: '뒤로' }))
+    expect(screen.getByText('홈 화면')).toBeInTheDocument()
+    expect(screen.getByTestId('loc').textContent).toBe('/')
+  })
+
+  it('앞 화면이 있으면(history idx > 0) 「뒤로」는 그 화면으로', async () => {
+    const user = userEvent.setup()
+    window.history.replaceState({ idx: 1 }, '')
+    try {
+      renderPage('/courses', { entries: ['/course-map', '/courses'] })
+
+      await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')
+      await user.click(chip('3곳'))
+      await user.click(screen.getByRole('button', { name: '뒤로' }))
+      expect(screen.getByText('지도 화면')).toBeInTheDocument()
+    } finally {
+      window.history.replaceState(null, '')
+    }
+  })
+
+  it('칩으로 거르면 「저장한 코스 N개는 빼고」도 그 칩 기준 — 뺀 코스가 다른 곳 수면 줄이 없다', async () => {
+    const user = userEvent.setup()
+    getToken.mockReturnValue('token')
+    api.courses.mockResolvedValue({ ...THREE, courses: [...THREE.courses, { ...COURSE_302, courseId: 105, courseCode: '3-05' }] })
+    api.savedTrips.mockResolvedValue([{ savedTripId: 9, courseId: 120 }, { savedTripId: 10, courseId: 105 }])
+    try {
+      renderPage()
+
+      expect(await screen.findByText('저장한 코스 2개는 빼고 보여줘요')).toBeInTheDocument()
+      await user.click(chip('3곳'))
+      expect(screen.getByText('저장한 코스 1개는 빼고 보여줘요')).toBeInTheDocument()
+      await user.click(chip('전체'))
+      expect(screen.getByText('저장한 코스 2개는 빼고 보여줘요')).toBeInTheDocument()
+    } finally {
+      getToken.mockReturnValue(null)
+    }
+  })
+
+  it('뺀 코스가 없는 칩에서는 「빼고 보여줘요」 줄이 없다', async () => {
+    const user = userEvent.setup()
+    getToken.mockReturnValue('token')
+    api.courses.mockResolvedValue({ ...THREE, courses: [...THREE.courses, { ...COURSE_NO_NINE, courseId: 121, courseCode: '4-09' }] })
+    api.savedTrips.mockResolvedValue([{ savedTripId: 9, courseId: 120 }])
+    try {
+      renderPage()
+
+      expect(await screen.findByText('저장한 코스 1개는 빼고 보여줘요')).toBeInTheDocument()
+      await user.click(chip('3곳'))
+      expect(screen.queryByText(/빼고 보여줘요/)).not.toBeInTheDocument()
+      await user.click(chip('4곳'))
+      expect(screen.getByText('저장한 코스 1개는 빼고 보여줘요')).toBeInTheDocument()
+    } finally {
+      getToken.mockReturnValue(null)
+    }
   })
 })
