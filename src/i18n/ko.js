@@ -267,6 +267,27 @@ export default {
   'ferry.noDock': '{spot} 근처에서 {to}에 가는 배를 타는 선착장을 원문에서 찾지 못했어요.',
   'ferry.noDockHint': '{to} 시간표에서 선착장 4곳의 배를 볼 수 있어요.',
 
+  /* ── 도선(섬으로 들어가는 작은 배) — 내도(구조라) · 지심도(장승포 지심도 터미널) · 2026-09-15 사용자 입력 ──
+     외도 유람선(ferry.*)과 같은 모양이지만 요일별 고정 시각이라 날짜 줄이 없습니다(ShuttleTimetable). */
+  'shuttle.dirIn': '{dock} 선착장 → {island}',
+  'shuttle.dirOut': '{island} → {dock} 선착장',
+  'shuttle.boardIn': '{dock} 선착장에서 타요.',
+  'shuttle.boardOut': '{island}에서 {dock} 선착장으로 나오는 배예요.',
+  'shuttle.next': '다음 배 {time}',
+  'shuttle.firstLast': '첫 배 {first} · 막배 {last}',
+  'shuttle.todayDone': '오늘 남은 배가 없어요',
+  // 그날 정해진 시각이 없을 때(내도 주말·공휴일) — 시각을 지어내지 않고 운항사 원문을 그대로 보입니다.
+  'shuttle.flexibleTitle': '주말·공휴일은 정해진 시각이 없어요',
+  'shuttle.flexibleNote': '운항사 안내 — {note}',
+  'shuttle.holidayCaption': '주말·공휴일 — {note}',
+  'shuttle.call': '문의 {phone}',
+  'shuttle.callA11y': '{operator}에 전화 걸기 {phone}',
+  'shuttle.fare': '요금 {fare}',
+  'shuttle.book': '예약하기 ↗',
+  'shuttle.bookA11y': '{operator} 예약 — 새 창에서 열려요',
+  'shuttle.caution': '배 시각은 운항사 사정으로 바뀔 수 있어요. 가기 전에 전화로 확인해 주세요.',
+  'shuttle.source': '출처 {source} · {entered} 입력',
+
   // ── 타는 곳 (스팟 시간표의 버스 칩 · 다음 버스 카드 아래) ─────────────────
   // Figma 09-14 개정 530:231(접힘) · 530:282 / 541:408(펼침). 정류장 좌표는 서버가 TAGO에서 받아 줍니다.
   // 거리는 좌표 사이 직선이라 「약」을 붙입니다. 이 자리에도 「운행 없음」을 쓰지 않습니다.

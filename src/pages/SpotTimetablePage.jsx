@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import BoardingMap from '../components/BoardingMap'
 import FerryTimetable from '../components/FerryTimetable'
 import Screen from '../components/Screen'
+import ShuttleTimetable from '../components/ShuttleTimetable'
 import { t } from '../i18n'
 import { api } from '../lib/api'
 import { formatDuration } from '../lib/format'
@@ -83,21 +84,25 @@ const ORIGIN = '고현터미널'
  *   · 다음 스팟이 배로만 가는 곳이면 next 칩이 배를 그리고 fromNext는 없습니다 — 배는 왕복이라
  *     "외도 → 이 스팟" 편이 따로 없습니다.
  */
-const NO_FERRY = { hasBusStop: true, toIsFerryDestination: false, ferries: [] }
+const NO_FERRY = { hasBusStop: true, toIsFerryDestination: false, ferries: [], shuttles: [] }
 
 function directionsFor({ hasNext, ferry }) {
   const f = ferry ?? NO_FERRY
   const dockDir = (x) => `dock:${x.dock.dockCode}`
+  /* 도선(2026-09-15 · 서버 shuttles, V31) — 선착장마다 들어가는 배 · 나오는 배 두 칩 `shuttle:{id}:in|out`.
+     섬 스팟(공곶이·내도 · 지심도)은 버스 정류장이 없어 외도처럼 배 칩뿐입니다. 배 칩이 하나도 없을 때만
+     팀원 규칙대로 버스 칩으로 돌아갑니다. */
+  const shuttleDirs = (f.shuttles ?? []).flatMap((s) => [`shuttle:${s.shuttleId}:in`, `shuttle:${s.shuttleId}:out`])
   if (!f.hasBusStop) {
     const docks = f.ferries.filter((x) => x.relation === 'DESTINATION').map(dockDir)
-    if (docks.length > 0) return docks
+    if (docks.length > 0 || shuttleDirs.length > 0) return [...docks, ...shuttleDirs]
   }
   const bus = !hasNext
     ? ['origin', 'fromOrigin']
     : f.toIsFerryDestination
       ? ['next', 'origin', 'fromOrigin']
       : ['next', 'fromNext', 'origin', 'fromOrigin']
-  return [...bus, ...f.ferries.filter((x) => x.relation === 'DOCK').map(dockDir)]
+  return [...bus, ...f.ferries.filter((x) => x.relation === 'DOCK').map(dockDir), ...shuttleDirs]
 }
 
 /** 다음 스팟이 배로만 가는 곳인데 이 스팟 근처 선착장이 원문에 없을 때. 빈 칸이 아니라 이유를 말합니다. */
@@ -111,6 +116,14 @@ function ferryFor(dir, ferry) {
   }
   if (dir === 'next' && f.toIsFerryDestination) return f.ferries.find((x) => x.relation === 'TOWARD') ?? NO_DOCK
   return null
+}
+
+/** 칩 → 그릴 도선 { shuttle, way }. 도선 칩이 아니면 null. */
+function shuttleFor(dir, ferry) {
+  if (!dir.startsWith('shuttle:')) return null
+  const [, id, way] = dir.split(':')
+  const shuttle = (ferry?.shuttles ?? []).find((s) => String(s.shuttleId) === id)
+  return shuttle ? { shuttle, way } : null
 }
 
 /**
@@ -166,7 +179,8 @@ export default function SpotTimetablePage() {
   const asked = searchParams.get('dir')
   const dir = dirs.includes(asked) ? asked : dirs[0]
   const chipFerry = ferry.status === 'loading' ? null : ferryFor(dir, ferryData)
-  const busChip = ferry.status !== 'loading' && chipFerry == null
+  const chipShuttle = ferry.status === 'loading' ? null : shuttleFor(dir, ferryData)
+  const busChip = ferry.status !== 'loading' && chipFerry == null && chipShuttle == null
 
   const [result, setResult] = useState(BUS_LOADING)
   /* 노선 칩. 방향마다 노선이 달라(바람의언덕 → 고현 55뿐, 고현 → 바람의언덕 55 · 55-1) 방향을 바꾸면 「전체」로 돌아갑니다.
@@ -241,6 +255,14 @@ export default function SpotTimetablePage() {
   const nextName = (nextId ? names.get(String(nextId)) : null) ?? nextFromResponse ?? ''
 
   const dirLabel = (k) => {
+    if (k.startsWith('shuttle:')) {
+      const s = shuttleFor(k, ferryData)
+      if (!s) return k
+      return t(s.way === 'in' ? 'shuttle.dirIn' : 'shuttle.dirOut', {
+        dock: s.shuttle.dockName,
+        island: s.shuttle.islandName,
+      })
+    }
     if (k.startsWith('dock:')) {
       const f = ferryFor(k, ferryData)
       return t(f.relation === 'DOCK' ? 'ferry.dockChip' : 'ferry.dirToSpot', { dock: f.dock.shortName, spot })
@@ -342,6 +364,12 @@ export default function SpotTimetablePage() {
         {/* 배에는 평일/휴일 구분이 없습니다 — 날짜마다 원문이 있습니다. 버스 답이 오기 전에도
             그리지 않습니다(평일인지 휴일인지는 서버가 날짜로 정합니다). */}
         {d && <span className={styles.dayPill}>{dayLabel}</span>}
+        {/* 도선은 요일별 시각이라 그날의 평일/휴일을 알약으로 보입니다(서버가 버스와 같은 판정으로 줍니다). */}
+        {!d && chipShuttle && (
+          <span className={styles.dayPill}>
+            {t(chipShuttle.shuttle.dayClass === 'HOLIDAY' ? 'courseDetail.holiday' : 'courseDetail.weekday')}
+          </span>
+        )}
       </header>
 
       <div className={styles.scroll}>
@@ -399,6 +427,12 @@ export default function SpotTimetablePage() {
           {chipFerry && chipFerry !== NO_DOCK && (
             <div className={styles.block}>
               <FerryTimetable ferry={chipFerry} asOf={ferryData.asOf} days={ferryData.days} />
+            </div>
+          )}
+
+          {chipShuttle && (
+            <div className={styles.block}>
+              <ShuttleTimetable shuttle={chipShuttle.shuttle} way={chipShuttle.way} now={now} showsNow={showsNow} />
             </div>
           )}
 

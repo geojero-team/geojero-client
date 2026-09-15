@@ -194,6 +194,69 @@ describe('SpotTimetablePage — 버스만 있는 스팟 (회귀 가드)', () => 
   })
 })
 
+/** 도선 — 구조라 ↔ 내도(평일). 서버 shuttles[] 한 개(V31 · 사용자 입력 원문). */
+const NAEDO_SHUTTLE = {
+  shuttleId: 1,
+  dockName: '구조라',
+  islandName: '내도',
+  operatorName: '도선(구조라)',
+  address: '경상남도 거제시 일운면 구조라로 21',
+  phone: '055-681-1624',
+  tripNote: '관광시간 10분',
+  fareText: '대인 왕복 12,000원 · 소인 왕복 6,000원 (단체 40명 이상 10% 할인)',
+  bookingUrl: null,
+  notice: null,
+  dayClass: 'WEEKDAY',
+  inTimes: ['09:00', '11:00', '13:00', '15:00', '17:00'],
+  outTimes: ['09:30', '11:30', '13:30', '15:30', '17:10'],
+  holidayNote: '5번~8번 (주말 수시운행)',
+  source: '운항사 안내',
+  enteredOn: '2026-09-15',
+}
+
+describe('SpotTimetablePage — 도선 (2026-09-15 내도 · 지심도)', () => {
+  it('섬 스팟은 들어가는 배 · 나오는 배 칩뿐 — 버스를 묻지 않고, 다음 배를 짚는다', async () => {
+    const user = userEvent.setup()
+    api.spotFerries.mockResolvedValue(ferriesOf(3, { hasBusStop: false, ferries: [], shuttles: [NAEDO_SHUTTLE] }))
+    renderAt(`/timetable/3?date=${DATE}&now=${NOW}`)
+
+    expect(await screen.findByRole('button', { name: '구조라 선착장 → 내도' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getAllByRole('button', { name: /→/ }).map((b) => b.textContent)).toEqual([
+      '구조라 선착장 → 내도',
+      '내도 → 구조라 선착장',
+    ])
+    expect(screen.getByText('구조라 선착장에서 타요.')).toBeInTheDocument()
+    expect(screen.getByText('다음 배 13:00')).toBeInTheDocument()
+    expect(screen.getByText('관광시간 10분')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '도선(구조라)에 전화 걸기 055-681-1624' })).toHaveAttribute('href', 'tel:0556811624')
+    expect(screen.getByText('주말·공휴일 — 5번~8번 (주말 수시운행)')).toBeInTheDocument()
+    expect(screen.getAllByText('평일').length).toBeGreaterThan(0)
+    expect(api.spotDepartures).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: '내도 → 구조라 선착장' }))
+    expect(screen.getByText('내도에서 구조라 선착장으로 나오는 배예요.')).toBeInTheDocument()
+    expect(screen.getByText('다음 배 13:30')).toBeInTheDocument()
+    expect(screen.getByText('17:10')).toBeInTheDocument()
+    expect(api.spotDepartures).not.toHaveBeenCalled()
+  })
+
+  it('주말·공휴일에 정해진 시각이 없으면(내도 수시운행) 시각을 지어내지 않고 운항사 원문을 그대로', async () => {
+    api.spotFerries.mockResolvedValue(
+      ferriesOf(3, {
+        hasBusStop: false,
+        ferries: [],
+        shuttles: [{ ...NAEDO_SHUTTLE, dayClass: 'HOLIDAY', inTimes: [], outTimes: [] }],
+      }),
+    )
+    renderAt(`/timetable/3?date=2026-09-19&now=${NOW}`)
+
+    expect(await screen.findByText('주말·공휴일은 정해진 시각이 없어요')).toBeInTheDocument()
+    expect(screen.getByText('운항사 안내 — 5번~8번 (주말 수시운행)')).toBeInTheDocument()
+    expect(screen.getAllByText('휴일').length).toBeGreaterThan(0)
+    expect(screen.queryByText('09:00')).not.toBeInTheDocument()
+  })
+})
+
 describe('SpotTimetablePage — 유람선', () => {
   it('배 응답이 오기 전에는 칩 없이 로딩만 — 버스도 아직 부르지 않는다', async () => {
     api.spotFerries.mockReturnValue(new Promise(() => {}))
