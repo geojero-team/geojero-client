@@ -234,7 +234,7 @@ describe('SpotTimetablePage — 도선 (2026-09-15 내도 · 지심도)', () => 
     expect(api.spotDepartures).not.toHaveBeenCalled()
 
     await user.click(screen.getByRole('button', { name: '내도 → 구조라 선착장' }))
-    expect(screen.getByText('내도에서 구조라 선착장으로 나오는 배예요.')).toBeInTheDocument()
+    expect(screen.getByText('내도에서 타요.')).toBeInTheDocument()
     expect(screen.getByText('다음 배 13:30')).toBeInTheDocument()
     expect(screen.getByText('17:10')).toBeInTheDocument()
     expect(api.spotDepartures).not.toHaveBeenCalled()
@@ -292,7 +292,8 @@ describe('SpotTimetablePage — 유람선', () => {
     expect(screen.getByRole('heading', { name: '외도보타니아' })).toBeInTheDocument()
     expect(screen.getByText('도장포 선착장에서 타요.')).toBeInTheDocument()
     expect(screen.queryByText('평일')).not.toBeInTheDocument()
-    expect(screen.queryByRole('region', { name: '타는 곳' })).not.toBeInTheDocument()
+    // 2026-09-15 — 배 칩에도 타는 곳 카드가 있다(선착장 지도 카드, 사용자 요청). 버스 정류장 카드가 아니다.
+    expect(within(screen.getByRole('region', { name: '타는 곳' })).getByText('도장포 선착장')).toBeInTheDocument()
     expect(api.spotDepartures).not.toHaveBeenCalled()
   })
 
@@ -459,7 +460,7 @@ describe('SpotTimetablePage — 타는 곳', () => {
     source: '정류소 좌표 국토교통부 TAGO · 2026-09-13',
   }
 
-  it('버스 칩이면 다음 버스 카드 바로 아래에 「타는 곳」 카드(09-14 개정) — 배 칩으로 바꾸면 사라진다', async () => {
+  it('버스 칩이면 다음 버스 카드 바로 아래에 「타는 곳」 카드(09-14 개정) — 배 칩으로 바꾸면 선착장 카드로 바뀐다', async () => {
     const user = userEvent.setup()
     api.spotDepartures.mockImplementation(async (poiId) => busOf(poiId, { boarding: BOARDING }))
     api.spotFerries.mockResolvedValue(ferriesOf(2, { ferries: [ferryOf('DOCK', 'DOJANGPO')] }))
@@ -472,8 +473,11 @@ describe('SpotTimetablePage — 타는 곳', () => {
     expect(card.compareDocumentPosition(tableTitle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(within(card).getByText('도장포 정류장')).toBeInTheDocument()
 
+    // 2026-09-15 — 배 칩에도 타는 곳 카드가 있다(선착장 지도 카드). 버스 정류장 카드가 남아 있으면 안 된다.
     await user.click(screen.getByRole('button', { name: '도장포 선착장 배 시간표' }))
-    expect(screen.queryByRole('region', { name: '타는 곳' })).not.toBeInTheDocument()
+    const dockCard = screen.getByRole('region', { name: '타는 곳' })
+    expect(within(dockCard).getByText('도장포 선착장')).toBeInTheDocument()
+    expect(within(dockCard).queryByText('도장포 정류장')).not.toBeInTheDocument()
   })
 
   it('boarding이 null이면 「타는 곳」을 그리지 않는다', async () => {

@@ -26,6 +26,11 @@
   cursor: pointer;
 }
 
+/* 펼칠 것이 없는 머리줄(좌표 없는 선착장 — DockCard) — 누르는 곳이 아니라서 손 모양을 거둡니다. */
+.headStatic {
+  cursor: default;
+}
+
 .headIcon {
   flex: none;
   display: block;

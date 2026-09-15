@@ -241,11 +241,18 @@ export default {
   'ferry.board': '{dock} 선착장에서 타요.',
   'ferry.access': '예약센터 안내 — “{quote}”',
   // 「같은 배로」라고 쓰지 않습니다 — 외도에서 타는 배가 같은 배라는 근거는 원문에 없습니다(사용자 결정).
-  'ferry.roundTrip': '왕복이에요. 외도에 내려 {stay} 구경한 뒤 출발한 {dock} 선착장으로 돌아와요.',
+  // 2026-09-15 재배치 — 왕복 문장을 따로 두지 않고 다음 배 카드 둘째 줄과 이용 안내의 코스 줄로 옮겼습니다.
+  'ferry.stay': '외도에서 {stay}',
+  'ferry.returnTo': '약 {ret} {dock} 선착장 복귀',
+  'ferry.courseStay': '외도에 내려 {stay} 구경하고 돌아와요',
+  'ferry.tableTitle': '배 시간표',
+  'ferry.tableSummary': '앞으로 {days}일 · 날마다 달라요',
   'ferry.cruiseNoLanding': '외도에 내리지 않아요',
   // 복귀 시각은 늘 「약」 — 원문이 기상·인원에 따라 10~30분 앞당기거나 늦출 수 있다고 적습니다.
-  'ferry.next': '다음 배 {time} · 약 {ret} 복귀',
-  'ferry.nextOn': '다음 배 {day} {time} · 약 {ret} 복귀',
+  // 다음 배 카드 — 큰 줄은 시각만(버스 「다음 버스 13:00 · 55번」과 같은 결), 복귀 · 체류는 둘째 줄.
+  'ferry.nextBig': '다음 배 {time}',
+  'ferry.nextBigOn': '다음 배 {day} {time}',
+  'ferry.nextOther': '{course} {time} · 약 {ret} 복귀',
   'ferry.nextUnknown': '다음 배 시각 미확인 — 배시간표에 아직 안 올라왔어요',
   'ferry.noNext': '앞으로 {days}일 동안 예정된 배가 없어요',
   'ferry.today': '오늘',
@@ -272,7 +279,8 @@ export default {
   'shuttle.dirIn': '{dock} 선착장 → {island}',
   'shuttle.dirOut': '{island} → {dock} 선착장',
   'shuttle.boardIn': '{dock} 선착장에서 타요.',
-  'shuttle.boardOut': '{island}에서 {dock} 선착장으로 나오는 배예요.',
+  'shuttle.boardOut': '{island}에서 타요.',
+  'shuttle.summary': '첫 배 {first} · 막배 {last} · 하루 {count}편',
   'shuttle.next': '다음 배 {time}',
   'shuttle.firstLast': '첫 배 {first} · 막배 {last}',
   'shuttle.todayDone': '오늘 남은 배가 없어요',
@@ -280,13 +288,21 @@ export default {
   'shuttle.flexibleTitle': '주말·공휴일은 정해진 시각이 없어요',
   'shuttle.flexibleNote': '운항사 안내 — {note}',
   'shuttle.holidayCaption': '주말·공휴일 — {note}',
-  'shuttle.call': '문의 {phone}',
+  'shuttle.call': '전화 {phone}',
   'shuttle.callA11y': '{operator}에 전화 걸기 {phone}',
-  'shuttle.fare': '요금 {fare}',
   'shuttle.book': '예약하기 ↗',
   'shuttle.bookA11y': '{operator} 예약 — 새 창에서 열려요',
   'shuttle.caution': '배 시각은 운항사 사정으로 바뀔 수 있어요. 가기 전에 전화로 확인해 주세요.',
   'shuttle.source': '출처 {source} · {entered} 입력',
+
+  /* ── 배 칩 공통 — 선착장 타는 곳 카드(DockCard) · 이용 안내 (2026-09-15 재배치) ── */
+  'boat.dockName': '{name} 선착장',
+  'boat.directionsA11y': '{name} 선착장 카카오맵 길찾기 — 새 창에서 열려요',
+  'boat.infoTitle': '이용 안내',
+  'boat.operator': '운항',
+  'boat.fare': '요금',
+  'boat.notice': '안내',
+  'boat.arriveDock': '내리는 곳',
 
   // ── 타는 곳 (스팟 시간표의 버스 칩 · 다음 버스 카드 아래) ─────────────────
   // Figma 09-14 개정 530:231(접힘) · 530:282 / 541:408(펼침). 정류장 좌표는 서버가 TAGO에서 받아 줍니다.

@@ -333,6 +333,16 @@ export default function SpotTimetablePage() {
      버스 이야기가 아니라서 둘 다 틀린 말이 됩니다. 칩은 팀원 규칙대로 둡니다(배가 없으면 버스 칩으로 돌아감). */
   const pendingTimetable = d?.emptyReason === 'TIMETABLE_PENDING'
 
+  /* 배 칩의 타는 문장 — 버스(「학동 정류장에서 타요.」)와 같은 자리, 칩 위(2026-09-15 재배치).
+     전에는 배 시간표 조각 안에 있어 칩 아래로 내려가, 같은 화면에서 "어디서 타는지"의 자리가 버스와 배가 달랐습니다. */
+  const boatBoard = chipShuttle
+    ? chipShuttle.way === 'in'
+      ? t('shuttle.boardIn', { dock: chipShuttle.shuttle.dockName })
+      : t('shuttle.boardOut', { island: chipShuttle.shuttle.islandName })
+    : chipFerry && chipFerry !== NO_DOCK
+      ? t('ferry.board', { dock: chipFerry.dock.shortName })
+      : null
+
   const estimatedCount = shown.filter((x) => x.departEstimated).length
   const allEstimated = shown.length > 0 && estimatedCount === shown.length
   const someEstimated = estimatedCount > 0 && !allEstimated
@@ -397,6 +407,8 @@ export default function SpotTimetablePage() {
 
           {/* 방향 칩 — 코스에서 왔으면 다음 스팟 왕복 + 고현터미널 왕복 네 개, 아니면 고현터미널 왕복 둘.
               그림(530:291)은 둘째 칩 이름을 말줄임으로 잘랐지만 칩 이름이 곧 구간이라 자르지 않고 가로로 넘깁니다. */}
+          {boatBoard && <p className={styles.board}>{boatBoard}</p>}
+
           <div className={styles.dirs} role="group">
             {dirs.map((k) => (
               <button

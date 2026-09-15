@@ -1,11 +1,16 @@
 import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it, vi } from 'vitest'
 import FerryTimetable from './FerryTimetable'
 import styles from './FerryTimetable.module.css'
+
+// 선착장 지도는 jsdom에서 뜨지 않습니다 — 펼치면 「지도를 불러오지 못했어요」로 떨어지고 길찾기는 그대로입니다.
+vi.mock('../lib/kakaoLoader', () => ({ loadKakaoMaps: vi.fn(() => Promise.reject(new Error('no sdk'))) }))
 
 /*
  * 순수 렌더 — 요청이 없으므로 props만 넣고 봅니다.
  * 값은 2026-09-13 수집분 설계 예시(도장포 9/14 = 10:30 외도상륙 · 14:00 외도상륙 · 14:00 선상관광)입니다.
+ * 2026-09-15 재배치: 다음 배 카드 → 예약 → 타는 곳(선착장 지도 카드) → 배 시간표 → 이용 안내 → 주의 · 출처.
  */
 
 const AS_OF = { date: '2026-09-14', time: '12:30', zone: 'Asia/Seoul' }
@@ -32,7 +37,14 @@ const CRUISE = {
   bookingUrl: 'https://www.oedoticket.com/page/view.php?cid=cWQ0KzkzWlJ4eEZBbHBLMUtISVUxdz09',
 }
 
-const DOCK = { dockCode: 'DOJANGPO', operatorName: '도장포유람선', shortName: '도장포', address: '경남 거제시 남부면 도장포1길 55' }
+const DOCK = {
+  dockCode: 'DOJANGPO',
+  operatorName: '도장포유람선',
+  shortName: '도장포',
+  address: '경남 거제시 남부면 도장포1길 55',
+  lat: 34.7421508,
+  lng: 128.6626096,
+}
 
 const COVERAGE = {
   publishedThrough: '2026-10-31',
@@ -164,16 +176,27 @@ describe('FerryTimetable — 날짜 줄', () => {
     expect(within(range).getByText('시각 미확인 · 이 날짜는 수집하지 않았어요')).toBeInTheDocument()
     expect(container).not.toHaveTextContent('운행 없음')
   })
+
+  it('표 머리줄은 버스의 「평일 시간표」 자리 — 「배 시간표」 · 「앞으로 14일 · 날마다 달라요」', () => {
+    renderFerry(destination())
+
+    const heading = screen.getByRole('heading', { name: '배 시간표' })
+    expect(screen.getByText('앞으로 14일 · 날마다 달라요')).toBeInTheDocument()
+    expect(heading.compareDocumentPosition(rowOf('9/14(월)')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
 })
 
-describe('FerryTimetable — 다음 배', () => {
-  it('오늘이면 시각만, 다른 날이면 날짜를 붙인다', () => {
-    const { unmount } = renderFerry(destination())
-    expect(screen.getByText('다음 배 14:00 · 약 16:40 복귀')).toBeInTheDocument()
+describe('FerryTimetable — 다음 배 카드', () => {
+  it('큰 줄은 시각만, 둘째 줄에 외도 체류와 복귀 — 전의 「왕복이에요 …」 문장이 여기로 모였다', () => {
+    const { container, unmount } = renderFerry(destination())
+    expect(screen.getByText('다음 배 14:00')).toBeInTheDocument()
+    expect(screen.getByText('외도에서 2시간 · 약 16:40 도장포 선착장 복귀')).toBeInTheDocument()
+    expect(container).not.toHaveTextContent('왕복이에요')
+    expect(container).not.toHaveTextContent('같은 배로')
     unmount()
 
     renderFerry(destination({ next: [{ courseId: 1, date: '2026-09-15', depart: '10:30', returnApprox: '13:10' }] }))
-    expect(screen.getByText('다음 배 9/15(화) 10:30 · 약 13:10 복귀')).toBeInTheDocument()
+    expect(screen.getByText('다음 배 9/15(화) 10:30')).toBeInTheDocument()
   })
 
   it('다음 배가 없고 창 안에 미공개 날이 있으면 「시각 미확인」, 전부 공개면 「앞으로 14일 동안 예정된 배가 없어요」', () => {
@@ -187,30 +210,64 @@ describe('FerryTimetable — 다음 배', () => {
     expect(screen.getByText('앞으로 14일 동안 예정된 배가 없어요')).toBeInTheDocument()
   })
 
-  it('코스가 둘이면 줄마다 코스 이름을 붙인다', () => {
+  it('코스가 둘이면 가장 이른 편이 큰 줄이고, 둘째 줄에 코스 이름 · 다른 코스의 다음 편은 아래 줄', () => {
     renderFerry(dock())
 
-    const lines = screen.getAllByText(/^다음 배 14:00/).map((el) => el.textContent)
-    expect(lines).toEqual([
-      expect.stringContaining('외도상륙+해금강선상관광'),
-      expect.stringContaining('해금강선상관광'),
-    ])
-    expect(screen.getByText(/약 15:00 복귀/)).toBeInTheDocument()
+    expect(screen.getByText('다음 배 14:00')).toBeInTheDocument()
+    expect(screen.getByText('외도상륙+해금강선상관광 · 외도에서 2시간 · 약 16:40 도장포 선착장 복귀')).toBeInTheDocument()
+    expect(screen.getByText('해금강선상관광 14:00 · 약 15:00 복귀')).toBeInTheDocument()
   })
 })
 
-describe('FerryTimetable — 코스와 각주', () => {
-  it('각주는 표 바로 위에 코스 이름(상품 원문)을 코스 색으로 — 외도상륙 검정, 선상관광 빨강', () => {
+describe('FerryTimetable — 예약 · 이용 안내 · 각주', () => {
+  it('코스가 하나(외도 화면)면 다음 배 카드 아래 카드 폭 예약 버튼 하나 — 새 창, opener 없이', () => {
+    renderFerry(destination())
+
+    const links = screen.getAllByRole('link', { name: /예약 — 새 창에서 열려요$/ })
+    expect(links).toHaveLength(1)
+    const book = links[0]
+    expect(book).toHaveAttribute('href', LANDING.bookingUrl)
+    expect(book).toHaveAttribute('target', '_blank')
+    expect(book.getAttribute('rel')).toContain('noopener')
+    expect(book.getAttribute('rel')).toContain('noreferrer')
+    expect(book).toHaveTextContent('예약센터에서 예약 ↗')
+    expect(screen.getByText('다음 배 14:00').compareDocumentPosition(book) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('코스가 둘이면 예약은 이용 안내의 코스마다 — 선착장 × 코스마다 하나', () => {
     renderFerry(dock())
 
-    const landingNote = screen.getByText(LANDING.name).closest('li')
-    const cruiseNote = screen.getByText(CRUISE.name).closest('li')
+    expect(screen.getAllByRole('link', { name: /예약 — 새 창에서 열려요$/ })).toHaveLength(2)
+    expect(screen.getByRole('link', { name: '외도상륙+해금강선상관광 예약 — 새 창에서 열려요' })).toHaveAttribute(
+      'href',
+      LANDING.bookingUrl,
+    )
+  })
+
+  it('이용 안내: 코스 이름 · 총 소요시간 · 체류(또는 「외도에 내리지 않아요」) · 상품 원문 이름', () => {
+    renderFerry(dock())
+
+    const info = screen.getByRole('region', { name: '이용 안내' })
+    expect(within(info).getByText('약 2시간 40분')).toBeInTheDocument()
+    expect(within(info).getByText('약 1시간')).toBeInTheDocument()
+    expect(within(info).getByText('외도에 내려 2시간 구경하고 돌아와요')).toBeInTheDocument()
+    expect(within(info).getAllByText('외도에 내리지 않아요')).toHaveLength(1)
+    expect(within(info).getByText(LANDING.name)).toBeInTheDocument()
+    expect(within(info).getByText(CRUISE.name)).toBeInTheDocument()
+  })
+
+  it('각주는 코스가 둘일 때만, 표 머리줄 아래에 코스 색으로 — 외도상륙 검정, 선상관광 빨강', () => {
+    const { unmount } = renderFerry(dock())
+
+    const landingNote = screen.getByText(LANDING.legendLabel, { selector: 'li' })
+    const cruiseNote = screen.getByText(CRUISE.legendLabel, { selector: 'li' })
     expect(landingNote).toHaveClass(styles.landing)
     expect(cruiseNote).toHaveClass(styles.cruise)
-    expect(landingNote).toHaveTextContent(`● ${LANDING.name}`)
-
-    // 각주 → 날짜 줄 순서
     expect(cruiseNote.compareDocumentPosition(rowOf('9/14(월)')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    unmount()
+
+    renderFerry(destination())
+    expect(screen.queryByText(LANDING.legendLabel, { selector: 'li' })).not.toBeInTheDocument()
   })
 
   it('외도상륙 편과 선상관광 편은 aria와 색이 다르다', () => {
@@ -222,49 +279,32 @@ describe('FerryTimetable — 코스와 각주', () => {
     expect(cruiseItem).toHaveClass(styles.cruise)
     expect(landingItem).not.toHaveClass(styles.cruise)
   })
-
-  it('외도 화면은 보이는 코스만 — 각주 한 줄', () => {
-    renderFerry(destination())
-
-    expect(screen.getByText(LANDING.name)).toBeInTheDocument()
-    expect(screen.queryByText(CRUISE.name)).not.toBeInTheDocument()
-  })
-
-  it('코스 카드: 이름 · 총 소요시간 · 선상관광이면 「외도에 내리지 않아요」', () => {
-    renderFerry(dock())
-
-    expect(screen.getByText('약 2시간 40분')).toBeInTheDocument()
-    expect(screen.getByText('약 1시간')).toBeInTheDocument()
-    expect(screen.getAllByText('외도에 내리지 않아요')).toHaveLength(1)
-  })
-
-  it('예약 링크는 선착장 × 코스마다 하나 — 새 창, opener 없이', () => {
-    renderFerry(dock())
-
-    const links = screen.getAllByRole('link', { name: /예약 — 새 창에서 열려요$/ })
-    expect(links).toHaveLength(2)
-    const landingLink = screen.getByRole('link', { name: '외도상륙+해금강선상관광 예약 — 새 창에서 열려요' })
-    expect(landingLink).toHaveAttribute('href', LANDING.bookingUrl)
-    expect(landingLink).toHaveAttribute('target', '_blank')
-    expect(landingLink.getAttribute('rel')).toContain('noopener')
-    expect(landingLink.getAttribute('rel')).toContain('noreferrer')
-    expect(landingLink).toHaveTextContent('예약센터에서 예약 ↗')
-  })
 })
 
-describe('FerryTimetable — 타는 곳·왕복·주의·출처', () => {
-  it('선착장 · 주소 · 왕복 안내(같은 배로 금지)', () => {
-    const { container } = renderFerry(destination())
+describe('FerryTimetable — 타는 곳 · 주의 · 출처', () => {
+  it('타는 곳은 선착장 지도 카드 — 이름 · 주소, 펼치면 지도와 카카오맵 길찾기(선착장 좌표)', async () => {
+    const user = userEvent.setup()
+    renderFerry(destination())
 
-    expect(screen.getByText('도장포 선착장에서 타요.')).toBeInTheDocument()
-    expect(screen.getByText('경남 거제시 남부면 도장포1길 55')).toBeInTheDocument()
-    expect(
-      screen.getByText('왕복이에요. 외도에 내려 2시간 구경한 뒤 출발한 도장포 선착장으로 돌아와요.'),
-    ).toBeInTheDocument()
-    expect(container).not.toHaveTextContent('같은 배로')
+    const card = screen.getByRole('region', { name: '타는 곳' })
+    expect(within(card).getByText('도장포 선착장')).toBeInTheDocument()
+    expect(within(card).getByText('경남 거제시 남부면 도장포1길 55')).toBeInTheDocument()
+
+    await user.click(within(card).getByRole('button', { expanded: false }))
+    const directions = within(card).getByRole('link', { name: '도장포 선착장 카카오맵 길찾기 — 새 창에서 열려요' })
+    expect(directions.getAttribute('href')).toContain('34.7421508,128.6626096')
+    expect(await within(card).findByText('지도를 불러오지 못했어요')).toBeInTheDocument()
   })
 
-  it('access가 있으면 예약센터 문장을 인용한다', () => {
+  it('선착장 좌표가 없으면 펼칠 것 없이 이름 · 주소만', () => {
+    renderFerry(destination({ dock: { ...DOCK, lat: null, lng: null } }))
+
+    const card = screen.getByRole('region', { name: '타는 곳' })
+    expect(within(card).getByText('도장포 선착장')).toBeInTheDocument()
+    expect(within(card).queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('access가 있으면 예약센터 문장을 타는 곳 카드에 인용한다(접혀 있어도)', () => {
     renderFerry(
       destination({
         relation: 'TOWARD',
@@ -272,16 +312,18 @@ describe('FerryTimetable — 타는 곳·왕복·주의·출처', () => {
       }),
     )
 
-    expect(screen.getByText('예약센터 안내 — “도보 1분거리에 바람의 언덕이 있습니다.”')).toBeInTheDocument()
+    const card = screen.getByRole('region', { name: '타는 곳' })
+    expect(within(card).getByText('예약센터 안내 — “도보 1분거리에 바람의 언덕이 있습니다.”')).toBeInTheDocument()
   })
 
-  it('출항 주의와 출처 한 줄 — 도장포는 누리집 대조를 덧붙인다', () => {
+  it('출항 주의와 출처 한 줄 — 맨 아래, 도장포는 누리집 대조를 덧붙인다', () => {
     const { unmount } = renderFerry(destination())
 
-    expect(screen.getByText(/출항은 기상·인원에 따라 10~30분/)).toBeInTheDocument()
-    expect(
-      screen.getByText('출처 외도유람선 예약센터 · 9/13 확인 · 10/31까지 공개 · 도장포유람선 누리집과 대조'),
-    ).toBeInTheDocument()
+    const caution = screen.getByText(/출항은 기상·인원에 따라 10~30분/)
+    const source = screen.getByText('출처 외도유람선 예약센터 · 9/13 확인 · 10/31까지 공개 · 도장포유람선 누리집과 대조')
+    const info = screen.getByRole('region', { name: '이용 안내' })
+    expect(info.compareDocumentPosition(caution) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(caution.compareDocumentPosition(source) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     unmount()
 
     renderFerry(destination({ coverage: { ...COVERAGE, crossCheckUrl: null } }))

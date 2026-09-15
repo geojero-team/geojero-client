@@ -1,25 +1,6 @@
-/* 유람선 시간표 — Figma 프레임 없음(2026-09-14 사용자 결정).
-   원천 사이트(외도유람선 예약센터 배시간표)처럼 날짜마다 한 줄에 시각을 늘어놓고, 코스는 글자 색으로 가릅니다.
-   카드·출처 모양은 스팟 시간표(SpotTimetablePage.module.css)의 버스 조각과 맞춥니다. */
-
-.root {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.boardBlock {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.board {
-  margin: 0;
-  font: var(--type-caption);
-  color: var(--text-secondary);
-  word-break: keep-all;
-}
+/* 배 칩 화면 — 외도 유람선(FerryTimetable) · 도선(ShuttleTimetable)이 같이 씁니다. Figma 프레임 없음.
+   2026-09-15 재배치: 다음 배 카드 · 시간표 머리줄 · 한 편 한 줄 · 출처는 버스 조각과 **같은 CSS**
+   (SpotTimetablePage.module.css)를 쓰고, 여기에는 배에만 있는 조각만 둡니다 — 날짜 줄(외도) · 코스 색 · 행동 버튼 · 이용 안내. */
 
 .caption {
   margin: 0;
@@ -37,87 +18,45 @@
   color: var(--ferry-cruise);
 }
 
-/* 다음 배 카드 — 버스의 다음 버스 카드와 같은 면 */
-.nextCard {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 14px;
-  border-radius: var(--radius-card);
-  background: var(--brand-tint);
-}
-
-.nextLine {
-  margin: 0;
-  font: var(--type-body-strong);
-  color: var(--brand-strong);
-  word-break: keep-all;
-}
-
-/* 코스가 둘일 때 줄 끝의 코스 이름. 빨강 글자는 연파랑 면 위에서 대비가 모자라 점만 코스 색으로 칠합니다. */
-.nextCourse {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: 8px;
-  font: var(--type-label);
-  color: var(--brand-strong);
-}
-
 .dot {
   font-size: 10px;
   line-height: 1;
 }
 
-.courses {
+/* ── 행동 — 다음 배 카드 바로 아래. 버스 타는 곳 카드의 「카카오맵으로 길찾기」와 같은 버튼 모양. ── */
+.actions {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  gap: var(--space-sm);
+  margin-bottom: 12px;
 }
 
-.course {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 14px;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-card);
+.action {
+  flex: 1;
+  display: block;
+  padding: 9px 0;
+  border: 1px solid var(--brand-surface);
+  border-radius: 10px;
   background: var(--bg-page);
-}
-
-.courseHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-}
-
-.courseLabel {
-  font: var(--type-body-strong);
-  color: var(--text-primary);
-}
-
-.courseTotal {
-  font: var(--type-caption);
-  color: var(--text-secondary);
-}
-
-/* 이 클라의 첫 외부 링크 — 새 창이라 ↗를 붙입니다. */
-.book {
-  align-self: flex-start;
-  font: var(--type-label);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
   color: var(--brand-strong);
+  text-align: center;
+  text-decoration: none;
 }
 
-/* 각주 — 표 바로 위 두 줄(원천 사이트와 같은 자리) */
+.action:active {
+  background: var(--bg-surface);
+}
+
+/* ── 외도 날짜 줄 — 버스 한 편 한 줄처럼 화면 끝까지 닿는 아래 테두리 ── */
+
+/* 각주 — 코스가 둘일 때만, 표 머리줄 바로 아래(원천 사이트와 같은 자리) */
 .legend {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-wrap: wrap;
+  gap: 2px 14px;
   margin: 0 0 6px;
   padding: 0;
   list-style: none;
@@ -128,7 +67,7 @@
 .rows {
   display: flex;
   flex-direction: column;
-  margin: 0;
+  margin: 0 -20px;
   padding: 0;
   list-style: none;
 }
@@ -137,7 +76,7 @@
   display: flex;
   align-items: baseline;
   gap: 12px;
-  padding: 11px 0;
+  padding: 11px 20px;
   border-bottom: 1px solid var(--border-default);
 }
 
@@ -194,8 +133,89 @@
   word-break: keep-all;
 }
 
-.source {
-  margin: 4px 0 0;
-  font: var(--type-label);
+/* ── 이용 안내 — 표 다음 섹션. 표와 크게 띄우고(24) 머리줄은 버스 「평일 시간표」와 같은 굵기. ── */
+.info {
+  margin-top: var(--space-xl);
+}
+
+.infoTitle {
+  margin: 0 0 2px;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+/* 도선 — 이름 / 값 두 칸. 이름 칸은 네 글자(「도착 선착장」 제외 두 글자)가 들어가는 폭. */
+.facts {
+  margin: 0;
+}
+
+.fact {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.fact dt {
+  font: var(--type-caption);
   color: var(--text-secondary);
+}
+
+.fact dd {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+/* 외도 — 코스마다 한 줄 묶음(이름 · 소요 / 체류 / 상품 원문 / 예약) */
+.courses {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.course {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.courseHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.courseLabel {
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.courseTotal {
+  margin-left: auto;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.courseLine {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+/* 코스가 둘일 때 코스마다 예약 — 글자 링크(새 창이라 ↗). */
+.book {
+  align-self: flex-start;
+  margin-top: 3px;
+  font: var(--type-label);
+  color: var(--brand-strong);
 }
