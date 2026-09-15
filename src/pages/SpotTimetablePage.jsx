@@ -306,6 +306,11 @@ export default function SpotTimetablePage() {
         : null
   const nextSub = showsNow && when ? (basis ? t('spotTime.nextSub', { when, basis }) : when) : null
 
+  /* 정류장도 배 연결도 없는 스팟 — 시간표를 아직 모으지 않은 곳(서버 TIMETABLE_PENDING, 2026-09-15 공곶이·내도 · 지심도).
+     빈 이유는 「준비 중」이고, 타는 곳 문장(「원문 시간표에 이 스팟의 정류장 칸이 없어요」)과 BIS 출처 줄은 그리지 않습니다 —
+     버스 이야기가 아니라서 둘 다 틀린 말이 됩니다. 칩은 팀원 규칙대로 둡니다(배가 없으면 버스 칩으로 돌아감). */
+  const pendingTimetable = d?.emptyReason === 'TIMETABLE_PENDING'
+
   const estimatedCount = shown.filter((x) => x.departEstimated).length
   const allEstimated = shown.length > 0 && estimatedCount === shown.length
   const someEstimated = estimatedCount > 0 && !allEstimated
@@ -345,7 +350,7 @@ export default function SpotTimetablePage() {
               고현터미널 → 스팟은 서버의 alightLabel이 **스팟 쪽** 정류장이라 그대로 쓰면
               "해금강 정류장에서 타요"가 됩니다 — 타는 곳은 고현터미널이므로 따로 적습니다.
               배 칩은 선착장 문장을 FerryTimetable이 칩 아래에 적습니다. */}
-          {d && (
+          {d && !pendingTimetable && (
             <p className={styles.board}>
               {dir === 'fromOrigin'
                 ? t('spotTime.board', { stop: ORIGIN })
@@ -422,7 +427,12 @@ export default function SpotTimetablePage() {
           {/* ★ 빈 결과의 이유. 셋을 갈라 말합니다. */}
           {d?.count === 0 && (
             <div className={`${styles.empty} ${styles.block}`}>
-              {d.emptyReason === 'UNKNOWN_TIME' ? (
+              {pendingTimetable ? (
+                <>
+                  <p className={styles.emptyTitle}>{t('spotTime.pendingTitle')}</p>
+                  <p className={styles.emptyText}>{t('spotTime.pendingText')}</p>
+                </>
+              ) : d.emptyReason === 'UNKNOWN_TIME' ? (
                 <>
                   <p className={styles.emptyTitle}>
                     {t('spotTime.emptyUnknown', { routes: (d.unknownTimeRoutes ?? []).join('·') })}
@@ -508,7 +518,7 @@ export default function SpotTimetablePage() {
           )}
 
           {/* 출처 — 맨 아래 두 줄(530:365). 정류소 좌표 줄은 타는 곳이 있을 때만 원천이 있습니다. */}
-          {d && (
+          {d && !pendingTimetable && (
             <div className={styles.sources}>
               <p className={styles.source}>{t('spotTime.sourceTime', { source: d.source, date: d.baseDate })}</p>
               {d.boarding?.source && <p className={styles.source}>{d.boarding.source}</p>}

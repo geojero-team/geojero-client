@@ -227,6 +227,10 @@ export default {
   'spotTime.emptyUnknownHint': '시각은 BIS에서 확인해 주세요 — 없는 시각을 지어내지 않습니다.',
   'spotTime.emptyNoService': '이 날은 이 구간을 가는 버스가 없어요.',
   'spotTime.emptyNoStop': '원문 시간표에 이 스팟의 정류장 칸이 없어요.',
+  // 정류장도 배 연결도 없는 스팟(서버 emptyReason TIMETABLE_PENDING · 2026-09-15 공곶이·내도 · 지심도) —
+  // 시각을 아직 모으지 못했습니다. 위 「정류장 칸이 없어요」(원문에 칸이 없음)와 다른 이유라 문구를 가릅니다.
+  'spotTime.pendingTitle': '이 스팟의 시간표는 아직 준비 중이에요.',
+  'spotTime.pendingText': '가는 배와 버스 시각을 모으고 있어요.',
   'spotTime.emptyNoStopHint': '버스가 지나가더라도 몇 시에 닿는지는 원문에 적혀 있지 않습니다.',
 
   // ── 유람선 시간표 (스팟 시간표의 배 칩) ──────────────────────────────────

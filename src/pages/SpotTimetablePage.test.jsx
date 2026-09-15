@@ -290,6 +290,29 @@ describe('SpotTimetablePage — 유람선', () => {
     expect(api.spotDepartures).toHaveBeenCalledWith('5', { date: DATE, after: NOW })
   })
 
+  it('정류장도 배 연결도 없는 스팟(서버 TIMETABLE_PENDING) — 「준비 중」, 타는 곳 문장·BIS 출처 줄은 없다', async () => {
+    api.spotFerries.mockResolvedValue(ferriesOf(3, { hasBusStop: false, ferries: [] }))
+    api.spotDepartures.mockResolvedValue(
+      busOf(3, {
+        boardStop: null,
+        alightLabel: null,
+        departures: [],
+        count: 0,
+        firstDeparture: null,
+        lastDeparture: null,
+        next: null,
+        byRoute: [],
+        emptyReason: 'TIMETABLE_PENDING',
+      }),
+    )
+    renderAt(`/timetable/3?date=${DATE}&now=${NOW}`)
+
+    expect(await screen.findByText('이 스팟의 시간표는 아직 준비 중이에요.')).toBeInTheDocument()
+    expect(screen.getByText('가는 배와 버스 시각을 모으고 있어요.')).toBeInTheDocument()
+    expect(screen.queryByText('원문 시간표에 이 스팟의 정류장 칸이 없어요.')).not.toBeInTheDocument()
+    expect(screen.queryByText(/거제시 BIS/)).not.toBeInTheDocument()
+  })
+
   it('/timetable/1?to=5 — 다음 스팟이 외도면 그 칩은 배(도장포 외도상륙), 거꾸로 칩은 없다', async () => {
     const user = userEvent.setup()
     api.spotFerries.mockResolvedValue(BARAM_TOWARD_OEDO)

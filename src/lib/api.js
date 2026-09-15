@@ -195,6 +195,7 @@ export const api = {
    *   UNKNOWN_TIME         정차는 하는데 원문에 시각이 없다 (unknownTimeRoutes가 노선을 댑니다)
    *   NO_SERVICE           그 노선이 거기 서지 않는다
    *   NO_STOP_IN_TIMETABLE 원문 시간표에 이 스팟의 정류장 칸이 없다 (boardStop이 null)
+   *   TIMETABLE_PENDING    정류장도 배 연결도 없다 — 아직 시간표를 모으지 않은 곳(2026-09-15 공곶이·내도 · 지심도)
    *
    * SpotDeparturesRes { poiId, name, shortName, boardStop, alightLabel,
    *   boardStopDiffers, to: { poiId, stop, name }, date, dayClass,
