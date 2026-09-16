@@ -1,15 +1,13 @@
 .screen {
   position: relative;
   width: 100%;
-  /* Figma 02-1 프레임 390×844 그대로.
-     폭만 잠그고 높이를 창에 맡기면, 세로로 긴 데스크톱 창에서 화면이 늘어나
-     Figma와 비율이 달라집니다 — 특히 남는 높이를 전부 먹는 지도가 그렇습니다.
-     그래서 높이도 844로 잠급니다. 폰에서는 뷰포트가 844보다 작아 그대로 꽉 찹니다.
-     큰 모니터에서 손톱만 해지는 건 lib/frameZoom.js가 배율을 올려 해결합니다
-     — 비율은 그대로 두고 크기만 키웁니다. */
+  /* Figma 프레임 390×844 그대로 그리고, 기기 크기는 배율(lib/frameZoom.js)이 맞춥니다.
+     폰에서는 배율 = 창 폭 ÷ 390 이라 이 390 이 화면 폭과 정확히 같아집니다.
+
+     높이를 배율로 나누는 이유: CSS zoom 은 길이를 곱하지만 100dvh 는 그대로 창 높이라,
+     나누지 않으면 프레임이 창보다 배율만큼 길어져 아래가 잘립니다. */
   max-width: 390px;
-  height: 100dvh;
-  max-height: 844px;
+  height: calc(100dvh / var(--frame-zoom, 1));
   margin: 0 auto;
   zoom: var(--frame-zoom, 1);
   display: flex;
@@ -18,8 +16,11 @@
   background: var(--bg-page);
 }
 
-@media (min-width: 430px) {
+/* 넓은 창에서는 '폰 프레임을 보는 화면'입니다 — 세로로 긴 창에서 늘어나지 않게 844 로 잠그고
+   바닥과 구분되도록 테두리를 둡니다. 폰에서는 둘 다 걸지 않습니다(앱에서 양옆에 선이 보입니다). */
+@media (min-width: 640px) {
   .screen {
+    max-height: 844px;
     border-inline: 1px solid var(--border-default);
   }
 }
