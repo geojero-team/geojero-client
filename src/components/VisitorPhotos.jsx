@@ -347,10 +347,13 @@ export default function VisitorPhotos({ poiId, spotName, uploadInUrl = false }) 
                       loading="lazy"
                     />
                   </button>
-                  <ReportButton
-                    label={t('visitorPhotos.reportAria', { n: index + 1 })}
-                    onClick={() => askReport(photo.photoId)}
-                  />
+                  {/* 내 사진은 신고 대상이 아닙니다 — 지우면 되니까요(2026-09-16 사용자 결정). */}
+                  {!photo.isMine && (
+                    <ReportButton
+                      label={t('visitorPhotos.reportAria', { n: index + 1 })}
+                      onClick={() => askReport(photo.photoId)}
+                    />
+                  )}
                 </div>
               ))}
         </div>
@@ -395,7 +398,7 @@ export default function VisitorPhotos({ poiId, spotName, uploadInUrl = false }) 
             onPrev={() => showInViewer(viewerIndex - 1)}
             onNext={() => showInViewer(viewerIndex + 1)}
             onClose={closeViewer}
-            onReport={() => askReport(viewing.photoId)}
+            onReport={viewing.isMine ? undefined : () => askReport(viewing.photoId)}
             actions={deleteAction(viewing)}
           />
         </ScreenPortal>

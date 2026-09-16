@@ -224,7 +224,9 @@ describe('방문자 사진 — 보기', () => {
     await user.click(within(viewer).getByRole('button', { name: '이전 사진' }))
     expect(within(viewer).getByRole('button', { name: '삭제' })).toBeInTheDocument()
 
-    // 신고는 내 사진·남의 사진을 가리지 않습니다 — 타일마다 하나, 뷰어에 하나.
+    // 내 사진에는 신고가 없습니다(2026-09-16 사용자 결정) — 마음에 안 들면 지우면 됩니다.
+    expect(within(viewer).queryByRole('button', { name: '신고' })).not.toBeInTheDocument()
+    await user.click(within(viewer).getByRole('button', { name: '다음 사진' }))
     expect(within(viewer).getByRole('button', { name: '신고' })).toBeInTheDocument()
   })
 
@@ -654,10 +656,11 @@ describe('방문자 사진 — 신고', () => {
     api.reportVisitorPhoto.mockResolvedValue(null)
     const user = renderSection()
 
+    // 남의 사진(41)에만 붙습니다 — 42 는 내 사진이라 신고가 없습니다.
     const buttons = await reportButtons()
-    expect(buttons).toHaveLength(2)
+    expect(buttons).toHaveLength(1)
 
-    await user.click(buttons[1])
+    await user.click(buttons[0])
     expect(api.reportVisitorPhoto).not.toHaveBeenCalled()
     expect(screen.getByText('이 사진을 신고할까요?')).toBeInTheDocument()
 
@@ -667,7 +670,8 @@ describe('방문자 사진 — 신고', () => {
       expect(screen.getByText('신고했어요. 이 사진은 바로 보이지 않게 했어요.')).toBeInTheDocument(),
     )
     expect(api.getVisitorPhotos).toHaveBeenCalledTimes(2)
-    expect(await reportButtons()).toHaveLength(1)
+    // 남은 한 장은 내 사진이라 신고 버튼이 아예 없습니다
+    expect(screen.queryAllByRole('button', { name: /방문자 사진 신고하기$/ })).toHaveLength(0)
   })
 
   it('취소하면 아무것도 부르지 않는다', async () => {
@@ -701,19 +705,21 @@ describe('방문자 사진 — 신고', () => {
     localStorage.setItem('gj_token', 'tok')
     api.getVisitorPhotos
       .mockResolvedValueOnce(listOf(PHOTOS))
-      .mockResolvedValueOnce(listOf([PHOTOS[1]]))
+      // 신고한 남의 사진(41)이 빠지고 내 사진(42)만 남습니다
+      .mockResolvedValueOnce(listOf([PHOTOS[0]]))
     api.reportVisitorPhoto.mockResolvedValue(null)
     const user = renderSection()
 
+    // 두 번째 타일이 남의 사진입니다 — 내 사진에는 신고가 없습니다
     const tiles = await screen.findAllByRole('button', { name: /번째 방문자 사진$/ })
-    await user.click(tiles[0])
+    await user.click(tiles[1])
     const viewer = screen.getByRole('dialog')
     await user.click(within(viewer).getByRole('button', { name: '신고' }))
     // 뷰어의 신고 버튼과 확인 줄의 「신고」가 같은 이름이라, 묻는 줄 안에서 고릅니다.
     const confirmRow = screen.getByText('이 사진을 신고할까요?').parentElement
     await user.click(within(confirmRow).getByRole('button', { name: '신고' }))
 
-    expect(api.reportVisitorPhoto).toHaveBeenCalledWith(42)
+    expect(api.reportVisitorPhoto).toHaveBeenCalledWith(41)
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 })
