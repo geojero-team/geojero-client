@@ -70,7 +70,8 @@ const COURSE_301 = {
     { seq: 1, mode: 'BUS', durationMin: 40, estimated: false, rides: [ride('55')], alight: { stop: '학동', distanceM: 311 } },
     { seq: 2, mode: 'BUS', durationMin: 10, estimated: false, rides: [ride('55')] },
     { seq: 3, mode: 'BUS', durationMin: 12, estimated: true, rides: [ride('55', false, true)] },
-    { seq: 4, mode: 'BUS', durationMin: 52, estimated: true, rides: [ride('55', true, false)] },
+    // 마지막 구간 — 고현터미널로 돌아간다. 내릴 스팟이 없어 대신 타는 곳이 온다
+    { seq: 4, mode: 'BUS', durationMin: 52, estimated: true, rides: [ride('55', true, false)], board: { stop: '도장포', distanceM: 376 } },
   ],
 }
 
@@ -317,6 +318,27 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     expect(await screen.findByText('지세포 정류장에서 내려 직선 약 680m')).toBeInTheDocument()
     // 같은 정류장 구간에는 내리는 곳 줄이 붙지 않는다 — 버스에서 내리지 않는다
     expect(screen.getByText('같은 정류장 · 바로 이동').parentElement.textContent).toBe('같은 정류장 · 바로 이동')
+  })
+
+  it('마지막 구간에는 돌아갈 때 타는 정류장 — 내릴 스팟이 없다(2026-09-16 사용자 지적)', async () => {
+    renderCourse(101)
+
+    expect(await screen.findByText('도장포 정류장에서 타요 · 직선 약 380m')).toBeInTheDocument()
+    // 「내려」가 아니라 「타요」다 — 같은 구간에 둘이 같이 나오지 않는다
+    expect(screen.queryByText('도장포 정류장에서 내려 직선 약 380m')).not.toBeInTheDocument()
+  })
+
+  it('내리는 곳이 있으면 타는 곳은 적지 않는다 — 구간마다 한 줄', async () => {
+    api.course.mockResolvedValue({
+      ...COURSE_301,
+      legs: COURSE_301.legs.map((leg, i) =>
+        i === 0 ? { ...leg, board: { stop: '고현', distanceM: 0 }, alight: { stop: '학동', distanceM: 271 } } : leg,
+      ),
+    })
+    renderCourse(101)
+
+    expect(await screen.findByText('학동 정류장에서 내려 직선 약 270m')).toBeInTheDocument()
+    expect(screen.queryByText(/고현 정류장에서 타요/)).not.toBeInTheDocument()
   })
 
   it('걷는 시간이 빠져 있다고 각주가 말한다 — 걷는 시간은 어느 원문에도 없다', async () => {

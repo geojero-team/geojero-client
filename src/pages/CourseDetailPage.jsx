@@ -82,19 +82,26 @@ function StopBusIcon() {
 }
 
 /**
- * 「{정류장}에서 내려 직선 약 210m」 — 없으면 null.
+ * 구간 줄 아래 한 줄 — 「{정류장}에서 내려 직선 약 210m」 / 마지막 구간은 「{정류장}에서 타요 · 직선 약 380m」. 없으면 null.
  *
- * 버스가 내려주는 곳은 스팟이 아니라 정류장이다. 이 줄이 없으면 「33번 · 약 45분」이 「45분 뒤 매미성 도착」으로 읽히는데,
- * 매미성은 대금교차로 정류장에서 직선 210m, 해금강은 1.1km 다(2026-09-16 사용자 결정).
- * 이름은 그 구간이 **실제로 내리는 정류장**이라 스팟이 말하는 내리는 곳과 다를 수 있다(씨월드는 코스가 지세포에서 내린다).
- * 거리를 모르면 이름만 적는다 — 값 없이 「직선 약」만 남기지 않는다(절대규칙 3).
+ * **이 구간과 스팟의 관계**를 말합니다. 버스가 서는 곳은 스팟이 아니라 정류장이라, 이 줄이 없으면
+ * 「33번 · 약 45분」이 「45분 뒤 매미성 도착」으로 읽힙니다 — 매미성은 대금교차로 정류장에서 직선 210m, 해금강은 1.1km 입니다.
+ *
+ * **내리는 곳이 있으면 그것, 없으면 타는 곳**입니다(2026-09-16 사용자 결정). 마지막 구간은 고현터미널로 돌아가는 길이라
+ * 내릴 스팟이 없고, 대신 마지막 스팟에서 **어디서 타는지**가 필요합니다 — 학동으로 끝나는 코스 셋은 내린 곳(학동삼거리 110m)과
+ * 타는 곳(학동 310m)이 다른 정류장이고 3배 멉니다. 고현터미널에서 떠나는 첫 구간은 타는 곳이 터미널 자신이라 서버가 주지 않습니다.
+ *
+ * 이름은 그 구간이 **실제로 서는 정류장**이라 스팟이 말하는 내리는 곳과 다를 수 있습니다(씨월드는 시각이 지세포 기준).
+ * 거리를 모르면 이름만 적습니다 — 값 없이 「직선 약」만 남기지 않습니다(절대규칙 3).
  */
-function alightSentence(alight) {
-  if (!alight?.stop) return null
-  const stop = alight.stop.endsWith('종점') ? alight.stop : t('courseDetail.stopName', { stop: alight.stop })
-  return alight.distanceM == null
-    ? t('courseDetail.alight', { stop })
-    : t('courseDetail.alightWithDistance', { stop, dist: formatDistance(alight.distanceM) })
+function stopSentence(leg) {
+  const near = leg.alight?.stop ? leg.alight : leg.board
+  if (!near?.stop) return null
+  const stop = near.stop.endsWith('종점') ? near.stop : t('courseDetail.stopName', { stop: near.stop })
+  const key = near === leg.alight ? 'alight' : 'board'
+  return near.distanceM == null
+    ? t(`courseDetail.${key}`, { stop })
+    : t(`courseDetail.${key}WithDistance`, { stop, dist: formatDistance(near.distanceM) })
 }
 
 function TerminalRow({ label }) {
@@ -116,9 +123,9 @@ function LegRow({ leg }) {
     ? t('courseDetail.legSameStop')
     : t(leg.estimated ? 'courseDetail.legApprox' : 'courseDetail.leg', { route, min: leg.durationMin })
 
-  // 내리는 곳은 **구간 줄**에 답니다(2026-09-16 사용자 결정). 스팟 이름 아래에 두면 스팟의 부제처럼 읽혀
-  // 「대금교차로」가 무엇인지 알 수 없었습니다 — 여기 있으면 「이 버스가 끝나는 곳」이 됩니다.
-  const alightText = alightSentence(leg.alight)
+  // 정류장 줄은 **구간 줄**에 답니다(2026-09-16 사용자 결정). 스팟 이름 아래에 두면 스팟의 부제처럼 읽혀
+  // 「대금교차로」가 무엇인지 알 수 없었습니다 — 여기 있으면 「이 버스와 스팟의 관계」가 됩니다.
+  const alightText = stopSentence(leg)
 
   return (
     <div className={styles.legRow}>
