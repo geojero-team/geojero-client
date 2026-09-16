@@ -9,6 +9,7 @@ import MyPlansPage from './pages/MyPlansPage'
 import SpotDetailPage from './pages/SpotDetailPage'
 import SpotsPage from './pages/SpotsPage'
 import SpotTimetablePage from './pages/SpotTimetablePage'
+import PrivacyPage from './pages/PrivacyPage'
 import TimetableListPage from './pages/TimetableListPage'
 import Tutorial from './components/Tutorial'
 
@@ -46,6 +47,8 @@ export default function App() {
         <Route path="/timetable/:poiId" element={<SpotTimetablePage />} />
         <Route path="/spots/:spotId" element={<SpotDetailPage />} />
         <Route path="/my" element={<MyPlansPage />} />
+        {/* 개인정보처리방침 — 스토어 등재에 필요한 공개 주소(www.geojero.com/privacy) */}
+        <Route path="/privacy" element={<PrivacyPage />} />
         {/* 카카오가 돌려보내는 자리. 이 경로가 카카오 콘솔의 Redirect URI와 같아야 합니다. */}
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

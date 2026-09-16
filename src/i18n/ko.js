@@ -461,6 +461,18 @@ export default {
   'myPlans.emptyText2': '코스 추천은 로그인 없이 가능해요.',
   // 로그인 후 — Figma 379:246(저장 0건) · 380:259(저장 목록)
   'myPlans.logout': '로그아웃',
+
+  /* 회원 탈퇴 — 되돌릴 수 없어 무엇이 사라지는지 먼저 말하고 묻습니다(2026-09-16). */
+  'myPlans.withdraw': '회원 탈퇴',
+  'myPlans.withdrawTitle': '정말 탈퇴할까요?',
+  'myPlans.withdrawText':
+    '저장한 코스와 올린 사진이 모두 지워져요.\n다시 되돌릴 수 없어요.',
+  'myPlans.withdrawKakao': '카카오 계정은 그대로예요. 연결 해제는 카카오 설정에서 할 수 있어요.',
+  'myPlans.withdrawConfirm': '탈퇴하기',
+  'myPlans.withdrawCancel': '취소',
+  'myPlans.withdrawing': '탈퇴하는 중',
+  'myPlans.withdrawFailed': '탈퇴하지 못했어요 — {error}',
+  'myPlans.privacy': '개인정보처리방침',
   'myPlans.loading': '불러오는 중…',
   'myPlans.savedEmptyTitle': '아직 저장한 일정이 없어요',
   'myPlans.savedEmptyText': '저장한 코스가 여기에 모여요.',

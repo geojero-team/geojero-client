@@ -141,6 +141,12 @@ export const api = {
   me: () => request('/api/me', { session: true }),
 
   /**
+   * 회원 탈퇴 — 서버에 있는 그 사람의 것을 전부 지웁니다(계정 · 저장한 코스 · 올린 사진).
+   * 되돌릴 수 없어서 화면이 한 번 더 묻고 부릅니다. 카카오 쪽 연결 해제는 카카오 설정에서 합니다.
+   */
+  deleteAccount: () => request('/api/me', { method: 'DELETE', session: true }),
+
+  /**
    * 추천 코스 목록 — 「코스 추천」 화면(v3 대표 코스 카드 · Figma 585:417).
    *
    * featured=true 면 서버가 규칙(9경 많은 순 · 버스 시간 짧은 순 · 곳 수 · 코드 순)으로 고른

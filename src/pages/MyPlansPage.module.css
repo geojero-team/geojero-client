@@ -250,3 +250,65 @@
   color: var(--text-secondary);
   text-align: center;
 }
+
+/* 맨 아래 한 줄 — 개인정보처리방침(왼쪽) · 회원 탈퇴(오른쪽, 2026-09-16 사용자 지정).
+   헤더의 로그아웃과 같은 링크형입니다 — 면·테두리 없이 보조색. */
+.footer {
+  display: flex;
+  align-items: center;
+  margin-top: var(--space-xl);
+}
+
+.footerLink {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: var(--type-caption);
+  color: var(--status-dim);
+  cursor: pointer;
+}
+
+/* 탈퇴 확인 — 되돌릴 수 없어 그 자리에서 무엇이 사라지는지 말합니다.
+   디자인에 위험(빨강) 색이 없어 새로 만들지 않고, 있는 Button 조합으로 둡니다
+   (취소=보조 · 탈퇴하기=기본). 마지막 확인이라 화면을 덮지 않고 그 자리에 폅니다. */
+.confirm {
+  margin-top: var(--space-sm);
+  padding: var(--space-lg);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+
+.confirmTitle {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.confirmText {
+  margin: var(--space-xs) 0 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  white-space: pre-line;
+}
+
+.confirmNote {
+  margin: var(--space-xs) 0 0;
+  font: var(--type-caption);
+  color: var(--status-dim);
+  word-break: keep-all;
+}
+
+.confirmError {
+  margin: var(--space-xs) 0 0;
+  font: var(--type-caption);
+  color: var(--text-primary);
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}

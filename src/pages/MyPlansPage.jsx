@@ -179,6 +179,26 @@ export default function MyPlansPage() {
     load()
   }, [loggedIn, load])
 
+  /* 회원 탈퇴(2026-09-16) — 되돌릴 수 없어 무엇이 사라지는지 말하고 한 번 더 묻습니다.
+     성공하면 이 화면에 그대로 남아 비로그인 상태가 됩니다 — 다른 데로 튕기지 않습니다. */
+  const [asking, setAsking] = useState(false)
+  const [withdrawError, setWithdrawError] = useState('')
+
+  const withdraw = () => {
+    setBusy(true)
+    setWithdrawError('')
+    api
+      .deleteAccount()
+      .then(() => {
+        clearSession()
+        setAsking(false)
+        setLoggedIn(false)
+        setResult({ status: 'loading', trips: [], error: '' })
+      })
+      .catch((error) => setWithdrawError(t('myPlans.withdrawFailed', { error: error.message })))
+      .finally(() => setBusy(false))
+  }
+
   const logout = () => {
     // 서버 세션 정리는 실패해도 상관없습니다 — 토큰을 버리면 이 브라우저에서는 끝입니다.
     api.logout().catch(() => {})
@@ -263,6 +283,58 @@ export default function MyPlansPage() {
               />
             ))}
           </div>
+        )}
+        {/* 맨 아래 한 줄 — 왼쪽 개인정보처리방침, 오른쪽 회원 탈퇴(사용자 지정 위치).
+            방침은 로그인과 무관하게 늘 보입니다 — 스토어 심사와 이용자 확인에 필요한 공개 문서입니다. */}
+        <footer className={styles.footer}>
+          <button
+            type="button"
+            className={styles.footerLink}
+            onClick={() => navigate('/privacy')}
+          >
+            {t('myPlans.privacy')}
+          </button>
+          <span className={styles.spacer} />
+          {loggedIn && !asking && (
+            <button
+              type="button"
+              className={styles.footerLink}
+              onClick={() => {
+                setAsking(true)
+                setWithdrawError('')
+              }}
+            >
+              {t('myPlans.withdraw')}
+            </button>
+          )}
+        </footer>
+
+        {loggedIn && asking && (
+          <section className={styles.confirm}>
+            <p className={styles.confirmTitle}>{t('myPlans.withdrawTitle')}</p>
+            {/* 문장마다 한 줄 — 무엇이 사라지는지, 되돌릴 수 없다는 것 */}
+            <p className={styles.confirmText}>{t('myPlans.withdrawText')}</p>
+            <p className={styles.confirmNote}>{t('myPlans.withdrawKakao')}</p>
+            {withdrawError && <p className={styles.confirmError}>{withdrawError}</p>}
+            <div className={styles.confirmActions}>
+              <Button
+                variant="secondary"
+                className={styles.action}
+                onClick={() => setAsking(false)}
+                disabled={busy}
+              >
+                {t('myPlans.withdrawCancel')}
+              </Button>
+              <Button
+                className={styles.action}
+                onClick={withdraw}
+                disabled={busy}
+                data-api="DELETE /api/me"
+              >
+                {busy ? t('myPlans.withdrawing') : t('myPlans.withdrawConfirm')}
+              </Button>
+            </div>
+          </section>
         )}
       </div>
 

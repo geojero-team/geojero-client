@@ -1,0 +1,94 @@
+/* 개인정보처리방침 — 읽기용 문서 화면. 머리는 다른 상세 화면과 같은 56 높이입니다. */
+
+.header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  height: 56px;
+  padding: 0 12px 0 8px;
+  background: var(--bg-page);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--text-primary);
+}
+
+.title {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-xs) 20px var(--space-xl);
+  overflow-y: auto;
+  background: var(--bg-page);
+  color: var(--text-secondary);
+}
+
+.lead {
+  margin: 0 0 var(--space-lg);
+  font: var(--type-body);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+.section {
+  margin-bottom: var(--space-lg);
+}
+
+.head {
+  margin: 0 0 var(--space-xs);
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.section p {
+  margin: 0 0 var(--space-xs);
+  font: var(--type-body);
+  word-break: keep-all;
+}
+
+/* 항목 이름은 본문색, 설명은 보조색 — 표처럼 읽히게 왼쪽을 맞춥니다. */
+.list {
+  margin: 0 0 var(--space-xs);
+}
+
+.list dt {
+  margin-top: var(--space-xs);
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.list dd {
+  margin: 2px 0 0;
+  font: var(--type-body);
+  word-break: keep-all;
+}
+
+.note {
+  font: var(--type-caption);
+  color: var(--status-dim);
+}
+
+.mail {
+  color: var(--brand-strong);
+}
+
+.updated {
+  margin: var(--space-lg) 0 0;
+  font: var(--type-caption);
+  color: var(--status-dim);
+}
