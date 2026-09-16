@@ -1,3 +1,4 @@
+import { Flag } from 'lucide-react'
 import { t } from '../i18n'
 import { formatDateWeekday } from '../lib/format'
 import styles from './VisitorPhotoViewer.module.css'
@@ -14,7 +15,16 @@ import styles from './VisitorPhotoViewer.module.css'
  *   · 첫 장의 ‹ · 끝 장의 › 는 비활성으로 흐리게 둡니다(그 모습은 Figma에 없습니다)
  *   · 사진은 390×390 칸 안에 **잘리지 않게** 넣습니다(contain) — 원본 비율 처리가 Figma에 정해져 있지 않습니다
  */
-export default function VisitorPhotoViewer({ photo, index, total, onPrev, onNext, onClose, actions }) {
+export default function VisitorPhotoViewer({
+  photo,
+  index,
+  total,
+  onPrev,
+  onNext,
+  onClose,
+  onReport,
+  actions,
+}) {
   return (
     <div
       className={styles.viewer}
@@ -40,6 +50,17 @@ export default function VisitorPhotoViewer({ photo, index, total, onPrev, onNext
       {/* photo(268:508) */}
       <div className={styles.photo}>
         <img className={styles.image} src={photo.imageUrl} alt="" draggable="false" />
+        {/* 신고 — 사진 우측 위(2026-09-16 사용자 지정). 면 없이 아이콘만 얹습니다. */}
+        {onReport && (
+          <button
+            type="button"
+            className={styles.overlay}
+            onClick={onReport}
+            aria-label={t('visitorPhotos.report')}
+          >
+            <Flag size={18} strokeWidth={2} aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       {/* caption(268:510) — 캡션이 없으면 문단을 그리지 않습니다 */}

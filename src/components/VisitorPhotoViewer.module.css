@@ -54,6 +54,7 @@
 
 /* photo(268:508) — 390×390, 면 #333b4a. 사진은 잘리지 않게 넣습니다. */
 .photo {
+  position: relative; /* 신고 버튼(.overlay)이 사진 칸 우측 위에 붙는 기준입니다 */
   flex: none;
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -121,4 +122,29 @@
 .navButton:disabled {
   opacity: 0.35;
   cursor: default;
+}
+
+/* 신고 — 큰 사진 우측 위(2026-09-16). 타일과 같은 규칙입니다: 면 없이 흰 아이콘 + 그림자.
+   사진 칸(.photo)이 기준이라 사진이 어떤 비율이든 늘 같은 자리에 붙습니다. */
+.overlay {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+  opacity: 0.85;
+  cursor: pointer;
+}
+
+.overlay:hover,
+.overlay:focus-visible {
+  opacity: 1;
 }

@@ -310,6 +310,13 @@ export const api = {
   /** 204 No Content — 본인 사진만. 남의 사진이면 403, 없으면 404. */
   deleteVisitorPhoto: (photoId) =>
     request(`/api/visitor-photos/${photoId}`, { method: 'DELETE', session: true }),
+
+  /**
+   * 사진 신고 — 부적절한 사진을 이용자가 바로 내리는 수단(스토어 심사 요구, 2026-09-16).
+   * 신고 한 건이면 서버가 그 사진을 감춥니다(지우지는 않습니다). 로그인이 필요합니다.
+   */
+  reportVisitorPhoto: (photoId) =>
+    request(`/api/visitor-photos/${photoId}/report`, { method: 'POST', session: true }),
 }
 
 /**

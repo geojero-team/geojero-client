@@ -159,6 +159,15 @@ export default {
   // 「삭제」는 02-1 「신고」(268:512) 자리, 뷰어 캡션 아래에 내 사진일 때만 둡니다(기준문서 §6).
   'visitorPhotos.moreAria': '방문자 사진 더보기',
   'visitorPhotos.delete': '삭제',
+
+  /* 신고(2026-09-16) — 사진마다 우측 위. 누르면 한 번 더 묻고, 신고하면 그 사진은 바로 감춰집니다. */
+  'visitorPhotos.report': '신고',
+  'visitorPhotos.reportAria': '{n}번째 방문자 사진 신고하기',
+  'visitorPhotos.reportConfirm': '이 사진을 신고할까요?',
+  'visitorPhotos.reportCancel': '취소',
+  'visitorPhotos.reported': '신고했어요. 이 사진은 바로 보이지 않게 했어요.',
+  'visitorPhotos.reportFailed': '신고하지 못했어요',
+  'visitorPhotos.reportLoginTitle': '사진을 신고하려면 로그인 해주세요',
   'visitorPhotos.loading': '사진을 불러오는 중',
   'visitorPhotos.loadFailed': '사진을 불러오지 못했어요',
   'visitorPhotos.retry': '다시 시도',

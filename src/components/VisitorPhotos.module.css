@@ -177,3 +177,49 @@
 .deleteDark .question {
   color: #ffffff;
 }
+
+/* 신고(2026-09-16) — 사진마다 우측 위. 사용자 지정: 빨간색을 쓰지 않고 **투명한 버튼**으로 둡니다.
+   사진 위에 얹히므로 면 없이 흰 아이콘 + 그림자로만 보이게 하고, 사진을 가리지 않게 작게 둡니다.
+
+   타일이 곧 버튼이라 그 안에 또 버튼을 넣을 수 없어(중첩 금지) 감싸는 칸을 둡니다 —
+   사진을 여는 버튼과 신고 버튼이 형제로 나란히 놓입니다. */
+.tileWrap {
+  position: relative;
+  flex: none;
+}
+
+.reportButton {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  /* 밝은 사진 위에서도 보이게 — 면을 깔지 않고 그림자로만 띄웁니다. */
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+  opacity: 0.85;
+  cursor: pointer;
+}
+
+.reportButton:hover,
+.reportButton:focus-visible {
+  opacity: 1;
+}
+
+/* 신고 확인 — 타일 위에 띄우면 비좁아서, 목록 아래 한 줄로 묻습니다(알림 문구와 같은 자리). */
+.confirmRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.confirmRow .question {
+  flex: 1;
+}

@@ -1,3 +1,4 @@
+import { Flag } from 'lucide-react'
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import LoginSheet from './LoginSheet'
@@ -63,6 +64,24 @@ function DeleteAction({ confirming, busy, onAsk, onConfirm, onCancel }) {
 }
 
 /**
+ * 신고 버튼 — 사진 우측 위(2026-09-16 사용자 지정). 면도 빨간색도 쓰지 않고 흰 아이콘만 얹습니다.
+ * 타일이 곧 버튼이라 그 안에 넣을 수 없어(버튼 중첩 금지) 타일과 형제로 둡니다.
+ */
+function ReportButton({ label, onClick }) {
+  return (
+    <button
+      type="button"
+      className={styles.reportButton}
+      onClick={onClick}
+      aria-label={label}
+      title={t('visitorPhotos.report')}
+    >
+      <Flag size={16} strokeWidth={2} aria-hidden="true" />
+    </button>
+  )
+}
+
+/**
  * @param poiId        서버 poi_id
  * @param spotName     올리기 시트 제목에 들어갈 이름(shortName) — 「바람의언덕에서 찍은 사진」
  * @param uploadInUrl  `/spots/:id` 화면이면 참. 지도 시트에서는 주지 않습니다
@@ -76,6 +95,11 @@ export default function VisitorPhotos({ poiId, spotName, uploadInUrl = false }) 
   const [viewerIndex, setViewerIndex] = useState(null)
   const [confirmingId, setConfirmingId] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  /* 신고(2026-09-16) — 누르면 목록 아래에서 한 번 더 묻습니다. 타일 위에 띄우면 비좁습니다.
+     신고가 들어가면 서버가 그 사진을 감추므로(V33) 목록을 다시 받으면 사라집니다. */
+  const [reportingId, setReportingId] = useState(null)
+  const [reporting, setReporting] = useState(false)
+  const [loginForReport, setLoginForReport] = useState(false)
   // 섹션 아래 한 줄 — 'uploaded' | 'deleteFailed'
   const [notice, setNotice] = useState(null)
 
@@ -206,6 +230,43 @@ export default function VisitorPhotos({ poiId, spotName, uploadInUrl = false }) 
       })
   }
 
+  /* ── 신고 ───────────────────────────────────────────────────────────────
+     비로그인이면 로그인 시트를 먼저 띄웁니다 — 누가 신고했는지 남아야 장난 신고를 되짚을 수 있습니다.
+     돌아올 곳은 스팟 상세입니다(올리기와 달리 `?upload=1`을 붙이지 않습니다). */
+  const askReport = (photoId) => {
+    setNotice(null)
+    if (!getToken()) {
+      setLoginForReport(true)
+      return
+    }
+    setReportingId(photoId)
+  }
+
+  const confirmReport = () => {
+    const photoId = reportingId
+    setReporting(true)
+    api
+      .reportVisitorPhoto(photoId)
+      .then(() => {
+        // 뷰어에서 신고했으면 닫습니다 — 감춰진 사진이 뷰어에 남아 있으면 안 됩니다.
+        setViewerIndex(null)
+        setNotice('reported')
+      })
+      .catch((error) => {
+        setViewerIndex(null)
+        if (error.status === 401) clearSession()
+        setNotice('reportFailed')
+      })
+      .then(load)
+      .finally(() => {
+        setReporting(false)
+        setReportingId(null)
+      })
+  }
+
+  const loginToReport = () =>
+    uploadInUrl ? beginKakaoLogin() : beginKakaoLoginTo(`/spots/${poiId}`)
+
   const deleteAction = (photo) =>
     photo.isMine && (
       <DeleteAction
@@ -271,22 +332,51 @@ export default function VisitorPhotos({ poiId, spotName, uploadInUrl = false }) 
                 </div>
               ))
             : photos.map((photo, index) => (
-                <button
-                  key={photo.photoId}
-                  type="button"
-                  className={styles.tile}
-                  aria-label={t('visitorPhotos.tileAria', { n: index + 1 })}
-                  onClick={() => showInViewer(index)}
-                >
-                  <img
-                    className={styles.tileImg}
-                    src={photo.imageUrl}
-                    alt=""
-                    draggable="false"
-                    loading="lazy"
+                <div key={photo.photoId} className={styles.tileWrap}>
+                  <button
+                    type="button"
+                    className={styles.tile}
+                    aria-label={t('visitorPhotos.tileAria', { n: index + 1 })}
+                    onClick={() => showInViewer(index)}
+                  >
+                    <img
+                      className={styles.tileImg}
+                      src={photo.imageUrl}
+                      alt=""
+                      draggable="false"
+                      loading="lazy"
+                    />
+                  </button>
+                  <ReportButton
+                    label={t('visitorPhotos.reportAria', { n: index + 1 })}
+                    onClick={() => askReport(photo.photoId)}
                   />
-                </button>
+                </div>
               ))}
+        </div>
+      )}
+
+      {/* 신고 확인 — 되돌릴 수 없는 일이 아니지만(감추기일 뿐) 남의 사진을 내리는 일이라 한 번 더 묻습니다. */}
+      {reportingId != null && (
+        <div className={styles.confirmRow}>
+          <span className={styles.question}>{t('visitorPhotos.reportConfirm')}</span>
+          <button
+            type="button"
+            className={styles.action}
+            onClick={confirmReport}
+            disabled={reporting}
+            data-api="POST /api/visitor-photos/{id}/report"
+          >
+            {t('visitorPhotos.report')}
+          </button>
+          <button
+            type="button"
+            className={styles.action}
+            onClick={() => setReportingId(null)}
+            disabled={reporting}
+          >
+            {t('visitorPhotos.reportCancel')}
+          </button>
         </div>
       )}
 
@@ -305,7 +395,19 @@ export default function VisitorPhotos({ poiId, spotName, uploadInUrl = false }) 
             onPrev={() => showInViewer(viewerIndex - 1)}
             onNext={() => showInViewer(viewerIndex + 1)}
             onClose={closeViewer}
+            onReport={() => askReport(viewing.photoId)}
             actions={deleteAction(viewing)}
+          />
+        </ScreenPortal>
+      )}
+
+      {loginForReport && (
+        <ScreenPortal>
+          <LoginSheet
+            open
+            onClose={() => setLoginForReport(false)}
+            onLogin={loginToReport}
+            title={t('visitorPhotos.reportLoginTitle')}
           />
         </ScreenPortal>
       )}
