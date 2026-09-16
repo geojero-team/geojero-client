@@ -4,6 +4,7 @@ import { t } from '../i18n'
 import { loadKakaoMaps } from '../lib/kakaoLoader'
 import { createPinElement, updateLabelVisibility } from './mapPins'
 import styles from './MapView.module.css'
+import { ORDER_LINE } from '../lib/mapLine'
 
 /** 거제도 대략 중심. 스팟이 로드되면 setBounds로 자동 조정됩니다. */
 const GEOJE_CENTER = { lat: 34.88, lng: 128.62 }
@@ -27,7 +28,6 @@ const FIT_TOP_EXTRA = 60
 const FIT_PADDING = 56
 
 /** 코스 경로 선 — Figma route-line(285:234) 2.5px 단선. 흰 casing 없음. */
-const ROUTE_LINE_WEIGHT = 2.5
 
 /**
  * 모든 스팟이 한 화면에 들어오도록 맞춥니다.
@@ -217,14 +217,12 @@ export default function MapView({
     const kakao = window.kakao
     const path = routePath.map(({ lat, lng }) => new kakao.maps.LatLng(lat, lng))
 
-    // Figma는 흰 casing 없는 2.5px 단선입니다(285:234). 마커 중심끼리 잇습니다.
+    // 마커 중심끼리 잇습니다. Figma(285:234)는 2.5px 파란 실선인데 점선 · 진회색으로 바꿨습니다 — 버스 길이 아니라
+    // 우리가 이은 방문 순서이고 학동 → 해금강처럼 바다를 가로지릅니다(lib/mapLine).
     const line = new kakao.maps.Polyline({
       map,
       path,
-      strokeWeight: ROUTE_LINE_WEIGHT,
-      strokeColor: '#0069b3',
-      strokeOpacity: 1,
-      strokeStyle: 'solid',
+      ...ORDER_LINE,
     })
     linesRef.current = [line]
 

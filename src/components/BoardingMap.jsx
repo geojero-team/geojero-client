@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { t } from '../i18n'
 import { courseImage, courseImageFallback } from '../lib/courseImage'
+import { LINK_LINE } from '../lib/mapLine'
 import { formatDistance } from '../lib/format'
 import { distanceMeters } from '../lib/geo'
 import { loadKakaoMaps } from '../lib/kakaoLoader'
@@ -293,11 +294,6 @@ function fromItem(from, fromSpot) {
   }
   return { at: from, content: fromElement(from.name), kind: 'from', shape: 'dot', width: fromLabelWidth(from.name), height: FROM_HEIGHT, center: FROM_HEIGHT / 2 }
 }
-
-/* 출발 곳 ↔ 정류장 점선(2026-09-16). **실선을 쓰지 않습니다** — 실선 2.5px 파랑은 코스 지도 · 코스 상세에서 「방문 순서」라
-   이 자리에 쓰면 「이 길로 걸어가라」로 읽힙니다. 우리가 아는 것은 두 점 사이 직선뿐이고(카드 줄도 「직선 약 380m」),
-   걷는 길은 「카카오맵으로 도보 길찾기」가 카카오맵에서 엽니다. 점선은 「실제 길이 아님」을 모양으로 말합니다. */
-const LINK_LINE = { strokeWeight: 2, strokeColor: '#0069b3', strokeOpacity: 0.7, strokeStyle: 'shortdash' }
 
 /** 펼쳤을 때만 마운트되는 지도 — 접으면 사라집니다. */
 function MapCanvas({ stops, exceptions, from, showFrom, fromSpot }) {

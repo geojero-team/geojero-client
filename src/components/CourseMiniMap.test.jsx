@@ -150,7 +150,8 @@ describe('CourseMiniMap — 코스 상세 220px 지도(532:324)', () => {
       [STOPS[2].lat, STOPS[2].lng],
       [TERMINAL.lat, TERMINAL.lng],
     ])
-    expect(polylines[0].options).toMatchObject({ map, strokeWeight: 2.5, strokeColor: '#0069b3', strokeStyle: 'solid' })
+    // 순서 선은 버스 길이 아니라 우리가 이은 직선이라 점선 · 진회색입니다(2026-09-16 사용자 결정 — 타는 곳 지도와 같은 규칙).
+    expect(polylines[0].options).toMatchObject({ map, strokeWeight: 2.5, strokeColor: '#344054', strokeStyle: 'dash', strokeOpacity: 0.85 })
 
     unmount()
     expect(polylines[0].setMap).toHaveBeenCalledWith(null)

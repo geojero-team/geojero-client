@@ -3,6 +3,7 @@ import { t } from '../i18n'
 import { distanceMeters } from '../lib/geo'
 import { loadKakaoMaps } from '../lib/kakaoLoader'
 import styles from './CourseMiniMap.module.css'
+import { ORDER_LINE } from '../lib/mapLine'
 
 /**
  * 코스 상세 머리의 220px 지도 — Figma 09-14 확정 `547:206`(그림은 개정 `532:324`와 같음).
@@ -26,9 +27,6 @@ import styles from './CourseMiniMap.module.css'
  */
 
 const FIT_PADDING = 32
-/** 순서 선 — MapView ROUTE_LINE_WEIGHT · 색과 같습니다(Figma 285:234 코스 선). */
-const ROUTE_LINE_WEIGHT = 2.5
-const ROUTE_LINE_COLOR = '#0069b3'
 /**
  * 화면에서 이보다 가까운 번호 핀은 한 핀에 번호를 합쳐 적습니다(「2·3」). 조선해양문화관과 거제씨월드는 113m라
  * 섬 절반을 담는 배율에서 1px 남짓 떨어져 한 핀이 다른 핀을 통째로 가립니다(코스 8개, 2026-09-14 리뷰).
@@ -114,10 +112,7 @@ export default function CourseMiniMap({ stops, terminal }) {
         ? new kakao.maps.Polyline({
             map,
             path,
-            strokeWeight: ROUTE_LINE_WEIGHT,
-            strokeColor: ROUTE_LINE_COLOR,
-            strokeOpacity: 1,
-            strokeStyle: 'solid',
+            ...ORDER_LINE,
           })
         : null
 

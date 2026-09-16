@@ -443,7 +443,8 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     ])
     expect(lines[0].options.strokeStyle).toBe('shortdash')
     expect(lines[0].options.strokeWeight).toBe(2)
-    expect(lines[0].options.strokeColor).toBe('#0069b3')
+    // 파랑은 바다 · 카카오 라벨 · 버스 마커와 같은 계열이라 묻혔습니다(2026-09-16 사용자 결정) — 진회색.
+    expect(lines[0].options.strokeColor).toBe('#344054')
     expect(lines[0].options.strokeOpacity).toBeLessThan(1)
   })
 
