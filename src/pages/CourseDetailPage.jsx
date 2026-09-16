@@ -11,6 +11,7 @@ import { formatDistance } from '../lib/format'
 import { courseTitle } from '../lib/courseTitle'
 import { getToken } from '../lib/session'
 import { formatDuration } from '../lib/format'
+import { ICON_PATHS } from '../lib/spotIcons'
 import { loadSpots, regionsOf } from '../lib/spots'
 import styles from './CourseDetailPage.module.css'
 
@@ -115,30 +116,83 @@ function TerminalRow({ label }) {
   )
 }
 
+/**
+ * 배 구간의 아이콘 — 분류 칩·지도 핀·스팟 상세 선착장 줄과 **같은 유람선 패스**(lib/spotIcons CRUISE)를
+ * 버스 아이콘과 같은 14px 칸에 넣습니다. 그 패스는 28 칸의 6~22 안에 그려져 있어 그 영역만 잘라 씁니다.
+ */
+function StopFerryIcon() {
+  return (
+    <svg className={styles.alightIcon} width="14" height="14" viewBox="6 6 16 16" fill="none" aria-hidden="true">
+      <path d={ICON_PATHS.CRUISE} stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/**
+ * 배 구간 한 줄 — 가는 구간은 「외도상륙+해금강선상관광 · 약 2시간 40분」,
+ * 돌아오는 구간은 「도장포 선착장으로 돌아와요」.
+ *
+ * 왕복 한 덩어리라 구간이 둘인데, 원문이 주는 시간은 **왕복 + 섬 체류를 합친 총 소요시간 하나뿐**이라
+ * 서버가 그 값을 가는 구간에 싣고 돌아오는 구간은 0분으로 준다(V36). 한 방향을 쪼개 만들지 않습니다.
+ *
+ * ⚠️ **머무는 시간은 여기 없습니다** — 그건 배가 아니라 **그 스팟에 대한 사실**이라 스팟 줄이 그립니다
+ * (아래 `stayLine`). 2026-09-16 사용자 결정.
+ */
+function ferryLine(leg) {
+  const f = leg.ferry
+  if (!f) return null
+  return leg.durationMin === 0
+    ? t('courseDetail.ferryReturn', { dock: f.dockName })
+    : t('courseDetail.ferryLeg', { course: f.legendLabel, time: f.totalText })
+}
+
+/**
+ * 스팟 이름 아래 한 줄 — 「2시간 머물러요 · 입장료 별도」.
+ *
+ * 이 값은 **우리가 정한 것이 아니라 배가 정한 것**입니다(2시간 뒤에 배가 떠납니다).
+ * 다른 스팟에 이 줄이 없는 이유는 얼마나 머물지를 사용자가 정하기 때문입니다(2026-09-13 결정) —
+ * 외도만 다른 것이 아니라 **외도만 우리가 아는 것**입니다.
+ *
+ * @param leg 그 스팟에 **닿는** 구간. 배로 닿고 그 배가 내려주는 편일 때만 줄이 생깁니다.
+ */
+function stayLine(leg) {
+  const f = leg?.ferry
+  if (!f || leg.durationMin === 0 || !f.landsOnOedo || f.stayMin == null) return null
+  return t('courseDetail.ferryStay', { stay: formatDuration(f.stayMin) })
+}
+
 /** 구간 한 줄 — `55번 · 40분` · 추정이면 `55번 · 약 12분` · 같은 정류장이면 `같은 정류장 · 바로 이동`. */
 function LegRow({ leg }) {
   const sameStop = leg.mode === 'SAME_STOP'
+  const ferry = leg.mode === 'FERRY' ? ferryLine(leg) : null
   const route = leg.rides?.[0]?.routeNo ?? ''
-  const text = sameStop
-    ? t('courseDetail.legSameStop')
-    : t(leg.estimated ? 'courseDetail.legApprox' : 'courseDetail.leg', { route, min: leg.durationMin })
+  const text = ferry
+    ? ferry
+    : sameStop
+      ? t('courseDetail.legSameStop')
+      : t(leg.estimated ? 'courseDetail.legApprox' : 'courseDetail.leg', { route, min: leg.durationMin })
 
   // 정류장 줄은 **구간 줄**에 답니다(2026-09-16 사용자 결정). 스팟 이름 아래에 두면 스팟의 부제처럼 읽혀
   // 「대금교차로」가 무엇인지 알 수 없었습니다 — 여기 있으면 「이 버스와 스팟의 관계」가 됩니다.
-  const alightText = stopSentence(leg)
+  // 배 구간에는 정류장 줄이 없습니다 — 버스를 타고 내리지 않아 서버가 board·alight 를 주지 않습니다.
+  const subText = ferry ? null : stopSentence(leg)
+  const Icon = StopBusIcon
 
   return (
     <div className={styles.legRow}>
       <span className={styles.rail}>
-        {/* 탄 구간은 선, 같은 정류장(타지 않음)은 점선 — 탄 것과 안 탄 것은 다릅니다. */}
-        <span className={sameStop ? styles.lineDots : styles.line} />
+        {/* 모드마다 선을 가릅니다 — 버스는 실선, 걸어 옮기면 점선, 배는 굵은 점선. */}
+        <span className={ferry ? styles.lineFerry : sameStop ? styles.lineDots : styles.line} />
       </span>
       <span className={styles.legLines}>
-        <span className={styles.legText}>{text}</span>
-        {alightText && (
+        <span className={ferry ? styles.ferryText : styles.legText}>
+          {ferry && <StopFerryIcon />}
+          {text}
+        </span>
+        {subText && (
           <span className={styles.alight}>
-            <StopBusIcon />
-            {alightText}
+            {!ferry && <Icon />}
+            {subText}
           </span>
         )}
       </span>
@@ -146,10 +200,13 @@ function LegRow({ leg }) {
   )
 }
 
-/** 스팟 줄 — 40px 둥근 사진(왼쪽 위에 20px 번호) + 이름, 오른쪽 끝 「시간표 ›」(547:247). */
-function StopRow({ stop, nextPoiId, onOpenTimetable }) {
+/**
+ * 스팟 줄 — 40px 둥근 사진(왼쪽 위에 20px 번호) + 이름, 오른쪽 끝 「시간표 ›」(547:247).
+ * `sub` 가 있으면 이름 아래 한 줄이 붙습니다 — 지금은 배가 정한 체류 시간뿐입니다.
+ */
+function StopRow({ stop, sub, nextPoiId, onOpenTimetable }) {
   return (
-    <div className={styles.stopRow} data-stop={stop.poiId}>
+    <div className={sub ? styles.stopRowWithSub : styles.stopRow} data-stop={stop.poiId}>
       <span className={styles.rail}>
         <span className={styles.thumb}>
           {/* 이름이 바로 옆에 있어 사진은 장식입니다. 링크가 죽으면 자리그림으로. */}
@@ -157,7 +214,10 @@ function StopRow({ stop, nextPoiId, onOpenTimetable }) {
           <span className={styles.badge}>{stop.seq}</span>
         </span>
       </span>
-      <span className={styles.stopName}>{stop.shortName ?? stop.name}</span>
+      <span className={styles.stopLines}>
+        <span className={styles.stopName}>{stop.shortName ?? stop.name}</span>
+        {sub && <span className={styles.stopSub}>{sub}</span>}
+      </span>
       {/* 읽기 도구에는 스팟 이름까지 — 「시간표」 버튼이 서너 개라 이름이 없으면 어느 스팟인지 모릅니다. */}
       <button
         type="button"
@@ -327,24 +387,48 @@ export default function CourseDetailPage() {
                   {t('courseDetail.busChip', { time: formatDuration(course.busMinTotal) })}
                 </span>
                 {/* 서버 legCount 는 같은 정류장 구간까지 세므로(4-09 는 5) 버스를 타는 구간만 다시 셉니다 — 타임라인의 버스 줄 개수와 같은 값. */}
+                {/* 배 시간은 버스와 갈라 적습니다 — 더하면 「버스 약 N분」이 거짓말이 됩니다.
+                    배가 없는 코스에는 이 칩이 없습니다(서버가 ferryMinTotal 0 · ferryTotalText null). */}
+                {course.ferryMinTotal > 0 && (
+                  <span className={styles.chipFerry}>
+                    {t('courseDetail.ferryChip', { time: formatDuration(course.ferryMinTotal) })}
+                  </span>
+                )}
                 <span className={styles.chipLegs}>{t('courseDetail.legChip', { n: legs.filter((leg) => leg.mode === 'BUS').length })}</span>
               </div>
 
               <div className={styles.timeline}>
                 <TerminalRow label={t('courseDetail.departNode', { origin })} />
-                {/* 구간과 스팟이 번갈아 옵니다. legs가 stops보다 하나 많습니다. */}
-                {legs.map((leg, i) => (
-                  <Fragment key={leg.seq}>
-                    <LegRow leg={leg} />
-                    {stops[i] && (
-                      <StopRow
-                        stop={stops[i]}
-                        nextPoiId={legs[i + 1]?.mode === 'SAME_STOP' ? null : stops[i + 1]?.poiId}
-                        onOpenTimetable={openTimetable}
-                      />
-                    )}
-                  </Fragment>
-                ))}
+                {/*
+                  구간과 스팟이 번갈아 옵니다 — 구간이 스팟보다 하나 많습니다.
+                  ⚠️ **배는 예외입니다.** 배는 떠난 선착장으로 돌아오므로 왕복 한 번마다 구간이 하나 더 있는데,
+                  그 돌아오는 구간(0분)이 닿는 곳은 **이미 번호를 받은 선착장**이라 스팟 줄을 다시 그리지 않습니다.
+                  그래서 스팟 번호는 구간 번호가 아니라 따로 셉니다.
+                */}
+                {(() => {
+                  let si = 0
+                  return legs.map((leg, i) => {
+                    const ferryReturn = leg.mode === 'FERRY' && leg.durationMin === 0
+                    const stop = ferryReturn ? null : stops[si++]
+                    // 다음 스팟을 목적지로 넘겨 그 스팟 시간표가 「여기 → 다음」을 열게 합니다.
+                    // 같은 정류장·배로 이어지는 구간에는 넘기지 않습니다 — 버스로 가는 구간이 아니라 서버가 NO_SERVICE 를 줍니다.
+                    const walkNext = legs[i + 1]?.mode === 'SAME_STOP' || legs[i + 1]?.mode === 'FERRY'
+                    return (
+                      <Fragment key={leg.seq}>
+                        <LegRow leg={leg} />
+                        {stop && (
+                          <StopRow
+                            stop={stop}
+                            /* 이 스팟에 **닿는** 구간이 곧 이 구간이다 — 배로 닿았으면 체류가 실려 온다 */
+                            sub={stayLine(leg)}
+                            nextPoiId={walkNext ? null : stops[si]?.poiId}
+                            onOpenTimetable={openTimetable}
+                          />
+                        )}
+                      </Fragment>
+                    )
+                  })
+                })()}
                 <TerminalRow label={t('courseDetail.arriveNode', { origin })} />
               </div>
 

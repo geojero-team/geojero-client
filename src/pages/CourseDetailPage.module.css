@@ -118,6 +118,21 @@
   color: var(--brand-strong);
 }
 
+/* 배 칩 — 버스 칩과 같은 모양이되 테두리로 갈라 둡니다. 배를 버스와 같은 색으로 칠하면
+   「버스 약 1시간 42분 · 배 약 2시간 40분」이 한 값처럼 읽힙니다. */
+.chipFerry {
+  padding: 5px 10px;
+  border: 1px solid var(--brand-tint);
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: normal;
+  color: var(--brand-strong);
+  white-space: nowrap;
+}
+
 .chipLegs {
   padding: 5px 10px; /* 테두리 1px 만큼 줄여 두 칩 높이를 맞춥니다 */
   border: 1px solid var(--border-default);
@@ -166,6 +181,18 @@
   min-height: 28px;
   height: 100%;
   background: var(--map-sea);
+}
+
+/* 배 구간 — **굵은 점선**. 모드마다 선을 가르는 것은 교통 앱의 표준입니다(Transit 앱: 버스 굵은 실선 / 도보 점선).
+   배는 버스가 아니고, 걸어 옮기는 것도 아니라 셋이 서로 달라 보여야 합니다.
+   직선이 아니라 점선인 이유는 코스 지도와 같습니다 — 실선은 「이 길로 간다」로 읽히는데 배가 가는 길을 우리가 모릅니다. */
+.lineFerry {
+  display: block;
+  width: 3px;
+  min-height: 28px;
+  height: 100%;
+  background-image: linear-gradient(var(--map-sea) 55%, transparent 55%);
+  background-size: 3px 8px;
 }
 
 /* 같은 정류장(버스를 타지 않음) — 점선. 탄 구간의 선과 갈라 보여야 합니다. */
@@ -269,12 +296,41 @@
 }
 
 .stopName {
-  flex: 1;
-  min-width: 0;
+  display: block;
   font-family: var(--font-sans);
   font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+/* 이름 + 부제를 한 덩어리로 — 부제가 없으면 예전과 똑같이 한 줄입니다. */
+.stopLines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* 스팟 부제 — 지금은 배가 정한 체류 시간뿐입니다(「2시간 머물러요 · 입장료 별도」).
+   구간 줄의 정류장 문장(.alight)과 같은 13/18 회색이라 타임라인의 결이 하나로 갑니다. */
+.stopSub {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+/* 부제가 붙은 스팟 줄 — 사진(40)보다 글이 길어지므로 위아래 여백을 줄여 리듬을 지킵니다.
+   위로 맞춥니다(center 가 아니라 flex-start) — 가운데로 맞추면 「시간표 ›」가 이름과 부제 사이로
+   내려가 어느 줄에 딸린 버튼인지 흐려집니다. 번호 배지도 이름과 같은 높이에 섭니다. */
+.stopRowWithSub {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 3px 0;
 }
 
 /* 「시간표 ›」 13 Medium, 줄 오른쪽 끝 */
@@ -289,6 +345,20 @@
   color: var(--brand-strong);
   white-space: nowrap;
   cursor: pointer;
+}
+
+/* 배 구간 첫 줄 — 「외도상륙+해금강선상관광 · 약 2시간 40분」. 버스의 「55번 · 40분」과 같은 크기·색이라
+   줄이 늘지 않고 리듬이 같습니다. 다만 유람선 코스 이름이 길어 줄바꿈을 허용합니다(버스는 nowrap). */
+.ferryText {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--text-secondary);
+  word-break: keep-all;
 }
 
 /* 「55번 · 40분」 13 Medium */

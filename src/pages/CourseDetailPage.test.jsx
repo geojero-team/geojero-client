@@ -97,6 +97,49 @@ const COURSE_308 = {
   ],
 }
 
+/**
+ * 운영 3-11(V36) — 배 구간이 든 첫 코스.
+ * 배는 버스와 둘이 다르다: ① **왕복**이라 구간이 둘(가는 구간 160분 · 돌아오는 구간 0분)이고
+ * ② **시각이 날짜마다 달라** departAt·arriveAt 이 없다. 원문이 주는 시간은 왕복 + 외도 체류를
+ * 합친 「약 2시간 40분」 하나뿐이라 그 값이 가는 구간에 실려 온다.
+ */
+const FERRY = {
+  legendLabel: '외도상륙+해금강선상관광',
+  courseName: '외도상륙+해금강, 십자동굴 선상관광(외도입장료 별도)',
+  totalText: '약 2시간 40분',
+  stayMin: 120,
+  landsOnOedo: true,
+  dockName: '도장포',
+  bookingUrl: 'https://www.oedoticket.com/page/view.php?cid=abc',
+}
+
+const COURSE_311 = {
+  ...COURSE_301,
+  courseId: 124,
+  courseCode: '3-11',
+  name: '도장포유람선 · 외도보타니아 · 바람의언덕',
+  title: '배로 건너가는 거제 9경, 외도보타니아',
+  busMinTotal: 102,
+  busTotalText: '약 1시간 42분',
+  ferryMinTotal: 160,
+  ferryTotalText: '약 2시간 40분',
+  legCount: 5,
+  estimatedLegCount: 2,
+  stops: [
+    { seq: 1, poiId: 2, name: '도장포유람선', shortName: '도장포유람선', theme: 'CRUISE', lat: 34.7435, lng: 128.6636 },
+    { seq: 2, poiId: 5, name: '외도보타니아', shortName: '외도보타니아', theme: 'CRUISE', lat: 34.7225, lng: 128.6969 },
+    { seq: 3, poiId: 1, name: '바람의언덕', shortName: '바람의언덕', theme: 'VIEW', lat: 34.7440458, lng: 128.6633111 },
+  ],
+  // fromName·toName 은 운영 응답 그대로입니다 — 배 구간의 둘째 줄이 「어느 스팟에 머무는가」를 거기서 읽습니다.
+  legs: [
+    { seq: 1, mode: 'BUS', fromName: '고현터미널', toName: '도장포유람선', durationMin: 50, estimated: true, rides: [ride('55', false, true)], alight: { stop: '도장포', distanceM: 174 } },
+    { seq: 2, mode: 'FERRY', fromName: '도장포유람선', toName: '외도보타니아', durationMin: 160, estimated: false, rides: [], ferry: FERRY },
+    { seq: 3, mode: 'FERRY', fromName: '외도보타니아', toName: '도장포유람선', durationMin: 0, estimated: false, rides: [], ferry: FERRY },
+    { seq: 4, mode: 'SAME_STOP', fromName: '도장포유람선', toName: '바람의언덕', durationMin: 0, estimated: false, rides: [] },
+    { seq: 5, mode: 'BUS', fromName: '바람의언덕', toName: '고현터미널', durationMin: 52, estimated: true, rides: [ride('55', true, false)], board: { stop: '도장포', distanceM: 376 } },
+  ],
+}
+
 function LocationProbe() {
   const location = useLocation()
   return <output data-testid="loc">{location.pathname + location.search}</output>
@@ -428,5 +471,80 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
 
     await screen.findByText('이 코스는 구간별 버스 정보가 없어요.')
     expect(screen.queryByRole('button', { name: '이 코스 저장하기' })).not.toBeInTheDocument()
+  })
+
+  // ── 배 구간 (2026-09-16) ──────────────────────────────────────────────────
+
+  it('배 구간 줄은 「유람선 코스 · 총 시간」 한 줄이다', async () => {
+    api.course.mockResolvedValue(COURSE_311)
+    renderCourse(124)
+
+    await screen.findByText('외도상륙+해금강선상관광 · 약 2시간 40분')
+  })
+
+  it('머무는 시간은 그 스팟 줄 아래에 붙는다 — 배가 정한 값이라 스팟에 대한 사실이다', async () => {
+    api.course.mockResolvedValue(COURSE_311)
+    renderCourse(124)
+
+    // 정류장 이름(「대금교차로」)은 버스에 대한 것이라 구간 줄에 두지만(2026-09-16),
+    // 「2시간 머물러요」는 그 스팟에 대한 것이라 이름 아래가 맞다 — Tripadvisor·Booking 투어도 그렇다.
+    // 이름이 바로 위에 있으니 「외도보타니아에」를 되풀이하지 않는다.
+    // 「입장료 별도」는 상품 원문 코스명에 든 사실이라 화면에 남아야 한다(부록 G).
+    const name = await screen.findByText('외도보타니아')
+    const row = name.closest('[data-stop]')
+    expect(within(row).getByText('2시간 머물러요 · 입장료 별도')).toBeInTheDocument()
+  })
+
+  it('배가 정하지 않은 스팟에는 체류 줄이 없다 — 얼마나 머물지는 사용자가 정한다', async () => {
+    api.course.mockResolvedValue(COURSE_311)
+    renderCourse(124)
+
+    // 「바람의언덕」은 제목 아래 스팟 체인에도 나오므로 타임라인 줄만 골라 본다
+    await screen.findByText('외도상륙+해금강선상관광 · 약 2시간 40분')
+    const row = document.querySelector('[data-stop="1"]')
+    expect(within(row).getByText('바람의언덕')).toBeInTheDocument()
+    expect(within(row).queryByText(/머물러요/)).not.toBeInTheDocument()
+  })
+
+  it('돌아오는 배 구간은 한 줄 — 떠난 선착장으로 돌아온다', async () => {
+    api.course.mockResolvedValue(COURSE_311)
+    renderCourse(124)
+
+    // 「같은 배로」라고 적지 않는다 — 원문이 같은 배인지 말하지 않는다(기준문서 §3).
+    await screen.findByText('도장포 선착장으로 돌아와요')
+  })
+
+  it('배 시간을 버스 시간과 갈라 적는다 — 배를 버스로 세면 「버스 약 N분」이 거짓말이 된다', async () => {
+    api.course.mockResolvedValue(COURSE_311)
+    renderCourse(124)
+
+    await screen.findByText('버스 약 1시간 42분')
+    expect(screen.getByText('배 약 2시간 40분')).toBeInTheDocument()
+  })
+
+  it('「버스 N번」 칩은 배를 세지 않는다', async () => {
+    api.course.mockResolvedValue(COURSE_311)
+    renderCourse(124)
+
+    // 구간 다섯 중 버스는 둘(고현터미널 → 도장포 · 바람의언덕 → 고현터미널)이다.
+    await screen.findByText('버스 2번')
+  })
+
+  it('배가 없는 코스에는 배 칩을 그리지 않는다', async () => {
+    api.course.mockResolvedValue(COURSE_301)
+    renderCourse(101)
+
+    await screen.findByText('버스 약 1시간 54분')
+    expect(screen.queryByText(/^배 약/)).not.toBeInTheDocument()
+  })
+
+  it('배 구간에는 정류장 줄이 없다 — 버스를 타고 내리지 않는다', async () => {
+    api.course.mockResolvedValue(COURSE_311)
+    renderCourse(124)
+
+    await screen.findByText('외도상륙+해금강선상관광 · 약 2시간 40분')
+    // 도장포 정류장 줄은 버스 구간(첫 구간 하차 · 마지막 구간 승차)에만 있다
+    expect(screen.getByText('도장포 정류장에서 내려 직선 약 170m')).toBeInTheDocument()
+    expect(screen.getByText('도장포 정류장에서 타요 · 직선 약 380m')).toBeInTheDocument()
   })
 })
