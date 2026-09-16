@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Minus, Plus, RotateCw, TriangleAlert } from 'lucide-react'
 import { t } from '../i18n'
 import { loadKakaoMaps } from '../lib/kakaoLoader'
+import { ORDER_LINE } from '../lib/mapLine'
 import { createPinElement, updateLabelVisibility } from './mapPins'
 import styles from './MapView.module.css'
-import { ORDER_LINE } from '../lib/mapLine'
 
 /** 거제도 대략 중심. 스팟이 로드되면 setBounds로 자동 조정됩니다. */
 const GEOJE_CENTER = { lat: 34.88, lng: 128.62 }

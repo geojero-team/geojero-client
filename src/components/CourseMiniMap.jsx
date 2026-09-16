@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { t } from '../i18n'
 import { distanceMeters } from '../lib/geo'
+import { ORDER_LINE } from '../lib/mapLine'
 import { loadKakaoMaps } from '../lib/kakaoLoader'
 import styles from './CourseMiniMap.module.css'
-import { ORDER_LINE } from '../lib/mapLine'
 
 /**
  * 코스 상세 머리의 220px 지도 — Figma 09-14 확정 `547:206`(그림은 개정 `532:324`와 같음).
