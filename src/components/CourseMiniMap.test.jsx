@@ -6,19 +6,20 @@ import CourseMiniMap from './CourseMiniMap'
 vi.mock('../lib/kakaoLoader', () => ({ loadKakaoMaps: vi.fn() }))
 
 const STOPS = [
-  { seq: 1, poiId: 4, shortName: '학동몽돌해변', lat: 34.774752, lng: 128.641498 },
-  { seq: 2, poiId: 3, shortName: '해금강', lat: 34.7333, lng: 128.6839 },
-  { seq: 3, poiId: 1, shortName: '바람의언덕', lat: 34.7440458, lng: 128.6633111 },
+  { seq: 1, poiId: 4, shortName: '학동몽돌해변', theme: 'BEACH', lat: 34.774752, lng: 128.641498, thumbnailUrl: 'https://tong.visitkorea.or.kr/hakdong.jpg' },
+  { seq: 2, poiId: 3, shortName: '해금강', theme: 'VIEW', lat: 34.7333, lng: 128.6839, thumbnailUrl: 'https://tong.visitkorea.or.kr/haegeumgang.jpg' },
+  { seq: 3, poiId: 1, shortName: '바람의언덕', theme: 'VIEW', lat: 34.7440458, lng: 128.6633111, thumbnailUrl: null },
 ]
-const TERMINAL = { lat: 34.8906148, lng: 128.6242507 }
 
-function fakeKakao({ pxPerDeg = null } = {}) {
+function fakeKakao({ pxPerDeg = null, fitLevel = 8 } = {}) {
   const overlays = []
   const polylines = []
   const created = []
   // SDK 흉내: 지도 안쪽에서 휠을 듣고(onWheel), 확대 컨트롤은 칸 안에 <button>을 넣습니다(실제 SDK 4.5: title 「확대」·「축소」).
   const map = {
     setBounds: vi.fn(),
+    getLevel: vi.fn(() => fitLevel),
+    setLevel: vi.fn(),
     onWheel: vi.fn(),
     container: null,
     addControl: vi.fn(() => {
@@ -76,31 +77,68 @@ function fakeKakao({ pxPerDeg = null } = {}) {
   return { kakao, map, overlays, polylines, created }
 }
 
-const pathOf = (polyline) => polyline.options.path.map(({ lat, lng }) => [lat, lng])
+const badgeOf = (overlay) => overlay.options.content.querySelector('span').textContent
+const imgOf = (overlay) => overlay.options.content.querySelector('img')
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('CourseMiniMap — 코스 상세 220px 지도(532:324)', () => {
-  it('번호 핀(순서) + 번호 없는 고현터미널 핀을 찍고, 전부 들어오게 맞춘다', async () => {
+describe('CourseMiniMap — 코스 상세 300px 지도 (09-16: 스팟에만 맞춤 · 사진 핀 · 선 없음)', () => {
+  // 치수(높이 300 · 사진 32 · 배지 18)는 CSS 모듈이라 여기서 재지 않습니다 — jsdom 은 레이아웃을 계산하지 않고 클래스 이름만 옵니다.
+  it('스팟마다 사진 핀 + 번호 배지를 찍고, 스팟에만 맞춘다 — 고현터미널은 틀에도 지도에도 없다', async () => {
     const { kakao, map, overlays } = fakeKakao()
     loadKakaoMaps.mockResolvedValue(kakao)
 
-    render(<CourseMiniMap stops={STOPS} terminal={TERMINAL} />)
+    render(<CourseMiniMap stops={STOPS} />)
 
-    await waitFor(() => expect(overlays).toHaveLength(4))
-    expect(overlays.map((o) => o.options.content.textContent)).toEqual(['', '1', '2', '3'])
-    expect(overlays.every((o) => o.options.map === map && o.options.yAnchor === 0.5)).toBe(true)
+    await waitFor(() => expect(overlays).toHaveLength(3))
+    expect(overlays.map(badgeOf)).toEqual(['1', '2', '3'])
+    // 사진은 타임라인 줄과 같은 출처 — /api/pois 대표 사진, 없으면 분류 자리그림(data URI)
+    expect(imgOf(overlays[0]).getAttribute('src')).toBe(STOPS[0].thumbnailUrl)
+    expect(imgOf(overlays[2]).getAttribute('src')).toMatch(/^data:image\/svg\+xml/)
+    expect(overlays.every((o) => o.options.map === map && o.options.xAnchor === 0.5 && o.options.yAnchor === 0.5)).toBe(true)
     expect(map.setBounds).toHaveBeenCalledTimes(1)
-    expect(map.setBounds.mock.calls[0][0].points).toHaveLength(4)
+    expect(map.setBounds.mock.calls[0][0].points.map(({ lat, lng }) => [lat, lng])).toEqual(STOPS.map(({ lat, lng }) => [lat, lng]))
+  })
+
+  it('사진 링크가 죽으면 분류 자리그림으로 바꾼다', async () => {
+    const { kakao, overlays } = fakeKakao()
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(<CourseMiniMap stops={STOPS} />)
+
+    await waitFor(() => expect(overlays).toHaveLength(3))
+    const img = imgOf(overlays[0])
+    fireEvent.error(img)
+    expect(img.getAttribute('src')).toMatch(/^data:image\/svg\+xml/)
+  })
+
+  it('스팟이 붙어 있어 맞춘 배율이 너무 가까우면 최소 배율로 물린다 — 골목까지 들어가지 않게', async () => {
+    const { kakao, map } = fakeKakao({ fitLevel: 3 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(<CourseMiniMap stops={STOPS} />)
+
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalledTimes(1))
+    expect(map.setLevel).toHaveBeenCalledWith(5)
+  })
+
+  it('맞춘 배율이 충분히 멀면 그대로 둔다', async () => {
+    const { kakao, map } = fakeKakao({ fitLevel: 8 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(<CourseMiniMap stops={STOPS} />)
+
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalledTimes(1))
+    expect(map.setLevel).not.toHaveBeenCalled()
   })
 
   it('끌기 · 두 손가락 확대 · 더블탭 · +/- 버튼은 된다 — 잠그는 옵션을 쓰지 않는다', async () => {
     const { kakao, map, created } = fakeKakao()
     loadKakaoMaps.mockResolvedValue(kakao)
 
-    render(<CourseMiniMap stops={STOPS} terminal={TERMINAL} />)
+    render(<CourseMiniMap stops={STOPS} />)
 
     await waitFor(() => expect(created).toHaveLength(1))
     // scrollwheel:false 는 SDK가 마우스 휠과 두 손가락 확대를 한 스위치로 묶은 옵션이라 쓰면 폰에서 확대가 안 된다.
@@ -116,7 +154,7 @@ describe('CourseMiniMap — 코스 상세 220px 지도(532:324)', () => {
     const { kakao, map, created } = fakeKakao()
     loadKakaoMaps.mockResolvedValue(kakao)
 
-    render(<CourseMiniMap stops={STOPS} terminal={TERMINAL} />)
+    render(<CourseMiniMap stops={STOPS} />)
 
     await waitFor(() => expect(created).toHaveLength(1))
     // fireEvent 는 preventDefault 가 불리면 false 를 돌려준다 — 기본 동작(페이지 스크롤)은 살아 있어야 한다.
@@ -128,7 +166,7 @@ describe('CourseMiniMap — 코스 상세 220px 지도(532:324)', () => {
     const { kakao, map, created } = fakeKakao()
     loadKakaoMaps.mockResolvedValue(kakao)
 
-    const { container } = render(<CourseMiniMap stops={STOPS} terminal={TERMINAL} />)
+    const { container } = render(<CourseMiniMap stops={STOPS} />)
 
     await waitFor(() => expect(created).toHaveLength(1))
     const buttons = container.querySelectorAll('[aria-hidden="true"] button')
@@ -136,85 +174,56 @@ describe('CourseMiniMap — 코스 상세 220px 지도(532:324)', () => {
     expect(map.container.querySelector('button').tabIndex).toBe(-1)
   })
 
-  it('고현터미널 → 1 → 2 → 3 → 고현터미널을 한 선으로 잇는다 — 코스 지도와 같은 파란 선', async () => {
-    const { kakao, map, polylines } = fakeKakao()
-    loadKakaoMaps.mockResolvedValue(kakao)
-
-    const { unmount } = render(<CourseMiniMap stops={STOPS} terminal={TERMINAL} />)
-
-    await waitFor(() => expect(polylines).toHaveLength(1))
-    expect(pathOf(polylines[0])).toEqual([
-      [TERMINAL.lat, TERMINAL.lng],
-      [STOPS[0].lat, STOPS[0].lng],
-      [STOPS[1].lat, STOPS[1].lng],
-      [STOPS[2].lat, STOPS[2].lng],
-      [TERMINAL.lat, TERMINAL.lng],
-    ])
-    // 순서 선은 버스 길이 아니라 우리가 이은 직선이라 점선 · 진회색입니다(2026-09-16 사용자 결정 — 타는 곳 지도와 같은 규칙).
-    expect(polylines[0].options).toMatchObject({ map, strokeWeight: 2.5, strokeColor: '#344054', strokeStyle: 'dash', strokeOpacity: 0.85 })
-
-    unmount()
-    expect(polylines[0].setMap).toHaveBeenCalledWith(null)
-  })
-
-  it('고현터미널 좌표가 없으면 스팟끼리만 잇는다', async () => {
-    const { kakao, polylines } = fakeKakao()
-    loadKakaoMaps.mockResolvedValue(kakao)
-
-    render(<CourseMiniMap stops={STOPS} terminal={null} />)
-
-    await waitFor(() => expect(polylines).toHaveLength(1))
-    expect(pathOf(polylines[0])).toEqual(STOPS.map(({ lat, lng }) => [lat, lng]))
-  })
-
-  it('이을 점이 하나뿐이면 선을 긋지 않는다', async () => {
+  it('순서 선을 긋지 않는다 — 순서는 번호 배지가 말하고, 직선은 바다를 건너 길처럼 읽혔다(2026-09-16 사용자 결정)', async () => {
     const { kakao, overlays, polylines } = fakeKakao()
     loadKakaoMaps.mockResolvedValue(kakao)
 
-    render(<CourseMiniMap stops={[STOPS[0]]} terminal={null} />)
+    render(<CourseMiniMap stops={STOPS} />)
 
-    await waitFor(() => expect(overlays).toHaveLength(1))
+    await waitFor(() => expect(overlays).toHaveLength(3))
     expect(polylines).toHaveLength(0)
   })
 
-  it('고현터미널 좌표가 없으면 스팟 핀만', async () => {
+  it('스팟이 하나면 핀 하나', async () => {
     const { kakao, overlays } = fakeKakao()
     loadKakaoMaps.mockResolvedValue(kakao)
 
-    render(<CourseMiniMap stops={STOPS} terminal={null} />)
+    render(<CourseMiniMap stops={[STOPS[0]]} />)
 
-    await waitFor(() => expect(overlays).toHaveLength(3))
-    expect(overlays.map((o) => o.options.content.textContent)).toEqual(['1', '2', '3'])
+    await waitFor(() => expect(overlays).toHaveLength(1))
+    expect(badgeOf(overlays[0])).toBe('1')
   })
 
   it('SDK를 못 불러오면 지도 칸에 한 줄 — 읽기 도구에는 지도를 숨긴다', async () => {
     loadKakaoMaps.mockRejectedValue(new Error('no sdk'))
-    const { container } = render(<CourseMiniMap stops={STOPS} terminal={TERMINAL} />)
+    const { container } = render(<CourseMiniMap stops={STOPS} />)
 
     expect(await screen.findByText('지도를 불러오지 못했어요')).toBeInTheDocument()
     expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull()
   })
 
-  it('화면에서 번호 핀이 포개지면 한 핀에 번호를 합쳐 적는다 — 조선해양문화관 · 거제씨월드(113m)가 섬 배율에서 1px 차이', async () => {
-    const { kakao, overlays } = fakeKakao({ pxPerDeg: 900 })
+  // 코스에 맞춘 배율 흉내 — 3-01(학동 → 해금강 가로 0.043도)이 350px 칸에 들어오면 도당 약 6000px. 그때 113m 는 6px, 해금강 → 바람의언덕 2.3km 는 140px.
+  it('화면에서 사진 핀이 포개지면 한 핀에 번호를 합쳐 적는다 — 조선해양문화관 · 거제씨월드(113m)는 코스 배율에서 6px 차이. 사진은 앞 스팟 것', async () => {
+    const { kakao, overlays } = fakeKakao({ pxPerDeg: 6000 })
     loadKakaoMaps.mockResolvedValue(kakao)
     const stops = [
-      { seq: 1, poiId: 4, shortName: '학동몽돌해변', lat: 34.774752, lng: 128.641498 },
-      { seq: 2, poiId: 20, shortName: '조선해양문화관', lat: 34.834849, lng: 128.701634 },
-      { seq: 3, poiId: 18, shortName: '거제씨월드', lat: 34.8358552, lng: 128.7014662 },
+      { seq: 1, poiId: 4, shortName: '학동몽돌해변', theme: 'BEACH', lat: 34.774752, lng: 128.641498, thumbnailUrl: null },
+      { seq: 2, poiId: 20, shortName: '조선해양문화관', theme: 'EXHIBIT', lat: 34.834849, lng: 128.701634, thumbnailUrl: 'https://tong.visitkorea.or.kr/museum.jpg' },
+      { seq: 3, poiId: 18, shortName: '거제씨월드', theme: 'EXHIBIT', lat: 34.8358552, lng: 128.7014662, thumbnailUrl: 'https://tong.visitkorea.or.kr/seaworld.jpg' },
     ]
 
-    render(<CourseMiniMap stops={stops} terminal={TERMINAL} />)
+    render(<CourseMiniMap stops={stops} />)
 
-    await waitFor(() => expect(overlays.map((o) => o.options.content.textContent)).toEqual(['', '1', '2·3']))
+    await waitFor(() => expect(overlays.map(badgeOf)).toEqual(['1', '2·3']))
+    expect(imgOf(overlays[1]).getAttribute('src')).toBe(stops[1].thumbnailUrl)
   })
 
-  it('떨어진 핀은 합치지 않는다', async () => {
-    const { kakao, overlays } = fakeKakao({ pxPerDeg: 900 })
+  it('떨어진 핀은 합치지 않는다 — 해금강 · 바람의언덕은 코스 배율에서 140px', async () => {
+    const { kakao, overlays } = fakeKakao({ pxPerDeg: 6000 })
     loadKakaoMaps.mockResolvedValue(kakao)
 
-    render(<CourseMiniMap stops={STOPS} terminal={TERMINAL} />)
+    render(<CourseMiniMap stops={STOPS} />)
 
-    await waitFor(() => expect(overlays.map((o) => o.options.content.textContent)).toEqual(['', '1', '2', '3']))
+    await waitFor(() => expect(overlays.map(badgeOf)).toEqual(['1', '2', '3']))
   })
 })

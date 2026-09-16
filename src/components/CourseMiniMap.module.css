@@ -1,9 +1,11 @@
-/* 코스 상세 지도 — Figma 09-14 개정 532:324. 폭 전체 × 220px, 바다색 바탕. */
+/* 코스 상세 지도 — 자리는 Figma 09-14 확정 547:206(220px), 높이는 2026-09-16 사용자 결정 300px.
+   틀을 스팟에만 맞추면 섬의 세로 모양(매미성 → 학동 남북 21km)이 가로 상자에 안 맞고, 사진 핀이 번호 핀(24px)보다 자리를 먹습니다.
+   정사각형(350)까지 가면 제목과 「버스 약 …」이 첫 화면에서 밀립니다. 폭 전체 × 300px, 바다색 바탕. */
 
 .root {
   position: relative;
   flex: none;
-  height: 220px;
+  height: 300px;
   background: var(--map-sea);
 }
 
@@ -25,14 +27,40 @@
 
 /* ── 핀 (CustomOverlay 안의 DOM) ─────────────────────────────────────── */
 
-/* 번호 핀 532:327 — 24px 브랜드 원 + 흰 테두리 2 + 흰 숫자 11 Bold. 포개진 핀을 묶으면(「2·3」) 옆으로 늘어난 알약 */
-.stop {
+/* 사진 핀 — 타임라인 줄(CourseDetailPage .thumb / .badge)과 같은 그림이되 한 단계 작은 32px 사진 원 + 왼쪽 위 18px 번호 배지
+   (2026-09-16 사용자 결정 — 40은 지도를 가렸습니다. jsx 의 PIN 주석).
+   좌표는 사진 가운데(xAnchor · yAnchor 0.5). 배지가 원 밖(-2px)으로 걸치므로 여기서는 자르지 않고 사진만 둥글게 자릅니다. */
+.pin {
+  position: relative;
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+
+.photo {
+  display: block;
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--bg-page);
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+  background: var(--brand-tint); /* 사진이 오기 전 · 자리그림 뒤 */
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.35);
+}
+
+/* 번호 배지 — 타임라인 줄(547:251)의 20px 을 사진에 맞춰 18px 로. 브랜드 원 + 흰 테두리 2 + 흰 숫자 11 Bold.
+   포개진 핀을 묶으면(「2·3」) 옆으로 늘어난 알약 */
+.badge {
+  position: absolute;
+  top: -2px;
+  left: -2px;
   display: grid;
   place-items: center;
   box-sizing: border-box;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
   white-space: nowrap;
   border: 2px solid var(--bg-page);
   border-radius: var(--radius-pill);
@@ -42,15 +70,4 @@
   font-weight: 700;
   line-height: 1;
   color: var(--text-on-brand);
-}
-
-/* 고현터미널 532:326 — 22px 브랜드 원 + 흰 테두리 2, 글자 없음 */
-.terminal {
-  display: block;
-  box-sizing: border-box;
-  width: 22px;
-  height: 22px;
-  border: 2px solid var(--bg-page);
-  border-radius: var(--radius-pill);
-  background: var(--brand-strong);
 }

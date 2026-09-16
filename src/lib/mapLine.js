@@ -20,7 +20,10 @@ export const LINK_LINE = {
   strokeStyle: 'shortdash',
 }
 
-/** 코스 지도 · 코스 상세 미니맵 — 고현터미널 → 1 → … → n → 고현터미널 방문 순서. 선이 길어 점선 간격을 길게. */
+/**
+ * 코스 지도(MapView) — 1 → … → n 방문 순서. 선이 길어 점선 간격을 길게.
+ * 코스 상세 미니맵은 2026-09-16부터 선을 긋지 않습니다(사용자 결정 — `CourseMiniMap` 머리 주석).
+ */
 export const ORDER_LINE = {
   strokeWeight: 2.5,
   strokeColor: STRAIGHT_COLOR,

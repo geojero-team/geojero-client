@@ -23,7 +23,8 @@ import styles from './CourseDetailPage.module.css'
  * 2026-09-13에 시각을 전부 뺐습니다(몇 시에 머물지는 사용자가 정한다 — 디자인브리프 부록 E).
  *
  * 2026-09-14 개정 → 확정(Figma):
- *  · 머리에 **220px 지도**(번호 핀 + 고현터미널 + 순서 선, 끌기·확대 됨), 권역, 제목, 스팟 체인, 칩 둘(버스 합계 · 구간 수).
+ *  · 머리에 지도(끌기·확대 됨), 권역, 제목, 스팟 체인, 칩 둘(버스 합계 · 구간 수).
+ *    → 2026-09-16 지도를 **300px · 스팟에만 맞춤 · 사진 핀 · 선 없음**으로 바꿨습니다(사용자 결정 — `CourseMiniMap` 머리 주석 · 디자인브리프 부록 H).
  *  · **제목은 규칙으로 짓습니다 — 「{첫 스팟}에서 {끝 스팟}까지」**(2026-09-14 사용자 결정). 그림의 「몽돌에서 바람의언덕까지」는
  *    사람이 지은 이름인데 코스 23개에 그런 이름이 없고, 서버 코스 name 은 전부 줄임말 체인이라(「학동 · 기성관 · …」,
  *    「기성관」·「맹종죽테마파크」는 TourAPI 정본 이름이 아님 — 절대규칙 5) 쓰지 않습니다.
@@ -148,12 +149,11 @@ export default function CourseDetailPage() {
     Promise.all([api.course(courseId), loadSpots()])
       .then(([data, pois]) => {
         if (cancelled) return
-        const terminal = [...pois.values()].find((poi) => poi.kind === 'TERMINAL') ?? null
         // 대표 사진은 목록(/api/pois)에만 있습니다. 못 받았거나(빈 Map) 없으면 null — 자리그림으로 떨어집니다.
         const stops = (data.stops ?? []).map((stop) => ({ ...stop, thumbnailUrl: pois.get(stop.poiId)?.imageUrl ?? null }))
         setResult({
           status: 'ready',
-          data: { ...data, stops, regions: regionsOf(stops, pois), terminal },
+          data: { ...data, stops, regions: regionsOf(stops, pois) },
           error: '',
         })
       })
@@ -255,7 +255,7 @@ export default function CourseDetailPage() {
       {header}
 
       <div className={styles.scroll}>
-        {hasLegs && <CourseMiniMap stops={stops} terminal={course.terminal} />}
+        {hasLegs && <CourseMiniMap stops={stops} />}
 
         <div className={styles.body}>
           {hasLegs && (
