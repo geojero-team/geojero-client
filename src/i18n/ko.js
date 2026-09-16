@@ -393,6 +393,15 @@ export default {
   'courseDetail.estimatedNote': '실제 이동 시간은 적힌 것보다 짧습니다 — 버스를 놓치지 않는 쪽으로만 어긋납니다.',
   'courseDetail.source': '출처 {source} · {date}',
   'courseDetail.originNote': '모든 첫 출발지는 {origin}로 가정합니다',
+  // 버스가 내려주는 곳은 스팟이 아니라 정류장이다 — 「55번 · 10분」이 「10분 뒤 도착」으로 읽히는 것을 막는다(2026-09-16 사용자 결정).
+  // 거리는 정류장 좌표(TAGO)와 스팟 좌표(TourAPI) 사이 **직선**이다. 걷는 거리·시간은 어느 원문에도 없다(절대규칙 1) —
+  // 그래서 「직선」을 적고, 걷는 길은 시간표 화면의 「카카오맵으로 도보 길찾기」가 연다.
+  // 정류소 원문 이름만으로는 그게 정류장인지 모른다(「대금교차로」 — 2026-09-16 사용자 확인). 이름 뒤에 「정류장」을 붙이되
+  // 이미 「종점」으로 끝나면 그대로 둔다(「해금강종점 정류장」은 같은 말을 두 번 한다).
+  'courseDetail.stopName': '{stop} 정류장',
+  'courseDetail.alight': '{stop}에서 내려요',
+  'courseDetail.alightWithDistance': '{stop}에서 내려 직선 약 {dist}',
+  'courseDetail.walkNote': '버스 시간에는 정류장에서 스팟까지 걷는 시간이 빠져 있어요. 걷는 길은 스팟 옆 「시간표 ›」에서 카카오맵으로 열 수 있어요.',
   'courseDetail.noLegs': '이 코스는 구간별 버스 정보가 없어요.',
   'courseDetail.save': '이 코스 저장하기',
   'courseDetail.loading': '코스를 불러오는 중',

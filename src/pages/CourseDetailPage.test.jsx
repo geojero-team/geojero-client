@@ -67,7 +67,7 @@ const COURSE_301 = {
     { seq: 3, poiId: 1, name: '바람의언덕', shortName: '바람의언덕', theme: 'VIEW', lat: 34.7440458, lng: 128.6633111 },
   ],
   legs: [
-    { seq: 1, mode: 'BUS', durationMin: 40, estimated: false, rides: [ride('55')] },
+    { seq: 1, mode: 'BUS', durationMin: 40, estimated: false, rides: [ride('55')], alight: { stop: '학동', distanceM: 311 } },
     { seq: 2, mode: 'BUS', durationMin: 10, estimated: false, rides: [ride('55')] },
     { seq: 3, mode: 'BUS', durationMin: 12, estimated: true, rides: [ride('55', false, true)] },
     { seq: 4, mode: 'BUS', durationMin: 52, estimated: true, rides: [ride('55', true, false)] },
@@ -88,10 +88,11 @@ const COURSE_308 = {
     { seq: 3, poiId: 18, name: '거제씨월드', shortName: '거제씨월드', theme: 'EXHIBIT', lat: 34.83, lng: 128.7 },
   ],
   legs: [
-    { seq: 1, mode: 'BUS', durationMin: 40, estimated: false, rides: [ride('55')] },
-    { seq: 2, mode: 'BUS', durationMin: 27, estimated: false, rides: [ride('67-1')] },
-    { seq: 3, mode: 'SAME_STOP', durationMin: 0, estimated: false, rides: [] },
-    { seq: 4, mode: 'BUS', durationMin: 45, estimated: false, rides: [ride('22')] },
+    { seq: 1, mode: 'BUS', durationMin: 40, estimated: false, rides: [ride('55')], alight: { stop: '학동', distanceM: 311 } },
+    { seq: 2, mode: 'BUS', durationMin: 27, estimated: false, rides: [ride('67-1')], alight: { stop: '지세포', distanceM: 675 } },
+    // 걸어서 옮기는 구간 — 버스에서 내리지 않으므로 줄이 없다
+    { seq: 3, mode: 'SAME_STOP', durationMin: 0, estimated: false, rides: [], alight: null },
+    { seq: 4, mode: 'BUS', durationMin: 45, estimated: false, rides: [ride('22')], alight: { stop: '학동', distanceM: 311 } },
   ],
 }
 
@@ -280,6 +281,49 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     const links = await screen.findAllByRole('button', { name: / 시간표$/ })
     await user.click(links[2])
     expect(screen.getByTestId('loc').textContent).toBe('/timetable/1')
+  })
+
+  it('구간 줄에 그 버스가 내리는 정류장과 직선거리 — 「10분 뒤 스팟 도착」으로 읽히지 않게(2026-09-16 사용자 결정)', async () => {
+    renderCourse(101)
+
+    // 이름만으로는 정류장인지 모른다(「대금교차로」) — 이름 뒤에 「정류장」을 붙인다
+    expect(await screen.findByText('학동 정류장에서 내려 직선 약 310m')).toBeInTheDocument()
+  })
+
+  it('이름이 「종점」으로 끝나면 「정류장」을 붙이지 않는다 — 같은 말을 두 번 하게 된다', async () => {
+    api.course.mockResolvedValue({
+      ...COURSE_301,
+      legs: COURSE_301.legs.map((leg, i) => (i === 0 ? { ...leg, alight: { stop: '해금강종점', distanceM: 1070 } } : leg)),
+    })
+    renderCourse(101)
+
+    expect(await screen.findByText('해금강종점에서 내려 직선 약 1.1km')).toBeInTheDocument()
+  })
+
+  it('거리를 모르면 정류장 이름만 적는다 — 값 없이 「직선 약」만 남기지 않는다', async () => {
+    api.course.mockResolvedValue({
+      ...COURSE_301,
+      legs: COURSE_301.legs.map((leg, i) => (i === 0 ? { ...leg, alight: { stop: '학동', distanceM: null } } : leg)),
+    })
+    renderCourse(101)
+
+    expect(await screen.findByText('학동 정류장에서 내려요')).toBeInTheDocument()
+    expect(screen.queryByText(/직선 약$/)).not.toBeInTheDocument()
+  })
+
+  it('걸어서 옮기는 구간에는 내리는 곳 줄이 없다 — 버스에서 내리지 않는다', async () => {
+    renderCourse(110)
+
+    expect(await screen.findByText('지세포 정류장에서 내려 직선 약 680m')).toBeInTheDocument()
+    // 같은 정류장 구간에는 내리는 곳 줄이 붙지 않는다 — 버스에서 내리지 않는다
+    expect(screen.getByText('같은 정류장 · 바로 이동').parentElement.textContent).toBe('같은 정류장 · 바로 이동')
+  })
+
+  it('걷는 시간이 빠져 있다고 각주가 말한다 — 걷는 시간은 어느 원문에도 없다', async () => {
+    renderCourse(101)
+
+    // 어디를 눌러야 하는지 적는다 — 「스팟의 시간표 화면에서」는 막연했다(2026-09-16)
+    expect(await screen.findByText(/걷는 길은 스팟 옆 「시간표 ›」에서 카카오맵으로 열 수 있어요/)).toBeInTheDocument()
   })
 
   it('칩은 버스를 타는 구간만 센다 — 같은 정류장으로 걸어가는 구간은 빼고 「버스 3번」(서버 legCount 는 4)', async () => {

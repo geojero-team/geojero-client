@@ -152,17 +152,19 @@
   padding: 5px 0;
 }
 
-/* 구간 줄 — 2px × 28 하늘색 선 */
+/* 구간 줄 — 2px 하늘색 선. 내리는 곳 줄이 붙으면 두 줄이 되므로 선이 칸 높이를 따라갑니다 */
 .legRow {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 12px;
+  min-height: 28px;
 }
 
 .line {
   display: block;
   width: 2px;
-  height: 28px;
+  min-height: 28px;
+  height: 100%;
   background: var(--map-sea);
 }
 
@@ -170,9 +172,39 @@
 .lineDots {
   display: block;
   width: 2px;
-  height: 28px;
+  min-height: 28px;
+  height: 100%;
   background-image: linear-gradient(var(--map-sea) 50%, transparent 50%);
   background-size: 2px 6px;
+}
+
+/* 「55번 · 40분」 + 「{정류장}에서 내려 직선 약 210m」 두 줄. 위아래 4로 선 끝과 붙지 않게 */
+.legLines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 0;
+}
+
+/* 내리는 곳 13/18 secondary + 14px 버스 아이콘 — 이름만으로는 정류장인지 모릅니다(2026-09-16) */
+.alight {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--text-secondary);
+}
+
+.alightIcon {
+  flex: none;
+  display: block;
+  color: var(--text-secondary);
 }
 
 /* terminal-bus 22px 칸 — 자산은 그림자까지 26.125px 박스라 22px 원 기준으로 바깥에 걸칩니다(Figma inset -6.25% / -9.38%). */
@@ -252,9 +284,11 @@
 
 /* 「55번 · 40분」 13 Medium */
 .legText {
+  display: block;
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 500;
+  line-height: 18px;
   color: var(--text-secondary);
   white-space: nowrap;
 }

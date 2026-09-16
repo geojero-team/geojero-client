@@ -7,6 +7,7 @@ import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { api, beginKakaoLogin } from '../lib/api'
 import { courseImage, onImageError } from '../lib/courseImage'
+import { formatDistance } from '../lib/format'
 import { courseTitle } from '../lib/courseTitle'
 import { getToken } from '../lib/session'
 import { formatDuration } from '../lib/format'
@@ -65,6 +66,37 @@ function TerminalIcon() {
   )
 }
 
+/** 내리는 곳 줄 앞 버스 — 스팟 상세(부록 J)의 Figma `607:12` 자산과 같은 그림, 여기서는 14px. 색은 CSS 에서 받습니다. */
+function StopBusIcon() {
+  return (
+    <svg className={styles.alightIcon} width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M6.66667 5V10 M12.5 5V10 M1.66667 10H18 M15 15H17.5C17.5 15 17.9167 13.5833 18.1667 12.6667C18.25 12.3333 18.3333 12 18.3333 11.6667C18.3333 11.3333 18.25 11 18.1667 10.6667L17 6.5C16.75 5.66667 15.9167 5 15 5H3.33333C2.89131 5 2.46738 5.17559 2.15482 5.48816C1.84226 5.80072 1.66667 6.22464 1.66667 6.66667V15H4.16667 M5.83333 16.6667C6.75381 16.6667 7.5 15.9205 7.5 15C7.5 14.0795 6.75381 13.3333 5.83333 13.3333C4.91286 13.3333 4.16667 14.0795 4.16667 15C4.16667 15.9205 4.91286 16.6667 5.83333 16.6667Z M7.5 15H11.6667 M13.3333 16.6667C14.2538 16.6667 15 15.9205 15 15C15 14.0795 14.2538 13.3333 13.3333 13.3333C12.4129 13.3333 11.6667 14.0795 11.6667 15C11.6667 15.9205 12.4129 16.6667 13.3333 16.6667Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/**
+ * 「{정류장}에서 내려 직선 약 210m」 — 없으면 null.
+ *
+ * 버스가 내려주는 곳은 스팟이 아니라 정류장이다. 이 줄이 없으면 「33번 · 약 45분」이 「45분 뒤 매미성 도착」으로 읽히는데,
+ * 매미성은 대금교차로 정류장에서 직선 210m, 해금강은 1.1km 다(2026-09-16 사용자 결정).
+ * 이름은 그 구간이 **실제로 내리는 정류장**이라 스팟이 말하는 내리는 곳과 다를 수 있다(씨월드는 코스가 지세포에서 내린다).
+ * 거리를 모르면 이름만 적는다 — 값 없이 「직선 약」만 남기지 않는다(절대규칙 3).
+ */
+function alightSentence(alight) {
+  if (!alight?.stop) return null
+  const stop = alight.stop.endsWith('종점') ? alight.stop : t('courseDetail.stopName', { stop: alight.stop })
+  return alight.distanceM == null
+    ? t('courseDetail.alight', { stop })
+    : t('courseDetail.alightWithDistance', { stop, dist: formatDistance(alight.distanceM) })
+}
+
 function TerminalRow({ label }) {
   return (
     <div className={styles.stopRow}>
@@ -84,13 +116,25 @@ function LegRow({ leg }) {
     ? t('courseDetail.legSameStop')
     : t(leg.estimated ? 'courseDetail.legApprox' : 'courseDetail.leg', { route, min: leg.durationMin })
 
+  // 내리는 곳은 **구간 줄**에 답니다(2026-09-16 사용자 결정). 스팟 이름 아래에 두면 스팟의 부제처럼 읽혀
+  // 「대금교차로」가 무엇인지 알 수 없었습니다 — 여기 있으면 「이 버스가 끝나는 곳」이 됩니다.
+  const alightText = alightSentence(leg.alight)
+
   return (
     <div className={styles.legRow}>
       <span className={styles.rail}>
         {/* 탄 구간은 선, 같은 정류장(타지 않음)은 점선 — 탄 것과 안 탄 것은 다릅니다. */}
         <span className={sameStop ? styles.lineDots : styles.line} />
       </span>
-      <span className={styles.legText}>{text}</span>
+      <span className={styles.legLines}>
+        <span className={styles.legText}>{text}</span>
+        {alightText && (
+          <span className={styles.alight}>
+            <StopBusIcon />
+            {alightText}
+          </span>
+        )}
+      </span>
     </div>
   )
 }
@@ -298,6 +342,8 @@ export default function CourseDetailPage() {
               </div>
 
               <div className={styles.notes}>
+                {/* 걷는 시간은 어느 원문에도 없다 — 없는 것을 없다고 말한다(2026-09-16 사용자 결정). */}
+                <p className={styles.estimatedNote}>{t('courseDetail.walkNote')}</p>
                 {hasEstimate && <p className={styles.estimatedNote}>{t('courseDetail.estimatedNote')}</p>}
                 <p className={styles.note}>
                   {t('courseDetail.source', { source: course.source, date: course.baseDate })}
