@@ -369,7 +369,9 @@ export default {
   // 제목은 서버 title, 없으면 common.courseTitleRange 규칙(lib/courseTitle).
   // {time}은 formatDuration(busMinTotal) — 서버 busTotalText는 60분 미만이면 「약 0시간 40분」이 되어 쓰지 않습니다.
   'courseDetail.busChip': '버스 약 {time}',
-  'courseDetail.legChip': '{n}구간',
+  // 「구간」은 방문하는 곳 수로 읽혔다 — 왼쪽 「남부권 · 3곳」과 나란히 보여 곳 수를 두 번 말하는 것처럼 됐다(2026-09-16 사용자 결정).
+  // 타임라인의 버스 줄 개수와 같은 값이라 눈으로 맞춰볼 수 있다. 걸어서 옮기는 구간(같은 정류장)은 세지 않는다.
+  'courseDetail.legChip': '버스 {n}번',
   'courseDetail.departNode': '{origin} 출발',
   'courseDetail.arriveNode': '{origin} 도착',
   'courseDetail.leg': '{route}번 · {min}분',

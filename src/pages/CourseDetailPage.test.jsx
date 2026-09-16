@@ -169,7 +169,9 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     expect(screen.getByText('남부권 · 3곳')).toBeInTheDocument()
     expect(screen.queryByText('고현터미널에서 출발해 고현터미널로 돌아와요')).not.toBeInTheDocument()
     expect(screen.getByText('버스 약 1시간 54분')).toBeInTheDocument()
-    expect(screen.getByText('4구간')).toBeInTheDocument()
+    // 「구간」은 방문하는 곳 수로 읽혔다(왼쪽 「남부권 · 3곳」과 나란히 보인다) — 버스 타는 횟수로 적는다(2026-09-16 사용자 결정).
+    expect(screen.getByText('버스 4번')).toBeInTheDocument()
+    expect(screen.queryByText('4구간')).not.toBeInTheDocument()
     // 코스 name 은 줄임말(「학동」 · 「기성관」)이라 제목으로 쓰지 않는다 — TourAPI 정본은 shortName 쪽이다
     expect(screen.queryByText('학동 · 해금강 · 바람의언덕')).not.toBeInTheDocument()
   })
@@ -280,6 +282,13 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     expect(screen.getByTestId('loc').textContent).toBe('/timetable/1')
   })
 
+  it('칩은 버스를 타는 구간만 센다 — 같은 정류장으로 걸어가는 구간은 빼고 「버스 3번」(서버 legCount 는 4)', async () => {
+    renderCourse(110)
+
+    expect(await screen.findByText('버스 3번')).toBeInTheDocument()
+    expect(screen.queryByText('버스 4번')).not.toBeInTheDocument()
+  })
+
   it('같은 정류장 구간 — 버스 줄 대신 걸어가는 줄, 그 앞 스팟 시간표는 목적지를 넘기지 않는다(「운행 없음」이 뜬다)', async () => {
     const user = userEvent.setup()
     renderCourse(110)
@@ -315,7 +324,7 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: '부산발 당일치기' })).toBeInTheDocument()
     expect(screen.getByText('이 코스는 구간별 버스 정보가 없어요.')).toBeInTheDocument()
-    expect(container).not.toHaveTextContent('0구간')
+    expect(container).not.toHaveTextContent('버스 0번')
     expect(container).not.toHaveTextContent('버스 약')
     expect(screen.queryByText('평일')).not.toBeInTheDocument()
   })

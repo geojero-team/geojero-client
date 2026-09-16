@@ -23,7 +23,7 @@ import styles from './CourseDetailPage.module.css'
  * 2026-09-13에 시각을 전부 뺐습니다(몇 시에 머물지는 사용자가 정한다 — 디자인브리프 부록 E).
  *
  * 2026-09-14 개정 → 확정(Figma):
- *  · 머리에 지도(끌기·확대 됨), 권역, 제목, 스팟 체인, 칩 둘(버스 합계 · 구간 수).
+ *  · 머리에 지도(끌기·확대 됨), 권역, 제목, 스팟 체인, 칩 둘(버스 합계 · **버스 타는 횟수** — 그림의 「4구간」은 곳 수로 읽혀 2026-09-16 에 「버스 4번」으로 바꿨습니다).
  *    → 2026-09-16 지도를 **300px · 스팟에만 맞춤 · 사진 핀 · 선 없음**으로 바꿨습니다(사용자 결정 — `CourseMiniMap` 머리 주석 · 디자인브리프 부록 H).
  *  · **제목은 규칙으로 짓습니다 — 「{첫 스팟}에서 {끝 스팟}까지」**(2026-09-14 사용자 결정). 그림의 「몽돌에서 바람의언덕까지」는
  *    사람이 지은 이름인데 코스 23개에 그런 이름이 없고, 서버 코스 name 은 전부 줄임말 체인이라(「학동 · 기성관 · …」,
@@ -275,7 +275,8 @@ export default function CourseDetailPage() {
                 <span className={styles.chipBus}>
                   {t('courseDetail.busChip', { time: formatDuration(course.busMinTotal) })}
                 </span>
-                <span className={styles.chipLegs}>{t('courseDetail.legChip', { n: course.legCount ?? legs.length })}</span>
+                {/* 서버 legCount 는 같은 정류장 구간까지 세므로(4-09 는 5) 버스를 타는 구간만 다시 셉니다 — 타임라인의 버스 줄 개수와 같은 값. */}
+                <span className={styles.chipLegs}>{t('courseDetail.legChip', { n: legs.filter((leg) => leg.mode === 'BUS').length })}</span>
               </div>
 
               <div className={styles.timeline}>
