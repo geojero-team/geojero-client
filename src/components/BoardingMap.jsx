@@ -296,7 +296,7 @@ function fromItem(from, fromSpot) {
 }
 
 /** 펼쳤을 때만 마운트되는 지도 — 접으면 사라집니다. */
-function MapCanvas({ stops, exceptions, from, showFrom, fromSpot }) {
+function MapCanvas({ stops, exceptions, from, showFrom, fromSpot, linkStop }) {
   const containerRef = useRef(null)
   const kakaoRef = useRef(null)
   const mapRef = useRef(null)
@@ -340,18 +340,20 @@ function MapCanvas({ stops, exceptions, from, showFrom, fromSpot }) {
       ...(showFrom ? [fromItem(from, fromSpot)] : []),
     ].map((item) => ({ ...item, position: new kakao.maps.LatLng(item.at.lat, item.at.lng) }))
 
-    // 출발 곳을 찍을 때만 잇습니다 — 고현터미널 앞(30m 안)은 두 점이 한 자리라 그을 선이 없습니다.
-    // 예외 핀(길 건너편에서 타는 편)에는 긋지 않습니다 — 선이 여러 개 겹치면 어느 것이 내 정류장인지 흐려집니다.
-    const links = showFrom
-      ? stops.map(
-          (stop) =>
+    /* 점선은 **갈 정류장이 한 곳으로 정해졌을 때만** 긋습니다(2026-09-16 사용자 결정).
+       정류장이 여럿인데 다 그으면 한 선이 다른 마커 옆을 지나 「버스끼리 이은 선」으로 읽혔습니다(학동 실측).
+       그래서 전체에서는 긋지 않고, 노선 칩을 고르면 그 노선 정류장으로 한 줄이 생깁니다.
+       출발 곳을 안 찍을 때(고현터미널 앞 30m)도 긋지 않습니다 — 두 점이 한 자리입니다. */
+    const links =
+      showFrom && linkStop
+        ? [
             new kakao.maps.Polyline({
               map,
-              path: [new kakao.maps.LatLng(from.lat, from.lng), new kakao.maps.LatLng(stop.lat, stop.lng)],
+              path: [new kakao.maps.LatLng(from.lat, from.lng), new kakao.maps.LatLng(linkStop.lat, linkStop.lng)],
               ...LINK_LINE,
             }),
-        )
-      : []
+          ]
+        : []
 
     const bounds = new kakao.maps.LatLngBounds()
     items.forEach((item) => bounds.extend(item.position))
@@ -374,7 +376,7 @@ function MapCanvas({ stops, exceptions, from, showFrom, fromSpot }) {
       overlays.forEach((overlay) => overlay.setMap(null))
       links.forEach((line) => line.setMap(null))
     }
-  }, [phase, stops, exceptions, from, showFrom, fromSpot])
+  }, [phase, stops, exceptions, from, showFrom, fromSpot, linkStop])
 
   // 지도는 이름 · 거리 · 길찾기와 같은 내용을 그림으로 보여줄 뿐이라 읽기 도구에서는 숨깁니다.
   return phase === 'error' ? (
@@ -464,6 +466,7 @@ export default function BoardingMap({ boarding, route = null, fromSpot = null })
             from={from}
             showFrom={!(isTerminal && nearestM < TERMINAL_NEAR_M)}
             fromSpot={fromSpot}
+            linkStop={single ? single.stop : null}
           />
 
           {listed.length > 0 && (

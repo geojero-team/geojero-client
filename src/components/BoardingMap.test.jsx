@@ -448,24 +448,59 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     expect(lines[0].options.strokeOpacity).toBeLessThan(1)
   })
 
-  it('정류장이 여럿이면 곳마다 한 줄 — 길 건너편에서 타는 편(예외 핀)에는 긋지 않는다', async () => {
+  it('정류장이 두 곳 이상이면 전체에서는 점선을 긋지 않는다 — 갈 곳이 아직 하나로 정해지지 않았다', async () => {
+    const user = userEvent.setup()
+    const { kakao, map, lines } = fakeKakao({ level: 5 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(<BoardingMap boarding={HAKDONG} />)
+    await expand(user)
+
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    expect(lines).toHaveLength(0)
+  })
+
+  it('노선 칩을 고르면 그 버스 타는 정류장으로 점선 하나 — 학동 55번은 학동, 67-1번은 학동삼거리', async () => {
     const user = userEvent.setup()
     const { kakao, lines } = fakeKakao({ level: 5 })
     loadKakaoMaps.mockResolvedValue(kakao)
 
-    const { unmount } = render(<BoardingMap boarding={HAKDONG} />)
+    const { unmount } = render(<BoardingMap boarding={HAKDONG} route="55" />)
     await expand(user)
-    await waitFor(() => expect(lines).toHaveLength(2))
+    await waitFor(() => expect(lines).toHaveLength(1))
     expect(ends(lines[0])[1]).toEqual([34.7747, 128.6381])
-    expect(ends(lines[1])[1]).toEqual([34.7756, 128.6411])
     unmount()
     expect(lines[0].setMap).toHaveBeenCalledWith(null)
 
     lines.length = 0
-    render(<BoardingMap boarding={MAEMI} />)
+    render(<BoardingMap boarding={HAKDONG} route="67-1" />)
     await expand(user)
     await waitFor(() => expect(lines).toHaveLength(1))
+    expect(ends(lines[0])[1]).toEqual([34.7756, 128.6411])
+  })
+
+  it('길 건너편에서 타는 편은 정류장으로 세지 않는다 — 매미성은 전체에서도 점선 하나', async () => {
+    const user = userEvent.setup()
+    const { kakao, lines } = fakeKakao({ level: 5 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(<BoardingMap boarding={MAEMI} />)
+    await expand(user)
+
+    await waitFor(() => expect(lines).toHaveLength(1))
     expect(ends(lines[0])[1]).toEqual([34.9673158, 128.7030327])
+  })
+
+  it('편마다 타는 쪽이 다르면(김영삼 생가 32번) 칩을 골라도 갈 곳이 둘이라 점선이 없다', async () => {
+    const user = userEvent.setup()
+    const { kakao, map, lines } = fakeKakao({ level: 5 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(<BoardingMap boarding={DAEGYE} route="32" />)
+    await expand(user)
+
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    expect(lines).toHaveLength(0)
   })
 
   it('출발 곳을 안 찍는 경우(고현터미널 앞 30m)에는 점선도 없다 — 이을 두 점이 한 자리다', async () => {
