@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- 앱(원스토어 TWA)·홈 화면 추가용. 이름·아이콘·세로 고정·스플래시는 매니페스트가 정합니다.
+         meta theme-color(흰색)는 모바일 브라우저 주소창 색이라 그대로 두고, 앱 상태표시줄 색은
+         매니페스트의 theme_color(#00A1FF)가 씁니다. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
