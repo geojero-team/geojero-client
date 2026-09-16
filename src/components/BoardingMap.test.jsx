@@ -80,6 +80,7 @@ const FROM_TERMINAL = {
 /** 카카오 지도 대신 — 만든 오버레이를 모아둡니다. */
 function fakeKakao({ level = 1, pxPerDeg = null } = {}) {
   const overlays = []
+  const lines = []
   const map = { setBounds: vi.fn(), getLevel: vi.fn(() => level), setLevel: vi.fn(), relayout: vi.fn() }
   // 화면 좌표 — 운영 지도(배율 500m 막대 ≈ 57px)처럼 위경도 1도 ≈ pxPerDeg px 로 편다
   if (pxPerDeg) {
@@ -113,9 +114,16 @@ function fakeKakao({ level = 1, pxPerDeg = null } = {}) {
           overlays.push(this)
         }
       },
+      Polyline: class {
+        constructor(options) {
+          this.options = options
+          this.setMap = vi.fn()
+          lines.push(this)
+        }
+      },
     },
   }
-  return { kakao, map, overlays }
+  return { kakao, map, overlays, lines }
 }
 
 /** 카드 머리줄(펼치기 버튼) — 펼침 여부와 무관하게 찾습니다. */
@@ -415,6 +423,60 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
 
     await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
     expect(overlays[1].options.yAnchor).not.toBeCloseTo(ICON_CENTER)
+  })
+
+  /** 점선 한 줄의 끝점 — [출발 곳, 정류장] 위경도. */
+  const ends = (line) => line.options.path.map((p) => [p.lat, p.lng])
+
+  it('출발 곳과 정류장을 점선으로 잇는다 — 길이 아니라 직선이라 실선(코스 순서 선)과 다른 모양', async () => {
+    const user = userEvent.setup()
+    const { kakao, lines } = fakeKakao({ level: 5 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(<BoardingMap boarding={BARAM} />)
+    await expand(user)
+
+    await waitFor(() => expect(lines).toHaveLength(1))
+    expect(ends(lines[0])).toEqual([
+      [34.7440458, 128.6633111],
+      [34.7426, 128.6664],
+    ])
+    expect(lines[0].options.strokeStyle).toBe('shortdash')
+    expect(lines[0].options.strokeWeight).toBe(2)
+    expect(lines[0].options.strokeColor).toBe('#0069b3')
+    expect(lines[0].options.strokeOpacity).toBeLessThan(1)
+  })
+
+  it('정류장이 여럿이면 곳마다 한 줄 — 길 건너편에서 타는 편(예외 핀)에는 긋지 않는다', async () => {
+    const user = userEvent.setup()
+    const { kakao, lines } = fakeKakao({ level: 5 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    const { unmount } = render(<BoardingMap boarding={HAKDONG} />)
+    await expand(user)
+    await waitFor(() => expect(lines).toHaveLength(2))
+    expect(ends(lines[0])[1]).toEqual([34.7747, 128.6381])
+    expect(ends(lines[1])[1]).toEqual([34.7756, 128.6411])
+    unmount()
+    expect(lines[0].setMap).toHaveBeenCalledWith(null)
+
+    lines.length = 0
+    render(<BoardingMap boarding={MAEMI} />)
+    await expand(user)
+    await waitFor(() => expect(lines).toHaveLength(1))
+    expect(ends(lines[0])[1]).toEqual([34.9673158, 128.7030327])
+  })
+
+  it('출발 곳을 안 찍는 경우(고현터미널 앞 30m)에는 점선도 없다 — 이을 두 점이 한 자리다', async () => {
+    const user = userEvent.setup()
+    const { kakao, lines } = fakeKakao({ level: 5 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(<BoardingMap boarding={FROM_TERMINAL} />)
+    await expand(user)
+
+    await waitFor(() => expect(loadKakaoMaps).toHaveBeenCalled())
+    expect(lines).toHaveLength(0)
   })
 
   it('출발지가 고현터미널이고 가장 가까운 정류장이 30m 안이면 출발 곳을 찍지 않는다', async () => {

@@ -294,6 +294,11 @@ function fromItem(from, fromSpot) {
   return { at: from, content: fromElement(from.name), kind: 'from', shape: 'dot', width: fromLabelWidth(from.name), height: FROM_HEIGHT, center: FROM_HEIGHT / 2 }
 }
 
+/* 출발 곳 ↔ 정류장 점선(2026-09-16). **실선을 쓰지 않습니다** — 실선 2.5px 파랑은 코스 지도 · 코스 상세에서 「방문 순서」라
+   이 자리에 쓰면 「이 길로 걸어가라」로 읽힙니다. 우리가 아는 것은 두 점 사이 직선뿐이고(카드 줄도 「직선 약 380m」),
+   걷는 길은 「카카오맵으로 도보 길찾기」가 카카오맵에서 엽니다. 점선은 「실제 길이 아님」을 모양으로 말합니다. */
+const LINK_LINE = { strokeWeight: 2, strokeColor: '#0069b3', strokeOpacity: 0.7, strokeStyle: 'shortdash' }
+
 /** 펼쳤을 때만 마운트되는 지도 — 접으면 사라집니다. */
 function MapCanvas({ stops, exceptions, from, showFrom, fromSpot }) {
   const containerRef = useRef(null)
@@ -339,6 +344,19 @@ function MapCanvas({ stops, exceptions, from, showFrom, fromSpot }) {
       ...(showFrom ? [fromItem(from, fromSpot)] : []),
     ].map((item) => ({ ...item, position: new kakao.maps.LatLng(item.at.lat, item.at.lng) }))
 
+    // 출발 곳을 찍을 때만 잇습니다 — 고현터미널 앞(30m 안)은 두 점이 한 자리라 그을 선이 없습니다.
+    // 예외 핀(길 건너편에서 타는 편)에는 긋지 않습니다 — 선이 여러 개 겹치면 어느 것이 내 정류장인지 흐려집니다.
+    const links = showFrom
+      ? stops.map(
+          (stop) =>
+            new kakao.maps.Polyline({
+              map,
+              path: [new kakao.maps.LatLng(from.lat, from.lng), new kakao.maps.LatLng(stop.lat, stop.lng)],
+              ...LINK_LINE,
+            }),
+        )
+      : []
+
     const bounds = new kakao.maps.LatLngBounds()
     items.forEach((item) => bounds.extend(item.position))
     map.setBounds(bounds, FIT_TOP, FIT_SIDE, FIT_BOTTOM, FIT_SIDE)
@@ -356,7 +374,10 @@ function MapCanvas({ stops, exceptions, from, showFrom, fromSpot }) {
       return new kakao.maps.CustomOverlay({ map, position: item.position, content: item.content, xAnchor: 0.5, yAnchor })
     })
 
-    return () => overlays.forEach((overlay) => overlay.setMap(null))
+    return () => {
+      overlays.forEach((overlay) => overlay.setMap(null))
+      links.forEach((line) => line.setMap(null))
+    }
   }, [phase, stops, exceptions, from, showFrom, fromSpot])
 
   // 지도는 이름 · 거리 · 길찾기와 같은 내용을 그림으로 보여줄 뿐이라 읽기 도구에서는 숨깁니다.
