@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.geojero.app",
+      "sha256_cert_fingerprints": [
+        "16:EC:F0:33:B9:97:A4:12:85:27:00:5C:DE:B8:54:1D:E0:66:FD:19:CB:2F:9B:94:43:B4:61:26:5D:68:9D:D2"
+      ]
+    }
+  }
+]
