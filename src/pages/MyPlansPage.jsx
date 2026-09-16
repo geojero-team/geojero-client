@@ -284,31 +284,13 @@ export default function MyPlansPage() {
             ))}
           </div>
         )}
-        {/* 맨 아래 한 줄 — 왼쪽 개인정보처리방침, 오른쪽 회원 탈퇴(사용자 지정 위치).
-            방침은 로그인과 무관하게 늘 보입니다 — 스토어 심사와 이용자 확인에 필요한 공개 문서입니다. */}
-        <footer className={styles.footer}>
-          <button
-            type="button"
-            className={styles.footerLink}
-            onClick={() => navigate('/privacy')}
-          >
-            {t('myPlans.privacy')}
-          </button>
-          <span className={styles.spacer} />
-          {loggedIn && !asking && (
-            <button
-              type="button"
-              className={styles.footerLink}
-              onClick={() => {
-                setAsking(true)
-                setWithdrawError('')
-              }}
-            >
-              {t('myPlans.withdraw')}
-            </button>
-          )}
-        </footer>
+      </div>
 
+      {/* 탭바 바로 위 한 줄 — 왼쪽 개인정보처리방침, 오른쪽 회원 탈퇴(사용자 지정 위치).
+          목록(위 body)과 함께 스크롤되지 않고 늘 같은 자리에 있습니다.
+          방침은 로그인과 무관하게 늘 보입니다 — 스토어 심사와 이용자 확인에 필요한 공개 문서입니다.
+          탈퇴 확인은 이 줄 바로 위에 펴집니다 — 묻는 자리와 누른 자리가 붙어 있게. */}
+      <div className={styles.bottom}>
         {loggedIn && asking && (
           <section className={styles.confirm}>
             <p className={styles.confirmTitle}>{t('myPlans.withdrawTitle')}</p>
@@ -336,6 +318,29 @@ export default function MyPlansPage() {
             </div>
           </section>
         )}
+
+        <footer className={styles.footer}>
+          <button
+            type="button"
+            className={styles.footerLink}
+            onClick={() => navigate('/privacy')}
+          >
+            {t('myPlans.privacy')}
+          </button>
+          <span className={styles.spacer} />
+          {loggedIn && !asking && (
+            <button
+              type="button"
+              className={styles.footerLink}
+              onClick={() => {
+                setAsking(true)
+                setWithdrawError('')
+              }}
+            >
+              {t('myPlans.withdraw')}
+            </button>
+          )}
+        </footer>
       </div>
 
       <BottomNav />
