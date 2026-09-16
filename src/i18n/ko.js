@@ -332,7 +332,9 @@ export default {
   // 거리는 좌표 사이 직선이라 「약」을 붙입니다. 이 자리에도 「운행 없음」을 쓰지 않습니다.
   'boarding.title': '타는 곳', // 카드의 읽기 도구 이름(화면 제목은 그림에서 빠졌다)
   'boarding.stopName': '{name} 정류장',
-  'boarding.distance': '{place}에서 약 {dist}',
+  // 「직선」(2026-09-16 사용자 결정) — 그림은 「약 380m」(접힌 줄 530:240 · 목록 줄 541:456). 도보 길찾기 버튼이 카카오맵의
+  // 걷는 거리(더 긴 값)를 열게 되어, 두 숫자가 다른 이유가 화면에 있어야 합니다. 거리를 적는 자리는 전부 이 말투입니다(otherStop 포함).
+  'boarding.distance': '{place}에서 직선 약 {dist}',
   // 고현터미널에서 30m 안 — 「약 0m」 대신
   'boarding.near': '{place} 앞',
   'boarding.summary': '{where} · {routes}',
@@ -344,13 +346,16 @@ export default {
   'boarding.stopsCount': '정류장 {count}곳',
   'boarding.perRoute': '노선마다 타는 정류장이 달라요',
   'boarding.perTrip': '편마다 타는 쪽이 달라요',
+  // 출발이 스팟이면 도보 길찾기(스팟 → 정류장, 2026-09-16 사용자 결정 — 그림은 「카카오맵으로 길찾기 ↗」). 고현터미널 출발 · 선착장(DockCard)은 목적지만.
+  'boarding.walk': '카카오맵으로 도보 길찾기 ↗',
+  'boarding.walkA11y': '{place}에서 {name} 정류장까지 카카오맵 도보 길찾기 — 새 창에서 열려요',
   'boarding.directions': '카카오맵으로 길찾기 ↗',
   'boarding.directionsA11y': '{name} 정류장 카카오맵 길찾기 — 새 창에서 열려요',
   // 지도 마커 아래 태그(530:324 「55」 · 541:451 「55 +2」)
   // 541:451(2026-09-14 저녁 수정) — 지도 마커 태그. 접힌 줄의 routeMore 와 같은 말(「55번 외 2」). 노선 하나면 번호만(「55」, 530:282).
   'boarding.pinMore': '{first}번 외 {count}',
   'boarding.opposite': '{route}번 {time} 버스는 길 건너편 정류장에서 타요.',
-  'boarding.otherStop': '{route}번 {time} 버스는 {name} 정류장(약 {dist} 떨어진 곳)에서 타요.',
+  'boarding.otherStop': '{route}번 {time} 버스는 {name} 정류장({place}에서 직선 약 {dist})에서 타요.',
   'boarding.split': '{route}번은 편마다 타는 쪽이 달라요 — {list}',
   'boarding.splitItem': '{time} 버스',
   'boarding.unresolved': '{routes}번은 타는 곳을 지도에 표시하지 못했어요.',

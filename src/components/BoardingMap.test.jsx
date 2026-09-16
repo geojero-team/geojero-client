@@ -131,13 +131,13 @@ beforeEach(() => {
 })
 
 describe('BoardingMap — 접힌 카드(530:231 · 541:231)', () => {
-  it('정류장 하나 · 노선 하나: 「도장포 정류장」 · 「바람의언덕에서 약 380m · 55번」 — 지도는 펼칠 때까지 부르지 않는다', () => {
+  it('정류장 하나 · 노선 하나: 「도장포 정류장」 · 「바람의언덕에서 직선 약 380m · 55번」 — 지도는 펼칠 때까지 부르지 않는다', () => {
     render(<BoardingMap boarding={BARAM} />)
 
     const card = screen.getByRole('region', { name: '타는 곳' })
     const button = within(card).getByRole('button', { expanded: false })
     expect(button).toHaveTextContent('도장포 정류장')
-    expect(button).toHaveTextContent('바람의언덕에서 약 380m · 55번')
+    expect(button).toHaveTextContent('바람의언덕에서 직선 약 380m · 55번')
     expect(screen.queryByRole('link')).not.toBeInTheDocument()
     expect(loadKakaoMaps).not.toHaveBeenCalled()
     expect(card).not.toHaveTextContent(SOURCE) // 출처는 페이지 맨 아래로 갔다
@@ -147,8 +147,16 @@ describe('BoardingMap — 접힌 카드(530:231 · 541:231)', () => {
     render(<BoardingMap boarding={MAEMI} />)
 
     expect(toggle()).toHaveTextContent('대금교차로 정류장')
-    expect(toggle()).toHaveTextContent('매미성에서 약 210m · 33번 외 4')
+    expect(toggle()).toHaveTextContent('매미성에서 직선 약 210m · 33번 외 4')
     expect(screen.getByText('32번 20:37 버스는 길 건너편 정류장에서 타요.')).toBeInTheDocument()
+  })
+
+  it('대표 정류장에서 50m 넘게 떨어진 곳에서 타는 편 — 그 거리도 「매미성에서 직선 약」으로 기준을 적는다', () => {
+    const far = { ...MAEMI.exceptions[0], nodeId: 'GJB9999', lat: 34.9660, lng: 128.7010, distanceM: 330, gapM: 140 }
+    render(<BoardingMap boarding={{ ...MAEMI, exceptions: [far] }} />)
+
+    expect(screen.getByText('32번 20:37 버스는 대금교차로 정류장(매미성에서 직선 약 330m)에서 타요.')).toBeInTheDocument()
+    expect(screen.queryByText(/떨어진 곳/)).not.toBeInTheDocument()
   })
 
   it('노선마다 정류장이 다르면 한 이름으로 뭉개지 않는다 — 「정류장 2곳」', () => {
@@ -162,7 +170,7 @@ describe('BoardingMap — 접힌 카드(530:231 · 541:231)', () => {
     render(<BoardingMap boarding={HAKDONG} route="67-1" />)
 
     expect(toggle()).toHaveTextContent('학동삼거리 정류장')
-    expect(toggle()).toHaveTextContent('학동몽돌해변에서 약 110m · 67-1번')
+    expect(toggle()).toHaveTextContent('학동몽돌해변에서 직선 약 110m · 67-1번')
   })
 
   it('편마다 타는 쪽이 다르면(대표 정류장 없음) 같은 이름은 한 번 · 「편마다 타는 쪽이 달라요」', () => {
@@ -196,11 +204,15 @@ describe('BoardingMap — 펼친 카드(530:282 · 541:408)', () => {
 
     await expand(user)
     expect(toggle()).toHaveAttribute('aria-expanded', 'true')
-    expect(toggle()).toHaveTextContent('바람의언덕에서 약 380m')
+    expect(toggle()).toHaveTextContent('바람의언덕에서 직선 약 380m')
     expect(toggle()).not.toHaveTextContent('55번')
-    const link = screen.getByRole('link', { name: '도장포 정류장 카카오맵 길찾기 — 새 창에서 열려요' })
-    expect(link).toHaveTextContent('카카오맵으로 길찾기 ↗')
-    expect(link).toHaveAttribute('href', `https://map.kakao.com/link/to/${encodeURIComponent('도장포')},34.7426,128.6664`)
+    // 2026-09-16 — 스팟 → 정류장 도보 길찾기가 바로 열린다(카카오맵 `/link/by/walk/출발/도착`). 우리 지도는 직선거리만 알고 길은 카카오가 그린다.
+    const link = screen.getByRole('link', { name: '바람의언덕에서 도장포 정류장까지 카카오맵 도보 길찾기 — 새 창에서 열려요' })
+    expect(link).toHaveTextContent('카카오맵으로 도보 길찾기 ↗')
+    expect(link).toHaveAttribute(
+      'href',
+      `https://map.kakao.com/link/by/walk/${encodeURIComponent('바람의언덕')},34.7440458,128.6633111/${encodeURIComponent('도장포 정류장')},34.7426,128.6664`,
+    )
     expect(link).toHaveAttribute('target', '_blank')
     expect(link.getAttribute('rel')).toContain('noopener')
     expect(screen.queryByRole('listitem')).not.toBeInTheDocument()
@@ -218,10 +230,21 @@ describe('BoardingMap — 펼친 카드(530:282 · 541:408)', () => {
     const row = screen.getByRole('listitem')
     expect(within(row).getByText('대금교차로 정류장')).toBeInTheDocument()
     // 어디서 잰 거리인지 — 접힌 카드와 같은 말투(2026-09-14 사용자 결정: 「약 210m」만으로는 기준을 모른다)
-    expect(within(row).getByText('매미성에서 약 210m')).toBeInTheDocument()
+    expect(within(row).getByText('매미성에서 직선 약 210m')).toBeInTheDocument()
     expect(within(row).getAllByText(/^3[23](-\d)?$/)).toHaveLength(5)
-    expect(screen.getAllByRole('link', { name: /카카오맵 길찾기/ })).toHaveLength(1)
+    expect(screen.getAllByRole('link', { name: /카카오맵 도보 길찾기/ })).toHaveLength(1)
     expect(screen.getByText('32번 20:37 버스는 길 건너편 정류장에서 타요.')).toBeInTheDocument()
+  })
+
+  it('출발이 고현터미널이면 도보 길찾기가 아니라 전처럼 정류장만 넘긴다 — 터미널 앞 30m 는 도보 안내가 뜻이 없다', async () => {
+    const user = userEvent.setup()
+    render(<BoardingMap boarding={FROM_TERMINAL} />)
+
+    await expand(user)
+    const link = screen.getByRole('link', { name: '터미널(일반) 정류장 카카오맵 길찾기 — 새 창에서 열려요' })
+    expect(link).toHaveTextContent('카카오맵으로 길찾기 ↗')
+    expect(link).not.toHaveTextContent('도보')
+    expect(link).toHaveAttribute('href', `https://map.kakao.com/link/to/${encodeURIComponent('터미널(일반) 정류장')},34.8906148,128.6242507`)
   })
 
   it('정류장이 여럿이면 정류장마다 목록 줄과 길찾기 — 카드 아래 버튼 하나로 어디로 보낼지 정할 수 없다', async () => {
@@ -232,9 +255,13 @@ describe('BoardingMap — 펼친 카드(530:282 · 541:408)', () => {
     const rows = screen.getAllByRole('listitem')
     expect(rows).toHaveLength(2)
     expect(within(rows[0]).getByText('학동 정류장')).toBeInTheDocument()
-    expect(within(rows[0]).getByText('학동몽돌해변에서 약 310m')).toBeInTheDocument()
-    expect(within(rows[1]).getByText('학동몽돌해변에서 약 110m')).toBeInTheDocument()
-    expect(within(rows[0]).getByRole('link', { name: '학동 정류장 카카오맵 길찾기 — 새 창에서 열려요' })).toBeInTheDocument()
+    expect(within(rows[0]).getByText('학동몽돌해변에서 직선 약 310m')).toBeInTheDocument()
+    expect(within(rows[1]).getByText('학동몽돌해변에서 직선 약 110m')).toBeInTheDocument()
+    expect(within(rows[0]).getByRole('link', { name: '학동몽돌해변에서 학동 정류장까지 카카오맵 도보 길찾기 — 새 창에서 열려요' })).toBeInTheDocument()
+    expect(within(rows[0]).getByRole('link')).toHaveAttribute(
+      'href',
+      `https://map.kakao.com/link/by/walk/${encodeURIComponent('학동몽돌해변')},34.774752,128.641498/${encodeURIComponent('학동 정류장')},34.7747,128.6381`,
+    )
     expect(rows[1]).toHaveTextContent('학동삼거리 정류장')
     expect(within(rows[1]).getByText('67-1')).toBeInTheDocument()
     expect(screen.getAllByRole('link')).toHaveLength(2)

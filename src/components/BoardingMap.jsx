@@ -26,6 +26,7 @@ import styles from './BoardingMap.module.css'
  *
  * **지도는 펼칠 때 만듭니다.** 접힌 칸에서 만들면 크기가 0이라 화면 맞추기가 틀어지고, 대부분은 펼치지 않습니다.
  * 지도가 못 떠도 이름 · 거리 · 길찾기는 그대로 나옵니다(카카오 JS 키는 도메인 제한).
+ * 거리는 두 점 사이 **직선**이라 화면에도 「직선 약 380m」라고 적고, 걷는 길은 「카카오맵으로 도보 길찾기」가 카카오맵에서 엽니다(2026-09-16).
  *
  * @param boarding 서버 departures 응답의 boarding { from, stops, exceptions, unresolved, source }.
  *                 from은 이 구간의 **출발 쪽**입니다(고현터미널 → 스팟이면 고현터미널).
@@ -202,20 +203,43 @@ function tagText(routes) {
   return routes.length === 1 ? routes[0] : t('boarding.pinMore', { first: routes[0], count: routes.length - 1 })
 }
 
-function directionsUrl({ name, lat, lng }) {
-  return `https://map.kakao.com/link/to/${encodeURIComponent(name)},${lat},${lng}`
+/**
+ * 출발이 스팟이면 스팟 → 정류장 **도보** 길찾기를 바로 엽니다(2026-09-16 사용자 결정 — 우리 지도는 두 점 사이 직선만 알고
+ * 길은 카카오가 그립니다. 우리가 선을 그려도 카카오맵 안에서 보는 것보다 정확할 수 없어 경로 API 는 넣지 않았습니다).
+ * 고현터미널 출발은 전처럼 정류장만 넘깁니다 — 터미널 앞 30m 는 도보 안내가 뜻이 없습니다.
+ */
+function walkable(from) {
+  return from.kind === 'SPOT' && from.lat != null && from.lng != null
 }
 
-function DirectionsLink({ stop, className }) {
+/**
+ * 카카오맵 웹 링크(apis.map.kakao.com/web/guide 「URL로 카카오맵 사용하기」). `/link/by/walk/출발/도착` 이 도보 길찾기,
+ * `/link/to/도착` 은 목적지만. 카카오가 PC · 모바일 웹을 알아서 고르므로 앱 스킴(kakaomap://)은 쓰지 않습니다.
+ * 도착 이름은 두 갈래 다 카드와 같은 「{이름} 정류장」입니다.
+ */
+function directionsUrl(from, stop) {
+  const point = (name, { lat, lng }) => `${encodeURIComponent(name)},${lat},${lng}`
+  const to = point(t('boarding.stopName', { name: stop.name }), stop)
+  return walkable(from)
+    ? `https://map.kakao.com/link/by/walk/${point(from.name, from)}/${to}`
+    : `https://map.kakao.com/link/to/${to}`
+}
+
+function DirectionsLink({ from, stop, className }) {
+  const walk = walkable(from)
   return (
     <a
       className={className}
-      href={directionsUrl(stop)}
+      href={directionsUrl(from, stop)}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={t('boarding.directionsA11y', { name: stop.name })}
+      aria-label={
+        walk
+          ? t('boarding.walkA11y', { place: from.name, name: stop.name })
+          : t('boarding.directionsA11y', { name: stop.name })
+      }
     >
-      {t('boarding.directions')}
+      {t(walk ? 'boarding.walk' : 'boarding.directions')}
     </a>
   )
 }
@@ -440,7 +464,7 @@ export default function BoardingMap({ boarding, route = null, fromSpot = null })
                       </span>
                     ))}
                   </span>
-                  {!single && <DirectionsLink stop={place.stop} className={styles.rowDirections} />}
+                  {!single && <DirectionsLink from={from} stop={place.stop} className={styles.rowDirections} />}
                 </li>
               ))}
             </ul>
@@ -458,7 +482,7 @@ export default function BoardingMap({ boarding, route = null, fromSpot = null })
             </p>
           ))}
 
-          {single && <DirectionsLink stop={single.stop} className={styles.directions} />}
+          {single && <DirectionsLink from={from} stop={single.stop} className={styles.directions} />}
         </div>
       )}
 
@@ -474,6 +498,7 @@ export default function BoardingMap({ boarding, route = null, fromSpot = null })
                 route: ex.routeNo,
                 time: ex.depart,
                 name: ex.name,
+                place: from.name,
                 dist: formatDistance(ex.distanceM),
               })}
         </p>
