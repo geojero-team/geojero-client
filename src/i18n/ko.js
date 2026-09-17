@@ -110,6 +110,22 @@ export default {
 
   /* ── 스팟 목록 (233:378) ──────────────────────────────────────────────── */
   'spots.title': '스팟',
+
+  /* ── 목록 도구 — 스팟 · 시간표 탭 위쪽 줄 (2026-09-17 사용자 결정) ──
+     검색 · 정렬 · 보기 방식을 두 탭이 함께 씁니다. 「최신순」은 두지 않습니다 —
+     스팟은 고정된 19곳이라 새로 들어오는 것이 없어 '최신'이 뜻을 갖지 않습니다. */
+  'listTools.searchAria': '스팟 찾기',
+  'listTools.searchPlaceholder': '스팟 이름으로 찾아보세요',
+  'listTools.clear': '입력한 내용 지우기',
+  'listTools.searchEmpty': '「{query}」와 맞는 스팟을 찾지 못했어요.\n이름을 짧게 줄여 보세요.',
+  'listTools.sortAria': '정렬 방식',
+  'listTools.sortDefault': '추천순',
+  'listTools.sortName': '가나다순',
+  'listTools.sortRegion': '권역순',
+  'listTools.viewAria': '보기 방식',
+  'listTools.viewGrid': '격자로 보기',
+  'listTools.viewRows': '목록으로 보기',
+  'listTools.viewLarge': '크게 보기',
   'timetableList.title': '시간표',
   // 그림(451:613)은 「… 버스 시간표를 보여드려요」인데 2026-09-14 밤 「버스」를 뗐습니다(사용자 결정) —
   // 외도보타니아·도장포유람선은 배 시간표를 엽니다(스팟 상세 「시간표 보기」와 같은 이유).

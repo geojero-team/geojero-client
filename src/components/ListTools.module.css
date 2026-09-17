@@ -1,0 +1,128 @@
+/* 목록 도구 — 스팟 · 시간표 탭 위쪽 줄(2026-09-17). 분류 칩과 같은 결로 맞춥니다:
+   면은 bg-surface, 켜진 칸만 브랜드 테두리 + 옅은 브랜드 면. 새 색은 만들지 않습니다. */
+
+.tools {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 찾기 줄 — 아이콘 · 입력 · 지우기가 한 줄에. 높이 40 은 분류 칩(한 줄 40)과 같습니다. */
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--bg-surface);
+}
+
+.search:focus-within {
+  border-color: var(--brand-strong);
+}
+
+.searchIcon {
+  flex: none;
+  color: var(--text-secondary);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  font: var(--type-body);
+  color: var(--text-primary);
+}
+
+.input::placeholder {
+  color: var(--status-dim);
+}
+
+.input:focus {
+  outline: none; /* 테두리가 대신 알려 줍니다(.search:focus-within) */
+}
+
+/* 사파리·크롬이 덧그리는 기본 × 를 지웁니다 — 우리 지우기 버튼과 둘이 보입니다. */
+.input::-webkit-search-cancel-button,
+.input::-webkit-search-decoration {
+  appearance: none;
+}
+
+.clear {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--border-default);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* 정렬 — 기본 select. 화살표는 브라우저 것을 쓰되 면·테두리를 없애 글자처럼 보이게 합니다. */
+.sort {
+  flex: none;
+  max-width: 60%;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+/* 보기 방식 — 두 칸 토글. 켜진 칸만 브랜드 색입니다. */
+.views {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+}
+
+.view {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--status-dim);
+  cursor: pointer;
+}
+
+.viewOn {
+  background: var(--bg-page);
+  color: var(--brand-strong);
+  box-shadow: var(--elevation-chip);
+}
+
+/* 찾은 것이 없을 때 — 문장마다 줄을 바꿉니다(문구 규칙). */
+.empty {
+  margin: 0;
+  padding: var(--space-lg) 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  text-align: center;
+  white-space: pre-line;
+}
