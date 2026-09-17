@@ -146,7 +146,7 @@
   background: var(--bg-pressed);
 }
 
-/* hero 200 — 첫 스팟 사진. 사진이 없으면 border-default 바탕에 한 줄 */
+/* hero 200 — 코스 스팟 사진(첫 스팟, 위 카드와 겹치면 다음 스팟 — lib/courseHero). 사진이 없으면 border-default 바탕에 한 줄 */
 .hero {
   display: grid;
   flex: none;
