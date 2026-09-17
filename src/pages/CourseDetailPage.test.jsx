@@ -48,6 +48,17 @@ const ride = (routeNo, boardEstimated = false, alightEstimated = false) => ({
   alightEstimated,
 })
 
+/**
+ * 버스 구간 첫 줄 — 노선 알약 「55」 + 글 「약 40분」으로 조각나 있어 줄 전체로 찾습니다.
+ * 단언은 화면 모양 그대로 「[55] 약 40분」으로 씁니다. 알약 안에 읽기 도구용 「번」이 있어 줄의 textContent 는 「55번 약 40분」입니다.
+ * 정규식은 textContent 에 그대로 겁니다.
+ */
+const busLine = (expected) => (_, el) => {
+  if (!el.classList?.contains(styles.legBus)) return false
+  const text = el.textContent.replace(/\s+/g, ' ')
+  return expected instanceof RegExp ? expected.test(text) : text === expected.replace(/^\[(\S+)\] /, '$1번 ')
+}
+
 /** 운영 3-01 그대로(2026-09-14) — 3·4구간이 도장포를 감싼 추정값이다. */
 const COURSE_301 = {
   courseId: 101,
@@ -248,19 +259,19 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
   it('타임라인 — 구간마다 노선 번호와 분, 추정 구간만 「약」', async () => {
     renderCourse(101)
 
-    await screen.findByText('55번 · 40분')
+    await screen.findByText(busLine('[55] 40분'))
     expect(screen.getByText('고현터미널 출발')).toBeInTheDocument()
-    expect(screen.getByText('55번 · 10분')).toBeInTheDocument()
-    expect(screen.getByText('55번 · 약 12분')).toBeInTheDocument()
-    expect(screen.getByText('55번 · 약 52분')).toBeInTheDocument()
+    expect(screen.getByText(busLine('[55] 10분'))).toBeInTheDocument()
+    expect(screen.getByText(busLine('[55] 약 12분'))).toBeInTheDocument()
+    expect(screen.getByText(busLine('[55] 약 52분'))).toBeInTheDocument()
     expect(screen.getByText('고현터미널 도착')).toBeInTheDocument()
-    expect(screen.queryByText('55번 · 약 40분')).not.toBeInTheDocument()
+    expect(screen.queryByText(busLine('[55] 약 40분'))).not.toBeInTheDocument()
   })
 
   it('추정 구간이 있으면 각주 · 출처 · 출발지 가정 — 옛 안내 줄과 큰 헤드라인은 없다', async () => {
     const { container } = renderCourse(101)
 
-    await screen.findByText('55번 · 40분')
+    await screen.findByText(busLine('[55] 40분'))
     expect(screen.getByText('실제 이동 시간은 적힌 것보다 짧습니다 — 버스를 놓치지 않는 쪽으로만 어긋납니다.')).toBeInTheDocument()
     expect(screen.getByText('출처 거제시 BIS 원문 · 2026-08-18')).toBeInTheDocument()
     expect(screen.getByText('모든 첫 출발지는 고현터미널로 가정합니다')).toBeInTheDocument()
@@ -272,7 +283,7 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
   it('추정 구간이 없는 코스에는 「적힌 것보다 짧습니다」를 쓰지 않는다 — 확정값을 짧다고 말하게 된다', async () => {
     renderCourse(110)
 
-    await screen.findByText('55번 · 40분')
+    await screen.findByText(busLine('[55] 40분'))
     expect(screen.queryByText(/적힌 것보다 짧습니다/)).not.toBeInTheDocument()
   })
 
@@ -375,17 +386,53 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     expect(screen.queryByText('도장포 정류장에서 내려 직선 약 380m')).not.toBeInTheDocument()
   })
 
-  it('내리는 곳이 있으면 타는 곳은 적지 않는다 — 구간마다 한 줄', async () => {
+  it('앞 구간에서 내린 정류장과 같은 정류장이면 타는 곳을 다시 적지 않는다 — 이름 · 거리가 1m까지 같을 때만', async () => {
+    api.course.mockResolvedValue({
+      ...COURSE_301,
+      legs: COURSE_301.legs.map((leg, i) => (i === 2 ? { ...leg, alight: { stop: '도장포', distanceM: 376 } } : leg)),
+    })
+    renderCourse(101)
+
+    expect(await screen.findByText('도장포 정류장에서 내려 직선 약 380m')).toBeInTheDocument()
+    expect(screen.queryByText(/도장포 정류장에서 타요/)).not.toBeInTheDocument()
+  })
+
+  it('이름만 같고 거리가 다르면 길 건너편일 수 있다 — 타는 곳을 따로 적는다(도장포 393m 에 내려 376m 에서 탐)', async () => {
+    api.course.mockResolvedValue({
+      ...COURSE_301,
+      legs: COURSE_301.legs.map((leg, i) => (i === 2 ? { ...leg, alight: { stop: '도장포', distanceM: 393 } } : leg)),
+    })
+    renderCourse(101)
+
+    expect(await screen.findByText('도장포 정류장에서 내려 직선 약 390m')).toBeInTheDocument()
+    expect(screen.getByText('도장포 정류장에서 타요 · 직선 약 380m')).toBeInTheDocument()
+  })
+
+  it('내린 곳과 다른 정류장에서 타면 한 구간에 두 줄 — 노선 → 타요 → 내려(4-09 는 학동삼거리에서 내려 학동에서 탄다)', async () => {
     api.course.mockResolvedValue({
       ...COURSE_301,
       legs: COURSE_301.legs.map((leg, i) =>
-        i === 0 ? { ...leg, board: { stop: '고현', distanceM: 0 }, alight: { stop: '학동', distanceM: 271 } } : leg,
+        i === 0
+          ? { ...leg, alight: { stop: '학동삼거리', distanceM: 106 } }
+          : i === 1
+            ? { ...leg, board: { stop: '학동', distanceM: 271 }, alight: { stop: '해금강종점', distanceM: 1070 } }
+            : leg,
       ),
     })
     renderCourse(101)
 
-    expect(await screen.findByText('학동 정류장에서 내려 직선 약 270m')).toBeInTheDocument()
-    expect(screen.queryByText(/고현 정류장에서 타요/)).not.toBeInTheDocument()
+    const route = await screen.findByText(busLine('[55] 10분'))
+    const board = screen.getByText('학동 정류장에서 타요 · 직선 약 270m')
+    const alight = screen.getByText('해금강종점에서 내려 직선 약 1.1km')
+    expect(route.compareDocumentPosition(board) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(board.compareDocumentPosition(alight) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('좁은 폰에서 「직선 약 380m」 안에서 줄이 갈리지 않는다 — 붙는 공백', async () => {
+    renderCourse(101)
+
+    const line = await screen.findByText('도장포 정류장에서 타요 · 직선 약 380m')
+    expect(line.textContent).toBe('도장포 정류장에서 타요\u00a0· 직선\u00a0약\u00a0380m')
   })
 
   it('걷는 시간이 빠져 있다고 각주가 말한다 — 걷는 시간은 어느 원문에도 없다', async () => {
@@ -446,7 +493,7 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     renderCourse(101)
 
     expect(await screen.findByText('지도를 불러오지 못했어요')).toBeInTheDocument()
-    expect(screen.getByText('55번 · 40분')).toBeInTheDocument()
+    expect(screen.getByText(busLine('[55] 40분'))).toBeInTheDocument()
   })
 
   it('「시간표 ›」 버튼은 읽기 도구에 스팟 이름까지 말한다 — 같은 이름 버튼이 셋이면 어느 스팟인지 모른다', async () => {
@@ -597,9 +644,9 @@ describe('CourseDetailPage — 되짚기: 가운데 고현터미널 줄(코스�
   }
 
   const stopOrder = () => [...document.querySelectorAll('[data-stop]')].map((e) => Number(e.dataset.stop))
-  const VIA = '고현터미널을 거쳐요'
+  const VIA = '고현터미널에서 갈아타요'
 
-  it('가운데 구간이 고현터미널로 가면 스팟이 아니라 「고현터미널을 거쳐요」 줄 — 스팟 번호가 밀리지 않는다', async () => {
+  it('가운데 구간이 고현터미널로 가면 스팟이 아니라 「고현터미널에서 갈아타요」 줄 — 스팟 번호가 밀리지 않는다', async () => {
     api.course.mockResolvedValue(COURSE_BACKTRACK)
     renderCourse(130)
 
@@ -611,31 +658,28 @@ describe('CourseDetailPage — 되짚기: 가운데 고현터미널 줄(코스�
     const pow = document.querySelector('[data-stop="12"]')
     expect(hakdong.compareDocumentPosition(via) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(via.compareDocumentPosition(pow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    // 출발 · 거쳐요 · 도착 — 터미널 줄은 셋
+    // 출발 · 갈아타요 · 도착 — 터미널 줄은 셋
     expect(screen.getByText('고현터미널 출발')).toBeInTheDocument()
     expect(screen.getByText('고현터미널 도착')).toBeInTheDocument()
     expect(screen.getAllByText(VIA)).toHaveLength(1)
   })
 
-  it('거쳐 가는 이유는 사실 한 줄 — 두 곳을 바로 잇는 버스가 없다', async () => {
+  it('갈아타는 이유(두 곳을 바로 잇는 버스가 없다)는 읽기 도구에만 — 화면 글은 한 줄', async () => {
     api.course.mockResolvedValue(COURSE_BACKTRACK)
     renderCourse(130)
 
     await screen.findByText(VIA)
-    expect(screen.getByText('두 곳을 바로 잇는 버스가 없어요')).toBeInTheDocument()
+    expect(screen.getByText('두 곳을 바로 잇는 버스가 없어요')).toHaveClass(styles.srOnly)
   })
 
-  it('거쳐 가는 줄은 아이콘 아래로 선을 잇는다 — 끊기면 「도착」 줄처럼 여정이 끝난 것으로 읽힌다', async () => {
-    // 이름 아래 한 줄이 붙어 글(약 40px)이 아이콘(22px)보다 길다. 아이콘 밑 레일이 비면 선이 22px 끊겼다(로컬 실측).
-    // 출발 · 도착 줄은 선의 끝이라 선이 없다.
+  it('갈아타는 줄은 출발 · 도착 줄과 같은 한 줄 모양 — 글이 아이콘 높이라 따로 선을 긋지 않는다', async () => {
+    // 두 줄(이름 + 이유)일 때는 아이콘 밑이 22px 비어 선을 따로 그었다. 한 줄이면 위아래 구간 선이 아이콘에 닿는다.
     api.course.mockResolvedValue(COURSE_BACKTRACK)
     renderCourse(130)
 
     const viaRow = (await screen.findByText(VIA)).closest(`.${styles.timeline} > *`)
-    expect(viaRow.querySelector(`.${styles.viaLine}`)).not.toBeNull()
-    for (const end of ['고현터미널 출발', '고현터미널 도착']) {
-      expect(screen.getByText(end).closest(`.${styles.timeline} > *`).querySelector(`.${styles.viaLine}`)).toBeNull()
-    }
+    expect(viaRow).toHaveClass(styles.stopRow)
+    expect(viaRow.querySelector(`.${styles.stopSub}`)).toBeNull()
   })
 
   it('터미널로 가는 구간은 그대로 그린다 — 노선 · 타는 정류장', async () => {
@@ -657,7 +701,7 @@ describe('CourseDetailPage — 되짚기: 가운데 고현터미널 줄(코스�
     expect(screen.getByTestId('loc')).toHaveTextContent(/^\/timetable\/4$/)
   })
 
-  it('터미널이 없는 코스에는 「거쳐요」 줄이 없다 — 마지막 구간(toPoiId null)은 도착 줄이다', async () => {
+  it('터미널이 없는 코스에는 「갈아타요」 줄이 없다 — 마지막 구간(toPoiId null)은 도착 줄이다', async () => {
     api.course.mockResolvedValue({
       ...COURSE_301,
       legs: [leg(1, null, 4), leg(2, 4, 3), leg(3, 3, 1), leg(4, 1, null)],
@@ -697,7 +741,7 @@ describe('CourseDetailPage — 되짚기: 가운데 고현터미널 줄(코스�
   })
 })
 
-describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니는 직행 노선 + 하루 횟수(2026-09-17 사용자 결정)', () => {
+describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니는 직행 노선 + 약 분(2026-09-17 사용자 결정)', () => {
   /**
    * 서버가 BUS 구간마다 주는 `service`(계약 — 서버는 동시에 만드는 중이라 이 모양이 곧 계약입니다).
    * 코스가 저장한 편 사슬(rides)은 「이 순서가 버스로 이어지는가」 확인용이라, 사슬이 우연히 탄 노선(하루 1회 55-1번)을
@@ -725,15 +769,15 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     })),
   })
 
-  it('노선 · 약 분 · 하루 횟수 — 사슬이 탄 노선(55-1번)이 아니라 가장 자주 다니는 노선', async () => {
+  it('노선 · 약 분 — 사슬이 탄 노선(55-1번)이 아니라 가장 자주 다니는 노선', async () => {
     api.course.mockResolvedValue(withService([service('55', 40), service('55', 10), service('55', 12), service('55', 52)]))
     renderCourse(101)
 
-    expect(await screen.findByText('55번 · 약 40분 · 하루 6회')).toBeInTheDocument()
-    expect(screen.getByText('55번 · 약 10분 · 하루 6회')).toBeInTheDocument()
-    expect(screen.queryByText(/55-1번/)).not.toBeInTheDocument()
+    expect(await screen.findByText(busLine('[55] 약 40분'))).toBeInTheDocument()
+    expect(screen.getByText(busLine('[55] 약 10분'))).toBeInTheDocument()
+    expect(screen.queryByText(busLine(/55-1번/))).not.toBeInTheDocument()
     // 사슬 기준 옛 줄은 나오지 않는다
-    expect(screen.queryByText('55번 · 40분')).not.toBeInTheDocument()
+    expect(screen.queryByText(busLine('[55] 40분'))).not.toBeInTheDocument()
   })
 
   it('소요가 편마다 다르면 폭 「약 50~55분」, 60분을 넘으면 시간 단위 「약 58분~1시간 2분」 · 「약 1시간 5분」', async () => {
@@ -747,42 +791,43 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     )
     renderCourse(101)
 
-    expect(await screen.findByText('55번 · 약 50~55분 · 하루 6회')).toBeInTheDocument()
-    expect(screen.getByText('22-1번 · 약 58분~1시간 2분 · 하루 6회')).toBeInTheDocument()
-    expect(screen.getByText('67-1번 · 약 1시간 5분 · 하루 6회')).toBeInTheDocument()
+    expect(await screen.findByText(busLine('[55] 약 50~55분'))).toBeInTheDocument()
+    expect(screen.getByText(busLine('[22-1] 약 58분~1시간 2분'))).toBeInTheDocument()
+    expect(screen.getByText(busLine('[67-1] 약 1시간 5분'))).toBeInTheDocument()
   })
 
-  it('좁은 폰에서는 「· 」 뒤에서만 줄이 바뀐다 — 나머지 띄어쓰기는 붙는 공백(「1시간 / 2분」 · 「평일 / 14회」로 갈리지 않게)', async () => {
-    // 이 줄은 281px 까지 길어진다(헤드리스 크롬 Noto Sans KR 13px 실측). 360 폭 화면의 칸은 264px 이다.
+  it('「약 58분~1시간 2분」 안에서 줄이 갈리지 않는다 — 붙는 공백(「1시간 / 2분」으로 갈리지 않게)', async () => {
     api.course.mockResolvedValue(
-      withService([
-        service('22-1', 62, { durationMinLow: 58, tripsWeekday: 14, tripsHoliday: 9 }),
-        service('55', 10),
-        service('55', 12),
-        service('55', 52),
-      ]),
+      withService([service('22-1', 62, { durationMinLow: 58 }), service('55', 10), service('55', 12), service('55', 52)]),
     )
     renderCourse(101)
 
-    const line = await screen.findByText('22-1번 · 약 58분~1시간 2분 · 평일 14회 · 휴일 9회')
+    const line = await screen.findByText(busLine('[22-1] 약 58분~1시간 2분'))
     const NB = '\u00a0'
-    expect(line.textContent).toBe(`22-1번${NB}· 약${NB}58분~1시간${NB}2분${NB}· 평일${NB}14회${NB}·${NB}휴일${NB}9회`)
+    expect(line.textContent).toBe(`22-1번 약${NB}58분~1시간${NB}2분`)
   })
 
-  it('횟수 — 평일과 휴일이 다르면 둘 다 · 휴일 0회면 평일만', async () => {
+  it('하루 · 평일 · 휴일 횟수는 구간 줄에 적지 않는다 — 스팟 시간표(「시간표 ›」)가 보여준다. 휴일에 버스가 정말 없다는 줄은 남는다', async () => {
+    // 사용자(2026-09-17): 「굳이 넣어야 되나? 어차피 들어가면 보이잖아」 · 「휴일 6회를 보고 무슨 의민지 알 수 있을까?」
     api.course.mockResolvedValue(
-      withService([
-        service('55', 40),
-        service('22-1', 30, { tripsWeekday: 14, tripsHoliday: 9 }),
-        service('남부2', 20, { tripsWeekday: 2, tripsHoliday: 0 }),
-        service('55', 52),
-      ]),
+      withService(
+        [
+          service('55', 40),
+          service('22-1', 30, { tripsWeekday: 14, tripsHoliday: 9 }),
+          service('남부2', 20, { tripsWeekday: 2, tripsHoliday: 0 }),
+          service('55', 52),
+        ],
+        { 2: { holidayNoBus: true } },
+      ),
     )
-    renderCourse(101)
+    const { container } = renderCourse(101)
 
-    expect(await screen.findByText('22-1번 · 약 30분 · 평일 14회 · 휴일 9회')).toBeInTheDocument()
-    expect(screen.getByText('남부2번 · 약 20분 · 평일 2회')).toBeInTheDocument()
-    expect(screen.queryByText(/휴일 0회/)).not.toBeInTheDocument()
+    expect(await screen.findByText(busLine('[22-1] 약 30분'))).toBeInTheDocument()
+    expect(screen.getByText(busLine('[남부2] 약 20분'))).toBeInTheDocument()
+    const timeline = container.querySelector(`.${styles.timeline}`).textContent
+    expect(timeline).not.toMatch(/\d+\s*회/)
+    expect(timeline).not.toMatch(/하루|평일/)
+    expect(screen.getByText('휴일엔 이 구간 버스가 없어요')).toBeInTheDocument()
   })
 
   it('휴일에 그 구간 버스가 정말 없으면(holidayNoBus) 그 구간 줄 아래에만 한 줄', async () => {
@@ -797,9 +842,9 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     const note = await screen.findByText('휴일엔 이 구간 버스가 없어요')
     expect(screen.getAllByText('휴일엔 이 구간 버스가 없어요')).toHaveLength(1)
     // 그 구간 줄 바로 아래 — 다른 구간 줄에 붙지 않는다
-    const legText = screen.getByText('남부2번 · 약 20분 · 평일 2회')
+    const legText = screen.getByText(busLine('[남부2] 약 20분'))
     expect(legText.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(note.compareDocumentPosition(screen.getByText('55번 · 약 12분 · 하루 6회')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(note.compareDocumentPosition(screen.getByText(busLine('[55] 약 12분'))) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('휴일 0회여도 holidayNoBus 가 아니면(시각 미상) 「버스가 없어요」를 쓰지 않는다 — 운행 없음 ≠ 시각 미상', async () => {
@@ -808,7 +853,7 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     )
     renderCourse(101)
 
-    await screen.findByText('남부2번 · 약 20분 · 평일 2회')
+    await screen.findByText(busLine('[남부2] 약 20분'))
     expect(screen.queryByText(/휴일엔 이 구간 버스가 없어요/)).not.toBeInTheDocument()
   })
 
@@ -819,7 +864,7 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     renderCourse(101)
 
     expect(await screen.findByText('학동 정류장에서 내려 직선 약 310m')).toBeInTheDocument()
-    const last = screen.getByText('55번 · 약 52분 · 하루 6회')
+    const last = screen.getByText(busLine('[55] 약 52분'))
     const holiday = screen.getByText('휴일엔 이 구간 버스가 없어요')
     const board = screen.getByText('도장포 정류장에서 타요 · 직선 약 380m')
     expect(last.compareDocumentPosition(holiday) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
@@ -830,16 +875,16 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     api.course.mockResolvedValue(withService([service('55', 40), null, null, service('55', 52)]))
     renderCourse(101)
 
-    expect(await screen.findByText('55번 · 약 40분 · 하루 6회')).toBeInTheDocument()
-    expect(screen.getByText('55-1번 · 10분')).toBeInTheDocument()
-    expect(screen.getByText('55번 · 약 12분')).toBeInTheDocument()
+    expect(await screen.findByText(busLine('[55] 약 40분'))).toBeInTheDocument()
+    expect(screen.getByText(busLine('[55-1] 10분'))).toBeInTheDocument()
+    expect(screen.getByText(busLine('[55] 약 12분'))).toBeInTheDocument()
   })
 
   it('추정 각주는 화면에 적힌 분을 따른다 — service 가 있으면 service.estimated', async () => {
     // 사슬(leg.estimated)은 추정이지만 가장 자주 다니는 노선의 소요는 확정값이면 각주가 없다
     api.course.mockResolvedValue(withService([service('55', 40), service('55', 10), service('55', 12), service('55', 52)]))
     const { unmount } = renderCourse(101)
-    await screen.findByText('55번 · 약 12분 · 하루 6회')
+    await screen.findByText(busLine('[55] 약 12분'))
     expect(screen.queryByText(/적힌 것보다 짧습니다/)).not.toBeInTheDocument()
     unmount()
 
@@ -849,11 +894,11 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
       legs: COURSE_308.legs.map((leg, i) => ({ ...leg, service: i === 1 ? service('67-1', 27, { estimated: true }) : null })),
     })
     renderCourse(110)
-    await screen.findByText('67-1번 · 약 27분 · 하루 6회')
+    await screen.findByText(busLine('[67-1] 약 27분'))
     expect(screen.getByText(/적힌 것보다 짧습니다/)).toBeInTheDocument()
   })
 
-  it('되짚기 가운데 고현터미널 줄과 섞여도 짝이 맞는다 — 노선 줄 · 휴일 줄 · 타는 곳 줄 뒤에 「거쳐요」, 스팟 번호는 밀리지 않는다', async () => {
+  it('되짚기 가운데 고현터미널 줄과 섞여도 짝이 맞는다 — 노선 줄 · 휴일 줄 · 타는 곳 줄 뒤에 「갈아타요」, 스팟 번호는 밀리지 않는다', async () => {
     // 로컬 서버 4-12(2026-09-17) 응답 그대로 — service 가 사슬 노선과 다른 구간이 둘이다(학동 → 고현 55 → 67-1 · 고현 → 포로수용소 100 → 110).
     // 정류장 줄(board)도 서버가 service 노선으로 찾아 67-1 의 학동삼거리다. 휴일 줄은 이 테스트가 얹은 값이다(운영 데이터에는 아직 없다).
     const bus = (seq, fromPoiId, toPoiId, chainRoute, svc, extra = {}) => ({
@@ -891,18 +936,18 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     })
     renderCourse(129)
 
-    const via = await screen.findByText('고현터미널을 거쳐요')
+    const via = await screen.findByText('고현터미널에서 갈아타요')
     expect([...document.querySelectorAll('[data-stop]')].map((e) => Number(e.dataset.stop))).toEqual([1, 3, 4, 13])
     // 사슬이 탄 노선(55 · 100)은 그 두 구간에 나오지 않는다
-    const toTerminal = screen.getByText('67-1번 · 약 47~58분 · 평일 8회')
+    const toTerminal = screen.getByText(busLine('[67-1] 약 47~58분'))
     const holiday = screen.getByText('휴일엔 이 구간 버스가 없어요')
     const board = screen.getByText('학동삼거리 정류장에서 타요 · 직선 약 110m')
-    const fromTerminal = screen.getByText('110번 · 약 11~15분 · 평일 28회 · 휴일 23회')
-    // 학동몽돌해변 → (67-1 · 휴일 없음 · 학동삼거리) → 고현터미널을 거쳐요 → (110) → 포로수용소
+    const fromTerminal = screen.getByText(busLine('[110] 약 11~15분'))
+    // 학동몽돌해변 → (67-1 · 휴일 없음 · 학동삼거리) → 고현터미널에서 갈아타요 → (110) → 포로수용소
     const order = [document.querySelector('[data-stop="4"]'), toTerminal, holiday, board, via, fromTerminal, document.querySelector('[data-stop="13"]')]
     order.slice(1).forEach((el, i) => expect(order[i].compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
     expect(screen.getAllByText('휴일엔 이 구간 버스가 없어요')).toHaveLength(1)
-    expect(screen.queryByText(/^100번/)).not.toBeInTheDocument()
+    expect(screen.queryByText(busLine(/^100번/))).not.toBeInTheDocument()
     expect(screen.getByText('버스 6번')).toBeInTheDocument()
     expect(screen.getByText(/적힌 것보다 짧습니다/)).toBeInTheDocument()
   })
@@ -918,8 +963,8 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     })
     renderCourse(124)
 
-    expect(await screen.findByText('55번 · 약 50분 · 하루 6회')).toBeInTheDocument()
-    expect(screen.getByText('55번 · 약 52분 · 하루 6회')).toBeInTheDocument()
+    expect(await screen.findByText(busLine('[55] 약 50분'))).toBeInTheDocument()
+    expect(screen.getByText(busLine('[55] 약 52분'))).toBeInTheDocument()
     expect(screen.getByText('외도상륙+해금강선상관광 · 약 2시간 40분')).toBeInTheDocument()
     expect(screen.getByText('도장포 선착장으로 돌아와요')).toBeInTheDocument()
     expect(screen.getByText('같은 정류장 · 바로 이동')).toBeInTheDocument()

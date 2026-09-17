@@ -400,27 +400,29 @@ export default {
   'courseDetail.departNode': '{origin} 출발',
   'courseDetail.arriveNode': '{origin} 도착',
   // 되짚기(2026-09-17 코스재설계 §3-3) — 가운데 구간이 고현터미널로 갔다가 다시 나옵니다(구간 둘: A → 터미널 · 터미널 → B).
-  // 둘째 줄은 거쳐 가는 이유입니다. 코스 규칙이 되짚기를 **직행이 없는 구간에만** 허락해서 사실입니다 —
-  // 환승 규칙을 어긴 게 아니라 구간마다 버스 한 대 그대로입니다. 「직행버스」(시외 버스 종류)로 읽히지 않게 「바로 잇는」이라 적습니다.
-  'courseDetail.viaNode': '{origin}을 거쳐요',
+  // 2026-09-17 한 줄로 줄였습니다. 「갈아타요」 — 내려서 다음 버스를 기다린다는 것을 덜어 말하지 않습니다.
+  // 코스 규칙의 「환승 없음」은 구간마다 버스 한 대라는 뜻이라 부딪히지 않습니다. 문구는 사용자가 시안을 보고 정했습니다(2026-09-17).
+  'courseDetail.viaNode': '{origin}에서 갈아타요',
+  // 거쳐 가는 이유 — **읽기 도구에만**(화면 srOnly). 코스 규칙이 되짚기를 직행이 없는 구간에만 허락해서 사실입니다.
+  // 「직행버스」(시외 버스 종류)로 읽히지 않게 「바로 잇는」이라 적습니다.
   'courseDetail.viaNote': '두 곳을 바로 잇는 버스가 없어요',
-  'courseDetail.leg': '{route}번 · {min}분',
-  // 앞뒤 정류장으로 감싼 구간(leg.estimated)만 「약」. 확정값에 붙이면 정확히 아는 값을 흐립니다.
-  'courseDetail.legApprox': '{route}번 · 약 {min}분',
+  // 옛 응답(service 없음) — 노선 번호는 알약이 적고 여기는 분만. 앞뒤 정류장으로 감싼 구간(leg.estimated)만 「약」.
+  // 확정값에 붙이면 정확히 아는 값을 흐립니다.
+  'courseDetail.legMin': '{min}분',
+  'courseDetail.legMinApprox': '약 {min}분',
   'courseDetail.legSameStop': '같은 정류장 · 바로 이동',
-  // 버스 구간(2026-09-17 사용자 결정) — 코스가 저장한 편 사슬의 노선이 아니라 **그 구간을 가장 자주 다니는 직행 노선**과 하루 횟수(서버 leg.service).
+  // 버스 구간(2026-09-17 사용자 결정) — 코스가 저장한 편 사슬의 노선이 아니라 **그 구간을 가장 자주 다니는 직행 노선**(서버 leg.service).
   // 사슬이 우연히 탄 하루 1회 노선을 적으면 시간을 스스로 정하는 사용자가 하루 한 번 오는 버스를 기다린다.
-  // {time}은 formatDuration(60분 넘으면 「1시간 5분」) 또는 아래 폭. 노선 전체의 값이라 늘 「약」.
-  // 좁은 폰에서 줄이 넘치면(「22-1번 · 약 58분~1시간 2분 · 평일 14회 · 휴일 9회」는 281px — 360 폭 화면의 칸은 264px)
-  // 「· 」 뒤에서만 줄을 바꾸게 나머지 띄어쓰기는 붙는 공백(\u00a0)입니다. 값 쪽 띄어쓰기는 화면이 붙여 넘깁니다.
-  'courseDetail.legService': '{route}번\u00a0· 약\u00a0{time}\u00a0· {trips}',
+  // 노선 번호는 글이 아니라 알약(화면 routePill)이 적습니다 — 이 문장은 알약 뒤 「약 40분」.
+  // {time}은 formatDuration(60분 넘으면 「1시간 5분」) 또는 아래 폭. 노선 전체의 값이라 늘 「약」. 「약 / 58분」으로 갈리지 않게 붙는 공백(\u00a0).
+  // 하루 · 평일 · 휴일 횟수는 적지 않습니다(2026-09-17 사용자 결정 — 「어차피 들어가면 보이잖아」 · 「휴일 6회를 보고 무슨 의민지 알 수 있을까?」).
+  // 횟수는 스팟 옆 「시간표 ›」 화면이 노선마다 보여줍니다.
+  'courseDetail.legServiceTime': '약\u00a0{time}',
+  // 알약 안 읽기 도구용 — 「55」만 읽히면 무엇의 번호인지 모릅니다.
+  'courseDetail.routeSuffix': '번',
   // 같은 노선인데 편마다 소요가 다르면 폭 — 한 값으로 뭉개면 늦은 차를 놓친다(부록 D). 60분을 넘으면 양 끝을 시간 단위로.
   'courseDetail.minRange': '{low}~{high}분',
   'courseDetail.timeRange': '{low}~{high}',
-  // 평일 = 휴일이면 한 값. 휴일 0회는 「휴일 0회」로 적지 않는다 — 운행 없음인지 시각 미상인지는 holidayNoBus 만 말한다.
-  'courseDetail.tripsDaily': '하루 {n}회',
-  'courseDetail.tripsSplit': '평일 {n}회 · 휴일 {m}회',
-  'courseDetail.tripsWeekday': '평일 {n}회',
   // 휴일에 이 구간을 잇는 직행이 어느 노선으로도 없고, 그게 시각 미상이 아니라 정말 운행이 없을 때만(서버 holidayNoBus).
   'courseDetail.holidayNoBus': '휴일엔 이 구간 버스가 없어요',
   // 배 구간(2026-09-16) — 버스 줄과 자리를 맞춥니다. 「55번」 자리에 유람선 코스 이름, 「40분」 자리에 총 소요시간.
@@ -449,11 +451,14 @@ export default {
   // 이미 「종점」으로 끝나면 그대로 둔다(「해금강종점 정류장」은 같은 말을 두 번 한다).
   'courseDetail.stopName': '{stop} 정류장',
   'courseDetail.alight': '{stop}에서 내려요',
-  'courseDetail.alightWithDistance': '{stop}에서 내려 직선 약 {dist}',
-  // 마지막 구간은 고현터미널로 돌아가는 길이라 내릴 스팟이 없다 — 대신 어디서 타는지를 말한다(2026-09-16 사용자 지적).
+  // 「직선 약 380m」는 붙는 공백(\u00a0) — 좁은 폰에서 「직선 약 / 380m」로 갈리지 않고 「직선」 앞에서만 줄이 바뀝니다
+  // (2026-09-17 320 폭 실측: 코스 33개의 정류장 문장 30개 중 23개가 두 줄, 전부 「직선」 앞에서).
+  'courseDetail.alightWithDistance': '{stop}에서 내려 직선\u00a0약\u00a0{dist}',
+  // 타는 곳 — 앞 구간에서 내린 정류장과 **다른** 정류장에서 탈 때만(화면 isSameStop, 2026-09-17).
+  // 마지막 구간은 고현터미널로 돌아가는 길이라 내릴 스팟이 없어 이 줄만 남습니다(2026-09-16 사용자 지적).
   // 학동으로 끝나는 코스 셋은 내린 곳(학동삼거리 110m)과 타는 곳(학동 310m)이 다른 정류장이고 3배 멀다.
   'courseDetail.board': '{stop}에서 타요',
-  'courseDetail.boardWithDistance': '{stop}에서 타요 · 직선 약 {dist}',
+  'courseDetail.boardWithDistance': '{stop}에서 타요\u00a0· 직선\u00a0약\u00a0{dist}',
   'courseDetail.walkNote': '버스 시간에는 정류장에서 스팟까지 걷는 시간이 빠져 있어요. 걷는 길은 스팟 옆 「시간표 ›」에서 카카오맵으로 열 수 있어요.',
   'courseDetail.noLegs': '이 코스는 구간별 버스 정보가 없어요.',
   'courseDetail.save': '이 코스 저장하기',

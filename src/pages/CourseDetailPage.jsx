@@ -83,55 +83,50 @@ function StopBusIcon() {
 }
 
 /**
- * 구간 줄 아래 한 줄 — 「{정류장}에서 내려 직선 약 210m」 / 마지막 구간은 「{정류장}에서 타요 · 직선 약 380m」. 없으면 null.
+ * 정류장 한 줄 — 「{정류장}에서 내려 직선 약 210m」 / 「{정류장}에서 타요 · 직선 약 380m」. 정류장이 없으면 null.
  *
  * **이 구간과 스팟의 관계**를 말합니다. 버스가 서는 곳은 스팟이 아니라 정류장이라, 이 줄이 없으면
  * 「33번 · 약 45분」이 「45분 뒤 매미성 도착」으로 읽힙니다 — 매미성은 대금교차로 정류장에서 직선 210m, 해금강은 1.1km 입니다.
  *
- * **내리는 곳이 있으면 그것, 없으면 타는 곳**입니다(2026-09-16 사용자 결정). 마지막 구간은 고현터미널로 돌아가는 길이라
- * 내릴 스팟이 없고, 대신 마지막 스팟에서 **어디서 타는지**가 필요합니다 — 학동으로 끝나는 코스 셋은 내린 곳(학동삼거리 110m)과
- * 타는 곳(학동 310m)이 다른 정류장이고 3배 멉니다. 고현터미널에서 떠나는 첫 구간은 타는 곳이 터미널 자신이라 서버가 주지 않습니다.
- *
  * 이름은 그 구간이 **실제로 서는 정류장**이라 스팟이 말하는 내리는 곳과 다를 수 있습니다(씨월드는 시각이 지세포 기준).
  * 거리를 모르면 이름만 적습니다 — 값 없이 「직선 약」만 남기지 않습니다(절대규칙 3).
+ *
+ * @param key 'alight'(내리는 곳) · 'board'(타는 곳)
  */
-function stopSentence(leg) {
-  const near = leg.alight?.stop ? leg.alight : leg.board
+function stopLine(near, key) {
   if (!near?.stop) return null
   const stop = near.stop.endsWith('종점') ? near.stop : t('courseDetail.stopName', { stop: near.stop })
-  const key = near === leg.alight ? 'alight' : 'board'
   return near.distanceM == null
     ? t(`courseDetail.${key}`, { stop })
     : t(`courseDetail.${key}WithDistance`, { stop, dist: formatDistance(near.distanceM) })
 }
 
 /**
- * 고현터미널 줄 — 출발 · 도착, 되짚기면 가운데 「고현터미널을 거쳐요」. `sub` 가 있으면 이름 아래 한 줄.
+ * 앞 구간에서 내린 정류장과 이번에 타는 정류장이 **같은 정류장인가** — 이름이 같고 스팟까지 거리가 1m까지 같을 때만(2026-09-17).
  *
- * 출발 · 도착은 선의 끝이라 아이콘뿐입니다. 가운데 줄은 여정이 **이어지므로** 아이콘 아래로 선을 그어 다음 구간 선에 붙입니다 —
- * 글이 두 줄(약 40px)이라 아이콘(22px) 밑이 비면 선이 22px 끊겨 「도착」 줄처럼 읽혔습니다(2026-09-17 리뷰 실측).
+ * 이름만 같으면 길 건너편일 수 있습니다. 코스 33개에서 앞 구간 하차와 이름이 같은 승차 78곳 중 35곳은 거리가 다릅니다
+ * (도장포 393m 에 내려 376m 에서 탐 · 거제면사무소 40m / 138m). 그 둘을 한 줄로 합치면 반대편에서 버스를 기다리게 됩니다.
+ * 응답에 정류장 번호(nodeId)가 없어 거리로 가립니다 — 거리를 모르면 같다고 보지 않습니다.
  */
-function TerminalRow({ label, sub }) {
-  if (!sub) {
-    return (
-      <div className={styles.stopRow}>
-        <span className={styles.rail}>
-          <TerminalIcon />
-        </span>
-        <span className={styles.terminalName}>{label}</span>
-      </div>
-    )
-  }
+function isSameStop(a, b) {
+  return Boolean(a?.stop) && a.distanceM != null && a.stop === b?.stop && a.distanceM === b?.distanceM
+}
+
+/**
+ * 고현터미널 줄 — 출발 · 도착, 되짚기면 가운데 「고현터미널에서 갈아타요」.
+ *
+ * 되짚기 줄은 2026-09-17 두 줄(이름 + 이유)에서 **한 줄**로 줄였습니다. 이유 문장(`note`)은 읽기 도구에만 둡니다.
+ * 한 줄이면 출발 · 도착 줄과 같은 모양이라 위아래 구간 선이 아이콘에 닿아 여정이 이어져 보입니다
+ * (두 줄일 때는 아이콘 밑이 22px 비어 따로 선을 그었습니다).
+ */
+function TerminalRow({ label, note }) {
   return (
-    <div className={styles.viaRow}>
-      <span className={styles.viaRail}>
+    <div className={styles.stopRow}>
+      <span className={styles.rail}>
         <TerminalIcon />
-        <span className={styles.viaLine} />
       </span>
-      <span className={styles.viaLines}>
-        <span className={styles.terminalName}>{label}</span>
-        <span className={styles.stopSub}>{sub}</span>
-      </span>
+      <span className={styles.terminalName}>{label}</span>
+      {note && <span className={styles.srOnly}>{note}</span>}
     </div>
   )
 }
@@ -182,20 +177,28 @@ function stayLine(leg) {
 }
 
 /**
- * 버스 구간 한 줄 — 「55번 · 약 12분 · 하루 6회」. 서버 `leg.service` 가 없으면(옛 응답) null.
+ * 버스 구간 한 줄의 두 조각 — 노선 알약 「55」와 글 「약 12분」(2026-09-17).
+ * 알약은 타는 곳 카드(BoardingMap `.badge`)와 같은 모양이라 코스 상세의 55번과 시간표 화면의 55번이 같은 부품으로 보입니다.
+ * 서버 `leg.service` 가 없으면(옛 응답) 사슬이 탄 노선 · 분 — 앞뒤 정류장으로 감싼 구간만 「약」.
  *
  * ★ **코스가 저장한 편 사슬(rides)의 노선을 적지 않습니다**(2026-09-17 사용자 결정). 서버는 「이 순서가 버스로 이어지는가」를
  * 확인하려고 코스마다 하루짜리 편 사슬 하나를 저장하는데, 그 사슬이 우연히 탄 노선이 하루 1회 55-1번이면 같은 구간을
  * 하루 6회 다니는 55번이 있어도 화면이 55-1번을 말했습니다. 몇 시에 갈지는 사용자가 정하므로 필요한 것은
- * **그 구간을 가장 자주 다니는 직행 노선과 하루 몇 번 오는지**입니다 — 서버가 스팟 시간표와 같은 엔진으로 골라 줍니다.
+ * **그 구간을 가장 자주 다니는 직행 노선**입니다 — 서버가 스팟 시간표와 같은 엔진으로 골라 줍니다.
  *
  *  · 분은 편마다 다르면 폭(「약 50~55분」), 같으면 한 값. 60분을 넘으면 시간 단위(formatDuration). 늘 「약」 — 노선 전체의 값이라서.
- *  · 횟수는 평일 = 휴일이면 「하루 N회」, 다르면 「평일 N회 · 휴일 M회」, 휴일 0회면 「평일 N회」.
- *    휴일 0회를 「휴일 0회」로 적지 않습니다 — 그게 운행 없음인지 시각 미상인지는 `holidayNoBus` 만 말합니다.
+ *  · **하루 몇 번 오는지는 적지 않습니다**(2026-09-17 사용자 결정 — 「어차피 들어가면 보이잖아」 · 「휴일 6회를 보고 무슨 의민지 알 수 있을까?」).
+ *    횟수는 스팟 옆 「시간표 ›」가 노선마다 보여줍니다. 서버 `service.tripsWeekday` · `tripsHoliday` 는 그대로 오지만 여기서는 쓰지 않습니다.
+ *    휴일에 정말 운행이 없다는 사실만은 구간 줄 아래 `holidayNoBus` 줄이 말합니다.
  */
-function serviceLine(leg) {
+function busParts(leg) {
   const s = leg.service
-  if (!s) return null
+  if (!s) {
+    return {
+      route: leg.rides?.[0]?.routeNo ?? null,
+      rest: t(leg.estimated ? 'courseDetail.legMinApprox' : 'courseDetail.legMin', { min: leg.durationMin }),
+    }
+  }
   const low = s.durationMinLow ?? s.durationMin
   const time =
     low === s.durationMin
@@ -203,15 +206,8 @@ function serviceLine(leg) {
       : s.durationMin < 60
         ? t('courseDetail.minRange', { low, high: s.durationMin })
         : t('courseDetail.timeRange', { low: formatDuration(low), high: formatDuration(s.durationMin) })
-  const trips =
-    s.tripsWeekday === s.tripsHoliday
-      ? t('courseDetail.tripsDaily', { n: s.tripsWeekday })
-      : s.tripsHoliday > 0
-        ? t('courseDetail.tripsSplit', { n: s.tripsWeekday, m: s.tripsHoliday })
-        : t('courseDetail.tripsWeekday', { n: s.tripsWeekday })
-  // 「1시간 2분」 · 「평일 14회」 안에서 줄이 갈리지 않게 붙는 공백으로 — 줄은 「· 」 뒤에서만 바뀝니다(ko.js legService).
-  const glue = (text) => text.replaceAll(' ', '\u00a0')
-  return t('courseDetail.legService', { route: s.routeNo, time: glue(time), trips: glue(trips) })
+  // 「약 58분~1시간 2분」 안에서 줄이 갈리지 않게 붙는 공백으로(ko.js legServiceTime).
+  return { route: s.routeNo, rest: t('courseDetail.legServiceTime', { time: time.replaceAll(' ', '\u00a0') }) }
 }
 
 /**
@@ -235,25 +231,21 @@ function legEstimated(leg) {
 }
 
 /**
- * 구간 한 줄 — 버스는 `55번 · 약 12분 · 하루 6회`(service), 옛 응답이면 `55번 · 40분` · 추정 `55번 · 약 12분`,
- * 같은 정류장이면 `같은 정류장 · 바로 이동`.
+ * 구간 한 줄 — 버스는 `[55] 약 12분`(service), 옛 응답이면 `[55] 40분` · 추정 `[55] 약 12분`,
+ * 같은 정류장이면 `같은 정류장 · 바로 이동`. 알약은 버스 노선에만 씁니다 — 배 구간 줄은 글 그대로.
  */
-function LegRow({ leg }) {
+function LegRow({ leg, prev }) {
   const sameStop = leg.mode === 'SAME_STOP'
   const ferry = leg.mode === 'FERRY' ? ferryLine(leg) : null
-  const service = leg.mode === 'BUS' ? serviceLine(leg) : null
-  const route = leg.rides?.[0]?.routeNo ?? ''
-  const text = ferry
-    ? ferry
-    : sameStop
-      ? t('courseDetail.legSameStop')
-      : (service ?? t(leg.estimated ? 'courseDetail.legApprox' : 'courseDetail.leg', { route, min: leg.durationMin }))
+  const bus = ferry || sameStop ? null : busParts(leg)
 
   // 정류장 줄은 **구간 줄**에 답니다(2026-09-16 사용자 결정). 스팟 이름 아래에 두면 스팟의 부제처럼 읽혀
   // 「대금교차로」가 무엇인지 알 수 없었습니다 — 여기 있으면 「이 버스와 스팟의 관계」가 됩니다.
+  // 순서는 노선 → 타요 → 내려(2026-09-17). 타는 곳은 앞 구간에서 내린 정류장과 **같은 정류장**이면 다시 적지 않고, 다르면 적습니다 —
+  // 4-09 는 학동삼거리에서 내려 학동에서 탑니다. 예전 규칙(내리는 곳이 있으면 타는 곳은 안 적음)은 이런 타는 곳을 지웠습니다.
   // 배 구간에는 정류장 줄이 없습니다 — 버스를 타고 내리지 않아 서버가 board·alight 를 주지 않습니다.
-  const subText = ferry ? null : stopSentence(leg)
-  const Icon = StopBusIcon
+  const board = ferry || isSameStop(prev?.alight, leg.board) ? null : stopLine(leg.board, 'board')
+  const alight = ferry ? null : stopLine(leg.alight, 'alight')
 
   return (
     <div className={styles.legRow}>
@@ -262,16 +254,35 @@ function LegRow({ leg }) {
         <span className={ferry ? styles.lineFerry : sameStop ? styles.lineDots : styles.line} />
       </span>
       <span className={styles.legLines}>
-        <span className={ferry ? styles.ferryText : styles.legText}>
-          {ferry && <StopFerryIcon />}
-          {text}
-        </span>
+        {bus ? (
+          <span className={styles.legBus}>
+            {/* 읽기 도구에는 「55번」 — 「55」만 읽히면 무엇의 번호인지 모릅니다. */}
+            {bus.route && (
+              <span className={styles.routePill}>
+                {bus.route}
+                <span className={styles.srOnly}>{t('courseDetail.routeSuffix')}</span>
+              </span>
+            )}{' '}
+            <span className={styles.legText}>{bus.rest}</span>
+          </span>
+        ) : (
+          <span className={ferry ? styles.ferryText : styles.legText}>
+            {ferry && <StopFerryIcon />}
+            {ferry ?? t('courseDetail.legSameStop')}
+          </span>
+        )}
         {/* 휴일에 이 구간을 잇는 직행이 어느 노선으로도 없을 때만 — 서버가 시각 미상(UNKNOWN_TIME)과 갈라 줍니다(운행 없음 ≠ 시각 미상). */}
         {leg.mode === 'BUS' && leg.holidayNoBus && <span className={styles.alight}>{t('courseDetail.holidayNoBus')}</span>}
-        {subText && (
+        {board && (
           <span className={styles.alight}>
-            {!ferry && <Icon />}
-            {subText}
+            <StopBusIcon />
+            {board}
+          </span>
+        )}
+        {alight && (
+          <span className={styles.alight}>
+            <StopBusIcon />
+            {alight}
           </span>
         )}
       </span>
@@ -517,10 +528,8 @@ export default function CourseDetailPage() {
                     const walkNext = next?.mode === 'SAME_STOP' || next?.mode === 'FERRY' || next?.toPoiId === null
                     return (
                       <Fragment key={leg.seq}>
-                        <LegRow leg={leg} />
-                        {viaTerminal && (
-                          <TerminalRow label={t('courseDetail.viaNode', { origin })} sub={t('courseDetail.viaNote')} />
-                        )}
+                        <LegRow leg={leg} prev={legs[i - 1]} />
+                        {viaTerminal && <TerminalRow label={t('courseDetail.viaNode', { origin })} note={t('courseDetail.viaNote')} />}
                         {stop && (
                           <StopRow
                             stop={stop}
