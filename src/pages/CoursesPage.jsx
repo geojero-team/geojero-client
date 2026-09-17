@@ -112,18 +112,16 @@ function centerThemeOf(course) {
 function CourseBadge({ course }) {
   const oc = course.officialCourse
   if (course.badgeAxis === 'OFFICIAL' && oc?.name && oc.matched > 0) {
-    // 흰 메달 초록 알약(2026-09-17 밤) — 9경 배지와 같은 틀에 밝기만 뒤집었습니다. 표식은 경로(출발 고리 → 점 두 개 → 핀)이고 장식이라 숨깁니다.
-    // 16 격자: 고리 r1.5 선 1.5 · 점 r0.9 둘 · 핀 r3.6 구멍 r1.4. 무게가 오른쪽 위 핀에 있어 고리를 왼쪽 아래 끝까지 내려 가운데를 맞췄습니다.
+    // 흰 메달 초록 알약(2026-09-17 밤) — 9경 배지와 같은 틀에 밝기만 뒤집었습니다. 표식은 **핀 하나**이고 장식이라 숨깁니다.
+    // 처음엔 경로(출발 고리 → 점 두 개 → 핀)였는데 22px 원 안에서 자잘해 사용자가 핀만 남기자고 했습니다(같은 밤).
+    // 16 격자 가운데: 핀 반지름 4.6 · 구멍 1.8. 뾰족한 끝까지 합친 높이의 가운데가 원 가운데에 오게 위로 조금 올렸습니다.
     return (
       <span className={`${styles.badge} ${styles.badgeOfficial}`}>
         <span className={styles.badgeOfficialMark}>
           <svg className={styles.badgeIcon} width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <circle cx="3" cy="13" r="1.5" stroke="currentColor" strokeWidth="1.5" />
-            <circle cx="6.2" cy="12.8" r="0.9" fill="currentColor" />
-            <circle cx="8.6" cy="12.2" r="0.9" fill="currentColor" />
             <path
               fillRule="evenodd"
-              d="M11.5 1.6a3.6 3.6 0 0 1 3.6 3.6c0 2.6-3.6 6.2-3.6 6.2S7.9 7.8 7.9 5.2a3.6 3.6 0 0 1 3.6-3.6zm0 2.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 1 0 0-2.8z"
+              d="M8 1.2a4.6 4.6 0 0 1 4.6 4.6c0 3.4-4.6 8.9-4.6 8.9S3.4 9.2 3.4 5.8A4.6 4.6 0 0 1 8 1.2zm0 2.8a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 1 0 0-3.6z"
               fill="currentColor"
             />
           </svg>
