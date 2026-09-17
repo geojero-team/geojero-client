@@ -397,7 +397,7 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     expect(screen.queryByText(/도장포 정류장에서 타요/)).not.toBeInTheDocument()
   })
 
-  it('이름만 같고 거리가 다르면 길 건너편일 수 있다 — 타는 곳을 따로 적는다(도장포 393m 에 내려 376m 에서 탐)', async () => {
+  it('이름만 같고 거리가 다르면 길 건너편일 수 있다 — 타는 곳을 따로 적고 가는 방향을 붙인다(도장포 393m 에 내려 376m 에서 탐)', async () => {
     api.course.mockResolvedValue({
       ...COURSE_301,
       legs: COURSE_301.legs.map((leg, i) => (i === 2 ? { ...leg, alight: { stop: '도장포', distanceM: 393 } } : leg)),
@@ -405,7 +405,20 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     renderCourse(101)
 
     expect(await screen.findByText('도장포 정류장에서 내려 직선 약 390m')).toBeInTheDocument()
-    expect(screen.getByText('도장포 정류장에서 타요 · 직선 약 380m')).toBeInTheDocument()
+    // 반올림하면 같은 거리라 같은 줄이 두 번 나온 것처럼 읽혔다(2026-09-17 밤 사용자 — 신촌 184m / 176m).
+    // 「길 건너편」은 정류장 번호가 없어 단정하지 않고, 사실인 **버스가 가는 방향**만 붙인다 — 이 구간은 고현터미널로 간다.
+    expect(screen.getByText('도장포 정류장(고현터미널 방향)에서 타요 · 직선 약 380m')).toBeInTheDocument()
+  })
+
+  it('이름이 다른 정류장에서 탈 때는 방향을 붙이지 않는다 — 헷갈릴 일이 없다', async () => {
+    api.course.mockResolvedValue({
+      ...COURSE_301,
+      legs: COURSE_301.legs.map((leg, i) => (i === 2 ? { ...leg, alight: { stop: '해금강종점', distanceM: 1070 } } : leg)),
+    })
+    renderCourse(101)
+
+    expect(await screen.findByText('도장포 정류장에서 타요 · 직선 약 380m')).toBeInTheDocument()
+    expect(screen.queryByText(/방향\)에서 타요/)).not.toBeInTheDocument()
   })
 
   it('내린 곳과 다른 정류장에서 타면 한 구간에 두 줄 — 노선 → 타요 → 내려(4-09 는 학동삼거리에서 내려 학동에서 탄다)', async () => {

@@ -459,6 +459,10 @@ export default {
   // 학동으로 끝나는 코스 셋은 내린 곳(학동삼거리 110m)과 타는 곳(학동 310m)이 다른 정류장이고 3배 멀다.
   'courseDetail.board': '{stop}에서 타요',
   'courseDetail.boardWithDistance': '{stop}에서 타요\u00a0· 직선\u00a0약\u00a0{dist}',
+  // 앞에서 내린 정류장과 이름만 같은 다른 정류장에서 탈 때 — 버스가 가는 곳을 붙인다(2026-09-17 밤 사용자 결정 C안).
+  // 「길 건너편」은 정류장 번호가 없어 단정하지 않는다. 신촌 184m 에 내려 176m 에서 타면 둘 다 「약 180m」라 같은 줄로 읽혔다.
+  'courseDetail.boardToward': '{stop}({toward} 방향)에서 타요',
+  'courseDetail.boardTowardWithDistance': '{stop}({toward} 방향)에서 타요 · 직선 약 {dist}',
   'courseDetail.walkNote': '버스 시간에는 정류장에서 스팟까지 걷는 시간이 빠져 있어요. 걷는 길은 스팟 옆 「시간표 ›」에서 카카오맵으로 열 수 있어요.',
   'courseDetail.noLegs': '이 코스는 구간별 버스 정보가 없어요.',
   'courseDetail.save': '이 코스 저장하기',

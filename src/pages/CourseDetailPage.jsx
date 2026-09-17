@@ -93,12 +93,13 @@ function StopBusIcon() {
  *
  * @param key 'alight'(내리는 곳) · 'board'(타는 곳)
  */
-function stopLine(near, key) {
+function stopLine(near, key, toward = null) {
   if (!near?.stop) return null
   const stop = near.stop.endsWith('종점') ? near.stop : t('courseDetail.stopName', { stop: near.stop })
+  const k = toward ? `${key}Toward` : key
   return near.distanceM == null
-    ? t(`courseDetail.${key}`, { stop })
-    : t(`courseDetail.${key}WithDistance`, { stop, dist: formatDistance(near.distanceM) })
+    ? t(`courseDetail.${k}`, { stop, toward })
+    : t(`courseDetail.${k}WithDistance`, { stop, toward, dist: formatDistance(near.distanceM) })
 }
 
 /**
@@ -234,7 +235,7 @@ function legEstimated(leg) {
  * 구간 한 줄 — 버스는 `[55] 약 12분`(service), 옛 응답이면 `[55] 40분` · 추정 `[55] 약 12분`,
  * 같은 정류장이면 `같은 정류장 · 바로 이동`. 알약은 버스 노선에만 씁니다 — 배 구간 줄은 글 그대로.
  */
-function LegRow({ leg, prev }) {
+function LegRow({ leg, prev, origin }) {
   const sameStop = leg.mode === 'SAME_STOP'
   const ferry = leg.mode === 'FERRY' ? ferryLine(leg) : null
   const bus = ferry || sameStop ? null : busParts(leg)
@@ -244,7 +245,13 @@ function LegRow({ leg, prev }) {
   // 순서는 노선 → 타요 → 내려(2026-09-17). 타는 곳은 앞 구간에서 내린 정류장과 **같은 정류장**이면 다시 적지 않고, 다르면 적습니다 —
   // 4-09 는 학동삼거리에서 내려 학동에서 탑니다. 예전 규칙(내리는 곳이 있으면 타는 곳은 안 적음)은 이런 타는 곳을 지웠습니다.
   // 배 구간에는 정류장 줄이 없습니다 — 버스를 타고 내리지 않아 서버가 board·alight 를 주지 않습니다.
-  const board = ferry || isSameStop(prev?.alight, leg.board) ? null : stopLine(leg.board, 'board')
+  // 앞에서 내린 정류장과 **이름은 같은데 다른 정류장**이면(거리가 다름 — 신촌 184m 에 내려 176m 에서 탐) 가는 방향을 붙입니다(2026-09-17 밤 사용자 결정).
+  // 반올림하면 둘 다 「약 180m」라 같은 줄이 두 번 나온 것처럼 읽혔습니다. 「길 건너편」은 정류장 번호가 없어 단정하지 않고,
+  // 사실인 **이 버스가 가는 곳**(다음 스팟 또는 고현터미널)만 적습니다.
+  const sameNameOther = Boolean(prev?.alight?.stop) && prev.alight.stop === leg.board?.stop && !isSameStop(prev.alight, leg.board)
+  // 가는 곳 이름은 구간의 toName — 고현터미널로 가는 구간인데 이름이 빠진 옛 응답이면 코스의 출발지 이름(originName).
+  const toward = sameNameOther ? (leg.toName ?? (leg.toPoiId == null ? origin : null)) : null
+  const board = ferry || isSameStop(prev?.alight, leg.board) ? null : stopLine(leg.board, 'board', toward)
   const alight = ferry ? null : stopLine(leg.alight, 'alight')
 
   return (
@@ -529,7 +536,7 @@ export default function CourseDetailPage() {
                     const walkNext = next?.mode === 'SAME_STOP' || next?.mode === 'FERRY' || next?.toPoiId === null
                     return (
                       <Fragment key={leg.seq}>
-                        <LegRow leg={leg} prev={legs[i - 1]} />
+                        <LegRow leg={leg} prev={legs[i - 1]} origin={course.originName} />
                         {viaTerminal && <TerminalRow label={t('courseDetail.viaNode', { origin })} note={t('courseDetail.viaNote')} />}
                         {stop && (
                           <StopRow
