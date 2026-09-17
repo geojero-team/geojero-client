@@ -94,8 +94,8 @@ function centerThemeOf(course) {
  * 사진 위 배지 — **축마다 색 하나**(2026-09-17 코스재설계 §5-2 사용자 결정). 어느 축으로 고른 코스인지는 서버가 줍니다(`badgeAxis`).
  *   OFFICIAL  초록 면 · 글자만 「거제시 추천 관광코스」
  *   THEME     어두운 반투명 유리 면 + 분류 아이콘 「전망·명소」(중심 분류 하나 — centerThemeOf)
- *   NINE      주황 면 · 글자만 「거제 9경」
- * 모양이 둘로 갈립니다 — **색 면 알약 = 거제시가 정한 목록**, **유리 알약 + 아이콘 = 분류**(2026-09-17 밤 사용자 결정 — 흰 알약 → 토스식 음영 유리, ◎ 도장 뺌).
+ *   NINE      밝은 라벨(연한 주황 면 + 주황 테) + 해 메달 「거제 9경」
+ * 모양이 셋으로 갈립니다 — 색 면 = 거제시 코스 · 유리 + 아이콘 = 분류 · 밝은 라벨 + 메달 = 9경(2026-09-17 밤 사용자 결정 — 흰 알약 → 토스식 음영 유리, ◎ 도장 → 해 메달).
  * 경마다 다른 색은 쓰지 않습니다 — 아홉 색은 못 외우고 뜻이 없습니다.
  * **글자에 숫자를 넣지 않습니다**(2026-09-17 저녁 사용자 결정 — *"한눈에 알아보게"*). 사진 위 배지는 2~6자 짧은 이름이 보통이고
  * (에어비앤비 「게스트 선호」 · 비짓제주 「관광지」), 원문 코스 이름 · 몇 곳 중 몇 곳 · 순서는 코스 상세 머리 한 줄이 말합니다.
@@ -129,9 +129,24 @@ function CourseBadge({ course }) {
   }
 
   if (!course.nineScenicNos?.length) return null
-  // 글자만 — ◎ 도장은 뺐습니다(2026-09-17 밤 사용자: "이게 좀 안 예뻐"). 초록 거제시 코스 배지와 같은 모양이 되어
-  // 「색 면 알약 = 누가 정한 목록」, 「유리 알약 + 아이콘 = 분류」로 모양이 둘로 갈립니다. 두 색 면은 글자가 가릅니다.
-  return <span className={`${styles.badge} ${styles.badgeNine}`}>{t('nineScenic.stamp')}</span>
+  // 밝은 라벨 + 해 메달(2026-09-17 밤 1안). 표식은 해 + 물결 두 줄(日本三景 마크를 줄인 모양) — 명승 목록이라 월계관 · 별 같은 「상」 표식을 쓰지 않습니다.
+  // 16 격자: 반원 해(면) · 물결 두 줄 같은 위상(선 1.5, 틈 1.9). 물결 쪽 잉크가 무거워 전체를 2 올려 메달 가운데에 맞췄습니다.
+  return (
+    <span className={`${styles.badge} ${styles.badgeNine}`}>
+      <span className={styles.badgeNineMark}>
+        <svg className={styles.badgeIcon} width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M4.6 5.4a3.4 3.4 0 0 1 6.8 0z" fill="currentColor" />
+          <path
+            d="M2 8.4q1.5-1.5 3 0t3 0t3 0t3 0M2 11.8q1.5-1.5 3 0t3 0t3 0t3 0"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      </span>
+      <span>{t('nineScenic.stamp')}</span>
+    </span>
+  )
 }
 
 /** 카드 한 장 — 카드 전체가 버튼이고 누르면 고름이 토글됩니다. */
