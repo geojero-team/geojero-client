@@ -6,6 +6,7 @@ import OptionChip from '../components/OptionChip'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { api } from '../lib/api'
+import { heroPhotos } from '../lib/courseHero'
 import { courseTitle } from '../lib/courseTitle'
 import { formatDuration, THEME_LABELS } from '../lib/format'
 import { getToken } from '../lib/session'
@@ -25,7 +26,7 @@ import styles from './CoursesPage.module.css'
  * 대표 밖 코스는 제목 · 소개가 없습니다. 서버에 다시 묻지 않고 받은 목록을 화면에서 거릅니다.
  * 저장해서 뺀 코스는 칩 개수에서도 빠지고, 0개인 칩은 지우지 않고 비활성으로 남깁니다.
  *
- * 카드는 첫 스팟 사진 · 배지(2026-09-17 부터 축마다 하나 — 거제시 코스 · 분류 · 9경, 아래 CourseBadge) · 제목 · 스팟 체인 · 소개 ·
+ * 카드는 사진(첫 스팟 사진, 위 카드와 겹치면 다음 스팟 — lib/courseHero) · 배지(2026-09-17 부터 축마다 하나 — 거제시 코스 · 분류 · 9경, 아래 CourseBadge) · 제목 · 스팟 체인 · 소개 ·
  * 태그 넷(버스 시간 · 권역 · 배차 · 요일)입니다.
  * 태그 값은 전부 서버 데이터입니다 — 기준문서에 없는 수치를 화면에서 만들지 않습니다(절대규칙 1).
  * 그림(582:416)의 둘째 태그는 노선 번호(「55번 한 노선」)였는데 2026-09-14 밤 **권역**으로 바꿨습니다(사용자 결정) —
@@ -156,11 +157,12 @@ function CourseBadge({ course }) {
 }
 
 /** 카드 한 장 — 카드 전체가 버튼이고 누르면 고름이 토글됩니다. */
-function CourseCard({ course, selected, onToggle }) {
-  // 첫 스팟 사진(/api/pois 대표 사진 — 코스 API는 사진을 주지 않습니다). 링크가 죽으면(onError)
+function CourseCard({ course, photoUrl, selected, onToggle }) {
+  // 사진은 목록이 정해 넘깁니다(photoUrl — /api/pois 대표 사진, 코스 API는 사진을 주지 않습니다). 링크가 죽으면(onError)
   // 사진이 없을 때와 같은 「사진 없음」 상태로 — 깨진 그림 아이콘을 남기지 않습니다.
-  const [broken, setBroken] = useState(false)
-  const photo = broken ? null : (course.spots[0]?.thumbnailUrl ?? null)
+  // 죽은 **주소**를 기억합니다: 칩으로 거르면 같은 카드가 자리를 지킨 채 사진 주소만 바뀌는데, 참/거짓으로 두면 새 사진까지 「사진 없음」이 됩니다.
+  const [brokenUrl, setBrokenUrl] = useState(null)
+  const photo = photoUrl && photoUrl !== brokenUrl ? photoUrl : null
   const names = course.spots.map((spot) => spot.shortName)
   const title = courseTitle(course.title, names) ?? names[0]
 
@@ -174,7 +176,8 @@ function CourseCard({ course, selected, onToggle }) {
     >
       <span className={styles.hero}>
         {photo ? (
-          <img className={styles.heroImg} src={photo} alt="" onError={() => setBroken(true)} />
+          /* alt="" — 장식 사진입니다. 카드 버튼의 이름은 제목 · 스팟 체인 글이라, 사진이 어느 스팟 것이든 틀린 말을 하지 않습니다. */
+          <img className={styles.heroImg} src={photo} alt="" onError={() => setBrokenUrl(photo)} />
         ) : (
           /* 자리그림 SVG 를 쓰지 않습니다 — 그림이 그렇습니다. 0장은 버그가 아니라 사실이라 이유를 적습니다. */
           <span className={styles.noPhoto}>{t('courses.noPhoto')}</span>
@@ -262,6 +265,8 @@ export default function CoursesPage() {
   const shown = spotCount ? courses.filter((course) => course.spotCount === spotCount) : courses
   // 칩으로 걸렀으면 그 곳 수에서 뺀 코스만 셉니다 — 4곳 코스를 뺐는데 3곳 목록 아래 「1개는 빼고」라 적지 않게.
   const hiddenCount = spotCount ? result.hidden.filter((n) => n === spotCount).length : result.hidden.length
+  // 카드 사진은 **보이는 카드** 순서대로 정합니다 — 칩으로 가려진 카드가 사진을 선점하지 않게(lib/courseHero).
+  const photos = heroPhotos(shown)
 
   // 칩을 누르면 목록 맨 위로(메모 623:520). 칩 줄은 붙어 있으므로, 상태줄이 칩 줄 아래 제자리 간격에 오게 올립니다.
   // 상태줄이 칩 줄 뒤에 가려 있으면 그만큼 내리고, 이미 그 아래에 보이면 움직이지 않습니다.
@@ -372,10 +377,11 @@ export default function CoursesPage() {
                 </p>
               )}
               <div className={styles.list}>
-                {shown.map((course) => (
+                {shown.map((course, i) => (
                   <CourseCard
                     key={course.courseId}
                     course={course}
+                    photoUrl={photos[i]}
                     selected={selected.has(course.courseId)}
                     onToggle={toggle}
                   />

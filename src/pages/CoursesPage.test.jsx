@@ -211,15 +211,48 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
     expect(card(120).querySelector(`.${styles.badge}`)).toBeNull()
   })
 
-  it('hero — 첫 스팟의 /api/pois 대표 사진, 없으면 「사진 없음 — TourAPI 사진 0장」(자리그림 SVG 아님)', async () => {
+  it('hero — 첫 스팟의 /api/pois 대표 사진 · 첫 스팟에 사진이 없으면 사진 있는 다음 스팟(위 카드가 쓴 사진은 건너뜀)', async () => {
     renderPage()
 
     await screen.findByText('환승 없이 남부 9경 세 곳')
     const img = card(101).querySelector('img')
     expect(img).toHaveAttribute('src', 'https://tong.visitkorea.or.kr/hakdong.jpg')
     expect(img).toHaveAttribute('alt', '')
-    expect(card(104).querySelector('img')).toBeNull()
-    expect(within(card(104)).getByText('사진 없음 — TourAPI 사진 0장')).toBeInTheDocument()
+    // 3-02: 거제씨월드(사진 없음) → 학동몽돌해변(3-01 이 씀) → 바람의언덕
+    expect(card(104).querySelector('img')).toHaveAttribute('src', 'https://tong.visitkorea.or.kr/windhill.jpg')
+    expect(card(104).querySelector('img')).toHaveAttribute('alt', '')
+  })
+
+  it('어느 스팟에도 사진이 없으면 「사진 없음 — TourAPI 사진 0장」(자리그림 SVG 아님)', async () => {
+    api.courses.mockResolvedValue({ ...TWO, courses: [COURSE_301, COURSE_NO_NINE] })
+    renderPage()
+
+    await screen.findByText('환승 없이 남부 9경 세 곳')
+    expect(card(120).querySelector('img')).toBeNull()
+    expect(within(card(120)).getByText('사진 없음 — TourAPI 사진 0장')).toBeInTheDocument()
+  })
+
+  it('①② 첫 스팟이 같으면 두 카드 사진 주소가 다르다 — 아래 카드는 아직 안 쓴 사진이 있는 다음 스팟', async () => {
+    // 둘 다 학동몽돌해변으로 시작합니다(대표 코스 ①② 실제 모양).
+    const second = {
+      ...COURSE_301,
+      courseId: 130,
+      title: '학동에서 시작하는 다른 코스',
+      spots: [
+        spot(1, 4, '학동흑진주몽돌해변', '학동몽돌해변', 'BEACH'),
+        spot(2, 1, '바람의언덕', '바람의언덕', 'VIEW'),
+        spot(3, 3, '해금강', '해금강', 'VIEW'),
+      ],
+    }
+    api.courses.mockResolvedValue({ ...TWO, courses: [COURSE_301, second] })
+    renderPage()
+
+    await screen.findByText('학동에서 시작하는 다른 코스')
+    const first = card(101).querySelector('img').getAttribute('src')
+    const other = card(130).querySelector('img').getAttribute('src')
+    expect(first).toBe('https://tong.visitkorea.or.kr/hakdong.jpg')
+    expect(other).toBe('https://tong.visitkorea.or.kr/windhill.jpg')
+    expect(other).not.toBe(first)
   })
 
   it('사진 링크가 죽으면(onError) 같은 「사진 없음」 상태로', async () => {
@@ -579,6 +612,60 @@ describe('CoursesPage — 개수 칩(Figma 623:444 · 메모 623:520, 2026-09-16
     } finally {
       getToken.mockReturnValue(null)
     }
+  })
+
+  describe('카드 사진 — 보이는 카드 순서대로 겹치지 않게(2026-09-17)', () => {
+    // 4곳 코스가 먼저 학동몽돌해변 사진을 씁니다. 3-01 도 학동으로 시작합니다.
+    const FOUR_HAKDONG = {
+      ...COURSE_NO_NINE,
+      courseId: 140,
+      title: '학동에서 시작하는 4곳 코스',
+      spots: [
+        spot(1, 4, '학동흑진주몽돌해변', '학동몽돌해변', 'BEACH'),
+        spot(2, 1, '바람의언덕', '바람의언덕', 'VIEW'),
+        spot(3, 16, '양지암조각공원', '양지암조각공원', 'EXHIBIT'),
+        spot(4, 18, '거제씨월드', '거제씨월드', 'EXHIBIT'),
+      ],
+    }
+    const photoOf = (id) => card(id).querySelector('img')?.getAttribute('src') ?? null
+
+    beforeEach(() => {
+      api.courses.mockResolvedValue({ ...THREE, courses: [FOUR_HAKDONG, COURSE_301] })
+    })
+
+    it('칩으로 거르면 거른 목록 기준으로 다시 정한다 — 가려진 카드가 사진을 선점하지 않는다', async () => {
+      const user = userEvent.setup()
+      renderPage()
+
+      await screen.findByText('학동에서 시작하는 4곳 코스')
+      // 전체: 4곳 코스가 학동 → 3-01 은 학동(씀) · 해금강(사진 없음) 건너 바람의언덕
+      expect(photoOf(140)).toBe('https://tong.visitkorea.or.kr/hakdong.jpg')
+      expect(photoOf(101)).toBe('https://tong.visitkorea.or.kr/windhill.jpg')
+
+      await user.click(chip('3곳'))
+      expect(card(140)).toBeNull()
+      expect(photoOf(101)).toBe('https://tong.visitkorea.or.kr/hakdong.jpg')
+
+      await user.click(chip('전체'))
+      expect(photoOf(101)).toBe('https://tong.visitkorea.or.kr/windhill.jpg')
+    })
+
+    it('링크가 죽으면 그 사진만 「사진 없음」 — 칩으로 카드 사진이 바뀌면 새 사진은 그린다', async () => {
+      const user = userEvent.setup()
+      renderPage()
+
+      await screen.findByText('학동에서 시작하는 4곳 코스')
+      fireEvent.error(card(101).querySelector('img'))
+      expect(within(card(101)).getByText('사진 없음 — TourAPI 사진 0장')).toBeInTheDocument()
+
+      // 같은 카드가 자리를 지킨 채 사진 주소만 바뀝니다 — 죽은 건 바람의언덕 링크지 학동 링크가 아닙니다.
+      await user.click(chip('3곳'))
+      expect(photoOf(101)).toBe('https://tong.visitkorea.or.kr/hakdong.jpg')
+
+      await user.click(chip('전체'))
+      expect(card(101).querySelector('img')).toBeNull()
+      expect(within(card(101)).getByText('사진 없음 — TourAPI 사진 0장')).toBeInTheDocument()
+    })
   })
 })
 
