@@ -548,3 +548,134 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     expect(screen.getByText('도장포 정류장에서 타요 · 직선 약 380m')).toBeInTheDocument()
   })
 })
+
+describe('CourseDetailPage — 되짚기: 가운데 고현터미널 줄(코스재설계 §3-3 · §5-3)', () => {
+  /**
+   * 되짚기는 구간 둘로 온다 — `A → 고현터미널`(toPoiId null) + `고현터미널 → B`(fromPoiId null).
+   * 모양은 2차 세트 ⑥(바람의언덕 → 해금강 → 학동몽돌해변 → 포로수용소)을 따랐고 노선 · 분 · 거리는 테스트 값이다.
+   * 스팟 넷에 구간 여섯 — 보통 코스(스팟 + 1)보다 하나 많다.
+   */
+  const leg = (seq, fromPoiId, toPoiId, extra = {}) => ({
+    seq,
+    mode: 'BUS',
+    fromPoiId,
+    fromName: fromPoiId == null ? '고현터미널' : `스팟${fromPoiId}`,
+    toPoiId,
+    toName: toPoiId == null ? '고현터미널' : `스팟${toPoiId}`,
+    durationMin: 30,
+    estimated: false,
+    rides: [ride('55')],
+    ...extra,
+  })
+
+  const COURSE_BACKTRACK = {
+    ...COURSE_301,
+    courseId: 130,
+    courseCode: '4-B',
+    title: null,
+    busMinTotal: 180,
+    legCount: 6,
+    estimatedLegCount: 0,
+    stops: [
+      { seq: 1, poiId: 1, name: '바람의언덕', shortName: '바람의언덕', theme: 'VIEW', lat: 34.744, lng: 128.663 },
+      { seq: 2, poiId: 3, name: '해금강', shortName: '해금강', theme: 'VIEW', lat: 34.733, lng: 128.684 },
+      { seq: 3, poiId: 4, name: '학동흑진주몽돌해변', shortName: '학동몽돌해변', theme: 'BEACH', lat: 34.775, lng: 128.641 },
+      { seq: 4, poiId: 12, name: '거제도포로수용소유적공원', shortName: '포로수용소', theme: 'HISTORY', lat: 34.887, lng: 128.623 },
+    ],
+    legs: [
+      leg(1, null, 1),
+      leg(2, 1, 3),
+      leg(3, 3, 4),
+      leg(4, 4, null, { board: { stop: '학동', distanceM: 311 } }),
+      leg(5, null, 12, { rides: [ride('10')] }),
+      leg(6, 12, null, { rides: [ride('10')] }),
+    ],
+  }
+
+  const stopOrder = () => [...document.querySelectorAll('[data-stop]')].map((e) => Number(e.dataset.stop))
+  const VIA = '고현터미널을 거쳐요'
+
+  it('가운데 구간이 고현터미널로 가면 스팟이 아니라 「고현터미널을 거쳐요」 줄 — 스팟 번호가 밀리지 않는다', async () => {
+    api.course.mockResolvedValue(COURSE_BACKTRACK)
+    renderCourse(130)
+
+    const via = await screen.findByText(VIA)
+    // 스팟 넷이 순서대로 한 번씩 — 터미널 구간이 스팟을 하나 먹으면 학동 자리에 포로수용소가 온다
+    expect(stopOrder()).toEqual([1, 3, 4, 12])
+    // 학동몽돌해변과 포로수용소 사이에 온다
+    const hakdong = document.querySelector('[data-stop="4"]')
+    const pow = document.querySelector('[data-stop="12"]')
+    expect(hakdong.compareDocumentPosition(via) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(via.compareDocumentPosition(pow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // 출발 · 거쳐요 · 도착 — 터미널 줄은 셋
+    expect(screen.getByText('고현터미널 출발')).toBeInTheDocument()
+    expect(screen.getByText('고현터미널 도착')).toBeInTheDocument()
+    expect(screen.getAllByText(VIA)).toHaveLength(1)
+  })
+
+  it('거쳐 가는 이유는 사실 한 줄 — 두 곳을 바로 잇는 버스가 없다', async () => {
+    api.course.mockResolvedValue(COURSE_BACKTRACK)
+    renderCourse(130)
+
+    await screen.findByText(VIA)
+    expect(screen.getByText('두 곳을 바로 잇는 버스가 없어요')).toBeInTheDocument()
+  })
+
+  it('터미널로 가는 구간은 그대로 그린다 — 노선 · 타는 정류장', async () => {
+    api.course.mockResolvedValue(COURSE_BACKTRACK)
+    renderCourse(130)
+
+    await screen.findByText(VIA)
+    expect(screen.getByText('학동 정류장에서 타요 · 직선 약 310m')).toBeInTheDocument()
+    expect(screen.getByText('버스 6번')).toBeInTheDocument()
+  })
+
+  it('터미널을 거치는 스팟의 「시간표 ›」는 다음 스팟을 넘기지 않는다 — 바로 가는 버스가 없어 「운행 없음」이 뜬다', async () => {
+    const user = userEvent.setup()
+    api.course.mockResolvedValue(COURSE_BACKTRACK)
+    renderCourse(130)
+
+    await screen.findByText(VIA)
+    await user.click(screen.getByRole('button', { name: '학동몽돌해변 시간표' }))
+    expect(screen.getByTestId('loc')).toHaveTextContent(/^\/timetable\/4$/)
+  })
+
+  it('터미널이 없는 코스에는 「거쳐요」 줄이 없다 — 마지막 구간(toPoiId null)은 도착 줄이다', async () => {
+    api.course.mockResolvedValue({
+      ...COURSE_301,
+      legs: [leg(1, null, 4), leg(2, 4, 3), leg(3, 3, 1), leg(4, 1, null)],
+    })
+    renderCourse(101)
+
+    await screen.findByText('고현터미널 도착')
+    expect(screen.queryByText(VIA)).not.toBeInTheDocument()
+    expect(stopOrder()).toEqual([4, 3, 1])
+  })
+
+  it('배 왕복(돌아오는 구간 0분)과 함께여도 스팟 짝이 맞는다', async () => {
+    // 포로수용소 → (고현터미널) → 도장포유람선 → 외도보타니아 → (도장포로 돌아옴) → 바람의언덕
+    api.course.mockResolvedValue({
+      ...COURSE_311,
+      stops: [
+        { seq: 1, poiId: 12, name: '거제도포로수용소유적공원', shortName: '포로수용소', theme: 'HISTORY', lat: 34.887, lng: 128.623 },
+        ...COURSE_311.stops.map((stop) => ({ ...stop, seq: stop.seq + 1 })),
+      ],
+      legs: [
+        leg(1, null, 12),
+        leg(2, 12, null),
+        leg(3, null, 2),
+        { seq: 4, mode: 'FERRY', fromPoiId: 2, toPoiId: 5, durationMin: 160, estimated: false, rides: [], ferry: FERRY },
+        { seq: 5, mode: 'FERRY', fromPoiId: 5, toPoiId: 2, durationMin: 0, estimated: false, rides: [], ferry: FERRY },
+        { seq: 6, mode: 'SAME_STOP', fromPoiId: 2, toPoiId: 1, durationMin: 0, estimated: false, rides: [] },
+        leg(7, 1, null),
+      ],
+    })
+    renderCourse(124)
+
+    const via = await screen.findByText(VIA)
+    expect(stopOrder()).toEqual([12, 2, 5, 1])
+    expect(via.compareDocumentPosition(document.querySelector('[data-stop="2"]')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(within(document.querySelector('[data-stop="5"]')).getByText('2시간 머물러요 · 입장료 별도')).toBeInTheDocument()
+    expect(screen.getByText('도장포 선착장으로 돌아와요')).toBeInTheDocument()
+  })
+})

@@ -387,6 +387,11 @@ export default {
   'courseDetail.legChip': '버스 {n}번',
   'courseDetail.departNode': '{origin} 출발',
   'courseDetail.arriveNode': '{origin} 도착',
+  // 되짚기(2026-09-17 코스재설계 §3-3) — 가운데 구간이 고현터미널로 갔다가 다시 나옵니다(구간 둘: A → 터미널 · 터미널 → B).
+  // 둘째 줄은 거쳐 가는 이유입니다. 코스 규칙이 되짚기를 **직행이 없는 구간에만** 허락해서 사실입니다 —
+  // 환승 규칙을 어긴 게 아니라 구간마다 버스 한 대 그대로입니다. 「직행버스」(시외 버스 종류)로 읽히지 않게 「바로 잇는」이라 적습니다.
+  'courseDetail.viaNode': '{origin}을 거쳐요',
+  'courseDetail.viaNote': '두 곳을 바로 잇는 버스가 없어요',
   'courseDetail.leg': '{route}번 · {min}분',
   // 앞뒤 정류장으로 감싼 구간(leg.estimated)만 「약」. 확정값에 붙이면 정확히 아는 값을 흐립니다.
   'courseDetail.legApprox': '{route}번 · 약 {min}분',

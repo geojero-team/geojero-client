@@ -105,13 +105,21 @@ function stopSentence(leg) {
     : t(`courseDetail.${key}WithDistance`, { stop, dist: formatDistance(near.distanceM) })
 }
 
-function TerminalRow({ label }) {
+/** 고현터미널 줄 — 출발 · 도착, 되짚기면 가운데 「고현터미널을 거쳐요」. `sub` 가 있으면 이름 아래 한 줄(스팟 줄과 같은 모양). */
+function TerminalRow({ label, sub }) {
   return (
-    <div className={styles.stopRow}>
+    <div className={sub ? styles.stopRowWithSub : styles.stopRow}>
       <span className={styles.rail}>
         <TerminalIcon />
       </span>
-      <span className={styles.terminalName}>{label}</span>
+      {sub ? (
+        <span className={styles.stopLines}>
+          <span className={styles.terminalName}>{label}</span>
+          <span className={styles.stopSub}>{sub}</span>
+        </span>
+      ) : (
+        <span className={styles.terminalName}>{label}</span>
+      )}
     </div>
   )
 }
@@ -404,18 +412,28 @@ export default function CourseDetailPage() {
                   ⚠️ **배는 예외입니다.** 배는 떠난 선착장으로 돌아오므로 왕복 한 번마다 구간이 하나 더 있는데,
                   그 돌아오는 구간(0분)이 닿는 곳은 **이미 번호를 받은 선착장**이라 스팟 줄을 다시 그리지 않습니다.
                   그래서 스팟 번호는 구간 번호가 아니라 따로 셉니다.
+                  ⚠️ **되짚기도 예외입니다**(2026-09-17 코스재설계 §3-3 · §5-3). 두 스팟 사이에 바로 가는 버스가 없으면
+                  고현터미널로 갔다가 다시 나오고, 서버는 그것을 구간 둘로 줍니다 — `A → 고현터미널`(toPoiId null) + `고현터미널 → B`(fromPoiId null).
+                  앞 구간이 닿는 곳은 스팟이 아니라 터미널이라 스팟 번호를 쓰지 않고 가운데 터미널 줄을 그립니다.
+                  마지막 구간도 toPoiId 가 null 이지만 그건 아래 「도착」 줄이 그립니다. 두 규칙은 서로 다른 구간을 건너뛰므로 함께 돌아도 짝이 맞습니다.
                 */}
                 {(() => {
                   let si = 0
                   return legs.map((leg, i) => {
                     const ferryReturn = leg.mode === 'FERRY' && leg.durationMin === 0
-                    const stop = ferryReturn ? null : stops[si++]
+                    const viaTerminal = i < legs.length - 1 && leg.toPoiId === null
+                    const stop = ferryReturn || viaTerminal ? null : stops[si++]
                     // 다음 스팟을 목적지로 넘겨 그 스팟 시간표가 「여기 → 다음」을 열게 합니다.
-                    // 같은 정류장·배로 이어지는 구간에는 넘기지 않습니다 — 버스로 가는 구간이 아니라 서버가 NO_SERVICE 를 줍니다.
-                    const walkNext = legs[i + 1]?.mode === 'SAME_STOP' || legs[i + 1]?.mode === 'FERRY'
+                    // 같은 정류장·배로 이어지는 구간, 고현터미널로 가는 구간에는 넘기지 않습니다 — 버스로 바로 가는 구간이 아니라
+                    // 서버가 NO_SERVICE 를 줍니다. 터미널로 가는 구간이면 목적지 없이 열어야 「여기 → 고현터미널」이 열려 그 구간과 맞습니다.
+                    const next = legs[i + 1]
+                    const walkNext = next?.mode === 'SAME_STOP' || next?.mode === 'FERRY' || next?.toPoiId === null
                     return (
                       <Fragment key={leg.seq}>
                         <LegRow leg={leg} />
+                        {viaTerminal && (
+                          <TerminalRow label={t('courseDetail.viaNode', { origin })} sub={t('courseDetail.viaNote')} />
+                        )}
                         {stop && (
                           <StopRow
                             stop={stop}
