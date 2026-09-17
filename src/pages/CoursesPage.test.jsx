@@ -765,7 +765,7 @@ describe('CoursesPage — 배지는 축마다 색 하나 · 숫자 없는 짧은
     expect(card(201).querySelectorAll(`.${styles.badge}`)).toHaveLength(1)
   })
 
-  it('NINE — 도장 하나 + 「거제 9경」 · 번호 없음(읽기 도구도 「거제 9경」)', async () => {
+  it('NINE — 주황 알약에 글자 「거제 9경」만 · 번호도 도장 모양도 없다(읽기 도구도 「거제 9경」)', async () => {
     show(NINE)
     renderPage()
 
@@ -773,6 +773,9 @@ describe('CoursesPage — 배지는 축마다 색 하나 · 숫자 없는 짧은
     expect(badgeOf(202)).toHaveTextContent(/^거제 9경$/)
     expect(digitsIn(badgeOf(202))).toBeNull()
     expect(badgeOf(202).querySelector('[data-no]')).toBeNull()
+    // ◎ 도장은 뺐다(2026-09-17 밤 사용자: "이게 좀 안 예뻐") — 초록 거제시 코스 배지처럼 글자만. 색 면 알약 = 공식 목록, 유리 알약 + 아이콘 = 분류
+    expect(badgeOf(202).querySelector('[aria-hidden="true"]')).toBeNull()
+    expect(badgeOf(202).querySelector('svg')).toBeNull()
     expect(card(202)).toHaveAccessibleName(/^거제 9경(?!\s*\d)/)
   })
 
