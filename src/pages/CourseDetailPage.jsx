@@ -105,21 +105,33 @@ function stopSentence(leg) {
     : t(`courseDetail.${key}WithDistance`, { stop, dist: formatDistance(near.distanceM) })
 }
 
-/** 고현터미널 줄 — 출발 · 도착, 되짚기면 가운데 「고현터미널을 거쳐요」. `sub` 가 있으면 이름 아래 한 줄(스팟 줄과 같은 모양). */
+/**
+ * 고현터미널 줄 — 출발 · 도착, 되짚기면 가운데 「고현터미널을 거쳐요」. `sub` 가 있으면 이름 아래 한 줄.
+ *
+ * 출발 · 도착은 선의 끝이라 아이콘뿐입니다. 가운데 줄은 여정이 **이어지므로** 아이콘 아래로 선을 그어 다음 구간 선에 붙입니다 —
+ * 글이 두 줄(약 40px)이라 아이콘(22px) 밑이 비면 선이 22px 끊겨 「도착」 줄처럼 읽혔습니다(2026-09-17 리뷰 실측).
+ */
 function TerminalRow({ label, sub }) {
-  return (
-    <div className={sub ? styles.stopRowWithSub : styles.stopRow}>
-      <span className={styles.rail}>
-        <TerminalIcon />
-      </span>
-      {sub ? (
-        <span className={styles.stopLines}>
-          <span className={styles.terminalName}>{label}</span>
-          <span className={styles.stopSub}>{sub}</span>
+  if (!sub) {
+    return (
+      <div className={styles.stopRow}>
+        <span className={styles.rail}>
+          <TerminalIcon />
         </span>
-      ) : (
         <span className={styles.terminalName}>{label}</span>
-      )}
+      </div>
+    )
+  }
+  return (
+    <div className={styles.viaRow}>
+      <span className={styles.viaRail}>
+        <TerminalIcon />
+        <span className={styles.viaLine} />
+      </span>
+      <span className={styles.viaLines}>
+        <span className={styles.terminalName}>{label}</span>
+        <span className={styles.stopSub}>{sub}</span>
+      </span>
     </div>
   )
 }

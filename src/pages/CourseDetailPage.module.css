@@ -258,6 +258,42 @@
   color: var(--text-secondary);
 }
 
+/* 되짚기 줄 「고현터미널을 거쳐요 / 두 곳을 바로 잇는 버스가 없어요」(2026-09-17 코스재설계 §3-3).
+   글이 두 줄이라 아이콘(22)보다 길어, 아이콘만 두면 그 아래 레일이 비어 선이 22px 끊겼습니다(리뷰 실측) —
+   끊긴 선은 「도착」 줄과 같아 보여 여정이 여기서 끝난 것으로 읽힙니다. 아이콘 아래를 선으로 채워 다음 구간 선에 붙입니다.
+   줄 자체에는 위아래 여백을 두지 않고(레일 선이 줄 바닥까지 닿게) 레일 · 글 칸이 각자 여백을 갖습니다.
+   위 5 는 출발 · 도착 줄(stopRow)과 같은 값, 아이콘과 선 사이 틈은 스팟 사진과 선 사이 틈(5)에 맞춥니다. */
+.viaRow {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.viaRail {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 44px;
+  padding-top: 5px;
+}
+
+.viaLine {
+  flex: 1;
+  width: 2px;
+  margin-top: 5px;
+  background: var(--map-sea);
+}
+
+.viaLines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px 0 3px;
+}
+
 /* 스팟 사진 547:250 — 40px 원. 번호가 원 밖(-2px)으로 걸치므로 여기서는 자르지 않고 사진만 둥글게 자릅니다 */
 .thumb {
   position: relative;

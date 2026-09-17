@@ -7,6 +7,7 @@ import { api } from '../lib/api'
 import { getToken } from '../lib/session'
 import { loadSpots } from '../lib/spots'
 import CourseDetailPage from './CourseDetailPage'
+import styles from './CourseDetailPage.module.css'
 
 vi.mock('../lib/api', () => ({
   api: { course: vi.fn(), saveTrip: vi.fn(), savedTrips: vi.fn() },
@@ -619,6 +620,19 @@ describe('CourseDetailPage — 되짚기: 가운데 고현터미널 줄(코스�
 
     await screen.findByText(VIA)
     expect(screen.getByText('두 곳을 바로 잇는 버스가 없어요')).toBeInTheDocument()
+  })
+
+  it('거쳐 가는 줄은 아이콘 아래로 선을 잇는다 — 끊기면 「도착」 줄처럼 여정이 끝난 것으로 읽힌다', async () => {
+    // 이름 아래 한 줄이 붙어 글(약 40px)이 아이콘(22px)보다 길다. 아이콘 밑 레일이 비면 선이 22px 끊겼다(로컬 실측).
+    // 출발 · 도착 줄은 선의 끝이라 선이 없다.
+    api.course.mockResolvedValue(COURSE_BACKTRACK)
+    renderCourse(130)
+
+    const viaRow = (await screen.findByText(VIA)).closest(`.${styles.timeline} > *`)
+    expect(viaRow.querySelector(`.${styles.viaLine}`)).not.toBeNull()
+    for (const end of ['고현터미널 출발', '고현터미널 도착']) {
+      expect(screen.getByText(end).closest(`.${styles.timeline} > *`).querySelector(`.${styles.viaLine}`)).toBeNull()
+    }
   })
 
   it('터미널로 가는 구간은 그대로 그린다 — 노선 · 타는 정류장', async () => {
