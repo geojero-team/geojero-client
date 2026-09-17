@@ -51,8 +51,9 @@
 }
 
 /* 거제9경 — 홈 지도에서만(HomePage 가 spot.nineScenic 을 붙일 때, 2026-09-14 사용자 결정).
-   테두리를 주황으로 바꾸고 1.5px → 2px 로 굵힙니다. 얇은 선일수록 색 구별이 약해져서,
-   색만 바꾸면 사진이 꽉 찬 28px 원에서 파랑·주황이 잘 갈리지 않습니다. .pinSpot 뒤에 둬야 이깁니다. */
+   테두리를 보라로 바꾸고 1.5px → 2px 로 굵힙니다(2026-09-17 전에는 주황이었습니다). 얇은 선일수록
+   색 구별이 약해져서, 색만 바꾸면 사진이 꽉 찬 28px 원에서 파랑·보라가 잘 갈리지 않습니다.
+   .pinSpot 뒤에 둬야 이깁니다. */
 .pinNineScenic .pinDot {
   border: 2px solid var(--nine-scenic);
   color: var(--nine-scenic);

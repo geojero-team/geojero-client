@@ -121,7 +121,7 @@
 }
 
 /* 거제9경 배지 — 분류 줄(20px) 안에 16px 로 들어가 peek 높이(spotSheetHeight.js)를 바꾸지 않습니다.
-   글씨는 흰 바탕 위 주황 글씨용 토큰(nine-scenic-text, 4.5:1 이상)입니다. */
+   글씨는 흰 바탕 위 글씨용 토큰(nine-scenic-text, 4.5:1 이상)입니다. */
 .nineBadge {
   display: inline-block;
   margin-right: 6px;

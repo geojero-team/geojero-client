@@ -160,7 +160,7 @@ export default function SpotSheet({ spot, onClose }) {
               <>
                 {/* 권역·분류가 없으면 줄을 아예 그리지 않습니다 — 값 없이 `·` 만 남으면
                     그게 곧 우리가 기준문서 §4에서 비판하는 '이유 없는 빈칸'입니다.
-                    거제9경이면 분류 줄 맨 앞에 주황 배지(2026-09-14). 주황 테두리 핀을 눌렀을 때
+                    거제9경이면 분류 줄 맨 앞에 9경 배지(2026-09-14). 보라 테두리 핀을 눌렀을 때
                     "그래서 이게 몇 경인지"를 바로 말합니다. 같은 줄 안이라 peek 높이는 그대로입니다. */}
                 {(spot.region || spot.category || nineRank) && (
                   <span className={styles.category}>
