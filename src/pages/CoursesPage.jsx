@@ -111,11 +111,13 @@ function themeBadgeOf(course) {
  * 한 카드에 축 색이 둘이면 「색만 봐도 어느 축인지 읽힌다」도 깨집니다(초록 + 주황 카드는 어느 축인가).
  * 9경은 사라지지 않습니다 — 지도 핀의 주황 테두리가 말하고, 도장 컴포넌트는 코스 상세에서도 쓸 수 있게 떼어 두었습니다.
  *
- * 폴백: `badgeAxis` 가 없는 옛 응답이거나 그 축의 값을 그릴 수 없으면(OFFICIAL 인데 officialCourse 없음 · 분류 셋 이상)
- * 지금까지처럼 9경 도장만 — 서버가 아직 새 필드를 주지 않아도 카드가 비지 않습니다. 9경이 0곳이면 배지가 없습니다.
+ * 폴백: `badgeAxis` 가 없는 옛 응답이거나 그 축의 값을 그릴 수 없으면(OFFICIAL 인데 officialCourse 가 없거나 코스 이름 ·
+ * 겹치는 곳 수가 빠짐 · 분류 셋 이상) 지금까지처럼 9경 도장만 — 서버가 아직 새 필드를 주지 않아도 카드가 비지 않고,
+ * 「거제시 undefined의 undefined곳」처럼 값 없는 문장 틀도 남지 않습니다. 9경이 0곳이면 배지가 없습니다.
  */
 function CourseBadge({ course }) {
-  const official = course.badgeAxis === 'OFFICIAL' ? course.officialCourse : null
+  const oc = course.officialCourse
+  const official = course.badgeAxis === 'OFFICIAL' && oc?.name && oc.matched > 0 ? oc : null
   if (official) {
     return (
       <span className={`${styles.badge} ${styles.badgeOfficial}`}>

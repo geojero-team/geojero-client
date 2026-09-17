@@ -715,4 +715,21 @@ describe('CoursesPage — 배지는 축마다 색 하나(코스재설계 §5-2 �
     await screen.findByText('거제 9경 1경 2경 4경')
     expect(within(card(207)).getByText('거제 9경 5경 9경')).toBeInTheDocument()
   })
+
+  it('폴백 — officialCourse 에 코스 이름 · 겹치는 곳 수가 없으면 9경 도장으로(「거제시 undefined의 undefined곳」 금지)', async () => {
+    // 서버 필드는 아직 배포 전이라 이름이 어긋나거나 빠질 수 있다 — 값 없이 문장 틀만 남기지 않는다(절대규칙 3)
+    show(
+      { ...OFFICIAL, officialCourse: { total: 6, orderKept: true, sourceUrl: 'x' } },
+      { ...OFFICIAL, courseId: 208, nineScenicNos: [5], officialCourse: { ...OFFICIAL.officialCourse, matched: 0 } },
+    )
+    renderPage()
+
+    await screen.findByText('거제 9경 1경 2경 4경')
+    expect(within(card(208)).getByText('거제 9경 5경')).toBeInTheDocument()
+    // 페이지 출처 줄(「… 거제시 BIS 원문 기준」)에도 「거제시」가 있어 카드 안만 본다
+    for (const id of [201, 208]) {
+      expect(within(card(id)).queryByText(/undefined|^거제시/)).not.toBeInTheDocument()
+    }
+    expect(screen.queryByText('원문 순서 그대로')).not.toBeInTheDocument()
+  })
 })
