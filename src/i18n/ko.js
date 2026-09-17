@@ -204,7 +204,10 @@ export default {
   'visitorPhotoUpload.title': '{name}에서 찍은 사진',
   'visitorPhotoUpload.preview': '선택한 사진',
   'visitorPhotoUpload.captionPlaceholder': '한 줄 남기기 (선택)',
-  'visitorPhotoUpload.notice': '날짜는 자동으로 붙어요 · 사진 속 위치 정보는 저장하지 않아요',
+  /* 공개된다는 사실을 첫 문장에 둡니다(2026-09-17 점검) — 전에는 날짜와 위치정보만 말해
+     비공개로 읽힐 여지가 있었습니다. 문장마다 줄을 바꿉니다(문구 규칙). */
+  'visitorPhotoUpload.notice':
+    '올린 사진은 이 스팟을 보는 사람 모두에게 보여요.\n날짜는 자동으로 붙고, 사진 속 위치 정보는 저장하지 않아요.',
   'visitorPhotoUpload.submit': '올리기',
   // 여기부터는 Figma에 없는 상태의 문구입니다(시트는 활성 상태 하나만 그려져 있습니다).
   'visitorPhotoUpload.sheetAria': '사진 올리기',
@@ -539,8 +542,12 @@ export default {
   'myPlans.getCourses': '코스 추천 받기',
   'myPlans.delete': '삭제',
   'myPlans.deleteAria': '{title} 삭제',
-  'myPlans.meta': '{date} · {depart} 출발 → {back} 복귀',
-  'myPlans.metaNoBack': '{date} · {depart} 출발',
+  /* 날짜는 **저장한 날**입니다(2026-09-17 점검) — 코스 상세에 날짜 선택이 없어 저장하는 날로 박힙니다.
+     앞에 두면 그 날 가는 일정으로 읽혀서, 시각을 먼저 적고 날짜는 「저장」을 붙여 뒤로 보냅니다. */
+  'myPlans.meta': '{depart} 출발 → {back} 복귀 · {date} 저장',
+  'myPlans.metaNoBack': '{depart} 출발 · {date} 저장',
+  'myPlans.deleteConfirm': '이 일정을 지울까요?',
+  'myPlans.deleteCancel': '닫기',
   // 저장 카드 둘째 줄 — 머무는 시간까지 넣은 전체 일정 길이(approxTotalMin, 30분 단위).
   'myPlans.duration': '약 {time} 소요 예정',
   'myPlans.openDetail': '코스 상세 확인',

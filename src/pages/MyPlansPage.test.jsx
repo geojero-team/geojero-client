@@ -116,3 +116,36 @@ describe('MyPlansPage — 회원 탈퇴와 개인정보처리방침 (2026-09-16)
     expect(await screen.findByText('개인정보처리방침 화면')).toBeInTheDocument()
   })
 })
+
+/* 저장 일정 삭제(2026-09-17 점검) — 전에는 누르는 즉시 지워졌습니다. 되돌릴 수 없는 일이라
+   사진 삭제 · 신고 · 회원 탈퇴처럼 그 자리에서 한 번 더 묻습니다. */
+describe('MyPlansPage — 저장 일정 삭제', () => {
+  const askButton = () => screen.findByRole('button', { name: `${TRIP.title} 삭제` })
+
+  it('묻기 전에는 지우지 않는다 — 「닫기」를 누르면 아무 일도 없다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await askButton())
+    expect(api.deleteTrip).not.toHaveBeenCalled()
+    expect(screen.getByText('이 일정을 지울까요?')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '닫기' }))
+    expect(api.deleteTrip).not.toHaveBeenCalled()
+    expect(screen.queryByText('이 일정을 지울까요?')).not.toBeInTheDocument()
+    expect(await askButton()).toBeInTheDocument()
+  })
+
+  it('확인하면 지우고 목록을 다시 받는다', async () => {
+    const user = userEvent.setup()
+    api.deleteTrip.mockResolvedValue(undefined)
+    api.savedTrips.mockResolvedValueOnce([TRIP]).mockResolvedValueOnce([])
+    renderPage()
+
+    await user.click(await askButton())
+    await user.click(screen.getByRole('button', { name: '삭제' }))
+
+    expect(api.deleteTrip).toHaveBeenCalledWith(TRIP.savedTripId)
+    expect(await screen.findByText('아직 저장한 일정이 없어요')).toBeInTheDocument()
+  })
+})

@@ -59,7 +59,8 @@ const NEW_PHOTO = {
 
 const LOGIN_TITLE = '사진을 올리려면 로그인 해주세요'
 const SHEET_TITLE = '학동몽돌해변에서 찍은 사진'
-const NOTICE = '날짜는 자동으로 붙어요 · 사진 속 위치 정보는 저장하지 않아요'
+/** 공개된다는 사실이 첫 문장입니다(2026-09-17) — 올리기 전에 알아야 하는 것입니다. */
+const NOTICE = '올린 사진은 이 스팟을 보는 사람 모두에게 보여요.'
 
 const listOf = (photos) => ({ poiId: 3, count: photos.length, photos })
 const httpError = (status, code) => Object.assign(new Error(`POST /api/x → ${status}`), { status, code })
@@ -340,7 +341,8 @@ describe('방문자 사진 — 올리기 진입 (지도 시트: 주소를 바꾸
     await user.click(await screen.findByRole('button', { name: '내 사진 올리기' }))
 
     expect(await screen.findByRole('heading', { name: SHEET_TITLE })).toBeInTheDocument()
-    expect(screen.getByText(NOTICE)).toBeInTheDocument()
+    // 안내는 두 문장이 한 덩어리로 들어갑니다(줄바꿈은 CSS 가 그립니다) — 첫 문장이 있는지로 봅니다.
+    expect(screen.getByText(NOTICE, { exact: false })).toBeInTheDocument()
     expect(api.me).toHaveBeenCalledTimes(1)
     expect(screen.getByTestId('loc')).toHaveTextContent(/^\/$/)
   })

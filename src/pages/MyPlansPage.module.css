@@ -318,3 +318,11 @@
   gap: var(--space-sm);
   margin-top: var(--space-md);
 }
+
+/* 삭제 확인 줄의 물음(2026-09-17) — 버튼 둘과 한 줄에 놓이고, 남는 자리를 차지해 버튼을 오른쪽으로 밉니다. */
+.confirmQuestion {
+  flex: 1;
+  font: var(--type-caption);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
