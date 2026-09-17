@@ -456,8 +456,6 @@ export default {
   // (어느 10개인지는 서버 featured=true 가 정합니다). plan.* 과 키를 따로 둡니다 — plan.* 은 판정 유물입니다.
   // 2026-09-16 개수 칩을 되살렸습니다(Figma 623:444 · 메모 623:520) — 대표 코스 10개 안에서 거릅니다.
   'courses.title': '코스 추천',
-  'courses.headline1': '거제 9경을 버스로 잇는',
-  'courses.headline2': '대표 코스',
   // 출발지 가정과 근거를 한 줄에 — 모든 시각이 이 위에 서 있어서 숨기면 안 됩니다.
   'courses.originNote': '출발은 고현터미널 · 노선과 시간은 거제시 BIS 원문 기준',
   'courses.total': '대표 코스 {count}가지 · 여러 개 고를 수 있어요',

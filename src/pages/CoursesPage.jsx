@@ -233,11 +233,8 @@ export default function CoursesPage() {
 
       <div className={styles.scroll} ref={scrollRef}>
         <div className={styles.body}>
-          <h2 className={styles.headline}>
-            {t('courses.headline1')}
-            <br />
-            {t('courses.headline2')}
-          </h2>
+          {/* 제목(「거제 9경을 버스로 잇는 대표 코스」)은 2026-09-17에 뺐습니다 — 문장이 어색하고,
+              화면 제목(「코스 추천」)과 카드가 이미 같은 말을 하고 있었습니다(사용자 결정). */}
 
           {/* 출발지 가정과 근거를 숨기지 않습니다 — 모든 시각이 이 위에 있습니다. */}
           <p className={styles.note}>{t('courses.originNote')}</p>
