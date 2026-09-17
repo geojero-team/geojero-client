@@ -850,7 +850,61 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     expect(screen.getByText(/적힌 것보다 짧습니다/)).toBeInTheDocument()
   })
 
-  it('배 · 같은 정류장 · 되짚기 구간과 섞여도 그대로 — service 는 BUS 구간에만 온다', async () => {
+  it('되짚기 가운데 고현터미널 줄과 섞여도 짝이 맞는다 — 노선 줄 · 휴일 줄 · 타는 곳 줄 뒤에 「거쳐요」, 스팟 번호는 밀리지 않는다', async () => {
+    // 로컬 서버 4-12(2026-09-17) 응답 그대로 — service 가 사슬 노선과 다른 구간이 둘이다(학동 → 고현 55 → 67-1 · 고현 → 포로수용소 100 → 110).
+    // 정류장 줄(board)도 서버가 service 노선으로 찾아 67-1 의 학동삼거리다. 휴일 줄은 이 테스트가 얹은 값이다(운영 데이터에는 아직 없다).
+    const bus = (seq, fromPoiId, toPoiId, chainRoute, svc, extra = {}) => ({
+      seq, mode: 'BUS', fromPoiId, toPoiId, durationMin: svc.durationMin, estimated: svc.estimated,
+      rides: [ride(chainRoute)], board: null, alight: null, ferry: null,
+      service: { tripsWeekday: 6, tripsHoliday: 6, ...svc }, holidayNoBus: false, ...extra,
+    })
+    api.course.mockResolvedValue({
+      ...COURSE_301,
+      courseId: 129,
+      courseCode: '4-12',
+      title: '풍차 언덕에서 6·25 포로수용소 유적까지',
+      busMinTotal: 160,
+      legCount: 6,
+      holidayNoBusLegs: [{ fromName: '학동몽돌해변', toName: '고현터미널' }],
+      stops: [
+        { seq: 1, poiId: 1, name: '바람의언덕', shortName: '바람의언덕', theme: 'VIEW', lat: 34.744, lng: 128.663 },
+        { seq: 2, poiId: 3, name: '해금강', shortName: '해금강', theme: 'VIEW', lat: 34.733, lng: 128.684 },
+        { seq: 3, poiId: 4, name: '학동흑진주몽돌해변', shortName: '학동몽돌해변', theme: 'BEACH', lat: 34.775, lng: 128.641 },
+        { seq: 4, poiId: 13, name: '거제도포로수용소유적공원', shortName: '포로수용소', theme: 'HISTORY', lat: 34.876, lng: 128.625 },
+      ],
+      legs: [
+        bus(1, null, 1, '55', { routeNo: '55', durationMin: 50, durationMinLow: 50, estimated: true }, { alight: { stop: '도장포', distanceM: 393 } }),
+        bus(2, 1, 3, '55', { routeNo: '55', durationMin: 10, durationMinLow: 10, estimated: true }),
+        bus(3, 3, 4, '55', { routeNo: '55', durationMin: 12, durationMinLow: 10, estimated: false }),
+        bus(4, 4, null, '55', { routeNo: '67-1', durationMin: 58, durationMinLow: 47, estimated: false, tripsWeekday: 8, tripsHoliday: 0 }, {
+          board: { stop: '학동삼거리', distanceM: 106 },
+          holidayNoBus: true,
+        }),
+        bus(5, null, 13, '100', { routeNo: '110', durationMin: 15, durationMinLow: 11, estimated: true, tripsWeekday: 28, tripsHoliday: 23 }, {
+          alight: { stop: '포로수용소', distanceM: 11 },
+        }),
+        bus(6, 13, null, '110', { routeNo: '110', durationMin: 15, durationMinLow: 9, estimated: true, tripsWeekday: 27, tripsHoliday: 22 }),
+      ],
+    })
+    renderCourse(129)
+
+    const via = await screen.findByText('고현터미널을 거쳐요')
+    expect([...document.querySelectorAll('[data-stop]')].map((e) => Number(e.dataset.stop))).toEqual([1, 3, 4, 13])
+    // 사슬이 탄 노선(55 · 100)은 그 두 구간에 나오지 않는다
+    const toTerminal = screen.getByText('67-1번 · 약 47~58분 · 평일 8회')
+    const holiday = screen.getByText('휴일엔 이 구간 버스가 없어요')
+    const board = screen.getByText('학동삼거리 정류장에서 타요 · 직선 약 110m')
+    const fromTerminal = screen.getByText('110번 · 약 11~15분 · 평일 28회 · 휴일 23회')
+    // 학동몽돌해변 → (67-1 · 휴일 없음 · 학동삼거리) → 고현터미널을 거쳐요 → (110) → 포로수용소
+    const order = [document.querySelector('[data-stop="4"]'), toTerminal, holiday, board, via, fromTerminal, document.querySelector('[data-stop="13"]')]
+    order.slice(1).forEach((el, i) => expect(order[i].compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
+    expect(screen.getAllByText('휴일엔 이 구간 버스가 없어요')).toHaveLength(1)
+    expect(screen.queryByText(/^100번/)).not.toBeInTheDocument()
+    expect(screen.getByText('버스 6번')).toBeInTheDocument()
+    expect(screen.getByText(/적힌 것보다 짧습니다/)).toBeInTheDocument()
+  })
+
+  it('배 · 같은 정류장 구간과 섞여도 그대로 — service 는 BUS 구간에만 온다', async () => {
     api.course.mockResolvedValue({
       ...COURSE_311,
       legs: COURSE_311.legs.map((leg) => ({

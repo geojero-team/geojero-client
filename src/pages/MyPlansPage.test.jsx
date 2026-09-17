@@ -72,6 +72,24 @@ describe('MyPlansPage — 저장 카드는 날짜 · 코스만(2026-09-17 사용
     expect(container).not.toHaveTextContent('21:10')
     expect(container).not.toHaveTextContent(/출발|복귀|소요 예정/)
   })
+
+  it('사진 줄을 그리는 보통 카드에도 시각이 없다 — 스팟 사진 줄 · 날짜는 그대로', async () => {
+    api.course.mockResolvedValue({
+      courseId: 101,
+      approxTotalMin: 510,
+      stops: [
+        { seq: 1, poiId: 4, shortName: '학동몽돌해변', theme: 'BEACH' },
+        { seq: 2, poiId: 3, shortName: '해금강', theme: 'VIEW' },
+        { seq: 3, poiId: 1, shortName: '바람의언덕', theme: 'VIEW' },
+      ],
+    })
+    const { container } = renderPage()
+
+    expect(await screen.findByText('해금강')).toBeInTheDocument()
+    expect(screen.getByText('학동몽돌해변')).toBeInTheDocument()
+    expect(screen.getByText('9월 20일(일)')).toBeInTheDocument()
+    expect(container).not.toHaveTextContent(/08:20|21:10|출발|복귀|소요 예정/)
+  })
 })
 
 describe('MyPlansPage — 회원 탈퇴와 개인정보처리방침 (2026-09-16)', () => {
