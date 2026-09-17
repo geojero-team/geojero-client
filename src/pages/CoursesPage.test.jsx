@@ -755,6 +755,18 @@ describe('CoursesPage — 배지는 축마다 색 하나 · 숫자 없는 짧은
     expect(screen.queryByText(/당일코스|2일코스|원문 순서/)).not.toBeInTheDocument()
   })
 
+  it('OFFICIAL — 경로 메달(장식) + 글자 「거제시 추천 관광코스」 · 메달은 읽기 도구에 숨긴다', async () => {
+    show(OFFICIAL)
+    renderPage()
+
+    await screen.findByText('거제시 추천 관광코스')
+    // 「심심하다 · 여기만 아이콘이 없다」(2026-09-17 밤 사용자) → 9경과 같은 틀에 밝기만 뒤집은 흰 메달(시안 넷 → 비평 → 1안).
+    // 메달은 장식이라 숨기고, 이름은 글자 그대로 — 인증 · 수상 표식(체크 · 별 · 월계관)이 아니다.
+    expect(badgeOf(201).querySelector(`.${styles.badgeOfficialMark} svg`)).toHaveAttribute('aria-hidden', 'true')
+    expect(badgeOf(201)).toHaveTextContent(/^거제시 추천 관광코스$/)
+    expect(card(201)).toHaveAccessibleName(/^거제시 추천 관광코스(?!\s*[「\d])/)
+  })
+
   it('9경이 든 코스라도 축이 OFFICIAL · THEME 이면 9경 도장을 함께 그리지 않는다 — 한 카드에 축 색은 하나', async () => {
     show(OFFICIAL, THEME_VIEW)
     renderPage()

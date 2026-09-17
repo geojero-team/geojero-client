@@ -92,10 +92,10 @@ function centerThemeOf(course) {
 
 /**
  * 사진 위 배지 — **축마다 색 하나**(2026-09-17 코스재설계 §5-2 사용자 결정). 어느 축으로 고른 코스인지는 서버가 줍니다(`badgeAxis`).
- *   OFFICIAL  초록 면 · 글자만 「거제시 추천 관광코스」
+ *   OFFICIAL  초록 면 + 흰 테 + 흰 원 메달(경로 표식) 「거제시 추천 관광코스」
  *   THEME     어두운 반투명 유리 면 + 분류 아이콘 「전망·명소」(중심 분류 하나 — centerThemeOf)
  *   NINE      밝은 라벨(연한 주황 면 + 주황 테) + 해 메달 「거제 9경」
- * 모양이 셋으로 갈립니다 — 색 면 = 거제시 코스 · 유리 + 아이콘 = 분류 · 밝은 라벨 + 메달 = 9경(2026-09-17 밤 사용자 결정 — 흰 알약 → 토스식 음영 유리, ◎ 도장 → 해 메달).
+ * 규칙: 남이 정한 목록(거제시 코스 · 9경)은 원 메달, 우리가 붙인 분류는 아이콘만 — 초록 면 + 흰 메달 = 거제시 코스 · 밝은 라벨 + 주황 메달 = 9경 · 유리 + 아이콘 = 분류(2026-09-17 밤 사용자 결정 — 흰 알약 → 토스식 음영 유리, ◎ 도장 → 해 메달).
  * 경마다 다른 색은 쓰지 않습니다 — 아홉 색은 못 외우고 뜻이 없습니다.
  * **글자에 숫자를 넣지 않습니다**(2026-09-17 저녁 사용자 결정 — *"한눈에 알아보게"*). 사진 위 배지는 2~6자 짧은 이름이 보통이고
  * (에어비앤비 「게스트 선호」 · 비짓제주 「관광지」), 원문 코스 이름 · 몇 곳 중 몇 곳 · 순서는 코스 상세 머리 한 줄이 말합니다.
@@ -112,7 +112,25 @@ function centerThemeOf(course) {
 function CourseBadge({ course }) {
   const oc = course.officialCourse
   if (course.badgeAxis === 'OFFICIAL' && oc?.name && oc.matched > 0) {
-    return <span className={`${styles.badge} ${styles.badgeOfficial}`}>{t('courses.officialBadge')}</span>
+    // 흰 메달 초록 알약(2026-09-17 밤) — 9경 배지와 같은 틀에 밝기만 뒤집었습니다. 표식은 경로(출발 고리 → 점 두 개 → 핀)이고 장식이라 숨깁니다.
+    // 16 격자: 고리 r1.5 선 1.5 · 점 r0.9 둘 · 핀 r3.6 구멍 r1.4. 무게가 오른쪽 위 핀에 있어 고리를 왼쪽 아래 끝까지 내려 가운데를 맞췄습니다.
+    return (
+      <span className={`${styles.badge} ${styles.badgeOfficial}`}>
+        <span className={styles.badgeOfficialMark}>
+          <svg className={styles.badgeIcon} width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="3" cy="13" r="1.5" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="6.2" cy="12.8" r="0.9" fill="currentColor" />
+            <circle cx="8.6" cy="12.2" r="0.9" fill="currentColor" />
+            <path
+              fillRule="evenodd"
+              d="M11.5 1.6a3.6 3.6 0 0 1 3.6 3.6c0 2.6-3.6 6.2-3.6 6.2S7.9 7.8 7.9 5.2a3.6 3.6 0 0 1 3.6-3.6zm0 2.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 1 0 0-2.8z"
+              fill="currentColor"
+            />
+          </svg>
+        </span>
+        <span>{t('courses.officialBadge')}</span>
+      </span>
+    )
   }
 
   const theme = course.badgeAxis === 'THEME' ? centerThemeOf(course) : null
