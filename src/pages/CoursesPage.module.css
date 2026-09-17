@@ -340,6 +340,13 @@
   font: var(--type-body);
   color: var(--text-primary);
   word-break: keep-all;
+  /* 최대 6줄(2026-09-17 밤 사용자: "본문 너무 긴 곳들이 몇 개 있어 최대 6줄로"). 글 자체는 서버 V37 에서 110자 이하로 다시 써서
+     지금 열 개 모두 5줄 이하입니다 — 이건 나중에 긴 소개가 들어와도 카드가 늘어지지 않게 거는 안전장치입니다(넘치면 「…」). */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
+  overflow: hidden;
 }
 
 .tags {
