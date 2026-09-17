@@ -164,7 +164,7 @@ export default {
   'visitorPhotos.report': '신고',
   'visitorPhotos.reportAria': '{n}번째 방문자 사진 신고하기',
   'visitorPhotos.reportConfirm': '이 사진을 신고할까요?',
-  'visitorPhotos.reportCancel': '취소',
+  'visitorPhotos.reportCancel': '닫기',
   'visitorPhotos.reported': '신고했어요. 이 사진은 바로 보이지 않게 했어요.',
   'visitorPhotos.reportFailed': '신고하지 못했어요',
   'visitorPhotos.reportLoginTitle': '사진을 신고하려면 로그인 해주세요',
@@ -173,7 +173,9 @@ export default {
   'visitorPhotos.retry': '다시 시도',
   'visitorPhotos.tileAria': '{n}번째 방문자 사진',
   'visitorPhotos.deleteConfirm': '이 사진을 지울까요?',
-  'visitorPhotos.deleteCancel': '취소',
+  /* 묻는 자리의 왼쪽 버튼은 「닫기」로 통일합니다(2026-09-16 문구 규칙) —
+     「취소」는 하던 일이 취소된다는 뜻으로 읽힙니다. */
+  'visitorPhotos.deleteCancel': '닫기',
   'visitorPhotos.deleteFailed': '사진을 지우지 못했어요',
   'visitorPhotos.uploaded': '사진을 올렸어요',
   'visitorPhotos.loginTitle': '사진을 올리려면 로그인 해주세요',
@@ -194,7 +196,10 @@ export default {
   'visitorPhotoUpload.submitting': '올리는 중',
   'visitorPhotoUpload.errTooLarge': '사진이 너무 커요',
   // 형식 이름(JPEG·PNG)을 적지 않습니다 — 브라우저가 열 수 있으면 JPEG로 바꿔 올리므로 실제와 달라집니다.
-  'visitorPhotoUpload.errUnreadable': '이 사진은 올릴 수 없어요',
+  // 못 쓰는 경우는 이유를 함께 적습니다(2026-09-16 문구 규칙) — 무엇을 하면 되는지도 같이.
+  // 이 키 하나가 형식·픽셀 과다·파일 없음에 함께 쓰입니다(errorKey). 그래서 이유를 특정하지 않고,
+  // 다음에 할 일만 말합니다 — 「읽지 못했어요」라고 쓰면 픽셀이 많아 거절된 경우엔 사실과 다릅니다.
+  'visitorPhotoUpload.errUnreadable': '이 사진은 올리지 못했어요. 다른 사진으로 올려 주세요',
   'visitorPhotoUpload.errCaption': '한 줄은 {max}자까지예요',
   'visitorPhotoUpload.errNetwork': '올리지 못했어요. 잠시 뒤 다시 시도해 주세요',
 
@@ -212,7 +217,8 @@ export default {
   'courseMap.select': '코스 선택',
   // 지도 카드는 폭이 좁아 '총 … 소요'를 뺀 짧은 꼴입니다.
   'courseMap.busTotal': '{time} 예정',
-  'courseMap.none': '고른 코스가 없어요. 코스 추천에서 다시 골라 주세요.',
+  // 빈 화면은 없는 것을 말하기보다 다음에 할 일을 말합니다(2026-09-16 문구 규칙).
+  'courseMap.none': '코스 추천에서 코스를 고르면 여기 지도에 그려 드려요.',
 
   // ── 스팟 시간표 (02-2 · Figma 453:210 · 453:288 · 453:415) ───────────────
   'spotTime.board': '{stop}에서 타요.',
@@ -506,7 +512,7 @@ export default {
     '저장한 코스와 올린 사진이 모두 지워져요.\n다시 되돌릴 수 없어요.',
   'myPlans.withdrawKakao': '카카오 계정은 그대로예요. 연결 해제는 카카오 설정에서 할 수 있어요.',
   'myPlans.withdrawConfirm': '탈퇴하기',
-  'myPlans.withdrawCancel': '취소',
+  'myPlans.withdrawCancel': '닫기',
   'myPlans.withdrawing': '탈퇴하는 중',
   'myPlans.withdrawFailed': '탈퇴하지 못했어요 — {error}',
   'myPlans.privacy': '개인정보처리방침',

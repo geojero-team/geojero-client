@@ -530,14 +530,14 @@ describe('방문자 사진 — 올리기 시트', () => {
 
   it.each([
     [413, undefined, '사진이 너무 커요'],
-    [415, 'UNSUPPORTED_IMAGE_TYPE', '이 사진은 올릴 수 없어요'],
+    [415, 'UNSUPPORTED_IMAGE_TYPE', '이 사진은 올리지 못했어요. 다른 사진으로 올려 주세요'],
     [400, 'CAPTION_TOO_LONG', '한 줄은 200자까지예요'],
     [0, undefined, '올리지 못했어요. 잠시 뒤 다시 시도해 주세요'],
     // 캡션 초과가 아닌 400은 전부 사진 문제입니다 — 서버 ErrorCode 이름 그대로.
-    [400, 'FILE_REQUIRED', '이 사진은 올릴 수 없어요'],
-    [400, 'IMAGE_UNREADABLE', '이 사진은 올릴 수 없어요'],
-    [400, 'IMAGE_TOO_MANY_PIXELS', '이 사진은 올릴 수 없어요'],
-    [400, undefined, '이 사진은 올릴 수 없어요'],
+    [400, 'FILE_REQUIRED', '이 사진은 올리지 못했어요. 다른 사진으로 올려 주세요'],
+    [400, 'IMAGE_UNREADABLE', '이 사진은 올리지 못했어요. 다른 사진으로 올려 주세요'],
+    [400, 'IMAGE_TOO_MANY_PIXELS', '이 사진은 올리지 못했어요. 다른 사진으로 올려 주세요'],
+    [400, undefined, '이 사진은 올리지 못했어요. 다른 사진으로 올려 주세요'],
     // 사진 탓이 아닌 실패는 다시 시도하라고만 말합니다.
     [403, 'ACCESS_DENIED', '올리지 못했어요. 잠시 뒤 다시 시도해 주세요'],
     [404, 'POI_NOT_FOUND', '올리지 못했어요. 잠시 뒤 다시 시도해 주세요'],
@@ -571,7 +571,7 @@ describe('방문자 사진 — 올리기 시트', () => {
   })
 
   it.each([
-    ['UNREADABLE', '이 사진은 올릴 수 없어요'],
+    ['UNREADABLE', '이 사진은 올리지 못했어요. 다른 사진으로 올려 주세요'],
     ['TOO_LARGE', '사진이 너무 커요'],
   ])('고른 사진을 줄이지 못하면(%s) 「%s」, 올리기는 비활성', async (reason, message) => {
     const user = await openSheet()
@@ -680,7 +680,7 @@ describe('방문자 사진 — 신고', () => {
     const user = renderSection()
 
     await user.click((await reportButtons())[0])
-    await user.click(screen.getByRole('button', { name: '취소' }))
+    await user.click(screen.getByRole('button', { name: '닫기' }))
 
     expect(api.reportVisitorPhoto).not.toHaveBeenCalled()
     expect(screen.queryByText('이 사진을 신고할까요?')).not.toBeInTheDocument()

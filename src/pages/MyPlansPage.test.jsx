@@ -87,7 +87,7 @@ describe('MyPlansPage — 회원 탈퇴와 개인정보처리방침 (2026-09-16)
     renderPage()
 
     await user.click(await screen.findByRole('button', { name: '회원 탈퇴' }))
-    await user.click(screen.getByRole('button', { name: '취소' }))
+    await user.click(screen.getByRole('button', { name: '닫기' }))
 
     expect(api.deleteAccount).not.toHaveBeenCalled()
     expect(screen.queryByText('정말 탈퇴할까요?')).not.toBeInTheDocument()
