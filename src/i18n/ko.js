@@ -396,6 +396,21 @@ export default {
   // 앞뒤 정류장으로 감싼 구간(leg.estimated)만 「약」. 확정값에 붙이면 정확히 아는 값을 흐립니다.
   'courseDetail.legApprox': '{route}번 · 약 {min}분',
   'courseDetail.legSameStop': '같은 정류장 · 바로 이동',
+  // 버스 구간(2026-09-17 사용자 결정) — 코스가 저장한 편 사슬의 노선이 아니라 **그 구간을 가장 자주 다니는 직행 노선**과 하루 횟수(서버 leg.service).
+  // 사슬이 우연히 탄 하루 1회 노선을 적으면 시간을 스스로 정하는 사용자가 하루 한 번 오는 버스를 기다린다.
+  // {time}은 formatDuration(60분 넘으면 「1시간 5분」) 또는 아래 폭. 노선 전체의 값이라 늘 「약」.
+  // 좁은 폰에서 줄이 넘치면(「22-1번 · 약 58분~1시간 2분 · 평일 14회 · 휴일 9회」는 281px — 360 폭 화면의 칸은 264px)
+  // 「· 」 뒤에서만 줄을 바꾸게 나머지 띄어쓰기는 붙는 공백(\u00a0)입니다. 값 쪽 띄어쓰기는 화면이 붙여 넘깁니다.
+  'courseDetail.legService': '{route}번\u00a0· 약\u00a0{time}\u00a0· {trips}',
+  // 같은 노선인데 편마다 소요가 다르면 폭 — 한 값으로 뭉개면 늦은 차를 놓친다(부록 D). 60분을 넘으면 양 끝을 시간 단위로.
+  'courseDetail.minRange': '{low}~{high}분',
+  'courseDetail.timeRange': '{low}~{high}',
+  // 평일 = 휴일이면 한 값. 휴일 0회는 「휴일 0회」로 적지 않는다 — 운행 없음인지 시각 미상인지는 holidayNoBus 만 말한다.
+  'courseDetail.tripsDaily': '하루 {n}회',
+  'courseDetail.tripsSplit': '평일 {n}회 · 휴일 {m}회',
+  'courseDetail.tripsWeekday': '평일 {n}회',
+  // 휴일에 이 구간을 잇는 직행이 어느 노선으로도 없고, 그게 시각 미상이 아니라 정말 운행이 없을 때만(서버 holidayNoBus).
+  'courseDetail.holidayNoBus': '휴일엔 이 구간 버스가 없어요',
   // 배 구간(2026-09-16) — 버스 줄과 자리를 맞춥니다. 「55번」 자리에 유람선 코스 이름, 「40분」 자리에 총 소요시간.
   // 총 소요시간은 **왕복 + 섬 체류를 합친 원문 값**이라 늘 「약」이 붙어 옵니다(서버 totalText 그대로).
   'courseDetail.ferryLeg': '{course} · {time}',
@@ -461,15 +476,14 @@ export default {
   // 분류(중립색 + 분류 아이콘) — 라벨은 분류 칩과 같은 theme.* 값. 분류가 하나면 「전망·명소만」, 둘이면 많은 쪽부터.
   'courses.themeOnly': '{label}만',
   'courses.themeTwo': '{a} {n}곳과 {b} {m}곳',
-  // 태그 넷 — 값은 전부 서버 데이터(busMinTotal · 권역(/api/pois) · tripsPerDay · holidayService)에서 옵니다(절대규칙 1).
+  // 태그 — 값은 전부 서버 데이터(busMinTotal · 권역(/api/pois) · holidayNoBusLegs)에서 옵니다(절대규칙 1).
   // 권역 태그는 데이터 값 그대로(「남부권」 · 「동부권·남부권」)라 키가 없습니다. 노선 번호 태그는 2026-09-14 밤 뺐습니다(사용자 결정).
+  // 배차(「매일 6회」) · 요일(「평일만」 · 「평일·휴일」) 태그는 2026-09-17 뺐습니다 — 코스가 확인용으로 저장한 편 사슬 하나의 값이라
+  // 「휴일엔 못 가는 코스」로 읽혔습니다(사용자 결정).
   // {time}은 formatDuration(busMinTotal) — 서버 busTotalText 는 60분 미만이면 「약 0시간 40분」이 되어 쓰지 않습니다.
   'courses.tagBus': '버스 약 {time}',
-  // 배차는 노선이 하나일 때만 옵니다(tripsPerDay). 평일·휴일 회차가 같으면 「매일」, 다르면 평일 값만.
-  'courses.tagDaily': '매일 {n}회',
-  'courses.tagWeekday': '평일 {n}회',
-  'courses.tagServiceAll': '평일·휴일',
-  'courses.tagServiceWeekday': '평일만',
+  // 휴일에 직행이 어느 노선으로도 없는 구간이 하나라도 있을 때만(holidayNoBusLegs). 시각 미상인 구간은 서버가 넣지 않습니다.
+  'courses.tagHolidayNoBus': '휴일엔 버스 없는 구간이 있어요',
   // 지도의 코스 카드 스트립(CourseMapPage)이 씁니다 — 코스 추천 카드는 코스 제목(title)을 씁니다.
   'courses.cardTitle': '코스 {n}',
   // 하단 고정 바 — 고른 게 1개 이상일 때만 뜹니다(0개면 바 자체가 없어 단수형이 없습니다).
@@ -532,10 +546,6 @@ export default {
   'myPlans.getCourses': '코스 추천 받기',
   'myPlans.delete': '삭제',
   'myPlans.deleteAria': '{title} 삭제',
-  'myPlans.meta': '{date} · {depart} 출발 → {back} 복귀',
-  'myPlans.metaNoBack': '{date} · {depart} 출발',
-  // 저장 카드 둘째 줄 — 머무는 시간까지 넣은 전체 일정 길이(approxTotalMin, 30분 단위).
-  'myPlans.duration': '약 {time} 소요 예정',
   'myPlans.openDetail': '코스 상세 확인',
   'myPlans.openAria': '{title} 코스 상세 보기',
   'myPlans.unknownCourse': '저장한 코스',

@@ -158,7 +158,7 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
     expect(api.courses).toHaveBeenCalledWith({ featured: true })
   })
 
-  it('카드 — 제목 · 스팟 체인 · 소개 · 태그 넷(버스 시간 · 권역 · 매일 6회 · 평일·휴일)', async () => {
+  it('카드 — 제목 · 스팟 체인 · 소개 · 태그 둘(버스 시간 · 권역)', async () => {
     renderPage()
 
     await screen.findByText('환승 없이 남부 9경 세 곳')
@@ -167,19 +167,21 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
     expect(c.getByText(COURSE_301.intro)).toBeInTheDocument()
     expect(c.getByText('버스 약 1시간 54분')).toBeInTheDocument()
     // 노선 번호 태그(「55번 한 노선」)는 2026-09-14 밤 권역으로 바꿨다 — 노선은 코스 상세가 구간마다 말한다
+    // 배차(「매일 6회」) · 요일(「평일·휴일」) 태그는 2026-09-17 뺐다 — 코스가 저장한 편 사슬 하나에서 나온 값이라
+    // 「휴일엔 못 가는 코스」로 읽혔다. 노선 · 횟수는 코스 상세가 구간마다 말한다.
     expect([...card(101).querySelectorAll(`.${styles.tag}`)].map((e) => e.textContent)).toEqual([
-      '버스 약 1시간 54분', '남부권', '매일 6회', '평일·휴일',
+      '버스 약 1시간 54분', '남부권',
     ])
     // 코스 name 은 줄임말 체인이라 화면에 내지 않는다(코스 상세와 같은 이유)
     expect(c.queryByText('학동 · 해금강 · 바람의언덕')).not.toBeInTheDocument()
   })
 
-  it('권역이 섞인 카드 — 가는 순서대로 「동부권·남부권」 · 배차 태그 없음(노선 여럿) · 「평일만」', async () => {
+  it('권역이 섞인 카드 — 가는 순서대로 「동부권·남부권」', async () => {
     renderPage()
 
     await screen.findByText('돌고래 보고 몽돌 밟고 바람의언덕')
     expect([...card(104).querySelectorAll(`.${styles.tag}`)].map((e) => e.textContent)).toEqual([
-      '버스 약 2시간 14분', '동부권·남부권', '평일만',
+      '버스 약 2시간 14분', '동부권·남부권',
     ])
   })
 
@@ -190,15 +192,33 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
     await screen.findByText('환승 없이 남부 9경 세 곳')
     const c = within(card(101))
     expect(c.queryByText(/권$/)).not.toBeInTheDocument()
-    expect(card(101).querySelectorAll(`.${styles.tag}`)).toHaveLength(3)
+    expect(card(101).querySelectorAll(`.${styles.tag}`)).toHaveLength(1)
   })
 
-  it('평일과 휴일 회차가 다르면 「평일 N회」', async () => {
-    api.courses.mockResolvedValue({ ...TWO, courses: [{ ...COURSE_301, tripsPerDay: { weekday: 6, holiday: 3 } }] })
+  it('휴일에 버스가 없는 구간이 있을 때만 태그 「휴일엔 버스 없는 구간이 있어요」 — 요일 · 배차 태그는 어느 코스에도 없다', async () => {
+    api.courses.mockResolvedValue({
+      ...TWO,
+      courses: [
+        { ...COURSE_301, holidayNoBusLegs: [] },
+        { ...COURSE_302, holidayNoBusLegs: [{ fromName: '도장포유람선', toName: '학동몽돌해변' }] },
+      ],
+    })
     renderPage()
 
-    expect(await screen.findByText('평일 6회')).toBeInTheDocument()
-    expect(screen.queryByText(/매일/)).not.toBeInTheDocument()
+    await screen.findByText('돌고래 보고 몽돌 밟고 바람의언덕')
+    expect([...card(104).querySelectorAll(`.${styles.tag}`)].map((e) => e.textContent)).toEqual([
+      '버스 약 2시간 14분', '동부권·남부권', '휴일엔 버스 없는 구간이 있어요',
+    ])
+    expect(within(card(101)).queryByText('휴일엔 버스 없는 구간이 있어요')).not.toBeInTheDocument()
+    // holidayService · tripsPerDay 는 응답에 남아 있어도 쓰지 않는다
+    expect(screen.queryByText(/평일만|평일·휴일|매일 \d+회|평일 \d+회/)).not.toBeInTheDocument()
+  })
+
+  it('holidayNoBusLegs 가 없는 옛 응답이면 휴일 태그 없음', async () => {
+    renderPage()
+
+    await screen.findByText('돌고래 보고 몽돌 밟고 바람의언덕')
+    expect(screen.queryByText(/휴일엔/)).not.toBeInTheDocument()
   })
 
   it('9경 배지 — [1, 2, 4] → 도장 「거제 9경 1경 2경 4경」, 9경이 0곳이면 배지 없음', async () => {

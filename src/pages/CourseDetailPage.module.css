@@ -397,7 +397,8 @@
   word-break: keep-all;
 }
 
-/* 「55번 · 40분」 13 Medium */
+/* 「55번 · 약 40분 · 하루 6회」 13 Medium. 2026-09-17 횟수가 붙어 좁은 폰에서 칸(360 폭 264px)을 넘을 수 있어
+   한 줄 고정(nowrap)을 풀었습니다 — 줄은 「· 」 뒤에서만 바뀝니다(나머지 띄어쓰기는 붙는 공백, ko.js legService). */
 .legText {
   display: block;
   font-family: var(--font-sans);
@@ -405,7 +406,7 @@
   font-weight: 500;
   line-height: 18px;
   color: var(--text-secondary);
-  white-space: nowrap;
+  word-break: keep-all;
 }
 
 /* 532:415~418 — 각주 11 / 회색. 추정 각주와 출처 사이 8 */

@@ -27,7 +27,7 @@ import styles from './CoursesPage.module.css'
  * 저장해서 뺀 코스는 칩 개수에서도 빠지고, 0개인 칩은 지우지 않고 비활성으로 남깁니다.
  *
  * 카드는 사진(첫 스팟 사진, 위 카드와 겹치면 다음 스팟 — lib/courseHero) · 배지(2026-09-17 부터 축마다 하나 — 거제시 코스 · 분류 · 9경, 아래 CourseBadge) · 제목 · 스팟 체인 · 소개 ·
- * 태그 넷(버스 시간 · 권역 · 배차 · 요일)입니다.
+ * 태그(버스 시간 · 권역 · 휴일에 버스 없는 구간 — 2026-09-17 배차 · 요일 태그를 뺐습니다, 아래 tagsOf)입니다.
  * 태그 값은 전부 서버 데이터입니다 — 기준문서에 없는 수치를 화면에서 만들지 않습니다(절대규칙 1).
  * 그림(582:416)의 둘째 태그는 노선 번호(「55번 한 노선」)였는데 2026-09-14 밤 **권역**으로 바꿨습니다(사용자 결정) —
  * 「55·67-1번 2노선」은 읽히지 않고, 노선은 코스 상세가 구간마다 말합니다.
@@ -59,18 +59,18 @@ function Check({ on }) {
 }
 
 /**
- * 태그 넷 — 버스 시간 · 권역 · 배차 · 요일. 권역은 /api/pois 를 못 받으면 빠집니다(빈 태그를 남기지 않게).
- * 배차는 노선이 하나일 때만 서버가 줍니다(tripsPerDay) — 노선이 섞인 코스의 회차를 하나로 합치면 실제로 운행하지 않는 수가 됩니다.
+ * 태그 — 버스 시간 · 권역 · (휴일에 버스 없는 구간이 있으면) 그 사실. 권역은 /api/pois 를 못 받으면 빠집니다(빈 태그를 남기지 않게).
+ *
+ * 배차(「매일 6회」) · 요일(「평일만」 · 「평일·휴일」) 태그는 2026-09-17 뺐습니다(사용자 결정). 둘 다 서버가 「이 순서가 버스로
+ * 이어지는가」를 확인하려고 저장한 **편 사슬 하나**에서 나온 값이라, 「평일만」은 사슬이 우연히 탄 한 편이 휴일에 없다는 뜻인데
+ * 「휴일엔 못 가는 코스」로 읽혔습니다. 대신 서버가 **구간마다** 휴일에도 다니는 버스가 있는지 보고, 없는 구간이 있을 때만
+ * `holidayNoBusLegs` 를 채웁니다. 노선 · 횟수는 코스 상세가 구간마다 말합니다. 필드가 없는 옛 응답이면 태그가 없습니다.
  */
 function tagsOf(course) {
-  const trips = course.tripsPerDay
   return [
     t('courses.tagBus', { time: formatDuration(course.busMinTotal) }),
     course.regions,
-    trips
-      ? t(trips.weekday === trips.holiday ? 'courses.tagDaily' : 'courses.tagWeekday', { n: trips.weekday })
-      : null,
-    t(course.holidayService ? 'courses.tagServiceAll' : 'courses.tagServiceWeekday'),
+    course.holidayNoBusLegs?.length > 0 ? t('courses.tagHolidayNoBus') : null,
   ].filter(Boolean)
 }
 

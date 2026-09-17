@@ -7,7 +7,7 @@ import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { api, beginKakaoLogin } from '../lib/api'
 import { courseImage, onImageError } from '../lib/courseImage'
-import { formatDuration, formatMonthDay } from '../lib/format'
+import { formatMonthDay } from '../lib/format'
 import { clearSession, getToken } from '../lib/session'
 import { loadSpotPhotos, withPhotos } from '../lib/spots'
 import styles from './MyPlansPage.module.css'
@@ -41,14 +41,11 @@ import styles from './MyPlansPage.module.css'
 function SavedTripCard({ trip, course, busy, onDelete, onOpen }) {
   // 제목·경로는 **저장 시점에 서버가 함께 저장한 값**입니다(V10). 사진 줄을 못 그릴 때만 씁니다.
   const title = trip.title ?? t('myPlans.unknownCourse')
+  // 날짜 · 코스만 적습니다(2026-09-17 사용자 결정). 응답의 출발 · 복귀 시각(arrivalTime · returnTime)과 코스 소요(approxTotalMin)는
+  // 서버가 「이 순서가 버스로 이어지는가」를 확인하려고 저장한 편 사슬 하나의 값이라 사용자가 정한 적이 없습니다 —
+  // 몇 시에 가서 얼마나 머물지는 사용자가 정합니다. 필드는 응답에 남아 있고 화면만 쓰지 않습니다.
   const date = formatMonthDay(trip.travelDate)
-  // 출발·복귀 시각은 코스에 박힌 값을 서버가 채워준 것입니다(사용자가 고르지 않습니다).
-  const meta = trip.returnTime
-    ? t('myPlans.meta', { date, depart: trip.arrivalTime, back: trip.returnTime })
-    : t('myPlans.metaNoBack', { date, depart: trip.arrivalTime })
   const stops = course?.stops ?? []
-  // 30분 단위로 반올림한 값은 서버가 한 번만 정합니다(approxTotalMin) — 여기서 따로 계산하면 어긋납니다.
-  const approx = course?.approxTotalMin
 
   return (
     <article className={styles.card}>
@@ -87,12 +84,7 @@ function SavedTripCard({ trip, course, busy, onDelete, onOpen }) {
         ) : (
           <span className={styles.cardTitle}>{title}</span>
         )}
-        <span className={styles.meta}>{meta}</span>
-        {approx != null && (
-          <span className={styles.meta}>
-            {t('myPlans.duration', { time: formatDuration(approx) })}
-          </span>
-        )}
+        <span className={styles.meta}>{date}</span>
       </button>
 
       <div className={styles.actions}>
@@ -121,7 +113,7 @@ function SavedTripCard({ trip, course, busy, onDelete, onOpen }) {
 }
 
 /**
- * 저장 카드마다 코스 상세를 부릅니다 — 사진 줄(스팟 poiId·이름)과 소요 시간이 저장 응답에 없어서입니다.
+ * 저장 카드마다 코스 상세를 부릅니다 — 사진 줄(스팟 poiId·이름)이 저장 응답에 없어서입니다.
  * 같은 코스를 여러 번 저장했으면 한 번만 부릅니다. 실패한 코스는 맵에서 빠지고 카드는 제목 글자로 그립니다.
  */
 async function loadTripCourses(trips) {
@@ -134,10 +126,7 @@ async function loadTripCourses(trips) {
   const byId = new Map()
   details.forEach((res, i) => {
     if (res.status !== 'fulfilled') return
-    byId.set(ids[i], {
-      stops: withPhotos(res.value.stops ?? [], photos),
-      approxTotalMin: res.value.approxTotalMin,
-    })
+    byId.set(ids[i], { stops: withPhotos(res.value.stops ?? [], photos) })
   })
   return byId
 }
@@ -147,7 +136,7 @@ export default function MyPlansPage() {
   const [loggedIn, setLoggedIn] = useState(() => Boolean(getToken()))
   const [result, setResult] = useState({ status: 'loading', trips: [], error: '' })
   const [busy, setBusy] = useState(false)
-  // courseId → { stops, approxTotalMin }. 저장 카드의 사진 줄·소요 시간입니다.
+  // courseId → { stops }. 저장 카드의 사진 줄입니다.
   const [tripCourses, setTripCourses] = useState(() => new Map())
 
   /* 상태를 콜백에서만 건드립니다 — 이펙트 본문에서 곧바로 setState를 부르면

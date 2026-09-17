@@ -59,6 +59,21 @@ beforeEach(() => {
   api.deleteAccount.mockResolvedValue(undefined)
 })
 
+describe('MyPlansPage — 저장 카드는 날짜 · 코스만(2026-09-17 사용자 결정)', () => {
+  it('출발 · 복귀 시각과 소요 시간을 적지 않는다 — 코스가 확인용으로 저장한 편 사슬의 값이라 사용자가 정한 적이 없다', async () => {
+    api.course.mockResolvedValue({ courseId: 101, stops: [], approxTotalMin: 510 })
+    const { container } = renderPage()
+
+    // 코스 상세를 못 그리면 저장된 제목 글자로 — 날짜는 그대로
+    expect(await screen.findByText('학동 · 해금강 · 바람의언덕')).toBeInTheDocument()
+    expect(screen.getByText('9월 20일(일)')).toBeInTheDocument()
+    await vi.waitFor(() => expect(api.course).toHaveBeenCalledWith(101))
+    expect(container).not.toHaveTextContent('08:20')
+    expect(container).not.toHaveTextContent('21:10')
+    expect(container).not.toHaveTextContent(/출발|복귀|소요 예정/)
+  })
+})
+
 describe('MyPlansPage — 회원 탈퇴와 개인정보처리방침 (2026-09-16)', () => {
   it('탈퇴는 한 번 더 묻고, 확인하면 계정을 지운 뒤 비로그인 화면으로 돌아온다', async () => {
     const user = userEvent.setup()

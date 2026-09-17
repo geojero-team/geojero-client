@@ -159,8 +159,11 @@ export const api = {
    *               name, summary, title, intro, nineScenicNos, busRoutes,
    *               tripsPerDay: { weekday, holiday } | null, holidayService,
    *               departAt, returnAt, approxTotalMin, approxTotalText, busMinTotal, busTotalText,
+   *               holidayNoBusLegs: [{ fromName, toName }],
    *               spots: [{ seq, poiId, name, shortName, theme, lat, lng }] }] }
    * title·intro 는 null 일 수 있고, tripsPerDay 는 busRoutes 가 하나일 때만 옵니다.
+   * tripsPerDay · holidayService 는 2026-09-17 부터 화면이 쓰지 않습니다(편 사슬 하나의 값 — 옛 클라 호환으로만 남음).
+   * holidayNoBusLegs 는 휴일에 직행이 어느 노선으로도 없는 버스 구간(시각 미상은 빠짐), 방문 순서. 없으면 [].
    */
   courses: ({ featured = false } = {}) =>
     request(`/api/courses${featured ? '?featured=true' : ''}`),
@@ -181,7 +184,15 @@ export const api = {
    *   legs: [{ seq, mode, fromPoiId, fromName, toPoiId, toName,
    *            departAt, arriveAt, durationMin, transfers, estimated,
    *            rides: [{ routeNo, boardStop, boardAt, boardEstimated,
-   *                      alightStop, alightAt, alightEstimated }] }] }
+   *                      alightStop, alightAt, alightEstimated }],
+   *            service: { routeNo, durationMin, durationMinLow, estimated, tripsWeekday, tripsHoliday } | null,
+   *            holidayNoBus }],
+   *   holidayNoBusLegs: [{ fromName, toName }] }
+   *
+   * ★ rides · durationMin · departAt · arriveAt 은 서버가 「이 순서가 버스로 이어지는가」를 확인하려고 저장한 **편 사슬 하나**입니다.
+   * 화면 구간 줄은 BUS 구간의 **service**(그 구간을 평일에 가장 자주 다니는 직행 노선 — 스팟 시간표와 같은 엔진)를 씁니다(2026-09-17).
+   * service 는 FERRY · SAME_STOP 구간과 옛 응답에서 null 이고, 그때는 rides 로 그립니다.
+   * holidayNoBus 는 휴일에 그 구간 직행이 정말 운행하지 않을 때만 true — 시각 미상(UNKNOWN_TIME)이면 false 입니다.
    */
   course: (courseId) => request(`/api/courses/${courseId}`),
 
@@ -253,6 +264,7 @@ export const api = {
    * 「내 일정」은 단순 열람입니다(기준문서 §6 컷 순서 3번).
    * SavedTripRes { savedTripId, courseId, title, chain,
    *                travelDate, arrivalTime, returnTime }
+   * arrivalTime · returnTime 은 코스의 편 사슬 시각이라 2026-09-17 부터 화면에 내지 않습니다(날짜 · 코스만).
    */
   savedTrips: () => request('/api/saved-trips', { session: true }),
 

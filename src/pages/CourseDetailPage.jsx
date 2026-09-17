@@ -181,16 +181,58 @@ function stayLine(leg) {
   return t('courseDetail.ferryStay', { stay: formatDuration(f.stayMin) })
 }
 
-/** 구간 한 줄 — `55번 · 40분` · 추정이면 `55번 · 약 12분` · 같은 정류장이면 `같은 정류장 · 바로 이동`. */
+/**
+ * 버스 구간 한 줄 — 「55번 · 약 12분 · 하루 6회」. 서버 `leg.service` 가 없으면(옛 응답) null.
+ *
+ * ★ **코스가 저장한 편 사슬(rides)의 노선을 적지 않습니다**(2026-09-17 사용자 결정). 서버는 「이 순서가 버스로 이어지는가」를
+ * 확인하려고 코스마다 하루짜리 편 사슬 하나를 저장하는데, 그 사슬이 우연히 탄 노선이 하루 1회 55-1번이면 같은 구간을
+ * 하루 6회 다니는 55번이 있어도 화면이 55-1번을 말했습니다. 몇 시에 갈지는 사용자가 정하므로 필요한 것은
+ * **그 구간을 가장 자주 다니는 직행 노선과 하루 몇 번 오는지**입니다 — 서버가 스팟 시간표와 같은 엔진으로 골라 줍니다.
+ *
+ *  · 분은 편마다 다르면 폭(「약 50~55분」), 같으면 한 값. 60분을 넘으면 시간 단위(formatDuration). 늘 「약」 — 노선 전체의 값이라서.
+ *  · 횟수는 평일 = 휴일이면 「하루 N회」, 다르면 「평일 N회 · 휴일 M회」, 휴일 0회면 「평일 N회」.
+ *    휴일 0회를 「휴일 0회」로 적지 않습니다 — 그게 운행 없음인지 시각 미상인지는 `holidayNoBus` 만 말합니다.
+ */
+function serviceLine(leg) {
+  const s = leg.service
+  if (!s) return null
+  const low = s.durationMinLow ?? s.durationMin
+  const time =
+    low === s.durationMin
+      ? formatDuration(s.durationMin)
+      : s.durationMin < 60
+        ? t('courseDetail.minRange', { low, high: s.durationMin })
+        : t('courseDetail.timeRange', { low: formatDuration(low), high: formatDuration(s.durationMin) })
+  const trips =
+    s.tripsWeekday === s.tripsHoliday
+      ? t('courseDetail.tripsDaily', { n: s.tripsWeekday })
+      : s.tripsHoliday > 0
+        ? t('courseDetail.tripsSplit', { n: s.tripsWeekday, m: s.tripsHoliday })
+        : t('courseDetail.tripsWeekday', { n: s.tripsWeekday })
+  // 「1시간 2분」 · 「평일 14회」 안에서 줄이 갈리지 않게 붙는 공백으로 — 줄은 「· 」 뒤에서만 바뀝니다(ko.js legService).
+  const glue = (text) => text.replaceAll(' ', '\u00a0')
+  return t('courseDetail.legService', { route: s.routeNo, time: glue(time), trips: glue(trips) })
+}
+
+/** 화면에 적힌 분이 추정인가 — service 가 있으면 그 노선의 소요, 없으면 사슬 구간. 각주가 이것을 따릅니다. */
+function legEstimated(leg) {
+  return leg.service ? Boolean(leg.service.estimated) : Boolean(leg.estimated)
+}
+
+/**
+ * 구간 한 줄 — 버스는 `55번 · 약 12분 · 하루 6회`(service), 옛 응답이면 `55번 · 40분` · 추정 `55번 · 약 12분`,
+ * 같은 정류장이면 `같은 정류장 · 바로 이동`.
+ */
 function LegRow({ leg }) {
   const sameStop = leg.mode === 'SAME_STOP'
   const ferry = leg.mode === 'FERRY' ? ferryLine(leg) : null
+  const service = leg.mode === 'BUS' ? serviceLine(leg) : null
   const route = leg.rides?.[0]?.routeNo ?? ''
   const text = ferry
     ? ferry
     : sameStop
       ? t('courseDetail.legSameStop')
-      : t(leg.estimated ? 'courseDetail.legApprox' : 'courseDetail.leg', { route, min: leg.durationMin })
+      : (service ?? t(leg.estimated ? 'courseDetail.legApprox' : 'courseDetail.leg', { route, min: leg.durationMin }))
 
   // 정류장 줄은 **구간 줄**에 답니다(2026-09-16 사용자 결정). 스팟 이름 아래에 두면 스팟의 부제처럼 읽혀
   // 「대금교차로」가 무엇인지 알 수 없었습니다 — 여기 있으면 「이 버스와 스팟의 관계」가 됩니다.
@@ -209,6 +251,8 @@ function LegRow({ leg }) {
           {ferry && <StopFerryIcon />}
           {text}
         </span>
+        {/* 휴일에 이 구간을 잇는 직행이 어느 노선으로도 없을 때만 — 서버가 시각 미상(UNKNOWN_TIME)과 갈라 줍니다(운행 없음 ≠ 시각 미상). */}
+        {leg.mode === 'BUS' && leg.holidayNoBus && <span className={styles.alight}>{t('courseDetail.holidayNoBus')}</span>}
         {subText && (
           <span className={styles.alight}>
             {!ferry && <Icon />}
@@ -379,7 +423,7 @@ export default function CourseDetailPage() {
   ))
   // 제목 — 서버 title 이 있으면 그것, 없으면 「학동몽돌해변에서 바람의언덕까지」. 한 곳뿐이면 이름 그대로(체인).
   const title = courseTitle(course.title, names) ?? chain
-  const hasEstimate = legs.some((leg) => leg.estimated)
+  const hasEstimate = legs.some(legEstimated)
 
   return (
     <Screen data-api="GET /api/courses/{id}">
