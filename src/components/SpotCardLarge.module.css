@@ -35,16 +35,23 @@
   object-fit: cover;
 }
 
-/* 거제9경 배지 — 코스 카드와 같은 자리(사진 오른쪽 아래), 같은 색입니다. */
+/* 거제9경 배지 — 사진 오른쪽 아래. 색 조합은 **스팟 시트의 배지와 같습니다**:
+   연한 주황 면(tint) + 흰 바탕용 주황 글씨(text).
+
+   2026-09-17에 고쳤습니다. 처음에는 진한 주황 면(--nine-scenic, 마커 테두리·버튼용)에 글씨용 주황을
+   얹었는데, 그 둘은 짝이 아닙니다 — 면이 어둡고 글씨가 빨갛게 보였습니다(사용자 지적).
+   사진 위에 얹히므로 테두리를 한 줄 둘러 어떤 사진에서도 경계가 보이게 합니다. */
 .nine {
   position: absolute;
   right: 8px;
   bottom: 8px;
   padding: 4px 10px;
   border-radius: var(--radius-pill);
-  background: var(--nine-scenic);
+  border: 1px solid var(--nine-scenic);
+  background: var(--nine-scenic-tint);
   color: var(--nine-scenic-text);
   font: var(--type-label);
+  font-weight: 700;
   white-space: nowrap;
 }
 
