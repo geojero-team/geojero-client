@@ -152,7 +152,8 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
 
     expect(await screen.findByText('대표 코스 2가지 · 여러 개 고를 수 있어요')).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 1, name: '코스 추천' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('거제 9경을 버스로 잇는대표 코스')
+    // 2026-09-17: 화면 안 제목을 뺐습니다(사용자 결정) — 남은 것은 머리의 「코스 추천」뿐입니다.
+    expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument()
     expect(screen.getByText('출발은 고현터미널 · 노선과 시간은 거제시 BIS 원문 기준')).toBeInTheDocument()
     expect(screen.queryByText(/총 코스/)).not.toBeInTheDocument()
     expect(api.courses).toHaveBeenCalledWith({ featured: true })

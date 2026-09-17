@@ -10,10 +10,10 @@ import styles from './NineScenicSheet.module.css'
 const TITLE_ID = 'nine-scenic-title'
 
 /**
- * 「거제9경이란?」 시트 — 홈 왼쪽 위 주황 버튼을 누르면 올라옵니다(2026-09-14 사용자 결정, Figma 프레임 없음).
+ * 「거제9경이란?」 시트 — 홈 왼쪽 위 보라 버튼을 누르면 올라옵니다(2026-09-14 사용자 결정, Figma 프레임 없음).
  *
  * 전에는 코스 추천 카드의 「거제9경 N곳」 태그에 붙이자고 했는데, 카드 전체가 버튼이라 태그를 누르면
- * 카드 선택까지 같이 눌립니다. 사용자가 홈으로 옮겼습니다 — 지도의 주황 테두리를 처음 보는 곳이 홈입니다.
+ * 카드 선택까지 같이 눌립니다. 사용자가 홈으로 옮겼습니다 — 지도의 보라 테두리를 처음 보는 곳이 홈입니다.
  *
  * 설명만 하고 끝내지 않고 **아홉 곳을 목록으로** 보여줍니다. 앱에 있는 곳은 줄이 **스팟 상세로 가는
  * 링크**입니다(사용자 요청 — 하이퍼링크 '방식', 겉모습은 목록 그대로). 상세에서 뒤로 오면 시트가 다시 열려
@@ -79,7 +79,7 @@ export default function NineScenicSheet({ open, onClose, links = null }) {
           <span>{t('nineScenic.lead3')}</span>
         </p>
 
-        {/* 범례 — 지도 마커와 같은 모양(흰 원 + 주황 테두리)을 그대로 그려 "이게 그거"를 말합니다. */}
+        {/* 범례 — 지도 마커와 같은 모양(흰 원 + 보라 테두리)을 그대로 그려 "이게 그거"를 말합니다. */}
         <p className={styles.legend}>
           <span className={styles.legendRing} aria-hidden="true" />
           <span className={styles.legendText}>

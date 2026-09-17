@@ -101,3 +101,22 @@
   font: var(--type-label);
   color: var(--text-secondary);
 }
+
+/* 「크게 보기」 — 큰 카드 세로 목록(2026-09-17). 격자(.grid)와 같은 간격을 씁니다.
+   시간표 탭도 이 스타일을 함께 씁니다(shared 로 가져다 씁니다). */
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 찾은 것이 없을 때 — 문장마다 줄을 바꿉니다(문구 규칙). */
+.empty {
+  margin: 0;
+  padding: var(--space-xl) 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  text-align: center;
+  white-space: pre-line;
+  word-break: keep-all;
+}

@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import CategoryBar from '../components/CategoryBar'
+import ListTools from '../components/ListTools'
 import Screen from '../components/Screen'
+import SpotCardLarge from '../components/SpotCardLarge'
 import { t } from '../i18n'
 import { api } from '../lib/api'
+import { filterAndSort } from '../lib/listTools'
 import { courseImage, onImageError } from '../lib/courseImage'
 import shared from './SpotsPage.module.css'
 import styles from './TimetableListPage.module.css'
@@ -61,6 +64,11 @@ export default function TimetableListPage() {
   const navigate = useNavigate()
   const [theme, setTheme] = useState(null)
   const [result, setResult] = useState({ status: 'loading', spots: [], error: '' })
+  /* 스팟 탭과 같은 도구입니다(2026-09-17 사용자 결정). 다른 점은 왼쪽 보기가 격자가 아니라
+     **한 줄 목록**이라는 것뿐입니다 — 이 탭은 사진보다 「어느 정류장인지」가 먼저입니다. */
+  const [query, setQuery] = useState('')
+  const [sort, setSort] = useState('default')
+  const [view, setView] = useState('compact')
 
   useEffect(() => {
     let cancelled = false
@@ -82,7 +90,8 @@ export default function TimetableListPage() {
     }
   }, [])
 
-  const spots = theme ? result.spots.filter((spot) => spot.theme === theme) : result.spots
+  const inTheme = theme ? result.spots.filter((spot) => spot.theme === theme) : result.spots
+  const spots = filterAndSort(inTheme, { query, sort })
 
   return (
     <Screen data-api="GET /api/pois">
@@ -95,10 +104,34 @@ export default function TimetableListPage() {
 
         <CategoryBar value={theme} onChange={setTheme} />
 
+        <ListTools
+          query={query}
+          onQuery={setQuery}
+          sort={sort}
+          onSort={setSort}
+          view={view}
+          onView={setView}
+          compact="rows"
+        />
+
         {result.status === 'error' ? (
           <p className={shared.notice}>{t('common.loadFailed', { error: result.error })}</p>
         ) : result.status === 'loading' ? (
           <p className={shared.notice}>{t('spots.loading')}</p>
+        ) : spots.length === 0 ? (
+          <p className={shared.empty}>{t('listTools.searchEmpty', { query: query.trim() })}</p>
+        ) : view === 'large' ? (
+          /* 크게 보기 — 카드는 스팟 탭과 같지만 누르면 그 스팟의 시간표로 갑니다. */
+          <div className={shared.cards}>
+            {spots.map((spot, index) => (
+              <SpotCardLarge
+                key={spot.poiId}
+                spot={spot}
+                onOpen={({ poiId }) => navigate(`/timetable/${poiId}`)}
+                tour={index === 0 ? 'first-timetable' : undefined}
+              />
+            ))}
+          </div>
         ) : (
           <div className={styles.list}>
             {spots.map((spot, index) => (

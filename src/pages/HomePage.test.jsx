@@ -114,7 +114,7 @@ describe('홈 — 거제9경(2026-09-14)', () => {
     await user.click(screen.getByRole('button', { name: '거제9경이란?' }))
     const dialog = screen.getByRole('dialog', { name: '거제9경이란?' })
     expect(dialog).toHaveTextContent('2024년')
-    expect(dialog).toHaveTextContent('주황색 테두리')
+    expect(dialog).toHaveTextContent('보라색 테두리')
     expect(screen.getByTestId('loc')).toHaveTextContent('/?nine=1')
 
     // 링크 주소는 서버 목록의 9경 번호(nineScenicNo)에서 온다 — 앱에 poiId 를 박지 않는다

@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import CategoryBar from '../components/CategoryBar'
+import ListTools from '../components/ListTools'
 import Screen from '../components/Screen'
+import SpotCardLarge from '../components/SpotCardLarge'
 import { t } from '../i18n'
+import { filterAndSort } from '../lib/listTools'
 import { loadVisibleSpots } from '../lib/spots'
 import { courseImage, onImageError } from '../lib/courseImage'
 import styles from './SpotsPage.module.css'
@@ -46,6 +49,11 @@ export default function SpotsPage() {
   const navigate = useNavigate()
   const [theme, setTheme] = useState(null)
   const [result, setResult] = useState({ status: 'loading', spots: [], error: '' })
+  /* 찾기 · 정렬 · 보기 방식(2026-09-17 사용자 결정). 주소에 싣지 않습니다 — 탭을 떠났다 오면
+     처음 상태로 돌아오는 편이 예측하기 쉽습니다. 분류 칩(theme)과 함께 걸러집니다. */
+  const [query, setQuery] = useState('')
+  const [sort, setSort] = useState('default')
+  const [view, setView] = useState('compact')
 
   useEffect(() => {
     let cancelled = false
@@ -61,7 +69,8 @@ export default function SpotsPage() {
     }
   }, [])
 
-  const spots = theme ? result.spots.filter((spot) => spot.theme === theme) : result.spots
+  const inTheme = theme ? result.spots.filter((spot) => spot.theme === theme) : result.spots
+  const spots = filterAndSort(inTheme, { query, sort })
 
   return (
     <Screen data-api="GET /api/spots">
@@ -72,10 +81,33 @@ export default function SpotsPage() {
       <div className={styles.body}>
         <CategoryBar value={theme} onChange={setTheme} />
 
+        <ListTools
+          query={query}
+          onQuery={setQuery}
+          sort={sort}
+          onSort={setSort}
+          view={view}
+          onView={setView}
+        />
+
         {result.status === 'error' ? (
           <p className={styles.notice}>{t('common.loadFailed', { error: result.error })}</p>
         ) : result.status === 'loading' ? (
           <p className={styles.notice}>{t('spots.loading')}</p>
+        ) : spots.length === 0 ? (
+          /* 찾은 것이 없을 때만 나옵니다 — 분류 칩은 어느 칸에나 스팟이 있어 0곳이 되지 않습니다. */
+          <p className={styles.empty}>{t('listTools.searchEmpty', { query: query.trim() })}</p>
+        ) : view === 'large' ? (
+          <div className={styles.cards}>
+            {spots.map((spot, index) => (
+              <SpotCardLarge
+                key={spot.poiId}
+                spot={spot}
+                onOpen={({ poiId }) => navigate(`/spots/${poiId}`)}
+                tour={index === 0 ? 'first-spot' : undefined}
+              />
+            ))}
+          </div>
         ) : (
           <div className={styles.grid}>
             {spots.map((spot, index) => (

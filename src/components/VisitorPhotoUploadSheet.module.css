@@ -130,6 +130,8 @@
   font: var(--type-label);
   color: var(--text-secondary);
   word-break: keep-all;
+  /* 문장마다 한 줄 — 공개된다는 사실과 위치정보 이야기를 따로 읽게 합니다. */
+  white-space: pre-line;
 }
 
 /* 실패 문구 — Figma에 없습니다. CourseDetailPage .saveError와 같은 모양입니다. */

@@ -5,7 +5,7 @@ import CourseMiniMap from '../components/CourseMiniMap'
 import LoginSheet from '../components/LoginSheet'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
-import { api, beginKakaoLogin } from '../lib/api'
+import { api, beginKakaoLoginTo } from '../lib/api'
 import { courseImage, onImageError } from '../lib/courseImage'
 import { formatDistance } from '../lib/format'
 import { courseTitle } from '../lib/courseTitle'
@@ -364,6 +364,13 @@ export default function CourseDetailPage() {
           data: { ...data, stops, regions: regionsOf(stops, pois) },
           error: '',
         })
+        /* 로그인하고 돌아왔으면 저장을 이어갑니다(2026-09-17 점검). 표시는 주소에 싣습니다 —
+           카카오를 거치는 동안 화면 상태가 사라지기 때문입니다(사진 올리기의 `?upload=1`과 같은 방식).
+           표시는 먼저 지웁니다. 남겨 두면 새로고침할 때마다 다시 저장하려 듭니다. */
+        if (new URLSearchParams(window.location.search).get('save') === '1') {
+          navigate(`/courses/${courseId}`, { replace: true })
+          if (getToken()) save()
+        }
       })
       .catch((error) => {
         if (!cancelled) setResult({ status: 'error', data: null, error: error.message })
@@ -371,6 +378,9 @@ export default function CourseDetailPage() {
     return () => {
       cancelled = true
     }
+    /* 코스가 바뀔 때만 돕니다. navigate · save 를 넣으면 렌더마다 새로 만들어져 코스를 다시 부르고,
+       로그인 복귀 저장(?save=1)도 두 번 돌 수 있습니다. 그 둘은 이 효과 안에서 한 번만 쓰입니다. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId])
 
   const course = result.data
@@ -395,7 +405,9 @@ export default function CourseDetailPage() {
    * 코스가 평일 기준이므로 주말에 저장하면 그날 버스와 어긋납니다 —
    * 날짜 선택을 둘지는 디자인 결정이라 여기서 정하지 않았습니다(팀 확인 필요).
    */
-  const save = () => {
+  // 함수 선언입니다(화살표 상수가 아닙니다) — 위의 코스 적재 이펙트가 로그인 복귀(`?save=1`) 때 이 함수를
+  // 부르는데, 상수로 두면 선언 전에 접근하는 꼴이 됩니다.
+  function save() {
     if (!getToken()) {
       setSheetOpen(true)
       return
@@ -598,10 +610,12 @@ export default function CourseDetailPage() {
         </div>
       </div>
 
+      {/* 돌아올 주소에 `?save=1`을 실어 둡니다 — 로그인을 마치고 오면 저장이 이어집니다(2026-09-17 점검).
+          사진 올리기가 `?upload=1`로 이미 쓰던 방식인데 저장만 빠져 있어, 로그인하고 와서 다시 눌러야 했습니다. */}
       <LoginSheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
-        onLogin={beginKakaoLogin}
+        onLogin={() => beginKakaoLoginTo(`/courses/${courseId}?save=1`)}
       />
     </Screen>
   )

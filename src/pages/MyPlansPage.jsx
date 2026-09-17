@@ -38,7 +38,7 @@ import styles from './MyPlansPage.module.css'
  * 없어서 코스 상세(`/api/courses/{id}`)를 함께 부릅니다 — 그 호출이 실패하면 저장된
  * 제목 글자로 그립니다(카드가 비지 않게).
  */
-function SavedTripCard({ trip, course, busy, onDelete, onOpen }) {
+function SavedTripCard({ trip, course, busy, confirming, onAsk, onCancel, onDelete, onOpen }) {
   // 제목·경로는 **저장 시점에 서버가 함께 저장한 값**입니다(V10). 사진 줄을 못 그릴 때만 씁니다.
   const title = trip.title ?? t('myPlans.unknownCourse')
   // 날짜 · 코스만 적습니다(2026-09-17 사용자 결정). 응답의 출발 · 복귀 시각(arrivalTime · returnTime)과 코스 소요(approxTotalMin)는
@@ -84,30 +84,55 @@ function SavedTripCard({ trip, course, busy, onDelete, onOpen }) {
         ) : (
           <span className={styles.cardTitle}>{title}</span>
         )}
-        <span className={styles.meta}>{date}</span>
+        {/* 날짜는 **저장한 날**이라 「저장」을 붙입니다(2026-09-17 팀 점검) — 날짜만 두면 그 날 가는 일정으로 읽혔습니다. */}
+        <span className={styles.meta}>{t('myPlans.savedOn', { date })}</span>
       </button>
 
-      <div className={styles.actions}>
-        <Button
-          variant="ghost"
-          className={styles.action}
-          onClick={() => onDelete(trip.savedTripId)}
-          disabled={busy}
-          aria-label={t('myPlans.deleteAria', { title })}
-          data-api="DELETE /api/saved-trips/{id}"
-        >
-          {t('myPlans.delete')}
-        </Button>
-        <span className={styles.spacer} />
-        <Button
-          variant="secondary"
-          className={styles.action}
-          onClick={() => onOpen(trip)}
-          data-api="GET /api/courses/{id}"
-        >
-          {t('myPlans.openDetail')}
-        </Button>
-      </div>
+      {/* 삭제는 되돌릴 수 없어 그 자리에서 한 번 더 묻습니다(2026-09-17 점검) —
+          사진 삭제 · 신고 · 회원 탈퇴가 이미 그렇게 하는데 여기만 바로 지우고 있었습니다. */}
+      {confirming ? (
+        <div className={styles.actions}>
+          <span className={styles.confirmQuestion}>{t('myPlans.deleteConfirm')}</span>
+          <Button
+            variant="ghost"
+            className={styles.action}
+            onClick={onCancel}
+            disabled={busy}
+          >
+            {t('myPlans.deleteCancel')}
+          </Button>
+          <Button
+            variant="secondary"
+            className={styles.action}
+            onClick={() => onDelete(trip.savedTripId)}
+            disabled={busy}
+            data-api="DELETE /api/saved-trips/{id}"
+          >
+            {t('myPlans.delete')}
+          </Button>
+        </div>
+      ) : (
+        <div className={styles.actions}>
+          <Button
+            variant="ghost"
+            className={styles.action}
+            onClick={() => onAsk(trip.savedTripId)}
+            disabled={busy}
+            aria-label={t('myPlans.deleteAria', { title })}
+          >
+            {t('myPlans.delete')}
+          </Button>
+          <span className={styles.spacer} />
+          <Button
+            variant="secondary"
+            className={styles.action}
+            onClick={() => onOpen(trip)}
+            data-api="GET /api/courses/{id}"
+          >
+            {t('myPlans.openDetail')}
+          </Button>
+        </div>
+      )}
     </article>
   )
 }
@@ -196,13 +221,19 @@ export default function MyPlansPage() {
     setResult({ status: 'loading', trips: [], error: '' })
   }
 
+  /* 삭제 확인(2026-09-17 점검) — 한 번에 하나만 묻습니다. 다른 카드의 「삭제」를 누르면 그쪽으로 옮겨갑니다. */
+  const [confirmingId, setConfirmingId] = useState(null)
+
   const remove = (savedTripId) => {
     setBusy(true)
     api
       .deleteTrip(savedTripId)
       .then(load)
       .catch(() => load())
-      .finally(() => setBusy(false))
+      .finally(() => {
+        setBusy(false)
+        setConfirmingId(null)
+      })
   }
 
   const trips = result.trips
@@ -267,6 +298,9 @@ export default function MyPlansPage() {
                 trip={trip}
                 course={tripCourses.get(trip.courseId)}
                 busy={busy}
+                confirming={confirmingId === trip.savedTripId}
+                onAsk={setConfirmingId}
+                onCancel={() => setConfirmingId(null)}
                 onDelete={remove}
                 onOpen={openCourse}
               />

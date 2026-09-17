@@ -1,0 +1,86 @@
+/* 큰 카드 — 「크게 보기」(2026-09-17). 격자 카드(SpotsPage .card)와 같은 재료를 씁니다:
+   흰 면 · 1px 테두리 · 모서리 12. 다른 점은 사진이 크고 요약이 붙는다는 것뿐입니다. */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  background: var(--bg-page);
+  overflow: hidden;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card:active {
+  background: var(--bg-pressed);
+}
+
+/* 사진 — 16:9. 참고 그림보다 낮게 잡습니다. 폰 한 화면에 카드가 1.5장쯤 보여야
+   「아래에 더 있다」가 드러납니다(스크롤 단서). */
+.photo {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--bg-surface);
+}
+
+.photoImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 거제9경 배지 — 사진 오른쪽 아래. 색 조합은 **스팟 시트의 배지와 같습니다**:
+   연한 면(tint) + 흰 바탕용 글씨(text).
+
+   2026-09-17에 고쳤습니다. 처음에는 진한 면(--nine-scenic, 마커 테두리·버튼용)에 글씨용 색을
+   얹었는데, 그 둘은 짝이 아닙니다 — 면이 어둡고 글씨가 묻혔습니다(사용자 지적).
+   사진 위에 얹히므로 테두리를 한 줄 둘러 어떤 사진에서도 경계가 보이게 합니다. */
+.nine {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--nine-scenic);
+  background: var(--nine-scenic-tint);
+  color: var(--nine-scenic-text);
+  font: var(--type-label);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 글 묶음 — 줄 사이를 좁게 붙여 한 덩어리로 읽히게 합니다(참고 그림의 간격 규칙). */
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px 14px;
+}
+
+.meta {
+  font: var(--type-label);
+  color: var(--brand-strong);
+}
+
+.name {
+  font: var(--type-title);
+  color: var(--text-primary);
+}
+
+/* 요약은 세 줄까지 — 카드 높이를 고르게 두려는 것입니다. 전문은 상세에서 읽습니다. */
+.summary {
+  margin-top: 4px;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  word-break: keep-all;
+}

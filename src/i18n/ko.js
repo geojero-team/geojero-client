@@ -27,7 +27,8 @@ export default {
   'nineScenic.lead1': '2024년 거제시가 새로 뽑은 대표 경관 아홉 곳이에요.',
   'nineScenic.lead2': '시민 여론조사와 전문가 위원 평가를 함께 반영했어요.',
   'nineScenic.lead3': '현지인이 인정한 곳이라 자신 있게 추천해요.',
-  'nineScenic.legend1': '지도의 주황색 테두리 스팟이 거제9경이에요.',
+  // 2026-09-17: 9경 강조색을 주황에서 보라로 바꿨습니다(사용자 결정). 지도에 보이는 색과 이 문장이 같아야 합니다.
+  'nineScenic.legend1': '지도의 보라색 테두리 스팟이 거제9경이에요.',
   'nineScenic.legend2': '누르면 자세한 정보를 볼 수 있어요.',
   'nineScenic.rank': '{rank}경',
   // 9경 이름과 스팟 이름이 다를 때(정글돔 → 상세 제목은 거제식물원) 이름 아래 한 줄.
@@ -118,6 +119,22 @@ export default {
 
   /* ── 스팟 목록 (233:378) ──────────────────────────────────────────────── */
   'spots.title': '스팟',
+
+  /* ── 목록 도구 — 스팟 · 시간표 탭 위쪽 줄 (2026-09-17 사용자 결정) ──
+     검색 · 정렬 · 보기 방식을 두 탭이 함께 씁니다. 「최신순」은 두지 않습니다 —
+     스팟은 고정된 19곳이라 새로 들어오는 것이 없어 '최신'이 뜻을 갖지 않습니다. */
+  'listTools.searchAria': '스팟 찾기',
+  'listTools.searchPlaceholder': '스팟 이름으로 찾아보세요',
+  'listTools.clear': '입력한 내용 지우기',
+  'listTools.searchEmpty': '「{query}」와 맞는 스팟을 찾지 못했어요.\n이름을 짧게 줄여 보세요.',
+  'listTools.sortAria': '정렬 방식',
+  'listTools.sortDefault': '추천순',
+  'listTools.sortName': '가나다순',
+  'listTools.sortRegion': '권역순',
+  'listTools.viewAria': '보기 방식',
+  'listTools.viewGrid': '격자로 보기',
+  'listTools.viewRows': '목록으로 보기',
+  'listTools.viewLarge': '크게 보기',
   'timetableList.title': '시간표',
   // 그림(451:613)은 「… 버스 시간표를 보여드려요」인데 2026-09-14 밤 「버스」를 뗐습니다(사용자 결정) —
   // 외도보타니아·도장포유람선은 배 시간표를 엽니다(스팟 상세 「시간표 보기」와 같은 이유).
@@ -172,7 +189,7 @@ export default {
   'visitorPhotos.report': '신고',
   'visitorPhotos.reportAria': '{n}번째 방문자 사진 신고하기',
   'visitorPhotos.reportConfirm': '이 사진을 신고할까요?',
-  'visitorPhotos.reportCancel': '취소',
+  'visitorPhotos.reportCancel': '닫기',
   'visitorPhotos.reported': '신고했어요. 이 사진은 바로 보이지 않게 했어요.',
   'visitorPhotos.reportFailed': '신고하지 못했어요',
   'visitorPhotos.reportLoginTitle': '사진을 신고하려면 로그인 해주세요',
@@ -181,7 +198,9 @@ export default {
   'visitorPhotos.retry': '다시 시도',
   'visitorPhotos.tileAria': '{n}번째 방문자 사진',
   'visitorPhotos.deleteConfirm': '이 사진을 지울까요?',
-  'visitorPhotos.deleteCancel': '취소',
+  /* 묻는 자리의 왼쪽 버튼은 「닫기」로 통일합니다(2026-09-16 문구 규칙) —
+     「취소」는 하던 일이 취소된다는 뜻으로 읽힙니다. */
+  'visitorPhotos.deleteCancel': '닫기',
   'visitorPhotos.deleteFailed': '사진을 지우지 못했어요',
   'visitorPhotos.uploaded': '사진을 올렸어요',
   'visitorPhotos.loginTitle': '사진을 올리려면 로그인 해주세요',
@@ -193,7 +212,10 @@ export default {
   'visitorPhotoUpload.title': '{name}에서 찍은 사진',
   'visitorPhotoUpload.preview': '선택한 사진',
   'visitorPhotoUpload.captionPlaceholder': '한 줄 남기기 (선택)',
-  'visitorPhotoUpload.notice': '날짜는 자동으로 붙어요 · 사진 속 위치 정보는 저장하지 않아요',
+  /* 공개된다는 사실을 첫 문장에 둡니다(2026-09-17 점검) — 전에는 날짜와 위치정보만 말해
+     비공개로 읽힐 여지가 있었습니다. 문장마다 줄을 바꿉니다(문구 규칙). */
+  'visitorPhotoUpload.notice':
+    '올린 사진은 이 스팟을 보는 사람 모두에게 보여요.\n날짜는 자동으로 붙고, 사진 속 위치 정보는 저장하지 않아요.',
   'visitorPhotoUpload.submit': '올리기',
   // 여기부터는 Figma에 없는 상태의 문구입니다(시트는 활성 상태 하나만 그려져 있습니다).
   'visitorPhotoUpload.sheetAria': '사진 올리기',
@@ -202,7 +224,10 @@ export default {
   'visitorPhotoUpload.submitting': '올리는 중',
   'visitorPhotoUpload.errTooLarge': '사진이 너무 커요',
   // 형식 이름(JPEG·PNG)을 적지 않습니다 — 브라우저가 열 수 있으면 JPEG로 바꿔 올리므로 실제와 달라집니다.
-  'visitorPhotoUpload.errUnreadable': '이 사진은 올릴 수 없어요',
+  // 못 쓰는 경우는 이유를 함께 적습니다(2026-09-16 문구 규칙) — 무엇을 하면 되는지도 같이.
+  // 이 키 하나가 형식·픽셀 과다·파일 없음에 함께 쓰입니다(errorKey). 그래서 이유를 특정하지 않고,
+  // 다음에 할 일만 말합니다 — 「읽지 못했어요」라고 쓰면 픽셀이 많아 거절된 경우엔 사실과 다릅니다.
+  'visitorPhotoUpload.errUnreadable': '이 사진은 올리지 못했어요. 다른 사진으로 올려 주세요',
   'visitorPhotoUpload.errCaption': '한 줄은 {max}자까지예요',
   'visitorPhotoUpload.errNetwork': '올리지 못했어요. 잠시 뒤 다시 시도해 주세요',
 
@@ -220,7 +245,8 @@ export default {
   'courseMap.select': '코스 선택',
   // 지도 카드는 폭이 좁아 '총 … 소요'를 뺀 짧은 꼴입니다.
   'courseMap.busTotal': '{time} 예정',
-  'courseMap.none': '고른 코스가 없어요. 코스 추천에서 다시 골라 주세요.',
+  // 빈 화면은 없는 것을 말하기보다 다음에 할 일을 말합니다(2026-09-16 문구 규칙).
+  'courseMap.none': '코스 추천에서 코스를 고르면 여기 지도에 그려 드려요.',
 
   // ── 스팟 시간표 (02-2 · Figma 453:210 · 453:288 · 453:415) ───────────────
   'spotTime.board': '{stop}에서 타요.',
@@ -475,8 +501,6 @@ export default {
   // (어느 10개인지는 서버 featured=true 가 정합니다). plan.* 과 키를 따로 둡니다 — plan.* 은 판정 유물입니다.
   // 2026-09-16 개수 칩을 되살렸습니다(Figma 623:444 · 메모 623:520) — 대표 코스 10개 안에서 거릅니다.
   'courses.title': '코스 추천',
-  'courses.headline1': '거제 9경을 버스로 잇는',
-  'courses.headline2': '대표 코스',
   // 출발지 가정과 근거를 한 줄에 — 모든 시각이 이 위에 서 있어서 숨기면 안 됩니다.
   'courses.originNote': '출발은 고현터미널 · 노선과 시간은 거제시 BIS 원문 기준',
   'courses.total': '대표 코스 {count}가지 · 여러 개 고를 수 있어요',
@@ -553,7 +577,7 @@ export default {
     '저장한 코스와 올린 사진이 모두 지워져요.\n다시 되돌릴 수 없어요.',
   'myPlans.withdrawKakao': '카카오 계정은 그대로예요. 연결 해제는 카카오 설정에서 할 수 있어요.',
   'myPlans.withdrawConfirm': '탈퇴하기',
-  'myPlans.withdrawCancel': '취소',
+  'myPlans.withdrawCancel': '닫기',
   'myPlans.withdrawing': '탈퇴하는 중',
   'myPlans.withdrawFailed': '탈퇴하지 못했어요 — {error}',
   'myPlans.privacy': '개인정보처리방침',
@@ -563,6 +587,11 @@ export default {
   'myPlans.getCourses': '코스 추천 받기',
   'myPlans.delete': '삭제',
   'myPlans.deleteAria': '{title} 삭제',
+  // 저장 카드 날짜는 **저장한 날**이다(2026-09-17 팀 점검) — 코스 상세에 날짜 선택이 없어 저장하는 날로 박힌다.
+  // 그냥 날짜만 두면 그 날 가는 일정으로 읽혀 「저장」을 붙인다. 출발 · 복귀 시각은 같은 날 뺐다(사용자 결정 — 확인용 편 사슬의 시각이다).
+  'myPlans.savedOn': '{date} 저장',
+  'myPlans.deleteConfirm': '이 일정을 지울까요?',
+  'myPlans.deleteCancel': '닫기',
   'myPlans.openDetail': '코스 상세 확인',
   'myPlans.openAria': '{title} 코스 상세 보기',
   'myPlans.unknownCourse': '저장한 코스',
