@@ -26,17 +26,6 @@
   cursor: pointer;
 }
 
-/* 532:322 — 어느 요일 시간표로 계산한 코스인지 */
-.dayPill {
-  flex: none;
-  padding: 5px 10px;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-pill);
-  background: var(--bg-surface);
-  font: var(--type-label);
-  color: var(--text-secondary);
-}
-
 .scroll {
   flex: 1;
   min-height: 0;

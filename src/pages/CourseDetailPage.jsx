@@ -402,12 +402,8 @@ export default function CourseDetailPage() {
         {'‹  '}
         {t('courseDetail.back')}
       </button>
-      {/* 어느 요일 시간표로 계산한 코스인지. 모르면(옛 코스 service null) 그리지 않습니다. */}
-      {course?.service && (
-        <span className={styles.dayPill}>
-          {t(course.service === 'HOLIDAY' ? 'courseDetail.holiday' : 'courseDetail.weekday')}
-        </span>
-      )}
+      {/* 요일 알약(547:200)은 뺐습니다(2026-09-17 사용자 결정) — course.service 는 확인용 편 사슬의 요일이라
+          「평일용 코스」로 읽혔습니다. 요일 사정은 구간 줄(「평일 N회 · 휴일 M회」 · 휴일 운행 없음 줄)이 말합니다. */}
     </header>
   )
 

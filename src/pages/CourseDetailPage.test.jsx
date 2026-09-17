@@ -211,7 +211,10 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     // 체인은 이름마다 nowrap 조각이라 한 문단의 textContent 로 봅니다.
     expect(screen.getByText((_, el) => el.tagName === 'P' && el.textContent === '학동몽돌해변 · 해금강 · 바람의언덕')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '뒤로' })).toHaveTextContent('코스')
-    expect(screen.getByText('평일')).toBeInTheDocument()
+    // 머리 「평일」 알약은 뺐다(2026-09-17 사용자 결정) — 확인용 편 사슬의 요일이라 「평일용 코스」로 읽혔다.
+    // 요일 사정은 구간 줄(「평일 N회 · 휴일 M회」 · 「휴일엔 이 구간 버스가 없어요」)이 말한다.
+    expect(screen.queryByText('평일')).not.toBeInTheDocument()
+    expect(screen.queryByText('휴일')).not.toBeInTheDocument()
     expect(screen.getByText('남부권 · 3곳')).toBeInTheDocument()
     expect(screen.queryByText('고현터미널에서 출발해 고현터미널로 돌아와요')).not.toBeInTheDocument()
     expect(screen.getByText('버스 약 1시간 54분')).toBeInTheDocument()
