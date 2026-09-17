@@ -221,12 +221,12 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
     expect(screen.queryByText(/휴일엔/)).not.toBeInTheDocument()
   })
 
-  it('9경 배지 — [1, 2, 4] → 도장 「거제 9경 1경 2경 4경」, 9경이 0곳이면 배지 없음', async () => {
+  it('9경 배지 — [1, 2, 4] → 도장 「거제 9경」(번호는 배지에 없다), 9경이 0곳이면 배지 없음', async () => {
     api.courses.mockResolvedValue({ ...TWO, courses: [COURSE_301, COURSE_NO_NINE] })
     renderPage()
 
-    await screen.findByText('거제 9경 1경 2경 4경')
-    expect(card(101)).toHaveAccessibleName(/거제 9경 1경 2경 4경/)
+    await screen.findByText('거제 9경')
+    expect(card(101)).toHaveAccessibleName(/^거제 9경(?!\s*\d)/)
     expect(within(card(120)).queryByText(/거제 9경/)).not.toBeInTheDocument()
     expect(card(120).querySelector(`.${styles.badge}`)).toBeNull()
   })
@@ -689,7 +689,7 @@ describe('CoursesPage — 개수 칩(Figma 623:444 · 메모 623:520, 2026-09-16
   })
 })
 
-describe('CoursesPage — 배지는 축마다 색 하나(코스재설계 §5-2 · §5-3)', () => {
+describe('CoursesPage — 배지는 축마다 색 하나 · 숫자 없는 짧은 이름(코스재설계 §5-2 · §5-3 · 2026-09-17 저녁)', () => {
   /** 서버가 곧 줄 필드(§5-3) — 아직 배포 전이라 이 모양이 계약입니다. 스팟 · 노선 · 분은 테스트 값입니다. */
   const OFFICIAL = {
     ...COURSE_301,
@@ -734,109 +734,155 @@ describe('CoursesPage — 배지는 축마다 색 하나(코스재설계 §5-2 �
   }
   const badgeOf = (id) => card(id).querySelector(`.${styles.badge}`)
   const show = (...courses) => api.courses.mockResolvedValue({ courses })
+  /** 배지 글자에서 목록 이름 「거제 9경」을 뺀 나머지의 숫자 글자 — 「9」는 이름의 일부라 남긴다(사용자 확인). */
+  const digitsIn = (el) => el.textContent.replace('거제 9경', '').match(/[0-9①-⑨]/g)
 
-  it('OFFICIAL — 「거제시 당일코스의 4곳」 + 원문 순서를 지켰으면 「원문 순서 그대로」', async () => {
-    show(OFFICIAL)
+  it('OFFICIAL — 「거제시 추천 관광코스」 고정 · 원문 코스 이름 · 곳 수 · 순서는 배지에 없다(코스 상세로 옮겼다)', async () => {
+    show(OFFICIAL, {
+      ...OFFICIAL,
+      courseId: 209,
+      officialCourse: { ...OFFICIAL.officialCourse, name: '2일코스', total: 16, matched: 6, orderKept: false },
+    })
     renderPage()
 
-    await screen.findByText('거제시 당일코스의 4곳')
-    expect(within(badgeOf(201)).getByText('원문 순서 그대로')).toBeInTheDocument()
-  })
-
-  it('OFFICIAL — 순서가 원문과 다르면 「원문 순서 그대로」를 적지 않는다', async () => {
-    show({ ...OFFICIAL, officialCourse: { ...OFFICIAL.officialCourse, name: '2일코스', matched: 6, orderKept: false } })
-    renderPage()
-
-    await screen.findByText('거제시 2일코스의 6곳')
-    expect(screen.queryByText('원문 순서 그대로')).not.toBeInTheDocument()
+    await screen.findAllByText('거제시 추천 관광코스')
+    for (const id of [201, 209]) {
+      expect(badgeOf(id)).toHaveTextContent(/^거제시 추천 관광코스$/)
+      expect(digitsIn(badgeOf(id))).toBeNull()
+      // 읽기 도구에는 카드 이름 맨 앞에 배지 글자 그대로(사진은 alt="") — 뒤에 원문 코스 이름 · 곳 수가 붙지 않는다
+      expect(card(id)).toHaveAccessibleName(/^거제시 추천 관광코스(?!\s*[「\d])/)
+    }
+    expect(screen.queryByText(/당일코스|2일코스|원문 순서/)).not.toBeInTheDocument()
   })
 
   it('9경이 든 코스라도 축이 OFFICIAL · THEME 이면 9경 도장을 함께 그리지 않는다 — 한 카드에 축 색은 하나', async () => {
     show(OFFICIAL, THEME_VIEW)
     renderPage()
 
-    await screen.findByText('거제시 당일코스의 4곳')
+    await screen.findByText('거제시 추천 관광코스')
     expect(within(card(201)).queryByText(/^거제 9경/)).not.toBeInTheDocument()
     expect(within(card(203)).queryByText(/^거제 9경/)).not.toBeInTheDocument()
     expect(card(201).querySelectorAll(`.${styles.badge}`)).toHaveLength(1)
   })
 
-  it('NINE — 9경 도장(읽기 도구 「거제 9경 1경 2경 4경 6경」)', async () => {
+  it('NINE — 도장 하나 + 「거제 9경」 · 번호 없음(읽기 도구도 「거제 9경」)', async () => {
     show(NINE)
     renderPage()
 
-    await screen.findByText('거제 9경 1경 2경 4경 6경')
-    expect([...badgeOf(202).querySelectorAll('[data-no]')].map((e) => e.textContent)).toEqual(['1', '2', '4', '6'])
+    await screen.findByText('거제 9경')
+    expect(badgeOf(202)).toHaveTextContent(/^거제 9경$/)
+    expect(digitsIn(badgeOf(202))).toBeNull()
+    expect(badgeOf(202).querySelector('[data-no]')).toBeNull()
+    expect(card(202)).toHaveAccessibleName(/^거제 9경(?!\s*\d)/)
   })
 
-  it('THEME — 분류가 전부 같으면 「전망·명소만」 · 분류 아이콘', async () => {
+  it('THEME — 분류가 전부 같으면 그 분류 이름 하나 「전망·명소」 · 그 아이콘(「만」 · 곳 수 없음)', async () => {
     show(THEME_VIEW)
     renderPage()
 
-    await screen.findByText('전망·명소만')
+    await screen.findByText('전망·명소')
+    expect(badgeOf(203)).toHaveTextContent(/^전망·명소$/)
     expect(badgeOf(203).querySelector('path')).toHaveAttribute('d', ICON_PATHS.VIEW)
+    expect(badgeOf(203).querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+    expect(card(203)).toHaveAccessibleName(/^전망·명소(?!만)/)
   })
 
-  it('THEME — 분류가 둘이면 많은 쪽부터 「정원·숲 2곳과 전망·명소 1곳」 · 많은 쪽 아이콘', async () => {
+  it('THEME — 분류가 둘이면 가장 많은 분류 「정원·숲」 · 그 아이콘', async () => {
     show(THEME_GARDEN)
     renderPage()
 
-    await screen.findByText('정원·숲 2곳과 전망·명소 1곳')
+    await screen.findByText('정원·숲')
+    expect(badgeOf(204)).toHaveTextContent(/^정원·숲$/)
     expect(badgeOf(204).querySelector('path')).toHaveAttribute('d', ICON_PATHS.GARDEN)
   })
 
-  it('THEME — 둘이 같은 수면 가는 순서대로', async () => {
+  it('THEME — 같은 수면 방문 순서에서 먼저 나오는 분류', async () => {
     show({ ...THEME_GARDEN, courseId: 206, spots: THEME_GARDEN.spots.slice(1) })
     renderPage()
 
-    expect(await screen.findByText('전망·명소 1곳과 정원·숲 1곳')).toBeInTheDocument()
+    await screen.findByText('전망·명소')
+    expect(badgeOf(206)).toHaveTextContent(/^전망·명소$/)
+    expect(badgeOf(206).querySelector('path')).toHaveAttribute('d', ICON_PATHS.VIEW)
   })
 
-  it('THEME — 유람선이 들면 유람선 아이콘', async () => {
-    show(THEME_CRUISE)
+  it('THEME — 분류가 셋 이상이어도 가장 많은 분류 하나 — 9경 도장으로 물러나지 않는다', async () => {
+    show({
+      ...THEME_GARDEN,
+      courseId: 207,
+      spots: [
+        ...THEME_GARDEN.spots,
+        spot(4, 4, '학동흑진주몽돌해변', '학동몽돌해변', 'BEACH'),
+        spot(5, 12, '포로수용소', '포로수용소', 'HISTORY'),
+      ],
+    })
     renderPage()
 
-    await screen.findByText('섬·유람선 2곳과 전망·명소 1곳')
-    expect(badgeOf(205).querySelector('path')).toHaveAttribute('d', ICON_PATHS.CRUISE)
+    await screen.findByText('정원·숲')
+    expect(badgeOf(207)).toHaveTextContent(/^정원·숲$/)
+    expect(within(card(207)).queryByText(/^거제 9경/)).not.toBeInTheDocument()
   })
 
-  it('폴백 — badgeAxis 가 없는 옛 응답이면 지금처럼 9경 도장만', async () => {
+  it('THEME — 분류가 없는 스팟은 세지 않는다', async () => {
+    // 분류 없는 스팟 둘까지 세면 「없음」이 가장 많다 — 빼고 세면 정원·숲 1 · 전망·명소 1 로 같고, 먼저 가는 정원·숲
+    show({
+      ...THEME_GARDEN,
+      courseId: 210,
+      spots: [
+        spot(1, 30, '가', '가', null),
+        spot(2, 10, '거제식물원', '거제식물원', 'GARDEN'),
+        spot(3, 31, '나', '나', undefined),
+        spot(4, 7, '매미성', '매미성', 'VIEW'),
+      ],
+    })
+    renderPage()
+
+    await screen.findByText('정원·숲')
+    expect(badgeOf(210)).toHaveTextContent(/^정원·숲$/)
+    expect(badgeOf(210).querySelector('path')).toHaveAttribute('d', ICON_PATHS.GARDEN)
+  })
+
+  it('THEME — 유람선 코스는 「섬·유람선」 · 유람선 아이콘. 배를 타도 가장 많은 분류가 전망이면 전망 아이콘(아이콘과 이름은 같은 분류)', async () => {
+    show(THEME_CRUISE, {
+      ...THEME_CRUISE,
+      courseId: 211,
+      spots: [THEME_CRUISE.spots[0], spot(2, 1, '바람의언덕', '바람의언덕', 'VIEW'), spot(3, 3, '해금강', '해금강', 'VIEW')],
+    })
+    renderPage()
+
+    await screen.findByText('섬·유람선')
+    expect(badgeOf(205)).toHaveTextContent(/^섬·유람선$/)
+    expect(badgeOf(205).querySelector('path')).toHaveAttribute('d', ICON_PATHS.CRUISE)
+    expect(badgeOf(211)).toHaveTextContent(/^전망·명소$/)
+    expect(badgeOf(211).querySelector('path')).toHaveAttribute('d', ICON_PATHS.VIEW)
+  })
+
+  it('폴백 — badgeAxis 가 없는 옛 응답이면 9경 도장 「거제 9경」(번호 없음)', async () => {
     show(COURSE_301)
     renderPage()
 
-    await screen.findByText('거제 9경 1경 2경 4경')
+    await screen.findByText('거제 9경')
+    expect(badgeOf(101)).toHaveTextContent(/^거제 9경$/)
     expect(within(card(101)).queryByText(/^거제시/)).not.toBeInTheDocument()
   })
 
-  it('폴백 — 축 값을 그릴 수 없으면(OFFICIAL 인데 officialCourse 없음 · 분류 셋 이상) 9경 도장으로', async () => {
+  it('폴백 — 축을 그릴 근거가 없으면 9경 도장(번호 없음) · OFFICIAL 인데 officialCourse 없음 · 이름 없음 · 겹치는 곳 0 · THEME 인데 셀 분류가 없음', async () => {
+    // 거제시 코스와 겹치는 곳이 확인되지 않으면 「거제시 추천 관광코스」라고 말할 근거가 없다
     show(
       { ...OFFICIAL, officialCourse: null },
-      {
-        ...THEME_GARDEN,
-        courseId: 207,
-        spots: [...THEME_GARDEN.spots, spot(4, 4, '학동흑진주몽돌해변', '학동몽돌해변', 'BEACH'), spot(5, 12, '포로수용소', '포로수용소', 'HISTORY')],
-      },
-    )
-    renderPage()
-
-    await screen.findByText('거제 9경 1경 2경 4경')
-    expect(within(card(207)).getByText('거제 9경 5경 9경')).toBeInTheDocument()
-  })
-
-  it('폴백 — officialCourse 에 코스 이름 · 겹치는 곳 수가 없으면 9경 도장으로(「거제시 undefined의 undefined곳」 금지)', async () => {
-    // 서버 필드는 아직 배포 전이라 이름이 어긋나거나 빠질 수 있다 — 값 없이 문장 틀만 남기지 않는다(절대규칙 3)
-    show(
-      { ...OFFICIAL, officialCourse: { total: 6, orderKept: true, sourceUrl: 'x' } },
       { ...OFFICIAL, courseId: 208, nineScenicNos: [5], officialCourse: { ...OFFICIAL.officialCourse, matched: 0 } },
+      { ...OFFICIAL, courseId: 212, officialCourse: { total: 6, orderKept: true, sourceUrl: 'x' } },
+      { ...THEME_VIEW, courseId: 213, spots: THEME_VIEW.spots.map((s) => ({ ...s, theme: null })) },
     )
     renderPage()
 
-    await screen.findByText('거제 9경 1경 2경 4경')
-    expect(within(card(208)).getByText('거제 9경 5경')).toBeInTheDocument()
+    await screen.findAllByText('거제 9경')
+    for (const id of [201, 208, 212, 213]) {
+      expect(badgeOf(id)).toHaveTextContent(/^거제 9경$/)
+      expect(digitsIn(badgeOf(id))).toBeNull()
+    }
     // 페이지 출처 줄(「… 거제시 BIS 원문 기준」)에도 「거제시」가 있어 카드 안만 본다
-    for (const id of [201, 208]) {
+    for (const id of [201, 208, 212]) {
       expect(within(card(id)).queryByText(/undefined|^거제시/)).not.toBeInTheDocument()
     }
-    expect(screen.queryByText('원문 순서 그대로')).not.toBeInTheDocument()
   })
 })

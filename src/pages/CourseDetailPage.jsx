@@ -10,7 +10,7 @@ import { courseImage, onImageError } from '../lib/courseImage'
 import { formatDistance } from '../lib/format'
 import { courseTitle } from '../lib/courseTitle'
 import { getToken } from '../lib/session'
-import { formatDuration } from '../lib/format'
+import { formatCountWord, formatDuration } from '../lib/format'
 import { ICON_PATHS } from '../lib/spotIcons'
 import { loadSpots, regionsOf } from '../lib/spots'
 import styles from './CourseDetailPage.module.css'
@@ -212,6 +212,21 @@ function serviceLine(leg) {
   // 「1시간 2분」 · 「평일 14회」 안에서 줄이 갈리지 않게 붙는 공백으로 — 줄은 「· 」 뒤에서만 바뀝니다(ko.js legService).
   const glue = (text) => text.replaceAll(' ', '\u00a0')
   return t('courseDetail.legService', { route: s.routeNo, time: glue(time), trips: glue(trips) })
+}
+
+/**
+ * 거제시 추천 관광코스 한 줄 — 「거제시 추천 관광코스 「당일코스」 여섯 곳 중 네 곳 · 원문 순서대로」. 그릴 수 없으면 null.
+ *
+ * 코스 추천 카드의 초록 배지는 2026-09-17 저녁 숫자 없는 「거제시 추천 관광코스」 하나가 됐고(사용자 결정 — 한눈에 알아보게),
+ * 거기서 뺀 **원문 코스 이름 · 몇 곳 중 몇 곳 · 순서**를 여기서 말합니다. 곳 수는 한글 수 낱말로 적습니다(사용자 결정).
+ * 「원문 순서대로」는 방문 순서까지 원문 그대로일 때만(`orderKept`).
+ * 서버 `officialCourse` 가 없으면(9경 · 분류 코스, 옛 응답) 줄이 없고, 이름이나 곳 수가 빠져도 줄이 없습니다 — 「undefined 곳」을 남기지 않습니다.
+ */
+function officialLine(oc) {
+  const total = formatCountWord(oc?.total)
+  const matched = formatCountWord(oc?.matched)
+  if (!oc?.name || !total || !matched) return null
+  return t(oc.orderKept ? 'courseDetail.officialOrderKept' : 'courseDetail.official', { name: oc.name, total, matched })
 }
 
 /** 화면에 적힌 분이 추정인가 — service 가 있으면 그 노선의 소요, 없으면 사슬 구간. 각주가 이것을 따릅니다. */
@@ -424,6 +439,7 @@ export default function CourseDetailPage() {
   // 제목 — 서버 title 이 있으면 그것, 없으면 「학동몽돌해변에서 바람의언덕까지」. 한 곳뿐이면 이름 그대로(체인).
   const title = courseTitle(course.title, names) ?? chain
   const hasEstimate = legs.some(legEstimated)
+  const official = officialLine(course.officialCourse)
 
   return (
     <Screen data-api="GET /api/courses/{id}">
@@ -445,6 +461,25 @@ export default function CourseDetailPage() {
           {hasLegs ? (
             <>
               <p className={styles.subtitle}>{chain}</p>
+
+              {/* 거제시 추천 관광코스 코스만 — 앞의 초록 점이 카드의 초록 배지와 이어 줍니다. 원문 페이지는 새 창. */}
+              {official && (
+                <p className={styles.official}>
+                  <span className={styles.officialDot} aria-hidden="true" />
+                  <span className={styles.officialText}>{official}</span>
+                  {course.officialCourse.sourceUrl && (
+                    <a
+                      className={styles.officialLink}
+                      href={course.officialCourse.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={t('courseDetail.officialSourceA11y')}
+                    >
+                      {t('courseDetail.officialSource')}
+                    </a>
+                  )}
+                </p>
+              )}
 
               <div className={styles.chips}>
                 <span className={styles.chipBus}>

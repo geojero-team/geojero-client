@@ -923,3 +923,79 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     expect(screen.getByText('버스 2번')).toBeInTheDocument()
   })
 })
+
+describe('CourseDetailPage — 거제시 추천 관광코스 안내 줄(2026-09-17 저녁 — 카드 배지에서 뺀 숫자를 여기로)', () => {
+  const OFFICIAL = { name: '당일코스', total: 6, matched: 4, orderKept: true, sourceUrl: 'https://tour.geoje.go.kr/index.geoje?menuCd=DOM_000008502008002000' }
+  const LINE = '거제시 추천 관광코스 「당일코스」 여섯 곳 중 네 곳 · 원문 순서대로'
+
+  it('원문 코스 이름 · 몇 곳 중 몇 곳(한글 수 낱말) · 원문 순서대로 — 제목 · 스팟 체인 아래, 「버스 약 …」 칩 위', async () => {
+    api.course.mockResolvedValue({ ...COURSE_301, officialCourse: OFFICIAL })
+    renderCourse(101)
+
+    const line = await screen.findByText(LINE)
+    const chain = screen.getByText((_, el) => el.tagName === 'P' && el.textContent === '학동몽돌해변 · 해금강 · 바람의언덕')
+    const chip = screen.getByText('버스 약 1시간 54분')
+    expect(chain.compareDocumentPosition(line) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(line.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // 숫자 글자로 적지 않는다(사용자 결정)
+    expect(line.textContent).not.toMatch(/[0-9]/)
+  })
+
+  it('원문 페이지로 가는 링크 — 새 창', async () => {
+    api.course.mockResolvedValue({ ...COURSE_301, officialCourse: OFFICIAL })
+    renderCourse(101)
+
+    const link = await screen.findByRole('link', { name: /원문.*새 창에서 열려요/ })
+    expect(link).toHaveTextContent('원문 보기 ↗')
+    expect(link).toHaveAttribute('href', OFFICIAL.sourceUrl)
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+
+  it('방문 순서가 원문과 다르면 「원문 순서대로」를 적지 않는다', async () => {
+    api.course.mockResolvedValue({
+      ...COURSE_301,
+      officialCourse: { ...OFFICIAL, name: '2일코스', total: 16, matched: 6, orderKept: false },
+    })
+    renderCourse(101)
+
+    expect(await screen.findByText('거제시 추천 관광코스 「2일코스」 열여섯 곳 중 여섯 곳')).toBeInTheDocument()
+    expect(screen.queryByText(/원문 순서/)).not.toBeInTheDocument()
+  })
+
+  it('원문 주소가 없으면 줄만 — 갈 곳 없는 링크를 두지 않는다', async () => {
+    api.course.mockResolvedValue({ ...COURSE_301, officialCourse: { ...OFFICIAL, sourceUrl: null } })
+    renderCourse(101)
+
+    expect(await screen.findByText(LINE)).toBeInTheDocument()
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+  })
+
+  it('officialCourse 가 없거나 null 이면 줄 없음 — 9경 · 분류 코스와 옛 응답', async () => {
+    api.course.mockResolvedValue({ ...COURSE_301, officialCourse: null })
+    const { unmount } = renderCourse(101)
+    await screen.findByText('버스 약 1시간 54분')
+    expect(screen.queryByText(/거제시 추천 관광코스/)).not.toBeInTheDocument()
+    unmount()
+
+    api.course.mockResolvedValue(COURSE_301)
+    renderCourse(101)
+    await screen.findByText('버스 약 1시간 54분')
+    expect(screen.queryByText(/거제시 추천 관광코스/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /원문/ })).not.toBeInTheDocument()
+  })
+
+  it('이름 · 곳 수를 셀 수 없으면 줄 없음 — 「undefined 곳」 · 「0 곳 중」을 남기지 않는다', async () => {
+    for (const officialCourse of [
+      { ...OFFICIAL, name: null },
+      { ...OFFICIAL, matched: 0 },
+      { ...OFFICIAL, total: undefined },
+    ]) {
+      api.course.mockResolvedValue({ ...COURSE_301, officialCourse })
+      const { unmount } = renderCourse(101)
+      await screen.findByText('버스 약 1시간 54분')
+      expect(screen.queryByText(/거제시 추천 관광코스|undefined/)).not.toBeInTheDocument()
+      unmount()
+    }
+  })
+})

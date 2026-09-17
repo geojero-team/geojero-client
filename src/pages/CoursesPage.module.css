@@ -198,17 +198,12 @@
   color: var(--text-on-brand);
 }
 
-/* 「원문 순서 그대로」 — 둘째 정보라 한 단계 가볍게(Medium). 흰 글씨 대비는 같습니다. */
-.badgeSub {
-  font-weight: 500;
-}
-
-/* 9경 — 주황 면(orange-700, 흰 글씨 5.18:1) 위에 흰 잉크 도장. 원(20)이 글줄(18)보다 커서 위아래 5 로 높이 30 을 맞추고,
-   오른쪽은 마지막 원이 알약 곡선에 붙게 6 만 둡니다. */
+/* 9경 — 주황 면(orange-700, 흰 글씨 5.18:1) 위에 흰 잉크 도장. 도장(20)이 글줄(18)보다 커서 위아래 5 로 높이 30 을 맞추고,
+   왼쪽은 앞에 오는 도장이 알약 곡선에 붙게 6 만 둡니다(분류 배지의 아이콘 자리와 같은 순서 — 표식 먼저, 이름 뒤). */
 .badgeNine {
   --stamp-ink: var(--text-on-brand);
   --stamp-paper: var(--nine-scenic-strong);
-  padding: 5px 6px 5px 12px;
+  padding: 5px 12px 5px 6px;
   background: var(--nine-scenic-strong);
   color: var(--text-on-brand);
 }

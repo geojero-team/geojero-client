@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDistance, sentenceLines } from './format'
+import { formatCountWord, formatDistance, sentenceLines } from './format'
 
 describe('sentenceLines — 소개문 문장마다 줄바꿈 (글자는 그대로, 공백만 바꾼다)', () => {
   it('문장 끝 띄어쓰기를 줄바꿈으로 바꾼다', () => {
@@ -52,5 +52,25 @@ describe('formatDistance — 타는 곳 거리 (「약」은 문구 쪽이 붙�
 
   it('10m 반올림이 1000m가 되면 km로 적는다 — 「1000m」라고 쓰지 않는다', () => {
     expect(formatDistance(996)).toBe('1.0km')
+  })
+})
+
+describe('formatCountWord — 곳 수를 한글 수 낱말로 (코스 상세 「여섯 곳 중 네 곳」, 2026-09-17 사용자 결정)', () => {
+  it('1~20 — 「곳」 앞에 붙는 꼴(한 곳 · 스무 곳)', () => {
+    const words = [
+      '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열',
+      '열한', '열두', '열세', '열네', '열다섯', '열여섯', '열일곱', '열여덟', '열아홉', '스무',
+    ]
+    expect(words.map((_, i) => formatCountWord(i + 1))).toEqual(words)
+  })
+
+  it('스물을 넘으면 「스물한」 — 「스무」는 스물 딱 하나일 때만', () => {
+    expect(formatCountWord(21)).toBe('스물한')
+    expect(formatCountWord(30)).toBe('서른')
+    expect(formatCountWord(99)).toBe('아흔아홉')
+  })
+
+  it('셀 수 없는 값은 null — 「undefined 곳」 · 「0 곳」을 만들지 않는다', () => {
+    for (const n of [0, -1, 1.5, 100, null, undefined, '4']) expect(formatCountWord(n)).toBeNull()
   })
 })

@@ -35,10 +35,9 @@ export default {
   'nineScenic.offMap': '지도에 없음',
   'nineScenic.linkAria': '{rank}경 {name} 상세 보기',
   'nineScenic.badge': '거제9경 · {rank}경',
-  // 9경 도장(NineScenicStamp — 코스 카드 배지, 2026-09-17 코스재설계 §5-2). 눈에는 「거제 9경」 + 번호 원(①②④),
-  // 읽기 도구에는 번호마다 「{rank}경」(위 nineScenic.rank)을 띄어 이은 한 줄 — 숫자만 읽으면 무엇의 번호인지 모릅니다.
+  // 9경 도장(NineScenicStamp — 코스 카드 배지, 2026-09-17 코스재설계 §5-2). 도장 하나 + 이 글자.
+  // 번호 원(①②④)은 2026-09-17 저녁 뺐습니다(사용자 결정 — 사진 위 배지에 숫자 없이). 「9」는 목록 이름의 일부라 남깁니다.
   'nineScenic.stamp': '거제 9경',
-  'nineScenic.stampA11y': '거제 9경 {list}',
   'nineScenic.confirm': '확인',
 
   /* ── 첫 방문 튜토리얼 — Figma 02-2 558:200(09-14). 문장마다 키를 나눕니다(문장마다 한 줄). ──
@@ -90,6 +89,11 @@ export default {
   // 타는 곳 거리(2026-09-14 · Figma 프레임 없음 — 사용자 결정). 「약」은 쓰는 문구가 붙입니다.
   'format.distance.m': '{m}m',
   'format.distance.km': '{km}km',
+  // 한글 수 낱말(formatCountWord — 코스 상세 「여섯 곳 중 네 곳」, 2026-09-17). 띄어 쓴 목록 한 줄씩: 일의 자리 1~9 · 십의 자리 10~90.
+  // 스물은 단위 앞에서 「스무 곳」이 되고 「스물한 곳」은 그대로라 20만 따로 둡니다.
+  'format.count.ones': '한 두 세 네 다섯 여섯 일곱 여덟 아홉',
+  'format.count.tens': '열 스물 서른 마흔 쉰 예순 일흔 여든 아흔',
+  'format.count.twenty': '스무',
   'format.date.short': '{month}/{day}',
   'format.date.long': '{month}/{day}({weekday}) · {dayType}',
   'format.date.weekday': '{month}/{day}({weekday})',
@@ -381,6 +385,14 @@ export default {
   'courseDetail.metaCount': '{count}곳',
   // 제목은 서버 title, 없으면 common.courseTitleRange 규칙(lib/courseTitle).
   // {time}은 formatDuration(busMinTotal) — 서버 busTotalText는 60분 미만이면 「약 0시간 40분」이 되어 쓰지 않습니다.
+  // 거제시 추천 관광코스 코스만(서버 officialCourse) 제목 · 스팟 체인 아래 한 줄 — 카드 배지(courses.officialBadge)에서 뺀 숫자가 여기 옵니다(2026-09-17 저녁 사용자 결정).
+  // {name}은 원문 코스 이름(「당일코스」), {total} · {matched}는 한글 수 낱말(formatCountWord — 「여섯」 · 「네」).
+  // 「원문 순서대로」는 방문 순서까지 원문 그대로일 때만(officialCourse.orderKept).
+  // 수 낱말과 「곳」 사이는 붙는 공백(\u00a0)입니다 — 두 줄이 될 때 「열여섯 / 곳」으로 갈리지 않게.
+  'courseDetail.official': '거제시 추천 관광코스 「{name}」 {total}\u00a0곳 중 {matched}\u00a0곳',
+  'courseDetail.officialOrderKept': '거제시 추천 관광코스 「{name}」 {total}\u00a0곳 중 {matched}\u00a0곳 · 원문 순서대로',
+  'courseDetail.officialSource': '원문 보기 ↗',
+  'courseDetail.officialSourceA11y': '거제시 추천 관광코스 원문 보기 — 새 창에서 열려요',
   'courseDetail.busChip': '버스 약 {time}',
   // 「구간」은 방문하는 곳 수로 읽혔다 — 왼쪽 「남부권 · 3곳」과 나란히 보여 곳 수를 두 번 말하는 것처럼 됐다(2026-09-16 사용자 결정).
   // 타임라인의 버스 줄 개수와 같은 값이라 눈으로 맞춰볼 수 있다. 걸어서 옮기는 구간(같은 정류장)은 세지 않는다.
@@ -467,15 +479,11 @@ export default {
   // hero 에 사진이 없을 때. 자리그림 SVG 를 쓰지 않고 이유를 적습니다 — 0장은 버그가 아니라 사실입니다(저작권 Type3 · 기준문서 §5).
   'courses.noPhoto': '사진 없음 — TourAPI 사진 0장',
   // 카드 사진 위 배지 — **축마다 색 하나**(2026-09-17 코스재설계 §5-2). 어느 축인지는 서버 badgeAxis 가 정합니다.
-  // 9경 축은 도장(nineScenic.stamp)이라 여기 키가 없습니다. 0곳이면 배지 자체가 없습니다.
-  // 거제시 공식 관광코스(초록) — {name}은 원문 코스 이름(「당일코스」), {count}는 그 코스와 겹치는 곳 수.
+  // **숫자 없는 짧은 이름 하나**(2026-09-17 저녁 사용자 결정 — 「한눈에 알아보게」). 원문 코스 이름 · 곳 수 · 순서는 코스 상세 줄(courseDetail.official*)로 옮겼습니다.
+  // 9경 축은 도장(nineScenic.stamp)이고, 분류 축은 분류 칩 라벨(theme.*) 그대로라 여기 키가 없습니다. 9경이 0곳이면 배지 자체가 없습니다.
+  // 거제시 공식 관광코스(초록) — 고정 문구. 거제시 사이트 메뉴 「추천여행코스 > 관광코스」의 말입니다.
   // 우리가 지은 이야기가 아니라 거제시가 묶은 곳이라는 사실 라벨입니다(§1-3).
-  'courses.officialBadge': '거제시 {name}의 {count}곳',
-  // 방문 순서까지 원문 그대로일 때만(officialCourse.orderKept) 붙는 둘째 정보.
-  'courses.officialOrderKept': '원문 순서 그대로',
-  // 분류(중립색 + 분류 아이콘) — 라벨은 분류 칩과 같은 theme.* 값. 분류가 하나면 「전망·명소만」, 둘이면 많은 쪽부터.
-  'courses.themeOnly': '{label}만',
-  'courses.themeTwo': '{a} {n}곳과 {b} {m}곳',
+  'courses.officialBadge': '거제시 추천 관광코스',
   // 태그 — 값은 전부 서버 데이터(busMinTotal · 권역(/api/pois) · holidayNoBusLegs)에서 옵니다(절대규칙 1).
   // 권역 태그는 데이터 값 그대로(「남부권」 · 「동부권·남부권」)라 키가 없습니다. 노선 번호 태그는 2026-09-14 밤 뺐습니다(사용자 결정).
   // 배차(「매일 6회」) · 요일(「평일만」 · 「평일·휴일」) 태그는 2026-09-17 뺐습니다 — 코스가 확인용으로 저장한 편 사슬 하나의 값이라

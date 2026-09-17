@@ -2,31 +2,26 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import NineScenicStamp from './NineScenicStamp'
 
-describe('NineScenicStamp — 거제 9경 도장(코스재설계 §5-2)', () => {
-  it('눈에는 「거제 9경」 + 번호 원 — 번호만 적는다(「①」 모양)', () => {
-    const { container } = render(<NineScenicStamp nos={[1, 2, 4]} />)
+describe('NineScenicStamp — 거제 9경 도장(코스재설계 §5-2 · 2026-09-17 저녁 번호를 뺐다)', () => {
+  it('눈에는 도장 하나 + 「거제 9경」 — 번호 원이 없다', () => {
+    const { container } = render(<NineScenicStamp />)
 
-    const visual = container.querySelector('[aria-hidden="true"]')
-    expect(visual).toHaveTextContent('거제 9경')
-    expect([...visual.querySelectorAll('[data-no]')].map((e) => e.textContent)).toEqual(['1', '2', '4'])
+    expect(container).toHaveTextContent(/^거제 9경$/)
+    // 「9」는 목록 이름의 일부라 남는다(사용자 확인). 그 밖의 숫자 글자는 없다
+    expect(container.textContent.replace('거제 9경', '')).not.toMatch(/[0-9①-⑨]/)
+    expect(container.querySelector('[data-no]')).toBeNull()
   })
 
-  it('읽기 도구에는 「거제 9경 1경 2경 4경」 — 숫자만 읽으면 무엇의 번호인지 모른다', () => {
+  it('읽기 도구에는 「거제 9경」 — 도장은 장식이라 숨긴다', () => {
     render(
       <button type="button">
-        <NineScenicStamp nos={[1, 2, 4]} />
+        <NineScenicStamp />
       </button>,
     )
 
-    // 눈에 보이는 「거제 9경」 · 「1」 「2」 「4」는 읽지 않아 이름이 두 번 들리지 않는다
-    expect(screen.getByRole('button')).toHaveAccessibleName('거제 9경 1경 2경 4경')
-  })
-
-  it('9경이 0곳이면 아무것도 그리지 않는다 — 「0경」 도장은 없다', () => {
-    const { container } = render(<NineScenicStamp nos={[]} />)
-    expect(container).toBeEmptyDOMElement()
-
-    const second = render(<NineScenicStamp />)
-    expect(second.container).toBeEmptyDOMElement()
+    expect(screen.getByRole('button')).toHaveAccessibleName('거제 9경')
+    const seal = screen.getByRole('button').querySelector('[aria-hidden="true"]')
+    expect(seal).not.toBeNull()
+    expect(seal).toBeEmptyDOMElement()
   })
 })

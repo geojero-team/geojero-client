@@ -22,6 +22,20 @@ export function formatDistance(meters) {
 }
 
 /**
+ * 4 -> "네" · 16 -> "열여섯" · 20 -> "스무" — 「곳」 같은 단위 앞에 붙는 한글 수 낱말(2026-09-17 코스 상세 「여섯 곳 중 네 곳」, 사용자 결정).
+ * 1~99 만 셉니다. 그 밖(0 · 소수 · 문자열 · 값 없음)은 null — 부르는 쪽이 줄을 그리지 않아 「undefined 곳」이 남지 않습니다.
+ */
+export function formatCountWord(n) {
+  if (!Number.isInteger(n) || n < 1 || n > 99) return null
+  if (n === 20) return t('format.count.twenty')
+  const ones = t('format.count.ones').split(' ')
+  const tens = t('format.count.tens').split(' ')
+  const ten = Math.floor(n / 10)
+  const one = n % 10
+  return (ten > 0 ? tens[ten - 1] : '') + (one > 0 ? ones[one - 1] : '')
+}
+
+/**
  * 소개문을 문장마다 한 줄로 — 스팟 상세(2026-09-15 사용자 요청 「문장 간 개행」).
  *
  * 글자는 **한 자도 바꾸지 않습니다.** TourAPI overview 는 원문 무수정이 공모전 조건입니다(서버 HttpTourApiGateway).
