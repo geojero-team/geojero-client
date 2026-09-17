@@ -1,5 +1,5 @@
 /* 코스 추천 — v3 대표 코스 카드(Figma 02-2 585:417 고름 · 585:485 안 고름 · 582:416 카드 3장).
-   흰 페이지, 탭바 없음. 카드는 사진(200) 위에 9경 배지가 걸치고, 아래에 제목 · 스팟 체인 · 소개 · 태그.
+   흰 페이지, 탭바 없음. 카드는 사진(200) 위에 배지(축마다 하나)가 걸치고, 아래에 제목 · 스팟 체인 · 소개 · 태그.
    고른 게 있으면 바닥에 고정 바가 뜹니다. 토큰에 없는 값(13/18 배지 글자 · 14/20 Medium · 그림자)은
    그림 값을 그대로 둡니다(tokens.css 머리 주석: Figma를 다시 잰다). */
 
@@ -63,7 +63,7 @@
 
 /* 623:451 개수 칩 줄 — 칩 사이 8, 왼쪽 정렬. 카드 한 장이 500px 를 넘어 헤더 아래에 붙입니다(메모 623:520 권장).
    붙었을 때 아래 카드가 비치지 않게 흰 띠를 좌우 끝까지 깔고, 띠의 위아래 8 은 음수 마진으로 상쇄해
-   제자리 간격(출처 줄 · 상태줄과 16)은 그림 그대로 둡니다. z-index 는 카드의 9경 배지(absolute)보다 위.
+   제자리 간격(출처 줄 · 상태줄과 16)은 그림 그대로 둡니다. z-index 는 카드 배지(absolute)보다 위.
    높이(8 + 40 + 8)나 음수 마진을 바꾸면 .scroll 의 scroll-padding-top 과 CoursesPage.jsx 의 CHIPS_TO_TOTAL 도 같이 바꿉니다. */
 .chips {
   position: sticky;
@@ -168,22 +168,66 @@
   color: var(--text-secondary);
 }
 
-/* 9경 배지 — hero 오른쪽 아래에 걸침: 오른쪽 20 · 카드 위에서 183(hero 아래 경계 200 에 반쯤).
-   brand 알약 px14 py6 · 13/18 Bold 흰 글자 · 그림자는 그림 값 그대로 */
+/* 배지 — hero 오른쪽 아래에 걸침: 오른쪽 20 · 카드 위에서 183(hero 아래 경계 200 에 반쯤).
+   알약 px14 py6 · 13/18 Bold · 그림자는 그림 값 그대로. 높이 30 을 축마다 지킵니다 — 아래 .content 위 26 이 이 높이에 맞춰져 있습니다.
+   **축마다 색 하나**(2026-09-17 코스재설계 §5-2): 거제시 코스 초록 · 9경 주황 · 분류 중립(흰 면). 경마다 다른 색은 쓰지 않습니다.
+   글이 카드 폭을 넘으면(좁은 폰 · 긴 원문 코스 이름) 덩어리 사이에서 줄을 바꿉니다 — 덩어리 안에서는 끊지 않습니다. */
 .badge {
   position: absolute;
   top: 183px;
   right: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0 4px;
+  max-width: calc(100% - 40px);
   padding: 6px 14px;
   border-radius: var(--radius-pill);
-  background: var(--brand-strong);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 700;
   line-height: 18px;
-  color: var(--text-on-brand);
   white-space: nowrap;
+}
+
+/* 거제시 공식 관광코스 — 초록 면 흰 글씨 5.02:1(tokens --official-course) */
+.badgeOfficial {
+  background: var(--official-course);
+  color: var(--text-on-brand);
+}
+
+/* 「원문 순서 그대로」 — 둘째 정보라 한 단계 가볍게(Medium). 흰 글씨 대비는 같습니다. */
+.badgeSub {
+  font-weight: 500;
+}
+
+/* 9경 — 주황 면(orange-700, 흰 글씨 5.18:1) 위에 흰 잉크 도장. 원(20)이 글줄(18)보다 커서 위아래 5 로 높이 30 을 맞추고,
+   오른쪽은 마지막 원이 알약 곡선에 붙게 6 만 둡니다. */
+.badgeNine {
+  --stamp-ink: var(--text-on-brand);
+  --stamp-paper: var(--nine-scenic-strong);
+  padding: 5px 6px 5px 12px;
+  background: var(--nine-scenic-strong);
+  color: var(--text-on-brand);
+}
+
+/* 분류 — 색을 더 주지 않습니다(주면 한 카드에 색이 넷이 된다 — §5-2). 흰 면 + 본문 글씨 17.75:1 + 회색 아이콘.
+   아래 절반이 흰 카드에 걸쳐 경계가 사라지므로 1px 테두리를 그림자로 더합니다(테두리 폭을 쓰면 높이가 32 가 됩니다). */
+.badgeTheme {
+  padding-left: 10px;
+  background: var(--bg-page);
+  box-shadow:
+    0 0 0 1px var(--border-default),
+    0 2px 6px rgba(0, 0, 0, 0.18);
+  color: var(--text-primary);
+}
+
+.badgeIcon {
+  flex: none;
+  display: block;
+  color: var(--text-secondary);
 }
 
 /* content — 위 26 은 배지가 걸치는 자리(배지 아래 끝 213 = hero 200 + 13) */

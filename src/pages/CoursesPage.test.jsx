@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../lib/api'
+import { ICON_PATHS } from '../lib/spotIcons'
 import { getToken } from '../lib/session'
 import { loadSpotPhotos, loadSpots } from '../lib/spots'
 import CoursesPage from './CoursesPage'
@@ -200,12 +201,14 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
     expect(screen.queryByText(/매일/)).not.toBeInTheDocument()
   })
 
-  it('9경 배지 — [1, 2, 4] → 「거제 9경 · 1경 2경 4경」, 9경이 0곳이면 배지 없음', async () => {
+  it('9경 배지 — [1, 2, 4] → 도장 「거제 9경 1경 2경 4경」, 9경이 0곳이면 배지 없음', async () => {
     api.courses.mockResolvedValue({ ...TWO, courses: [COURSE_301, COURSE_NO_NINE] })
     renderPage()
 
-    await screen.findByText('거제 9경 · 1경 2경 4경')
+    await screen.findByText('거제 9경 1경 2경 4경')
+    expect(card(101)).toHaveAccessibleName(/거제 9경 1경 2경 4경/)
     expect(within(card(120)).queryByText(/거제 9경/)).not.toBeInTheDocument()
+    expect(card(120).querySelector(`.${styles.badge}`)).toBeNull()
   })
 
   it('hero — 첫 스팟의 /api/pois 대표 사진, 없으면 「사진 없음 — TourAPI 사진 0장」(자리그림 SVG 아님)', async () => {
@@ -576,5 +579,140 @@ describe('CoursesPage — 개수 칩(Figma 623:444 · 메모 623:520, 2026-09-16
     } finally {
       getToken.mockReturnValue(null)
     }
+  })
+})
+
+describe('CoursesPage — 배지는 축마다 색 하나(코스재설계 §5-2 · §5-3)', () => {
+  /** 서버가 곧 줄 필드(§5-3) — 아직 배포 전이라 이 모양이 계약입니다. 스팟 · 노선 · 분은 테스트 값입니다. */
+  const OFFICIAL = {
+    ...COURSE_301,
+    courseId: 201,
+    featuredRank: 1,
+    badgeAxis: 'OFFICIAL',
+    officialCourse: { name: '당일코스', total: 6, matched: 4, orderKept: true, sourceUrl: 'https://tour.geoje.go.kr/' },
+    nineScenicNos: [1, 2, 4],
+  }
+  const NINE = { ...COURSE_301, courseId: 202, featuredRank: 6, badgeAxis: 'NINE', officialCourse: null, nineScenicNos: [1, 2, 4, 6] }
+  const THEME_VIEW = {
+    ...COURSE_301,
+    courseId: 203,
+    featuredRank: 3,
+    badgeAxis: 'THEME',
+    officialCourse: null,
+    nineScenicNos: [1, 2, 9],
+    spots: [spot(1, 1, '바람의언덕', '바람의언덕', 'VIEW'), spot(2, 3, '해금강', '해금강', 'VIEW'), spot(3, 7, '매미성', '매미성', 'VIEW')],
+  }
+  const THEME_GARDEN = {
+    ...THEME_VIEW,
+    courseId: 204,
+    featuredRank: 4,
+    nineScenicNos: [5, 9],
+    spots: [
+      spot(1, 10, '거제식물원', '거제식물원', 'GARDEN'),
+      spot(2, 7, '매미성', '매미성', 'VIEW'),
+      spot(3, 11, '거제맹종죽테마공원', '맹종죽테마공원', 'GARDEN'),
+    ],
+  }
+  const THEME_CRUISE = {
+    ...THEME_VIEW,
+    courseId: 205,
+    featuredRank: 5,
+    nineScenicNos: [2, 3],
+    ferryMinTotal: 160,
+    spots: [
+      spot(1, 2, '도장포유람선', '도장포유람선', 'CRUISE'),
+      spot(2, 5, '외도보타니아', '외도보타니아', 'CRUISE'),
+      spot(3, 1, '바람의언덕', '바람의언덕', 'VIEW'),
+    ],
+  }
+  const badgeOf = (id) => card(id).querySelector(`.${styles.badge}`)
+  const show = (...courses) => api.courses.mockResolvedValue({ courses })
+
+  it('OFFICIAL — 「거제시 당일코스의 4곳」 + 원문 순서를 지켰으면 「원문 순서 그대로」', async () => {
+    show(OFFICIAL)
+    renderPage()
+
+    await screen.findByText('거제시 당일코스의 4곳')
+    expect(within(badgeOf(201)).getByText('원문 순서 그대로')).toBeInTheDocument()
+  })
+
+  it('OFFICIAL — 순서가 원문과 다르면 「원문 순서 그대로」를 적지 않는다', async () => {
+    show({ ...OFFICIAL, officialCourse: { ...OFFICIAL.officialCourse, name: '2일코스', matched: 6, orderKept: false } })
+    renderPage()
+
+    await screen.findByText('거제시 2일코스의 6곳')
+    expect(screen.queryByText('원문 순서 그대로')).not.toBeInTheDocument()
+  })
+
+  it('9경이 든 코스라도 축이 OFFICIAL · THEME 이면 9경 도장을 함께 그리지 않는다 — 한 카드에 축 색은 하나', async () => {
+    show(OFFICIAL, THEME_VIEW)
+    renderPage()
+
+    await screen.findByText('거제시 당일코스의 4곳')
+    expect(within(card(201)).queryByText(/^거제 9경/)).not.toBeInTheDocument()
+    expect(within(card(203)).queryByText(/^거제 9경/)).not.toBeInTheDocument()
+    expect(card(201).querySelectorAll(`.${styles.badge}`)).toHaveLength(1)
+  })
+
+  it('NINE — 9경 도장(읽기 도구 「거제 9경 1경 2경 4경 6경」)', async () => {
+    show(NINE)
+    renderPage()
+
+    await screen.findByText('거제 9경 1경 2경 4경 6경')
+    expect([...badgeOf(202).querySelectorAll('[data-no]')].map((e) => e.textContent)).toEqual(['1', '2', '4', '6'])
+  })
+
+  it('THEME — 분류가 전부 같으면 「전망·명소만」 · 분류 아이콘', async () => {
+    show(THEME_VIEW)
+    renderPage()
+
+    await screen.findByText('전망·명소만')
+    expect(badgeOf(203).querySelector('path')).toHaveAttribute('d', ICON_PATHS.VIEW)
+  })
+
+  it('THEME — 분류가 둘이면 많은 쪽부터 「정원·숲 2곳과 전망·명소 1곳」 · 많은 쪽 아이콘', async () => {
+    show(THEME_GARDEN)
+    renderPage()
+
+    await screen.findByText('정원·숲 2곳과 전망·명소 1곳')
+    expect(badgeOf(204).querySelector('path')).toHaveAttribute('d', ICON_PATHS.GARDEN)
+  })
+
+  it('THEME — 둘이 같은 수면 가는 순서대로', async () => {
+    show({ ...THEME_GARDEN, courseId: 206, spots: THEME_GARDEN.spots.slice(1) })
+    renderPage()
+
+    expect(await screen.findByText('전망·명소 1곳과 정원·숲 1곳')).toBeInTheDocument()
+  })
+
+  it('THEME — 유람선이 들면 유람선 아이콘', async () => {
+    show(THEME_CRUISE)
+    renderPage()
+
+    await screen.findByText('섬·유람선 2곳과 전망·명소 1곳')
+    expect(badgeOf(205).querySelector('path')).toHaveAttribute('d', ICON_PATHS.CRUISE)
+  })
+
+  it('폴백 — badgeAxis 가 없는 옛 응답이면 지금처럼 9경 도장만', async () => {
+    show(COURSE_301)
+    renderPage()
+
+    await screen.findByText('거제 9경 1경 2경 4경')
+    expect(within(card(101)).queryByText(/^거제시/)).not.toBeInTheDocument()
+  })
+
+  it('폴백 — 축 값을 그릴 수 없으면(OFFICIAL 인데 officialCourse 없음 · 분류 셋 이상) 9경 도장으로', async () => {
+    show(
+      { ...OFFICIAL, officialCourse: null },
+      {
+        ...THEME_GARDEN,
+        courseId: 207,
+        spots: [...THEME_GARDEN.spots, spot(4, 4, '학동흑진주몽돌해변', '학동몽돌해변', 'BEACH'), spot(5, 12, '포로수용소', '포로수용소', 'HISTORY')],
+      },
+    )
+    renderPage()
+
+    await screen.findByText('거제 9경 1경 2경 4경')
+    expect(within(card(207)).getByText('거제 9경 5경 9경')).toBeInTheDocument()
   })
 })

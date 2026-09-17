@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Button from '../components/Button'
+import NineScenicStamp from '../components/NineScenicStamp'
 import OptionChip from '../components/OptionChip'
 import Screen from '../components/Screen'
 import { t } from '../i18n'
 import { api } from '../lib/api'
 import { courseTitle } from '../lib/courseTitle'
-import { formatDuration } from '../lib/format'
+import { formatDuration, THEME_LABELS } from '../lib/format'
 import { getToken } from '../lib/session'
+import { ICON_PATHS } from '../lib/spotIcons'
 import { loadSpotPhotos, loadSpots, regionsOf, withPhotos } from '../lib/spots'
 import styles from './CoursesPage.module.css'
 
@@ -23,7 +25,8 @@ import styles from './CoursesPage.module.css'
  * 대표 밖 코스는 제목 · 소개가 없습니다. 서버에 다시 묻지 않고 받은 목록을 화면에서 거릅니다.
  * 저장해서 뺀 코스는 칩 개수에서도 빠지고, 0개인 칩은 지우지 않고 비활성으로 남깁니다.
  *
- * 카드는 첫 스팟 사진 · 9경 배지 · 제목 · 스팟 체인 · 소개 · 태그 넷(버스 시간 · 권역 · 배차 · 요일)입니다.
+ * 카드는 첫 스팟 사진 · 배지(2026-09-17 부터 축마다 하나 — 거제시 코스 · 분류 · 9경, 아래 CourseBadge) · 제목 · 스팟 체인 · 소개 ·
+ * 태그 넷(버스 시간 · 권역 · 배차 · 요일)입니다.
  * 태그 값은 전부 서버 데이터입니다 — 기준문서에 없는 수치를 화면에서 만들지 않습니다(절대규칙 1).
  * 그림(582:416)의 둘째 태그는 노선 번호(「55번 한 노선」)였는데 2026-09-14 밤 **권역**으로 바꿨습니다(사용자 결정) —
  * 「55·67-1번 2노선」은 읽히지 않고, 노선은 코스 상세가 구간마다 말합니다.
@@ -70,6 +73,86 @@ function tagsOf(course) {
   ].filter(Boolean)
 }
 
+/**
+ * 분류 배지 문구 — 스팟 분류(TourAPI contentTypeId → theme)를 세어 만듭니다. 분류는 한국관광공사가 정한 값이라
+ * 우리가 지은 이야기가 아닙니다(코스재설계 §1-3).
+ *  · 전부 같으면 「전망·명소만」
+ *  · 둘이면 많은 쪽부터 「정원·숲 2곳과 전망·명소 1곳」, 같은 수면 가는 순서대로
+ * 셋 이상이거나 라벨이 없는 분류가 섞이면 null — 한 줄로 말할 수 없는 구성을 억지로 줄이지 않고 9경 도장으로 물러납니다.
+ * 아이콘은 많은 쪽 분류, 유람선(CRUISE 스팟 또는 배 구간)이 들면 유람선입니다 — 배를 타는 코스라는 게 더 드문 사실이라서.
+ */
+function themeBadgeOf(course) {
+  const counts = new Map() // 넣은 순서 = 가는 순서. 정렬이 안정적이라 같은 수면 이 순서가 남습니다.
+  for (const spot of course.spots) {
+    if (!THEME_LABELS[spot.theme]) return null
+    counts.set(spot.theme, (counts.get(spot.theme) ?? 0) + 1)
+  }
+  const parts = [...counts].sort((a, b) => b[1] - a[1])
+  if (parts.length === 0 || parts.length > 2) return null
+  const [[themeA, n], [themeB, m] = []] = parts
+  const cruise = counts.has('CRUISE') || course.ferryMinTotal > 0
+  return {
+    icon: cruise ? 'CRUISE' : themeA,
+    text: themeB
+      ? t('courses.themeTwo', { a: THEME_LABELS[themeA], n, b: THEME_LABELS[themeB], m })
+      : t('courses.themeOnly', { label: THEME_LABELS[themeA] }),
+  }
+}
+
+/**
+ * 사진 위 배지 — **축마다 색 하나**(2026-09-17 코스재설계 §5-2 사용자 결정). 어느 축으로 고른 코스인지는 서버가 줍니다(`badgeAxis`).
+ *   OFFICIAL  초록 글자 배지 「거제시 당일코스의 4곳」(+ 「원문 순서 그대로」)
+ *   THEME     중립색 + 분류 아이콘 「전망·명소만」
+ *   NINE      주황 9경 도장 「거제 9경 ① ② ④」
+ * 경마다 다른 색은 쓰지 않습니다 — 아홉 색은 못 외우고 뜻이 없습니다.
+ *
+ * ★ **9경 도장을 다른 축과 같이 그리지 않습니다.** 확정 7개(§5-1)는 전부 9경 스팟을 한 곳 이상 품고 있어서,
+ * 같이 그리면 **모든 카드에 주황이 다시 올라갑니다** — 「배지가 전부 9경이라 무엇이 다른지 말하지 않는다」(§0)로 되돌아갑니다.
+ * 한 카드에 축 색이 둘이면 「색만 봐도 어느 축인지 읽힌다」도 깨집니다(초록 + 주황 카드는 어느 축인가).
+ * 9경은 사라지지 않습니다 — 지도 핀의 주황 테두리가 말하고, 도장 컴포넌트는 코스 상세에서도 쓸 수 있게 떼어 두었습니다.
+ *
+ * 폴백: `badgeAxis` 가 없는 옛 응답이거나 그 축의 값을 그릴 수 없으면(OFFICIAL 인데 officialCourse 없음 · 분류 셋 이상)
+ * 지금까지처럼 9경 도장만 — 서버가 아직 새 필드를 주지 않아도 카드가 비지 않습니다. 9경이 0곳이면 배지가 없습니다.
+ */
+function CourseBadge({ course }) {
+  const official = course.badgeAxis === 'OFFICIAL' ? course.officialCourse : null
+  if (official) {
+    return (
+      <span className={`${styles.badge} ${styles.badgeOfficial}`}>
+        <span>{t('courses.officialBadge', { name: official.name, count: official.matched })}</span>
+        {official.orderKept && (
+          <span className={styles.badgeSub}>
+            {/* 가운뎃점은 눈으로만 가릅니다 — 읽기 도구에는 두 사실이 이어 들립니다. */}
+            <span aria-hidden="true">· </span>
+            {t('courses.officialOrderKept')}
+          </span>
+        )}
+      </span>
+    )
+  }
+
+  const theme = course.badgeAxis === 'THEME' ? themeBadgeOf(course) : null
+  if (theme) {
+    return (
+      <span className={`${styles.badge} ${styles.badgeTheme}`}>
+        {/* 분류 칩 · 지도 핀과 같은 패스(lib/spotIcons). 패스가 28 칸의 6~22 안에 있어 그 영역만 잘라 18px 에 넣습니다. */}
+        <svg className={styles.badgeIcon} width="18" height="18" viewBox="6 6 16 16" fill="none" aria-hidden="true">
+          <path d={ICON_PATHS[theme.icon]} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <span>{theme.text}</span>
+      </span>
+    )
+  }
+
+  const nine = course.nineScenicNos ?? []
+  if (nine.length === 0) return null
+  return (
+    <span className={`${styles.badge} ${styles.badgeNine}`}>
+      <NineScenicStamp nos={nine} />
+    </span>
+  )
+}
+
 /** 카드 한 장 — 카드 전체가 버튼이고 누르면 고름이 토글됩니다. */
 function CourseCard({ course, selected, onToggle }) {
   // 첫 스팟 사진(/api/pois 대표 사진 — 코스 API는 사진을 주지 않습니다). 링크가 죽으면(onError)
@@ -78,7 +161,6 @@ function CourseCard({ course, selected, onToggle }) {
   const photo = broken ? null : (course.spots[0]?.thumbnailUrl ?? null)
   const names = course.spots.map((spot) => spot.shortName)
   const title = courseTitle(course.title, names) ?? names[0]
-  const nine = course.nineScenicNos ?? []
 
   return (
     <button
@@ -97,12 +179,8 @@ function CourseCard({ course, selected, onToggle }) {
         )}
       </span>
 
-      {/* 9경 배지 — hero 아래 경계에 반쯤 걸칩니다. 0곳이면 배지가 없습니다(「0곳」이라 적지 않습니다). */}
-      {nine.length > 0 && (
-        <span className={styles.badge}>
-          {t('courses.nineBadge', { list: nine.map((n) => t('courses.nineNo', { n })).join(' ') })}
-        </span>
-      )}
+      {/* 배지 — hero 아래 경계에 반쯤 걸칩니다. 축마다 모양 · 색이 다릅니다(CourseBadge). */}
+      <CourseBadge course={course} />
 
       <span className={styles.content}>
         <span className={styles.titleRow}>

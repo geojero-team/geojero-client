@@ -35,6 +35,10 @@ export default {
   'nineScenic.offMap': '지도에 없음',
   'nineScenic.linkAria': '{rank}경 {name} 상세 보기',
   'nineScenic.badge': '거제9경 · {rank}경',
+  // 9경 도장(NineScenicStamp — 코스 카드 배지, 2026-09-17 코스재설계 §5-2). 눈에는 「거제 9경」 + 번호 원(①②④),
+  // 읽기 도구에는 번호마다 「{rank}경」(위 nineScenic.rank)을 띄어 이은 한 줄 — 숫자만 읽으면 무엇의 번호인지 모릅니다.
+  'nineScenic.stamp': '거제 9경',
+  'nineScenic.stampA11y': '거제 9경 {list}',
   'nineScenic.confirm': '확인',
 
   /* ── 첫 방문 튜토리얼 — Figma 02-2 558:200(09-14). 문장마다 키를 나눕니다(문장마다 한 줄). ──
@@ -442,9 +446,16 @@ export default {
   'courses.totalN': '{n}곳 코스 {count}가지 · 여러 개 고를 수 있어요',
   // hero 에 사진이 없을 때. 자리그림 SVG 를 쓰지 않고 이유를 적습니다 — 0장은 버그가 아니라 사실입니다(저작권 Type3 · 기준문서 §5).
   'courses.noPhoto': '사진 없음 — TourAPI 사진 0장',
-  // 9경 배지 — nineScenicNos 를 「{n}경」으로 띄어 잇습니다(「거제 9경 · 1경 2경 4경」). 0곳이면 배지 자체가 없습니다.
-  'courses.nineBadge': '거제 9경 · {list}',
-  'courses.nineNo': '{n}경',
+  // 카드 사진 위 배지 — **축마다 색 하나**(2026-09-17 코스재설계 §5-2). 어느 축인지는 서버 badgeAxis 가 정합니다.
+  // 9경 축은 도장(nineScenic.stamp)이라 여기 키가 없습니다. 0곳이면 배지 자체가 없습니다.
+  // 거제시 공식 관광코스(초록) — {name}은 원문 코스 이름(「당일코스」), {count}는 그 코스와 겹치는 곳 수.
+  // 우리가 지은 이야기가 아니라 거제시가 묶은 곳이라는 사실 라벨입니다(§1-3).
+  'courses.officialBadge': '거제시 {name}의 {count}곳',
+  // 방문 순서까지 원문 그대로일 때만(officialCourse.orderKept) 붙는 둘째 정보.
+  'courses.officialOrderKept': '원문 순서 그대로',
+  // 분류(중립색 + 분류 아이콘) — 라벨은 분류 칩과 같은 theme.* 값. 분류가 하나면 「전망·명소만」, 둘이면 많은 쪽부터.
+  'courses.themeOnly': '{label}만',
+  'courses.themeTwo': '{a} {n}곳과 {b} {m}곳',
   // 태그 넷 — 값은 전부 서버 데이터(busMinTotal · 권역(/api/pois) · tripsPerDay · holidayService)에서 옵니다(절대규칙 1).
   // 권역 태그는 데이터 값 그대로(「남부권」 · 「동부권·남부권」)라 키가 없습니다. 노선 번호 태그는 2026-09-14 밤 뺐습니다(사용자 결정).
   // {time}은 formatDuration(busMinTotal) — 서버 busTotalText 는 60분 미만이면 「약 0시간 40분」이 되어 쓰지 않습니다.
