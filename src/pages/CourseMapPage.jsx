@@ -40,6 +40,9 @@ export default function CourseMapPage() {
   const [activeId, setActiveId] = useState(null)
   // 핀을 누른 스팟. 홈과 같은 동작입니다 — 화면을 옮기지 않고 시트만 올립니다.
   const [picked, setPicked] = useState(null)
+  /* 시트를 끝까지 올려 스팟 상세를 보는 중인지. 그동안은 아래 코스 카드를 감춥니다
+     (2026-09-18 사용자) — 지금 하는 일은 이 스팟을 읽는 것이고, 상세를 닫으면 카드가 그대로 돌아옵니다. */
+  const [sheetFull, setSheetFull] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -121,22 +124,17 @@ export default function CourseMapPage() {
           />
         </div>
 
-        {/* 몇 곳 코스를 몇 개 고르고 있는지(446:719 condition-pill) */}
-        {active && !picked && (
-          <div className={styles.pill}>
-            {t('courseMap.pill', { count: active.spotCount, picked: courses.length })}
-          </div>
-        )}
-
         <SpotSheet
           key={picked?.poiId ?? 'none'}
           spot={picked}
           onClose={() => setPicked(null)}
+          onFullChange={setSheetFull}
         />
       </div>
 
-      {/* 코스 카드 스트립 — 좌우로 넘겨 비교하고 하나를 선택합니다. */}
-      <div className={styles.sheet}>
+      {/* 코스 카드 스트립 — 좌우로 넘겨 비교하고 하나를 선택합니다.
+          스팟 상세를 펼친 동안에는 감춥니다(지우지 않습니다 — 닫으면 고르던 코스가 그대로 있어야 합니다). */}
+      <div className={sheetFull ? `${styles.sheet} ${styles.sheetHidden}` : styles.sheet}>
         {result.status === 'error' ? (
           <p className={styles.notice}>{t('common.loadFailed', { error: result.error })}</p>
         ) : courses.length === 0 ? (

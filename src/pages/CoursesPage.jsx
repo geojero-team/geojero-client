@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Button from '../components/Button'
 import OptionChip from '../components/OptionChip'
@@ -7,7 +7,8 @@ import { t } from '../i18n'
 import { api } from '../lib/api'
 import { heroPhotos } from '../lib/courseHero'
 import { courseTitle } from '../lib/courseTitle'
-import { formatDuration, THEME_LABELS } from '../lib/format'
+import { fitOneLine } from '../lib/fitOneLine'
+import { formatDuration, sentenceLines, THEME_LABELS } from '../lib/format'
 import { getToken } from '../lib/session'
 import { ICON_PATHS } from '../lib/spotIcons'
 import { loadSpotPhotos, loadSpots, regionsOf, withPhotos } from '../lib/spots'
@@ -176,6 +177,18 @@ function CourseCard({ course, photoUrl, selected, onToggle }) {
   const names = course.spots.map((spot) => spot.shortName)
   const title = courseTitle(course.title, names) ?? names[0]
 
+  /* 제목은 한 줄로 앉힙니다 — 넘치면 글자만 조금 줄입니다(2026-09-18 사용자: 「자동 개행된 줄이
+     가로 절반도 못 채우면 글자 크기를 줄여서라도 한 줄로」). 16px 까지 줄여도 안 되는 긴 제목만 두 줄로 되돌아갑니다.
+     글꼴이 늦게 오면 폭이 달라지므로 fonts.ready 뒤에 한 번 더 재고, 화면 폭이 바뀌어도 다시 잽니다. */
+  const titleRef = useRef(null)
+  useLayoutEffect(() => {
+    const fit = () => fitOneLine(titleRef.current, { max: 20, min: 16 })
+    fit()
+    document.fonts?.ready?.then(fit)
+    window.addEventListener('resize', fit)
+    return () => window.removeEventListener('resize', fit)
+  }, [title])
+
   return (
     <button
       type="button"
@@ -199,12 +212,15 @@ function CourseCard({ course, photoUrl, selected, onToggle }) {
 
       <span className={styles.content}>
         <span className={styles.titleRow}>
-          <span className={styles.cardTitle}>{title}</span>
+          <span ref={titleRef} className={styles.cardTitle}>
+            {title}
+          </span>
           <Check on={selected} />
         </span>
         <span className={styles.chain}>{names.join(' → ')}</span>
         {/* 소개가 없는 코스는 문단 자체를 그리지 않습니다 — 빈 줄이 남지 않게. */}
-        {course.intro && <span className={styles.intro}>{course.intro}</span>}
+        {/* 문장마다 줄을 바꿉니다(2026-09-18 사용자) — 스팟 상세 요약과 같은 규칙(sentenceLines). */}
+        {course.intro && <span className={styles.intro}>{sentenceLines(course.intro)}</span>}
         <span className={styles.tags}>
           {tagsOf(course).map((tag) => (
             <span key={tag} className={styles.tag}>

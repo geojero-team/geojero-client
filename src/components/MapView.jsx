@@ -17,6 +17,10 @@ const MAX_FIT_LEVEL = 10
 /** 겹친 핀을 탭했을 때 당길 배율 단계. 2단계면 250m가 40px 넘게 벌어집니다. */
 const CLUSTER_ZOOM_STEP = 2
 
+/** 핀을 눌렀을 때 당기는 배율(2026-09-18 사용자: 「스팟을 클릭하면 줌인되며 중앙에」).
+    4 는 주변 길과 마을 이름이 함께 읽히는 선입니다 — 더 당기면 어디쯤인지 감이 사라집니다. */
+const SELECTED_LEVEL = 4
+
 /**
  * 화면 맞추기 여백(px). 38e0255의 배율을 그대로 씁니다.
  *
@@ -272,8 +276,13 @@ export default function MapView({
 
     if (selectedSpotId == null) return
     const selected = pinsRef.current.find((pin) => pin.spotId === selectedSpotId)
+    if (!selected) return
+
+    /* 고른 스팟으로 당깁니다. 이미 더 가까이 보고 있으면 그대로 둡니다 —
+       눌렀다고 뒤로 물러나면 방금까지 보던 것을 잃습니다. */
+    if (map.getLevel() > SELECTED_LEVEL) map.setLevel(SELECTED_LEVEL, { animate: true })
     // 지도 영역이 시트만큼 줄어 있으므로 그냥 가운데로 보내면 됩니다.
-    if (selected) map.panTo(selected.overlay.getPosition())
+    map.panTo(selected.overlay.getPosition())
   }, [selectedSpotId, spots, phase, topReserved])
 
   const zoom = useCallback((delta) => {

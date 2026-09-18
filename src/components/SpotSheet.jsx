@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import SpotDetail from './SpotDetail'
 import { t } from '../i18n'
 import { courseImage, onImageError } from '../lib/courseImage'
@@ -32,7 +32,7 @@ import styles from './SpotSheet.module.css'
 /** 이만큼 끌면 다음 단계로 넘어갑니다. 짧으면 손 떨림에도 열리고, 길면 안 열립니다. */
 const SNAP_THRESHOLD = 56
 
-export default function SpotSheet({ spot, onClose }) {
+export default function SpotSheet({ spot, onClose, onFullChange }) {
   const [full, setFull] = useState(false)
   // 끄는 동안 보이는 높이(px). null이면 단계가 정한 높이를 씁니다.
   const [dragHeight, setDragHeight] = useState(null)
@@ -49,6 +49,12 @@ export default function SpotSheet({ spot, onClose }) {
   /* 다른 스팟을 누르면 peek 에서 다시 시작해야 합니다 — 앞 스팟을 펼쳐 보던 상태가
      남으면 누른 적 없는 스팟의 상세가 펼쳐진 채로 뜹니다. 그 초기화를 effect 에서
      하지 않고 **부모가 `key={poiId}` 로 다시 마운트**해서 합니다. */
+
+  /* 펼쳤는지를 부모에게 알립니다(2026-09-18 사용자 — 코스 지도에서 스팟 상세를 보는 동안에는
+     아래 코스 카드를 감춥니다). 시트가 닫히면(spot 이 null) full 은 false 라 카드가 다시 나옵니다. */
+  useEffect(() => {
+    onFullChange?.(full)
+  }, [full, onFullChange])
 
   const peek = peekHeightOf(spot)
   const maxHeight = () => clipRef.current?.clientHeight ?? peek

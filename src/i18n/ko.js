@@ -121,7 +121,8 @@ export default {
   'listTools.searchAria': '스팟 찾기',
   'listTools.searchPlaceholder': '스팟 이름으로 찾아보세요',
   'listTools.clear': '입력한 내용 지우기',
-  'listTools.searchEmpty': '「{query}」와 맞는 스팟을 찾지 못했어요.\n이름을 짧게 줄여 보세요.',
+  // 2026-09-18 사용자 — 「이름을 짧게 줄여 보세요」는 뺐습니다. 시키지 않아도 사용자가 알아서 고쳐 넣습니다.
+  'listTools.searchEmpty': '「{query}」와 맞는 스팟을 찾지 못했어요.',
   'listTools.sortAria': '정렬 방식',
   'listTools.sortDefault': '추천순',
   'listTools.sortName': '가나다순',
@@ -236,7 +237,6 @@ export default {
   'courseDetail.saveFailed': '저장하지 못했어요 — {error}',
 
   // ── 지도 · 고른 코스 (02-2 · Figma 446:717) ──────────────────────────────
-  'courseMap.pill': '{count}곳 코스 · 고른 코스 {picked}개',
   'courseMap.select': '코스 선택',
   // 지도 카드는 폭이 좁아 '총 … 소요'를 뺀 짧은 꼴입니다.
   'courseMap.busTotal': '{time} 예정',
@@ -510,7 +510,9 @@ export default {
   // 출발지 가정과 근거를 한 줄에 — 모든 시각이 이 위에 서 있어서 숨기면 안 됩니다.
   // 2026-09-18 사용자 문장. 고현터미널이 왜 출발지인지(거제 밖에서 들어오는 시외버스가 닿는 곳)를 말합니다 —
   // 전에는 「출발은 고현터미널 · 노선과 시간은 거제시 BIS 원문 기준」이라 근거만 나열했습니다.
-  'courses.originNote': '코스 출발은 교외에서 접근할 때 도착하는 고현터미널에서 해요',
+  /* 한 줄에 들어와야 합니다(2026-09-18 사용자) — 14px 에서 350px 폭이면 스물너덧 자가 한계입니다.
+     앞 판(「코스 출발은 교외에서 접근할 때 도착하는 고현터미널에서 해요」, 31자)은 두 줄로 넘어갔습니다. */
+  'courses.originNote': '교외에서 오면 고현터미널에서 출발해요',
   'courses.total': '대표 코스 {count}가지 · 여러 개 고를 수 있어요',
   // 개수 칩(OptionChip 넷)과 칩을 고른 뒤의 상태줄 — 전체면 위 courses.total 을 씁니다.
   'courses.countAria': '코스 곳 수',

@@ -11,7 +11,10 @@
 /* hero(264:228) — 390×260, 오버레이는 전부 absolute */
 .hero {
   position: relative;
-  height: 260px;
+  /* 260 → 320(2026-09-18 사용자 — 「비율이 엉망이라 이질감이 든다」). 390 폭에서 260 은 가로로 납작해
+     풍경 사진의 위아래가 크게 잘렸습니다. 320 이면 약 6:5 라 원본에 가깝게 보입니다.
+     스팟 상세를 쓰는 곳(스팟 화면 · 지도 시트 펼침)이 모두 이 값을 따릅니다. */
+  height: 320px;
   overflow: hidden;
 }
 
@@ -57,7 +60,9 @@
   border: 0;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.92);
-  font: var(--type-title);
+  /* 글자만 키웁니다(2026-09-18 사용자 — 「버튼 크기는 괜찮은데 문자가 너무 작다」).
+     ‹ 는 글꼴에서 작게 그려지는 글자라 원 크기(36)에 견줘 더 작아 보였습니다. */
+  font: 700 26px/1 var(--font-sans);
   color: var(--text-primary);
   cursor: pointer;
 }

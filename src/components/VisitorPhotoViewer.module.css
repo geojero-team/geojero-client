@@ -47,7 +47,8 @@
   padding: 0;
   border: 0;
   background: transparent;
-  font: var(--type-title);
+  /* 어두운 바탕 위 ✕ — 20 → 24px(2026-09-18 사용자: 「모든 ✕ 문자가 작다」) */
+  font: 500 24px/1 var(--font-sans);
   color: inherit;
   cursor: pointer;
 }

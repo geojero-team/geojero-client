@@ -20,6 +20,8 @@
 export function fitOneLine(el, { max, min }) {
   if (!el) return
 
+  // 앞서 두 줄로 되돌리며 걸었을 수 있는 균등 나눔을 먼저 지웁니다(화면 폭이 바뀌어 다시 잴 때).
+  el.style.textWrap = ''
   el.style.whiteSpace = 'nowrap'
   el.style.fontSize = `${max}px`
 
@@ -34,6 +36,10 @@ export function fitOneLine(el, { max, min }) {
     return
   }
 
+  /* 여기까지 줄여도 한 줄에 못 들어가면 두 줄로 되돌립니다. 대신 **두 줄을 고르게 나눕니다** —
+     그냥 두면 마지막 줄에 한 글자만 남습니다(「돌고래와 옥포대첩 기념탑, 굵은 대나무 / 숲」,
+     2026-09-18 코스 카드에서 확인). 한 줄이 최선이고, 안 되면 고아 글자 없는 두 줄이 차선입니다. */
   el.style.fontSize = `${min}px`
   el.style.whiteSpace = 'normal'
+  el.style.textWrap = 'balance'
 }

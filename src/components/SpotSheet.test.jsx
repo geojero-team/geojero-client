@@ -125,3 +125,28 @@ describe('SpotSheet — 펼친 뒤 돌아가기', () => {
     expect(screen.getByRole('button', { name: '자세히 보기', expanded: false })).toBeInTheDocument()
   })
 })
+
+/* 펼쳤는지를 부모에게 알립니다(2026-09-18 사용자 — 코스 지도에서 스팟 상세를 보는 동안에는
+   아래 코스 카드를 감춥니다). 시트 혼자서는 그 카드를 모르므로 판단만 넘기고 감추는 일은 화면이 합니다. */
+describe('SpotSheet — 펼침을 부모에게 알린다', () => {
+  it('펼치면 true, 지도로 돌아오면 다시 false', async () => {
+    loadSpotDetail.mockResolvedValue({ ...SPOT, photos: [] })
+    api.getVisitorPhotos.mockResolvedValue({ poiId: SPOT.poiId, count: 0, photos: [] })
+    const onFullChange = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <SpotSheet spot={SPOT} onClose={vi.fn()} onFullChange={onFullChange} />
+      </MemoryRouter>,
+    )
+
+    // peek 으로 시작합니다 — 카드는 그대로 보입니다
+    expect(onFullChange).toHaveBeenLastCalledWith(false)
+
+    await user.click(screen.getByRole('button', { name: '자세히 보기', expanded: false }))
+    expect(onFullChange).toHaveBeenLastCalledWith(true)
+
+    await user.click(await screen.findByRole('button', { name: '뒤로' }))
+    expect(onFullChange).toHaveBeenLastCalledWith(false)
+  })
+})

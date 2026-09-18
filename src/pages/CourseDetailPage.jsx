@@ -11,6 +11,7 @@ import { formatDistance } from '../lib/format'
 import { courseTitle } from '../lib/courseTitle'
 import { fitOneLine } from '../lib/fitOneLine'
 import { distanceMeters } from '../lib/geo'
+import { pinToBottom } from '../lib/pinToBottom'
 import { getToken } from '../lib/session'
 import { formatDuration } from '../lib/format'
 import { ICON_PATHS } from '../lib/spotIcons'
@@ -531,11 +532,9 @@ export default function CourseDetailPage() {
           navigate(`/courses/${courseId}`, { replace: true })
           if (getToken()) save()
           /* 저장 자리는 본문 맨 아래입니다 — 로그인하고 돌아오면 화면이 맨 위라 저장된 것을 볼 수 없습니다(2026-09-18 사용자).
-             다음 그림이 끝난 뒤 내립니다. 타임라인이 그려지기 전에 내리면 높이가 아직 작아 끝까지 가지 않습니다. */
-          requestAnimationFrame(() => {
-            const box = scrollRef.current
-            if (box) box.scrollTop = box.scrollHeight
-          })
+             한 프레임 뒤에 한 번만 내리면 그때의 높이까지만 갑니다. 미니 지도와 스팟 사진이 그 뒤에 자리를 잡아
+             맨 아래가 다시 밀려났습니다 — 높이가 자라는 동안 따라 내려갑니다(손을 대면 놓습니다). */
+          pinToBottom(scrollRef.current)
         }
       })
       .catch((error) => {
