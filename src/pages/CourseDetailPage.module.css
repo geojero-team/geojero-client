@@ -514,7 +514,8 @@
   flex: none;
   gap: 6px;
   margin: 12px -20px 0;
-  padding: 0 20px;
+  /* 위아래 2px — 가로 스크롤 칸이 세로도 자르기 때문에, 없으면 고른 칩의 아래 테두리가 잘립니다(2026-09-18). */
+  padding: 2px 20px;
   overflow-x: auto;
   scrollbar-width: none;
   overscroll-behavior-x: contain;

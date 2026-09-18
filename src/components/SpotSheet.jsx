@@ -137,9 +137,11 @@ export default function SpotSheet({ spot, onClose }) {
         </button>
 
         {full ? (
-          /* 끌어올리면 스팟 상세가 그대로 나옵니다. 시트에 손잡이와 닫기가 있으므로
-             onBack은 주지 않습니다 — 닫는 방법이 둘이면 어느 게 뭘 닫는지 알 수 없습니다. */
-          <SpotDetail key={spot.poiId} poiId={spot.poiId} seed={spot} />
+          /* 끌어올리면 스팟 상세가 그대로 나옵니다.
+             2026-09-18: 펼친 상태에 **‹ 버튼**을 줍니다(사용자 — 「지도에서 스팟 상세로 들어가면 뒤로가기가 없다」).
+             전에는 손잡이와 ✕뿐이었는데, 펼치면 사진이 화면을 채워 둘 다 눈에 띄지 않았습니다.
+             ‹ 는 **지도로 돌아가기**(시트를 peek 으로)이고 ✕ 는 닫기라 뜻이 갈립니다. */
+          <SpotDetail key={spot.poiId} poiId={spot.poiId} seed={spot} onBack={() => setFull(false)} />
         ) : (
           /* peek — 이름 · 권역·분류 · 사진 한 장.
              「자세히 보기」 버튼을 뺐습니다(2026-09-13). 손잡이로 바로 올릴 수 있어 버튼이

@@ -259,25 +259,33 @@ export default {
   'spotTime.inTime': '약 {time} 뒤',
   'spotTime.soon': '곧 출발',
   'spotTime.basisTimetable': '시간표 기준',
-  'spotTime.basisEstimated': '앞뒤 정류장 시각으로 추정',
+  /* 확정 시각은 「시간표 기준」, 추정 시각은 「원문 시간표로 계산」입니다(2026-09-18) —
+     사용자 요청대로 근거(거제시 원문)를 밝히되, 둘이 같은 말을 하지 않게 「기준」과 「계산」으로 가릅니다. */
+  'spotTime.basisEstimated': '거제시 원문 시간표로 계산',
   'spotTime.tableTitle': '{day} 시간표',
   // 요약 셋(530:332 · 541:246 · 541:360) — 노선 하나 / 여럿 · 전체 / 노선 칩을 고름
   'spotTime.summary': '첫차 {first} · 막차 {last} · 하루 {count}회',
   'spotTime.summaryCount': '하루 {count}회',
   'spotTime.summaryRoute': '{route}번 {count}회',
-  'spotTime.routeAll': '전체 {count}',
-  'spotTime.routeChip': '{route}번 {count}',
+  // 칩에서 횟수를 뺐습니다(2026-09-18 사용자) — 「전체 7 · 55번 6」이 고르기 전에 숫자로 미는 것처럼 보였습니다.
+  // 하루 몇 회인지는 아래 시간표 요약(「첫차 · 막차 · 하루 N회」)이 말합니다.
+  'spotTime.routeAll': '전체',
+  'spotTime.routeChip': '{route}번',
   // 노선 칩을 골랐을 때만(541:371). 같은 노선인데 편마다 다르면 범위로 — 한 값으로 뭉개면 늦은 차를 놓칩니다(부록 D).
   'spotTime.duration': '약 {min}분',
   'spotTime.durationRange': '약 {low}~{high}분',
-  'spotTime.durationEstimated': '{duration} · 앞뒤 정류장 시각으로 추정',
+  'spotTime.durationEstimated': '{duration} · 거제시 원문 시간표로 계산',
   'spotTime.hour': '{h}시',
   'spotTime.nextTag': '다음',
   // ★ 출발 시각이 앞뒤 정류장으로 감싼 값일 때(departures[].departEstimated). 감싼 방향이 정해져 있어
   //   적힌 출발은 실제보다 이르거나 같습니다 — 그 시각에 나가 있으면 놓치지 않습니다(SpotLayer 규칙 3). 절대규칙 1.
   'spotTime.estimatedTag': '추정',
-  'spotTime.estimatedAll': '이 정류장 시각은 원문 시간표에 칸이 없어 앞뒤 정류장 시각으로 추정했어요. 적힌 시각에 나가 있으면 버스를 놓치지 않아요.',
-  'spotTime.estimatedSome': '「추정」 시각은 원문 시간표에 칸이 없어 앞뒤 정류장 시각으로 추정했어요. 적힌 시각에 나가 있으면 버스를 놓치지 않아요.',
+  /* 2026-09-18 사용자 결정 — 「원문에 칸이 없어 추정」이 우리 데이터를 못 미덥게 보이게 했습니다.
+     같은 사실을 근거 쪽에서 말합니다: 거제시가 주는 원문 시간표로 계산한 시각이라는 것. 문장마다 한 줄. */
+  'spotTime.estimatedAll':
+    '이 정류장 시각은 거제시가 제공하는 원문 시간표를 기준으로 계산했어요.\n적힌 시각에 나가 있으면 버스를 놓치지 않아요.',
+  'spotTime.estimatedSome':
+    '「추정」 시각도 거제시가 제공하는 원문 시간표를 기준으로 계산했어요.\n적힌 시각에 나가 있으면 버스를 놓치지 않아요.',
   // 맨 아래 출처(530:366). 정류소 좌표 줄은 서버 boarding.source 그대로입니다.
   'spotTime.sourceTime': '시각 {source} · {date}',
   'spotTime.loading': '시간표를 불러오는 중',
@@ -467,7 +475,6 @@ export default {
   'courseDetail.timetable': '시간표',
   'courseDetail.timetableA11y': '{name} 시간표',
   // 추정 구간이 있을 때만 — 확정값뿐인 코스에 쓰면 정확한 분을 「짧다」고 말하게 됩니다.
-  'courseDetail.estimatedNote': '실제 이동 시간은 적힌 것보다 짧습니다 — 버스를 놓치지 않는 쪽으로만 어긋납니다.',
   'courseDetail.source': '출처 {source} · {date}',
   'courseDetail.originNote': '모든 첫 출발지는 {origin}로 가정합니다',
   // 버스가 내려주는 곳은 스팟이 아니라 정류장이다 — 「55번 · 10분」이 「10분 뒤 도착」으로 읽히는 것을 막는다(2026-09-16 사용자 결정).
@@ -487,7 +494,6 @@ export default {
   // 앞에서 내린 정류장과 이름만 같은 다른 정류장에서 탈 때 — 버스가 가는 곳을 붙인다(2026-09-17 밤 사용자 결정 C안).
   // 「길 건너편」은 정류장 번호가 없어 단정하지 않는다. 신촌 184m 에 내려 176m 에서 타면 둘 다 「약 180m」라 같은 줄로 읽혔다.
   'courseDetail.boardToward': '{stop}({toward} 방향)에서 타요',
-  'courseDetail.walkNote': '버스 시간에는 걷는 시간이 빠져 있어요. 걷는 거리는 두 곳 사이 직선거리예요. 실제 걷는 길은 「길찾기 ↗」에서 카카오맵으로 확인하세요.',
   'courseDetail.walkDirections': '길찾기 ↗',
   'courseDetail.walkDirectionsA11y': '{from}에서 {to}까지 카카오맵 도보 길찾기 — 새 창에서 열려요',
   'courseDetail.noLegs': '이 코스는 구간별 버스 정보가 없어요.',
@@ -502,7 +508,9 @@ export default {
   // 2026-09-16 개수 칩을 되살렸습니다(Figma 623:444 · 메모 623:520) — 대표 코스 10개 안에서 거릅니다.
   'courses.title': '코스 추천',
   // 출발지 가정과 근거를 한 줄에 — 모든 시각이 이 위에 서 있어서 숨기면 안 됩니다.
-  'courses.originNote': '출발은 고현터미널 · 노선과 시간은 거제시 BIS 원문 기준',
+  // 2026-09-18 사용자 문장. 고현터미널이 왜 출발지인지(거제 밖에서 들어오는 시외버스가 닿는 곳)를 말합니다 —
+  // 전에는 「출발은 고현터미널 · 노선과 시간은 거제시 BIS 원문 기준」이라 근거만 나열했습니다.
+  'courses.originNote': '코스 출발은 교외에서 접근할 때 도착하는 고현터미널에서 해요',
   'courses.total': '대표 코스 {count}가지 · 여러 개 고를 수 있어요',
   // 개수 칩(OptionChip 넷)과 칩을 고른 뒤의 상태줄 — 전체면 위 courses.total 을 씁니다.
   'courses.countAria': '코스 곳 수',

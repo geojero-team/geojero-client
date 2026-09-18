@@ -291,7 +291,8 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     const { container } = renderCourse(101)
 
     await screen.findByText(busLine('[55] 40분'))
-    expect(screen.getByText('실제 이동 시간은 적힌 것보다 짧습니다 — 버스를 놓치지 않는 쪽으로만 어긋납니다.')).toBeInTheDocument()
+    // 각주 두 줄은 2026-09-18 뺐습니다(사용자 결정) — 줄마다 붙는 「약」과 걷는 칸이 이미 말합니다.
+    expect(screen.queryByText(/실제 이동 시간은 적힌 것보다 짧습니다/)).not.toBeInTheDocument()
     expect(screen.getByText('출처 거제시 BIS 원문 · 2026-08-18')).toBeInTheDocument()
     expect(screen.getByText('모든 첫 출발지는 고현터미널로 가정합니다')).toBeInTheDocument()
     expect(container).not.toHaveTextContent('시간표를 클릭하면')
@@ -524,7 +525,7 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     renderCourse(101)
 
     // 어디를 눌러야 하는지 적는다 — 「스팟의 시간표 화면에서」는 막연했다(2026-09-16)
-    expect(await screen.findByText(/버스 시간에는 걷는 시간이 빠져 있어요/)).toBeInTheDocument()
+    expect(screen.queryByText(/버스 시간에는 걷는 시간이 빠져 있어요/)).not.toBeInTheDocument()
   })
 
   it('칩은 버스를 타는 구간만 센다 — 같은 정류장으로 걸어가는 구간은 빼고 「버스 탑승 3번」(서버 legCount 는 4)', async () => {
@@ -595,14 +596,14 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     expect(within(spot.nextElementSibling).queryByRole('link')).not.toBeInTheDocument()
     expect(within(spot).queryByRole('button', { name: /시간표/ })).not.toBeInTheDocument()
   })
-  it('각주는 걷는 길을 어디서 여는지 말한다 — 걷는 칸의 「길찾기 ↗」(2026-09-18)', async () => {
+  it('각주를 두지 않는다 — 걷는 칸의 「도보 약 N · 길찾기 ↗」가 대신 말한다(2026-09-18 사용자 결정)', async () => {
     renderCourse(110)
 
-    // 걷는 칸은 「도보 약 110m」 — 그 값이 직선거리라는 것은 각주가 한 번 말한다(2026-09-18 사용자 결정: 「도보 · 직선」이 한 줄에 붙어 어색했다).
-    // 카카오맵 길찾기가 더 긴 거리를 보여줘도 우리 숫자가 틀린 것으로 읽히지 않게.
-    expect(
-      await screen.findByText('버스 시간에는 걷는 시간이 빠져 있어요. 걷는 거리는 두 곳 사이 직선거리예요. 실제 걷는 길은 「길찾기 ↗」에서 카카오맵으로 확인하세요.'),
-    ).toBeInTheDocument()
+    // 화면이 무거워 각주 두 줄을 뺐다. 걷는 거리는 칸마다 적히고, 실제 길은 그 줄의 「길찾기 ↗」가 연다.
+    // 걷는 칸은 여러 개입니다 — 하나라도 있으면 됩니다.
+    expect((await screen.findAllByText(/도보 약/)).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/버스 시간에는 걷는 시간이 빠져 있어요/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/적힌 것보다 짧습니다/)).not.toBeInTheDocument()
   })
   it('버스 합계가 한 시간이 안 되면 「0시간」을 쓰지 않는다', async () => {
     api.course.mockResolvedValue({ ...COURSE_301, busMinTotal: 40 })
@@ -1048,7 +1049,7 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     expect(screen.getByText(busLine('[55] 약 12분'))).toBeInTheDocument()
   })
 
-  it('추정 각주는 화면에 적힌 분을 따른다 — service 가 있으면 service.estimated', async () => {
+  it('추정이어도 각주를 두지 않는다 — 줄마다 붙는 「약」이 이미 말한다(2026-09-18 사용자 결정)', async () => {
     // 사슬(leg.estimated)은 추정이지만 가장 자주 다니는 노선의 소요는 확정값이면 각주가 없다
     api.course.mockResolvedValue(withService([service('55', 40), service('55', 10), service('55', 12), service('55', 52)]))
     const { unmount } = renderCourse(101)
@@ -1056,14 +1057,14 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     expect(screen.queryByText(/적힌 것보다 짧습니다/)).not.toBeInTheDocument()
     unmount()
 
-    // 사슬은 확정인데(3-08 은 추정 구간 0) 노선 소요가 추정이면 각주가 있다
+    // 노선 소요가 추정이어도 각주는 없다 — 그 구간 줄이 「약 27분」으로 이미 말한다
     api.course.mockResolvedValue({
       ...COURSE_308,
       legs: COURSE_308.legs.map((leg, i) => ({ ...leg, service: i === 1 ? service('67-1', 27, { estimated: true }) : null })),
     })
     renderCourse(110)
     await screen.findByText(busLine('[67-1] 약 27분'))
-    expect(screen.getByText(/적힌 것보다 짧습니다/)).toBeInTheDocument()
+    expect(screen.queryByText(/적힌 것보다 짧습니다/)).not.toBeInTheDocument()
   })
 
   it('되짚기 가운데 고현터미널 줄과 섞여도 짝이 맞는다 — 노선 줄 · 휴일 줄 · 타는 곳 줄 뒤에 「갈아타요」, 스팟 번호는 밀리지 않는다', async () => {
@@ -1117,7 +1118,7 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     expect(screen.getAllByText('휴일엔 이 구간 버스가 없어요')).toHaveLength(1)
     expect(screen.queryByText(busLine(/^100번/))).not.toBeInTheDocument()
     expect(screen.getByText('버스 탑승 6번')).toBeInTheDocument()
-    expect(screen.getByText(/적힌 것보다 짧습니다/)).toBeInTheDocument()
+    expect(screen.queryByText(/적힌 것보다 짧습니다/)).not.toBeInTheDocument()
   })
 
   it('배 · 같은 정류장 구간과 섞여도 그대로 — service 는 BUS 구간에만 온다', async () => {

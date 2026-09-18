@@ -151,14 +151,16 @@
   display: grid;
   flex: none;
   place-items: center;
-  height: 200px;
+  /* 200 → 156(2026-09-18 사용자) — 카드가 한 화면에 하나 겨우 들어가 스크롤이 깊었습니다.
+     16:9 에 가까운 비율이라 사진이 뭉개지지 않습니다. */
+  height: 156px;
   background: var(--border-default);
 }
 
 .heroImg {
   display: block;
   width: 100%;
-  height: 200px;
+  height: 156px;
   object-fit: cover;
 }
 
@@ -285,8 +287,8 @@
 .content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 20px 20px 20px;
+  gap: 10px;
+  padding: 14px 20px 16px;
 }
 
 .titleRow {
@@ -357,7 +359,7 @@
 
 /* 태그 — surface 면 · radius 8 · px12 py8 · 14/20 Medium */
 .tag {
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: var(--radius-sm);
   background: var(--bg-surface);
   font-family: var(--font-sans);

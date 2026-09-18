@@ -96,3 +96,32 @@ describe('SpotSheet — 방문자 사진', () => {
     expect(beginKakaoLoginTo).toHaveBeenCalledWith('/spots/4?upload=1')
   })
 })
+
+/* 펼친 시트의 ‹ 버튼(2026-09-18 사용자 — 「지도에서 스팟 상세로 들어가면 뒤로가기가 없다」).
+   손잡이와 ✕ 는 있었지만 펼치면 사진이 화면을 채워 둘 다 눈에 띄지 않았습니다.
+   ‹ 는 **지도로 돌아가기**(시트를 peek 으로)이고 ✕ 는 닫기라 뜻이 갈립니다. */
+describe('SpotSheet — 펼친 뒤 돌아가기', () => {
+  it('펼치면 ‹ 가 보이고, 누르면 닫지 않고 peek 으로 돌아온다', async () => {
+    loadSpotDetail.mockResolvedValue({ ...SPOT, photos: [] })
+    api.getVisitorPhotos.mockResolvedValue({ poiId: SPOT.poiId, count: 0, photos: [] })
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <SpotSheet spot={SPOT} onClose={onClose} />
+      </MemoryRouter>,
+    )
+
+    // peek 에서는 상세가 없으므로 ‹ 도 없습니다
+    expect(screen.queryByRole('button', { name: '뒤로' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '자세히 보기', expanded: false }))
+    const back = await screen.findByRole('button', { name: '뒤로' })
+
+    await user.click(back)
+
+    // 시트는 닫히지 않고 peek 으로 — 손잡이가 다시 「자세히 보기」가 됩니다
+    expect(onClose).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: '자세히 보기', expanded: false })).toBeInTheDocument()
+  })
+})

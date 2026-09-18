@@ -230,10 +230,8 @@ function busParts(leg) {
   return { route: s.routeNo, rest: t('courseDetail.legServiceTime', { time: time.replaceAll(' ', '\u00a0') }) }
 }
 
-/** 화면에 적힌 분이 추정인가 — service 가 있으면 그 노선의 소요, 없으면 사슬 구간. 각주가 이것을 따릅니다. */
-function legEstimated(leg) {
-  return leg.service ? Boolean(leg.service.estimated) : Boolean(leg.estimated)
-}
+/* 「화면에 적힌 분이 추정인가」를 세던 legEstimated 는 2026-09-18 지웠습니다 —
+   그 값을 읽던 추정 각주를 뺐기 때문입니다(사용자 결정). 추정은 구간 줄의 「약」이 그 자리에서 말합니다. */
 
 /** 걷는 사람 — 내리는 정류장 · 선착장 점 원 안(다음이 걷기). 버스 원의 StopBusIcon 과 같은 14px 입니다(Tabler Icons 「walk」, MIT). */
 function StopWalkIcon() {
@@ -487,6 +485,8 @@ export default function CourseDetailPage() {
      DOM 을 직접 고칩니다(상태를 두지 않습니다). 글꼴이 늦게 오면 폭이 달라지므로 그때 한 번 더 재고,
      화면 폭이 바뀔 때도 다시 잽니다. */
   const titleRef = useRef(null)
+  // 본문 스크롤 칸 — 로그인하고 돌아왔을 때 저장 자리(맨 아래)로 내리는 데 씁니다(2026-09-18 사용자).
+  const scrollRef = useRef(null)
   useLayoutEffect(() => {
     const fit = () => fitOneLine(titleRef.current, { max: 30, min: 22 })
     fit()
@@ -530,6 +530,12 @@ export default function CourseDetailPage() {
         if (new URLSearchParams(window.location.search).get('save') === '1') {
           navigate(`/courses/${courseId}`, { replace: true })
           if (getToken()) save()
+          /* 저장 자리는 본문 맨 아래입니다 — 로그인하고 돌아오면 화면이 맨 위라 저장된 것을 볼 수 없습니다(2026-09-18 사용자).
+             다음 그림이 끝난 뒤 내립니다. 타임라인이 그려지기 전에 내리면 높이가 아직 작아 끝까지 가지 않습니다. */
+          requestAnimationFrame(() => {
+            const box = scrollRef.current
+            if (box) box.scrollTop = box.scrollHeight
+          })
         }
       })
       .catch((error) => {
@@ -625,13 +631,13 @@ export default function CourseDetailPage() {
   ))
   // 제목 — 서버 title 이 있으면 그것, 없으면 「학동몽돌해변에서 바람의언덕까지」. 한 곳뿐이면 이름 그대로(체인).
   const title = courseTitle(course.title, names) ?? chain
-  const hasEstimate = legs.some(legEstimated)
+  // 추정 각주를 뺀 뒤로(2026-09-18) 이 값을 쓰는 곳이 없습니다 — 구간 줄의 「약」이 그 자리를 대신합니다.
 
   return (
     <Screen data-api="GET /api/courses/{id}">
       {header}
 
-      <div className={styles.scroll}>
+      <div ref={scrollRef} className={styles.scroll}>
         {hasLegs && <CourseMiniMap stops={stops} />}
 
         <div className={styles.body}>
@@ -762,8 +768,8 @@ export default function CourseDetailPage() {
               <div className={styles.notes}>
                 {/* 걷는 시간은 어느 원문에도 없다 — 없는 것을 없다고 말한다(2026-09-16 사용자 결정). */}
                 {/* 걷는 칸의 「도보 약 N」은 직선거리라 각주가 한 번 말하고 걷는 길은 「길찾기 ↗」로 보냅니다(2026-09-18). */}
-                <p className={styles.estimatedNote}>{t('courseDetail.walkNote')}</p>
-                {hasEstimate && <p className={styles.estimatedNote}>{t('courseDetail.estimatedNote')}</p>}
+                {/* 걷는 시간 · 이동 시간 각주 두 줄은 2026-09-18 뺐습니다(사용자 결정) — 화면이 무거웠습니다.
+                    걷는 칸은 「도보 약 N · 길찾기 ↗」가, 추정 구간은 줄마다 붙는 「약」이 이미 말합니다. */}
                 <p className={styles.note}>
                   {t('courseDetail.source', { source: course.source, date: course.baseDate })}
                 </p>

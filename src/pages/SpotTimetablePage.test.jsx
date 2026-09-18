@@ -642,9 +642,9 @@ describe('SpotTimetablePage — 버스 시간표 09-14 개정(530:213 · 541:213
     renderAt(`/timetable/4?date=${DATE}&now=${NOW}`)
 
     expect(await screen.findByText('하루 3회')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '전체 3' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: '55번 2' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '67-1번 1' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '전체' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: '55번' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '67-1번' })).toBeInTheDocument()
     expect(screen.queryByText(/^약 \d+(~\d+)?분$/)).not.toBeInTheDocument()
   })
 
@@ -653,14 +653,14 @@ describe('SpotTimetablePage — 버스 시간표 09-14 개정(530:213 · 541:213
     api.spotDepartures.mockImplementation(async (poiId) => busOf(poiId, HAKDONG))
     renderAt(`/timetable/4?date=${DATE}&now=07:00`)
 
-    await user.click(await screen.findByRole('button', { name: '55번 2' }))
+    await user.click(await screen.findByRole('button', { name: '55번' }))
     expect(screen.getByText('55번 2회')).toBeInTheDocument()
     expect(screen.getByText('약 40~43분')).toBeInTheDocument()
     expect(screen.queryByText('07:35')).not.toBeInTheDocument()
     expect(screen.getByText('07:47')).toBeInTheDocument()
     expect(screen.getByText('다음 버스 07:47 · 55번')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: '67-1번 1' }))
+    await user.click(screen.getByRole('button', { name: '67-1번' }))
     expect(screen.getByText('약 58분')).toBeInTheDocument()
     expect(screen.getByText('다음 버스 07:35 · 67-1번')).toBeInTheDocument()
   })
@@ -685,9 +685,10 @@ describe('SpotTimetablePage — 버스 시간표 09-14 개정(530:213 · 541:213
     )
     const { container } = renderAt(`/timetable/1?date=${DATE}&now=12:20`)
 
-    expect(await screen.findByText('약 28분 뒤 · 앞뒤 정류장 시각으로 추정')).toBeInTheDocument()
+    expect(await screen.findByText('약 28분 뒤 · 거제시 원문 시간표로 계산')).toBeInTheDocument()
     expect(
-      screen.getByText('이 정류장 시각은 원문 시간표에 칸이 없어 앞뒤 정류장 시각으로 추정했어요. 적힌 시각에 나가 있으면 버스를 놓치지 않아요.'),
+      // 2026-09-18 사용자 결정 — 「원문에 칸이 없어 추정」 대신 근거(거제시 원문 시간표)를 말합니다. 문장마다 한 줄.
+      screen.getByText(/이 정류장 시각은 거제시가 제공하는 원문 시간표를 기준으로 계산했어요/),
     ).toBeInTheDocument()
     expect(container).not.toHaveTextContent('시간표 기준')
     // 전부 추정이면 줄마다 태그를 달지 않는다 — 한 줄로 충분하다
@@ -707,7 +708,7 @@ describe('SpotTimetablePage — 버스 시간표 09-14 개정(530:213 · 541:213
     const estimated = await screen.findByText('07:00')
     expect(estimated.closest('li')).toHaveTextContent('추정')
     expect(screen.getByText('06:00').closest('li')).not.toHaveTextContent('추정')
-    expect(screen.getByText('「추정」 시각은 원문 시간표에 칸이 없어 앞뒤 정류장 시각으로 추정했어요. 적힌 시각에 나가 있으면 버스를 놓치지 않아요.')).toBeInTheDocument()
+    expect(screen.getByText(/「추정」 시각도 거제시가 제공하는 원문 시간표를 기준으로 계산했어요/)).toBeInTheDocument()
   })
 
   it('도착만 추정인 편(estimated · departEstimated false)은 시각에 추정 표시를 붙이지 않는다 — 고현 출발은 원문 칸이다', async () => {
@@ -728,7 +729,7 @@ describe('SpotTimetablePage — 버스 시간표 09-14 개정(530:213 · 541:213
     api.spotDepartures.mockImplementation(async (poiId) => busOf(poiId, HAKDONG))
     renderAt(`/timetable/4?date=${DATE}&now=12:00`)
 
-    await user.click(await screen.findByRole('button', { name: '67-1번 1' }))
+    await user.click(await screen.findByRole('button', { name: '67-1번' }))
     expect(screen.getByText('오늘 남은 67-1번 버스가 없어요')).toBeInTheDocument()
     expect(screen.queryByText('오늘 남은 버스가 없어요')).not.toBeInTheDocument()
   })
@@ -750,8 +751,8 @@ describe('SpotTimetablePage — 버스 시간표 09-14 개정(530:213 · 541:213
     )
     renderAt(`/timetable/1?dir=fromOrigin&date=${DATE}&now=06:00`)
 
-    await user.click(await screen.findByRole('button', { name: '55번 1' }))
-    expect(screen.getByText('약 50분 · 앞뒤 정류장 시각으로 추정')).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: '55번' }))
+    expect(screen.getByText('약 50분 · 거제시 원문 시간표로 계산')).toBeInTheDocument()
   })
 
   it('서버가 departEstimated를 주지 않으면(옛 서버) 「시간표 기준」이라고 단정하지 않는다', async () => {
@@ -816,7 +817,7 @@ describe('SpotTimetablePage — 시계(주소에 now가 없을 때)', () => {
     await act(async () => {
       vi.advanceTimersByTime(90 * 1000)
     })
-    await user.click(screen.getByRole('button', { name: '55번 1' }))
+    await user.click(screen.getByRole('button', { name: '55번' }))
 
     expect(screen.queryByText('시간표를 불러오는 중')).not.toBeInTheDocument()
     expect(screen.getByText('15:00')).toBeInTheDocument()
