@@ -436,7 +436,16 @@ export default {
   // 확정값에 붙이면 정확히 아는 값을 흐립니다.
   'courseDetail.legMin': '{min}분',
   'courseDetail.legMinApprox': '약 {min}분',
-  'courseDetail.legSameStop': '같은 정류장 · 바로 이동',
+  // 걷는 칸(2026-09-18 사용자 결정 「점 = 장소, 사이 = 이동」).
+  // 전 문구 「같은 정류장 · 바로 이동」은 데이터 말이라 버스를 또 타는지, 「바로」가 몇 분인지 읽히지 않았다.
+  // 스팟 ↔ 스팟(SAME_STOP) · 스팟 ↔ 정류장 걷는 칸 모두. 어디서 어디로는 위아래 점이 말한다. 거리는 두 점 좌표 사이 직선이고
+  // 그 사실은 각주(walkNote)가 한 번 말한다 — 줄마다 「직선」을 붙이니 「도보 · 직선」이 어색했다(같은 날 사용자).
+  // 걷는 시간은 원천이 없어 적지 않는다(절대규칙 1).
+  // 「약 110m」는 붙는 공백(\u00a0) — 「도보 약 / 110m」로 갈리지 않는다.
+  'courseDetail.walkSeg': '도보',
+  'courseDetail.walkSegWithDistance': '도보\u00a0약\u00a0{dist}',
+  // 돌아오는 배가 내려주는 선착장 점(2026-09-18 「점 = 장소, 사이 = 이동」).
+  'courseDetail.dockAlight': '{dock} 선착장에서 내려요',
   // 버스 구간(2026-09-17 사용자 결정) — 코스가 저장한 편 사슬의 노선이 아니라 **그 구간을 가장 자주 다니는 직행 노선**(서버 leg.service).
   // 사슬이 우연히 탄 하루 1회 노선을 적으면 시간을 스스로 정하는 사용자가 하루 한 번 오는 버스를 기다린다.
   // 노선 번호는 글이 아니라 알약(화면 routePill)이 적습니다 — 이 문장은 알약 뒤 「약 40분」.
@@ -462,7 +471,7 @@ export default {
   // 「입장료 별도」는 상품 원문 코스명에 든 사실이라 화면 어딘가에 남아야 합니다(디자인브리프 부록 G).
   'courseDetail.ferryStay': '{stay} 머물러요 · 입장료 별도',
   // 돌아오는 구간. 「같은 배로」라고 적지 않습니다 — 원문이 같은 배인지 말하지 않습니다(기준문서 §3).
-  'courseDetail.ferryReturn': '{dock} 선착장으로 돌아와요',
+  'courseDetail.ferryReturn': '배로 돌아와요',
   'courseDetail.ferryChip': '배 약 {time}',
   'courseDetail.timetable': '시간표',
   'courseDetail.timetableA11y': '{name} 시간표',
@@ -476,20 +485,20 @@ export default {
   // 정류소 원문 이름만으로는 그게 정류장인지 모른다(「대금교차로」 — 2026-09-16 사용자 확인). 이름 뒤에 「정류장」을 붙이되
   // 이미 「종점」으로 끝나면 그대로 둔다(「해금강종점 정류장」은 같은 말을 두 번 한다).
   'courseDetail.stopName': '{stop} 정류장',
+  // 2026-09-18 「점 = 장소, 사이 = 이동」 — 정류장은 타임라인의 점이고, 거기까지 · 거기서 걷는 거리는 앞뒤 걷는 칸(walkSeg)이 말합니다.
   'courseDetail.alight': '{stop}에서 내려요',
   // 「직선 약 380m」는 붙는 공백(\u00a0) — 좁은 폰에서 「직선 약 / 380m」로 갈리지 않고 「직선」 앞에서만 줄이 바뀝니다
   // (2026-09-17 320 폭 실측: 코스 33개의 정류장 문장 30개 중 23개가 두 줄, 전부 「직선」 앞에서).
-  'courseDetail.alightWithDistance': '{stop}에서 내려 직선\u00a0약\u00a0{dist}',
   // 타는 곳 — 앞 구간에서 내린 정류장과 **다른** 정류장에서 탈 때만(화면 isSameStop, 2026-09-17).
   // 마지막 구간은 고현터미널로 돌아가는 길이라 내릴 스팟이 없어 이 줄만 남습니다(2026-09-16 사용자 지적).
   // 학동으로 끝나는 코스 셋은 내린 곳(학동삼거리 110m)과 타는 곳(학동 310m)이 다른 정류장이고 3배 멀다.
   'courseDetail.board': '{stop}에서 타요',
-  'courseDetail.boardWithDistance': '{stop}에서 타요\u00a0· 직선\u00a0약\u00a0{dist}',
   // 앞에서 내린 정류장과 이름만 같은 다른 정류장에서 탈 때 — 버스가 가는 곳을 붙인다(2026-09-17 밤 사용자 결정 C안).
   // 「길 건너편」은 정류장 번호가 없어 단정하지 않는다. 신촌 184m 에 내려 176m 에서 타면 둘 다 「약 180m」라 같은 줄로 읽혔다.
   'courseDetail.boardToward': '{stop}({toward} 방향)에서 타요',
-  'courseDetail.boardTowardWithDistance': '{stop}({toward} 방향)에서 타요 · 직선 약 {dist}',
-  'courseDetail.walkNote': '버스 시간에는 정류장에서 스팟까지 걷는 시간이 빠져 있어요. 걷는 길은 스팟 옆 「시간표 ›」에서 카카오맵으로 열 수 있어요.',
+  'courseDetail.walkNote': '버스 시간에는 걷는 시간이 빠져 있어요. 걷는 거리는 두 곳 사이 직선거리예요. 실제 걷는 길은 「길찾기 ↗」에서 카카오맵으로 확인하세요.',
+  'courseDetail.walkDirections': '길찾기 ↗',
+  'courseDetail.walkDirectionsA11y': '{from}에서 {to}까지 카카오맵 도보 길찾기 — 새 창에서 열려요',
   'courseDetail.noLegs': '이 코스는 구간별 버스 정보가 없어요.',
   'courseDetail.save': '이 코스 저장하기',
   'courseDetail.loading': '코스를 불러오는 중',

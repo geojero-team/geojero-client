@@ -9,6 +9,7 @@ import { api, beginKakaoLoginTo } from '../lib/api'
 import { courseImage, onImageError } from '../lib/courseImage'
 import { formatDistance } from '../lib/format'
 import { courseTitle } from '../lib/courseTitle'
+import { distanceMeters } from '../lib/geo'
 import { getToken } from '../lib/session'
 import { formatCountWord, formatDuration } from '../lib/format'
 import { ICON_PATHS } from '../lib/spotIcons'
@@ -67,7 +68,7 @@ function TerminalIcon() {
   )
 }
 
-/** 내리는 곳 줄 앞 버스 — 스팟 상세(부록 J)의 Figma `607:12` 자산과 같은 그림, 여기서는 14px. 색은 CSS 에서 받습니다. */
+/** 타는 정류장 점 원 안 버스 — 스팟 상세(부록 J)의 Figma `607:12` 자산과 같은 그림, 여기서는 14px. 색은 CSS 에서 받습니다. */
 function StopBusIcon() {
   return (
     <svg className={styles.alightIcon} width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -83,23 +84,40 @@ function StopBusIcon() {
 }
 
 /**
- * 정류장 한 줄 — 「{정류장}에서 내려 직선 약 210m」 / 「{정류장}에서 타요 · 직선 약 380m」. 정류장이 없으면 null.
+ * 정류장 점(장소) 한 줄 — 「학동 정류장에서 내려요」 / 「도장포 정류장에서 타요」. 정류장이 없으면 null.
  *
- * **이 구간과 스팟의 관계**를 말합니다. 버스가 서는 곳은 스팟이 아니라 정류장이라, 이 줄이 없으면
- * 「33번 · 약 45분」이 「45분 뒤 매미성 도착」으로 읽힙니다 — 매미성은 대금교차로 정류장에서 직선 210m, 해금강은 1.1km 입니다.
- *
+ * 2026-09-18 「점 = 장소, 사이 = 이동」(사용자 결정 — 구글 지도 · 네이버 지도 대중교통 상세). 정류장은 문장 속 단어가 아니라
+ * 타임라인의 **점**이고, 거기까지 · 거기서 걷는 거리는 점 앞뒤의 걷는 칸(walkText)이 말합니다.
+ * 버스가 서는 곳은 스팟이 아니라 정류장이라, 이 점이 없으면 「33번 · 약 45분」이 「45분 뒤 매미성 도착」으로 읽힙니다.
  * 이름은 그 구간이 **실제로 서는 정류장**이라 스팟이 말하는 내리는 곳과 다를 수 있습니다(씨월드는 시각이 지세포 기준).
- * 거리를 모르면 이름만 적습니다 — 값 없이 「직선 약」만 남기지 않습니다(절대규칙 3).
  *
  * @param key 'alight'(내리는 곳) · 'board'(타는 곳)
  */
-function stopLine(near, key, toward = null) {
+function stationText(near, key, toward = null) {
   if (!near?.stop) return null
-  const stop = near.stop.endsWith('종점') ? near.stop : t('courseDetail.stopName', { stop: near.stop })
-  const k = toward ? `${key}Toward` : key
-  return near.distanceM == null
-    ? t(`courseDetail.${k}`, { stop, toward })
-    : t(`courseDetail.${k}WithDistance`, { stop, toward, dist: formatDistance(near.distanceM) })
+  return t(toward ? `courseDetail.${key}Toward` : `courseDetail.${key}`, { stop: stopLabel(near), toward })
+}
+
+/** 정류장 이름 — 원문 이름 뒤에 「정류장」(「대금교차로」만으로는 정류장인지 모른다). 이미 「종점」으로 끝나면 그대로. */
+function stopLabel(near) {
+  return near.stop.endsWith('종점') ? near.stop : t('courseDetail.stopName', { stop: near.stop })
+}
+
+/** 걷는 칸 길찾기 양 끝 — 정류장(TAGO 좌표)을 스팟과 같은 모양({shortName, lat, lng})으로. 좌표가 없으면 null. */
+function stopPoint(near) {
+  return near?.stop && located(near) ? { shortName: stopLabel(near), lat: near.lat, lng: near.lng } : null
+}
+
+/**
+ * 걷는 칸 글 — 「도보 약 170m」. 어디서 어디로는 위아래 점(정류장 · 스팟)이 말하므로 적지 않습니다.
+ * 동사(「걸어가요」)는 뺐고(2026-09-18 사용자 — 「어차피 이미지가 있는데」) 「도보」는 남깁니다 — 스팟에서 시작하는 걷기는
+ * 위에 걷기 원이 없어 회색 점선만으로는 무슨 거리인지 모릅니다(네이버지도도 「도보 240m」).
+ * 값은 두 점 좌표 사이 **직선**입니다. 줄마다 「직선」을 붙였더니 「도보 · 직선」이 한 줄에 붙어 어색해(같은 날 사용자)
+ * 각주(courseDetail.walkNote)가 한 번 말합니다 — 카카오맵 길찾기가 더 긴 거리를 보여줘도 우리 숫자가 틀린 것으로 읽히지 않게.
+ * 걷는 시간은 원천이 없어 적지 않습니다(절대규칙 1). 거리를 모르면 「도보」만 — 값 없이 「약」을 남기지 않습니다(절대규칙 3).
+ */
+function walkText(distanceM) {
+  return distanceM == null ? t('courseDetail.walkSeg') : t('courseDetail.walkSegWithDistance', { dist: formatDistance(distanceM) })
 }
 
 /**
@@ -146,7 +164,7 @@ function StopFerryIcon() {
 
 /**
  * 배 구간 한 줄 — 가는 구간은 「외도상륙+해금강선상관광 · 약 2시간 40분」,
- * 돌아오는 구간은 「도장포 선착장으로 돌아와요」.
+ * 돌아오는 구간은 「배로 돌아와요」(뒤에 선착장 점 「도장포 선착장에서 내려요」가 붙는다 — 2026-09-18).
  *
  * 왕복 한 덩어리라 구간이 둘인데, 원문이 주는 시간은 **왕복 + 섬 체류를 합친 총 소요시간 하나뿐**이라
  * 서버가 그 값을 가는 구간에 싣고 돌아오는 구간은 0분으로 준다(V36). 한 방향을 쪼개 만들지 않습니다.
@@ -158,7 +176,7 @@ function ferryLine(leg) {
   const f = leg.ferry
   if (!f) return null
   return leg.durationMin === 0
-    ? t('courseDetail.ferryReturn', { dock: f.dockName })
+    ? t('courseDetail.ferryReturn')
     : t('courseDetail.ferryLeg', { course: f.legendLabel, time: f.totalText })
 }
 
@@ -231,77 +249,225 @@ function legEstimated(leg) {
   return leg.service ? Boolean(leg.service.estimated) : Boolean(leg.estimated)
 }
 
+/** 걷는 사람 — 내리는 정류장 · 선착장 점 원 안(다음이 걷기). 버스 원의 StopBusIcon 과 같은 14px 입니다(Tabler Icons 「walk」, MIT). */
+function StopWalkIcon() {
+  return (
+    <svg className={styles.alightIcon} width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 4a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M7 21l3 -4 M16 21l-2 -4l-3 -3l1 -6 M6 12l2 -3l4 -1l3 3l3 1"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/** 스팟 좌표(TourAPI)를 아는가 — 모르면 거리도 길찾기도 만들지 않습니다. */
+function located(spot) {
+  return spot?.lat != null && spot?.lng != null
+}
+
 /**
- * 구간 한 줄 — 버스는 `[55] 약 12분`(service), 옛 응답이면 `[55] 40분` · 추정 `[55] 약 12분`,
- * 같은 정류장이면 `같은 정류장 · 바로 이동`. 알약은 버스 노선에만 씁니다 — 배 구간 줄은 글 그대로.
+ * 두 스팟 사이 걷는 거리(m) — 서버 mode SAME_STOP(두 스팟이 같은 정류장을 써서 버스 구간이 없다). 좌표를 하나라도 모르면 null.
+ * 두 스팟 좌표(TourAPI) 사이 **직선**입니다. 전 문구 「같은 정류장 · 바로 이동」은 데이터 말이라 버스를 또 타는지,
+ * 「바로」가 몇 분인지 읽히지 않았습니다(2026-09-18 사용자 지적).
+ *
+ * @param dest 이 구간이 닿는 스팟(타임라인 바로 아래 줄). 구간에 toPoiId 가 없는 옛 응답에서 씁니다.
  */
-function LegRow({ leg, prev, origin }) {
-  const sameStop = leg.mode === 'SAME_STOP'
-  const ferry = leg.mode === 'FERRY' ? ferryLine(leg) : null
-  const bus = ferry || sameStop ? null : busParts(leg)
+function spotDistance(leg, stops, dest) {
+  const byId = (id) => (id == null ? null : stops.find((stop) => stop.poiId === id))
+  const from = byId(leg.fromPoiId)
+  const to = byId(leg.toPoiId) ?? dest
+  return located(from) && located(to) ? distanceMeters(from, to) : null
+}
 
-  // 정류장 줄은 **구간 줄**에 답니다(2026-09-16 사용자 결정). 스팟 이름 아래에 두면 스팟의 부제처럼 읽혀
-  // 「대금교차로」가 무엇인지 알 수 없었습니다 — 여기 있으면 「이 버스와 스팟의 관계」가 됩니다.
-  // 순서는 노선 → 타요 → 내려(2026-09-17). 타는 곳은 앞 구간에서 내린 정류장과 **같은 정류장**이면 다시 적지 않고, 다르면 적습니다 —
-  // 4-09 는 학동삼거리에서 내려 학동에서 탑니다. 예전 규칙(내리는 곳이 있으면 타는 곳은 안 적음)은 이런 타는 곳을 지웠습니다.
-  // 배 구간에는 정류장 줄이 없습니다 — 버스를 타고 내리지 않아 서버가 board·alight 를 주지 않습니다.
-  // 앞에서 내린 정류장과 **이름은 같은데 다른 정류장**이면(거리가 다름 — 신촌 184m 에 내려 176m 에서 탐) 가는 방향을 붙입니다(2026-09-17 밤 사용자 결정).
-  // 반올림하면 둘 다 「약 180m」라 같은 줄이 두 번 나온 것처럼 읽혔습니다. 「길 건너편」은 정류장 번호가 없어 단정하지 않고,
-  // 사실인 **이 버스가 가는 곳**(다음 스팟 또는 고현터미널)만 적습니다.
-  const sameNameOther = Boolean(prev?.alight?.stop) && prev.alight.stop === leg.board?.stop && !isSameStop(prev.alight, leg.board)
-  // 가는 곳 이름은 구간의 toName — 고현터미널로 가는 구간인데 이름이 빠진 옛 응답이면 코스의 출발지 이름(originName).
-  const toward = sameNameOther ? (leg.toName ?? (leg.toPoiId == null ? origin : null)) : null
-  const board = ferry || isSameStop(prev?.alight, leg.board) ? null : stopLine(leg.board, 'board', toward)
-  const alight = ferry ? null : stopLine(leg.alight, 'alight')
-
+/**
+ * 이동 칸 — 점과 점 **사이**(2026-09-18 사용자 결정 「점 = 장소, 사이 = 이동」 — 구글 지도 · 네이버 지도 대중교통 상세).
+ * 레일의 선 모양이 수단을 말합니다 — 버스 굵은 파란 막대 · 걷기 회색 동그라미 점선 · 배 굵은 점선(네이버지도).
+ * 걷기 · 버스 아이콘은 칸이 아니라 정류장 점 원 안(다음 수단)에 두고, 칸 글 옆 아이콘은 배뿐입니다(`icon`).
+ * 같은 날 거친 안: 걷기 · 버스를 레일 위 원 아이콘으로 두니 정류장이 문장 속 단어로 남아(「신촌 정류장에서 내려 걸어가요」)
+ * 글이 길고, 원이 장소인지 이동인지 섞였습니다.
+ */
+function SegmentRow({ line, icon = null, note = null, action = null, children }) {
   return (
     <div className={styles.legRow}>
-      <span className={styles.rail}>
-        {/* 모드마다 선을 가릅니다 — 버스는 실선, 걸어 옮기면 점선, 배는 굵은 점선. */}
-        <span className={ferry ? styles.lineFerry : sameStop ? styles.lineDots : styles.line} />
-      </span>
-      <span className={styles.legLines}>
-        {bus ? (
-          <span className={styles.legBus}>
-            {/* 읽기 도구에는 「55번」 — 「55」만 읽히면 무엇의 번호인지 모릅니다. */}
-            {bus.route && (
-              <span className={styles.routePill}>
-                {bus.route}
-                <span className={styles.srOnly}>{t('courseDetail.routeSuffix')}</span>
-              </span>
-            )}{' '}
-            <span className={styles.legText}>{bus.rest}</span>
-          </span>
-        ) : (
-          <span className={ferry ? styles.ferryText : styles.legText}>
-            {ferry && <StopFerryIcon />}
-            {ferry ?? t('courseDetail.legSameStop')}
-          </span>
-        )}
-        {/* 휴일에 이 구간을 잇는 직행이 어느 노선으로도 없을 때만 — 서버가 시각 미상(UNKNOWN_TIME)과 갈라 줍니다(운행 없음 ≠ 시각 미상). */}
-        {leg.mode === 'BUS' && leg.holidayNoBus && <span className={styles.alight}>{t('courseDetail.holidayNoBus')}</span>}
-        {board && (
-          <span className={styles.alight}>
-            <StopBusIcon />
-            {board}
-          </span>
-        )}
-        {alight && (
-          <span className={styles.alight}>
-            <StopBusIcon />
-            {alight}
-          </span>
-        )}
+      <span className={styles.rail}>{line}</span>
+      <span className={styles.segLines}>
+        <span className={styles.segLine}>
+          {icon}
+          {children}
+          {action}
+        </span>
+        {note && <span className={styles.segNote}>{note}</span>}
       </span>
     </div>
   )
 }
 
 /**
+ * 걷는 칸 「길찾기 ↗」 — 위 점에서 아래 점까지 카카오맵 도보 길찾기(2026-09-18 사용자 결정). 거리 글 바로 뒤에 둔다 —
+ * 오른쪽 끝에 두니 바로 아래 타는 정류장 점의 「시간표 ›」와 세로로 붙어 버튼 두 개가 한 덩어리로 보였다(같은 날 사용자 지적).
+ * 정류장 ↔ 스팟 · 스팟 ↔ 스팟 모두 — 걷는 곳마다 걷는 길이 있어야 한다. 한쪽 좌표라도 모르면 걸지 않는다(추측으로 잇지 않는다).
+ */
+function WalkLink({ from, to }) {
+  const url = walkDirectionsUrl(from, to)
+  if (!url) return null
+  return (
+    <a
+      className={styles.walkLink}
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={t('courseDetail.walkDirectionsA11y', { from: from.shortName ?? from.name, to: to.shortName ?? to.name })}
+    >
+      {t('courseDetail.walkDirections')}
+    </a>
+  )
+}
+
+/**
+ * 정류장 · 선착장 점 — 원 안에 **다음 수단** 아이콘(2026-09-18 사용자 결정 · 네이버지도 「하차」 줄의 걷기 원 · 「승차」 줄의 버스 원).
+ * 타는 정류장은 버스(파란 원) — 다음이 버스다. 내리는 정류장 · 선착장은 걷기(회색 원) — 다음이 걷기다.
+ * 스팟(40px 사진) · 고현터미널(22px 원)과 같은 레일 가운데에 22px 로 선다.
+ *
+ * @param next 'bus' · 'walk'
+ */
+function StationRow({ next, action = null, children }) {
+  return (
+    <div className={styles.stationRow}>
+      <span className={styles.rail}>
+        <span className={next === 'bus' ? `${styles.stationNode} ${styles.stationNodeBus}` : styles.stationNode}>
+          {next === 'bus' ? <StopBusIcon /> : <StopWalkIcon />}
+        </span>
+      </span>
+      <span className={styles.stationName}>{children}</span>
+      {action}
+    </div>
+  )
+}
+
+/**
+ * 「시간표 ›」 — 그 스팟에서 떠나는 버스 · 배 시간표. 버스는 **타는 정류장 점**에, 배와 정류장 점이 없는 구간은 스팟 줄에 둔다
+ * (2026-09-18 — 네이버지도는 「시간표 · 실시간」이 승차 줄에 있다). 읽기 도구에는 스팟 이름까지 — 버튼이 서너 개다.
+ */
+function TimetableButton({ spot, nextPoiId, onOpen }) {
+  return (
+    <button
+      type="button"
+      className={styles.timetableLink}
+      onClick={() => onOpen(spot.poiId, nextPoiId)}
+      aria-label={t('courseDetail.timetableA11y', { name: spot.shortName ?? spot.name })}
+    >
+      {t('courseDetail.timetable')} ›
+    </button>
+  )
+}
+
+/**
+ * 구간 — 움직이는 순서대로 점(장소)과 칸(이동)을 늘어놓습니다(2026-09-18 사용자 결정).
+ *  · 버스: ┆ 도보 약 N 길찾기 ↗ → (🚌) {정류장}에서 타요 시간표 › → ┃ [55] 약 12분 → (🚶) {정류장}에서 내려요 → ┆ 도보 약 N 길찾기 ↗
+ *  · 두 스팟 사이 걷기(SAME_STOP): ┆ 도보 약 110m 길찾기 ↗
+ *  · 배: ╏ 🚢 외도상륙+해금강선상관광 · 약 2시간 40분 / ╏ 🚢 배로 돌아와요 → (🚶) 도장포 선착장에서 내려요
+ */
+function LegRow({ leg, prev, origin, stops = [], dest = null, onOpenTimetable }) {
+  const byId = (id) => (id == null ? null : stops.find((stop) => stop.poiId === id))
+  const fromSpot = byId(leg.fromPoiId)
+  const walkSeg = (distanceM, from, to) => (
+    <SegmentRow line={<span className={styles.lineDots} />} action={from && to ? <WalkLink from={from} to={to} /> : null}>
+      <span className={styles.legText}>{walkText(distanceM)}</span>
+    </SegmentRow>
+  )
+
+  if (leg.mode === 'SAME_STOP') return walkSeg(spotDistance(leg, stops, dest), fromSpot, byId(leg.toPoiId) ?? dest)
+
+  const ferry = leg.mode === 'FERRY' ? ferryLine(leg) : null
+  if (ferry) {
+    const ferrySeg = (
+      <SegmentRow line={<span className={styles.lineFerry} />} icon={<StopFerryIcon />}>
+        <span className={styles.legText}>{ferry}</span>
+      </SegmentRow>
+    )
+    // 돌아오는 배(0분)는 떠난 선착장에 내려준다 — 그 선착장이 점이다.
+    return leg.durationMin === 0 ? (
+      <>
+        {ferrySeg}
+        <StationRow next="walk">{t('courseDetail.dockAlight', { dock: leg.ferry.dockName })}</StationRow>
+      </>
+    ) : (
+      ferrySeg
+    )
+  }
+
+  const bus = busParts(leg)
+  // 앞에서 내린 정류장과 **이름은 같은데 다른 정류장**이면(거리가 다름 — 신촌 184m 에 내려 176m 에서 탐) 가는 방향을 붙입니다(2026-09-17 밤 사용자 결정).
+  // 반올림하면 둘 다 「약 180m」라 같은 줄이 두 번 나온 것처럼 읽혔습니다. 「길 건너편」은 정류장 번호가 없어 단정하지 않고,
+  // 사실인 **이 버스가 가는 곳**(다음 스팟 또는 고현터미널)만 적습니다.
+  // 내린 정류장으로 돌아와 다시 탈 때(이름 · 거리가 같다)도 점을 찍습니다 — 스팟에서 그 정류장까지 다시 걸어갑니다(2026-09-18).
+  const sameNameOther = Boolean(prev?.alight?.stop) && prev.alight.stop === leg.board?.stop && !isSameStop(prev.alight, leg.board)
+  // 가는 곳 이름은 구간의 toName — 고현터미널로 가는 구간인데 이름이 빠진 옛 응답이면 코스의 출발지 이름(originName).
+  const toward = sameNameOther ? (leg.toName ?? (leg.toPoiId == null ? origin : null)) : null
+  const board = stationText(leg.board, 'board', toward)
+  const alight = stationText(leg.alight, 'alight')
+
+  return (
+    <>
+      {board && (
+        <>
+          {walkSeg(leg.board.distanceM, fromSpot, stopPoint(leg.board))}
+          <StationRow
+            next="bus"
+            action={fromSpot && <TimetableButton spot={fromSpot} nextPoiId={leg.toPoiId ?? null} onOpen={onOpenTimetable} />}
+          >
+            {board}
+          </StationRow>
+        </>
+      )}
+      <SegmentRow
+        line={<span className={styles.line} />}
+        // 휴일에 이 구간을 잇는 직행이 어느 노선으로도 없을 때만 — 서버가 시각 미상(UNKNOWN_TIME)과 갈라 줍니다(운행 없음 ≠ 시각 미상).
+        note={leg.mode === 'BUS' && leg.holidayNoBus ? t('courseDetail.holidayNoBus') : null}
+      >
+        <span className={styles.legBus}>
+          {/* 읽기 도구에는 「55번」 — 「55」만 읽히면 무엇의 번호인지 모릅니다. */}
+          {bus.route && (
+            <span className={styles.routePill}>
+              {bus.route}
+              <span className={styles.srOnly}>{t('courseDetail.routeSuffix')}</span>
+            </span>
+          )}{' '}
+          <span className={styles.legText}>{bus.rest}</span>
+        </span>
+      </SegmentRow>
+      {alight && (
+        <>
+          <StationRow next="walk">{alight}</StationRow>
+          {walkSeg(leg.alight.distanceM, stopPoint(leg.alight), dest)}
+        </>
+      )}
+    </>
+  )
+}
+
+/**
+ * 걷는 칸 「길찾기 ↗」의 주소 — 위 점(스팟 · 정류장)에서 아래 점까지 카카오맵 도보 길찾기. 좌표를 하나라도 모르면 null.
+ * 형식은 타는 곳 카드(BoardingMap directionsUrl)와 같은 `/link/by/walk/출발/도착` — 걷는 길은 카카오가 그립니다(기준문서 §6 배제 표).
+ */
+function walkDirectionsUrl(from, to) {
+  if (!located(from) || !located(to)) return null
+  const point = (spot) => `${encodeURIComponent(spot.shortName ?? spot.name)},${spot.lat},${spot.lng}`
+  return `https://map.kakao.com/link/by/walk/${point(from)}/${point(to)}`
+}
+
+/**
  * 스팟 줄 — 40px 둥근 사진(왼쪽 위에 20px 번호) + 이름, 오른쪽 끝 「시간표 ›」(547:247).
  * `sub` 가 있으면 이름 아래 한 줄이 붙습니다 — 지금은 배가 정한 체류 시간뿐입니다.
+ *
+ * @param showTimetable 스팟 줄에 「시간표 ›」를 두는가 — 다음 구간이 버스이고 타는 정류장 점이 있으면 그 점이 갖고(2026-09-18),
+ *   다음이 걷기면 없다(버스를 또 타는 것처럼 보였다). 배로 떠나거나 정류장 점이 없는 구간만 스팟 줄에 둔다.
  */
-function StopRow({ stop, sub, nextPoiId, onOpenTimetable }) {
+function StopRow({ stop, sub, nextPoiId, onOpenTimetable, showTimetable = true }) {
   return (
     <div className={sub ? styles.stopRowWithSub : styles.stopRow} data-stop={stop.poiId}>
       <span className={styles.rail}>
@@ -315,15 +481,7 @@ function StopRow({ stop, sub, nextPoiId, onOpenTimetable }) {
         <span className={styles.stopName}>{stop.shortName ?? stop.name}</span>
         {sub && <span className={styles.stopSub}>{sub}</span>}
       </span>
-      {/* 읽기 도구에는 스팟 이름까지 — 「시간표」 버튼이 서너 개라 이름이 없으면 어느 스팟인지 모릅니다. */}
-      <button
-        type="button"
-        className={styles.timetableLink}
-        onClick={() => onOpenTimetable(stop.poiId, nextPoiId)}
-        aria-label={t('courseDetail.timetableA11y', { name: stop.shortName ?? stop.name })}
-      >
-        {t('courseDetail.timetable')} ›
-      </button>
+      {showTimetable && <TimetableButton spot={stop} nextPoiId={nextPoiId} onOpen={onOpenTimetable} />}
     </div>
   )
 }
@@ -548,7 +706,14 @@ export default function CourseDetailPage() {
                     const walkNext = next?.mode === 'SAME_STOP' || next?.mode === 'FERRY' || next?.toPoiId === null
                     return (
                       <Fragment key={leg.seq}>
-                        <LegRow leg={leg} prev={legs[i - 1]} origin={course.originName} />
+                        <LegRow
+                          leg={leg}
+                          prev={legs[i - 1]}
+                          origin={course.originName}
+                          stops={stops}
+                          dest={stop}
+                          onOpenTimetable={openTimetable}
+                        />
                         {viaTerminal && <TerminalRow label={t('courseDetail.viaNode', { origin })} note={t('courseDetail.viaNote')} />}
                         {stop && (
                           <StopRow
@@ -557,6 +722,10 @@ export default function CourseDetailPage() {
                             sub={stayLine(leg)}
                             nextPoiId={walkNext ? null : stops[si]?.poiId}
                             onOpenTimetable={openTimetable}
+                            // 다음이 걷기면 없음, 다음 버스에 타는 정류장 점이 있으면 그 점이 갖는다
+                            showTimetable={
+                              next != null && next.mode !== 'SAME_STOP' && !(next.mode === 'BUS' && next.board?.stop && next.fromPoiId != null)
+                            }
                           />
                         )}
                       </Fragment>
@@ -568,6 +737,7 @@ export default function CourseDetailPage() {
 
               <div className={styles.notes}>
                 {/* 걷는 시간은 어느 원문에도 없다 — 없는 것을 없다고 말한다(2026-09-16 사용자 결정). */}
+                {/* 걷는 칸의 「도보 약 N」은 직선거리라 각주가 한 번 말하고 걷는 길은 「길찾기 ↗」로 보냅니다(2026-09-18). */}
                 <p className={styles.estimatedNote}>{t('courseDetail.walkNote')}</p>
                 {hasEstimate && <p className={styles.estimatedNote}>{t('courseDetail.estimatedNote')}</p>}
                 <p className={styles.note}>

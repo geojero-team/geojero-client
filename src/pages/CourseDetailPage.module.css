@@ -201,12 +201,14 @@
   min-height: 28px;
 }
 
+/* 버스 칸 — 굵은 막대(2026-09-18 · 네이버지도 노선 막대). 걷기 동그라미 점선 · 배 굵은 점선과 한눈에 갈린다. */
 .line {
   display: block;
-  width: 2px;
+  width: 4px;
   min-height: 28px;
   height: 100%;
-  background: var(--map-sea);
+  border-radius: 2px;
+  background: var(--brand-surface);
 }
 
 /* 배 구간 — **굵은 점선**. 모드마다 선을 가르는 것은 교통 앱의 표준입니다(Transit 앱: 버스 굵은 실선 / 도보 점선).
@@ -221,44 +223,57 @@
   background-size: 3px 8px;
 }
 
-/* 같은 정류장(버스를 타지 않음) — 점선. 탄 구간의 선과 갈라 보여야 합니다. */
+/* 걷는 칸 — 회색 동그라미 점선(2026-09-18 · 네이버지도 도보 줄). 버스 막대 · 배 굵은 점선과 모양으로 갈린다. */
 .lineDots {
   display: block;
-  width: 2px;
+  width: 6px;
   min-height: 28px;
   height: 100%;
-  background-image: linear-gradient(var(--map-sea) 50%, transparent 50%);
-  background-size: 2px 6px;
+  background-image: radial-gradient(circle at 3px 3px, var(--text-disabled) 2.5px, transparent 3px);
+  background-size: 6px 11px;
+  background-position: 0 4px;
 }
 
-/* 노선 줄 「[55] 약 40분」 + 정류장 줄(「{정류장}에서 타요」 · 「{정류장}에서 내려 직선 약 210m」).
-   09-14 그림 값(위아래 4)은 구간이 **한 줄**이던 때 값이라, 2026-09-16 에 정류장 줄이 붙으면서 빽빽해졌습니다(사용자 지적).
-   넓히는 자리를 여기로 고른 이유: 스팟 줄(위아래 5)을 건드리면 사진과 하늘색 선 사이 틈(5px)까지 같이 벌어져 선이 끊겨 보입니다.
-   여기를 넓히면 구간 칸이 커지는 만큼 **선이 길어져** 틈은 5px 그대로입니다.
-
-   **위 4 · 아래 10 으로 어긋나게 둡니다**(사용자 결정 C안). 구간은 **위 스팟에서 나가는 방법**이라
-   그 스팟에 붙고, 아래 스팟과는 떨어집니다 — 스팟마다 「여기 도착 / 여기서 나가는 버스」로 읽힙니다.
-   위아래를 같이 10 으로 두면 구간이 어느 스팟 것인지 화면이 말하지 않습니다.
-   위를 2 까지 줄이면 이름에 붙어, 09-16 에 이 줄을 구간으로 옮긴 이유(스팟의 부제처럼 읽힘)로 되돌아갑니다.
-   구간 안 줄 사이(노선 · 타요 · 내려)는 2px → **6px**(2026-09-17 사용자 지적 — 「두 줄 사이 간격 너무너무 좁은 거 같아」).
-   구간 칸 **안**의 틈이라 칸이 커지는 만큼 선이 길어지고, 스팟 사진과 선 사이 틈 5px · 위 4 · 아래 10 은 그대로입니다. */
-.legLines {
+/* 이동 칸(2026-09-18 「점 = 장소, 사이 = 이동」) — 선 옆에 수단 아이콘 + 글. 위아래 16 이라 점과 점 사이에 여유가 있습니다
+   (레일 위 원 아이콘으로 단계를 나눴을 때 10 은 「간격이 너무너무너무 좁아」 — 같은 날 사용자). */
+.segLines {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 6px;
-  padding: 4px 0 10px;
+  gap: 4px;
+  padding: 16px 0;
 }
 
-/* 정류장 줄 13/18 secondary + 14px 버스 아이콘 — 이름만으로는 정류장인지 모릅니다(2026-09-16).
-   좁은 폰에서 두 줄이 되면 아이콘은 **첫 줄에** 섭니다 — 가운데로 맞추면 두 줄 사이에 떠 있었습니다(2026-09-17 320 폭 실측).
-   줄은 띄어쓰기에서만 바뀌고, 「직선 약 380m」는 붙는 공백이라 그 앞에서만 갈립니다(ko.js alightWithDistance). */
-.alight {
+/* 아이콘 + 글 한 줄 — 글이 두 줄이 되면 아이콘은 첫 줄에 섭니다(2026-09-17 320 폭 실측). */
+.segLine {
   display: flex;
   align-items: flex-start;
-  gap: 5px;
+  gap: 6px;
+  min-width: 0;
+}
+
+.segLine > .alightIcon {
+  margin-top: 2px;
+}
+
+/* 걷는 칸 「길찾기 ↗」 — 거리 글 바로 뒤(오른쪽 끝의 「시간표 ›」와 세로로 붙지 않게). 글과 같은 13/18, 링크 색. */
+.walkLink {
+  flex: none;
+  margin-left: 4px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--brand-strong);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* 이동 칸 아래 한 줄(휴일 안내) — 글 시작을 아이콘(14) + 틈(6) 뒤에 맞춥니다. */
+.segNote {
+  padding-left: 20px;
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 500;
@@ -267,15 +282,52 @@
   word-break: keep-all;
 }
 
+/* 정류장 · 선착장 점 줄 — 스팟 · 터미널 줄과 같은 위아래 5, 레일 가운데 22px 원(안에 다음 수단 아이콘). */
+.stationRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 0;
+}
+
+.stationNode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--text-disabled);
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+  color: var(--text-secondary);
+}
+
+/* 타는 정류장 — 다음이 버스라 버스 막대와 같은 파랑 */
+.stationNodeBus {
+  border-color: var(--brand-strong);
+  color: var(--brand-strong);
+}
+
+.stationNode .alightIcon {
+  color: inherit;
+}
+
+.stationName {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
 .alightIcon {
   flex: none;
   display: block;
   color: var(--text-secondary);
-}
-
-/* 14px 아이콘을 18px 첫 줄 가운데로. 배 구간 첫 줄(.ferryText)의 아이콘에는 걸지 않습니다. */
-.alight .alightIcon {
-  margin-top: 2px;
 }
 
 /* terminal-bus 22px 칸 — 자산은 그림자까지 26.125px 박스라 22px 원 기준으로 바깥에 걸칩니다(Figma inset -6.25% / -9.38%). */
@@ -382,11 +434,13 @@
 }
 
 /* 「시간표 ›」 13 Medium, 줄 오른쪽 끝 */
+/* 걸어가기 전 스팟의 「길찾기 ↗」(링크)도 같은 모양 — 링크 밑줄을 지워 「시간표 ›」 버튼과 같게 봅니다(2026-09-18). */
 .timetableLink {
   flex: none;
   padding: 4px 0;
   border: 0;
   background: transparent;
+  text-decoration: none;
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 500;
@@ -395,21 +449,7 @@
   cursor: pointer;
 }
 
-/* 배 구간 첫 줄 — 「외도상륙+해금강선상관광 · 약 2시간 40분」. 버스의 「55번 · 40분」과 같은 크기·색이라
-   줄이 늘지 않고 리듬이 같습니다. 다만 유람선 코스 이름이 길어 줄바꿈을 허용합니다(버스는 nowrap). */
-.ferryText {
-  display: flex;
-  align-items: flex-start;
-  gap: 5px;
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 18px;
-  color: var(--text-secondary);
-  word-break: keep-all;
-}
-
-/* 구간 글 「약 40분」 · 「같은 정류장 · 바로 이동」 13 Medium. 2026-09-17 횟수가 붙으며 한 줄 고정(nowrap)을 풀었고,
+/* 구간 글 「약 40분」 13 Medium. 2026-09-17 횟수가 붙으며 한 줄 고정(nowrap)을 풀었고,
    횟수를 뺀 뒤(같은 날 사용자 결정)에도 그대로 둡니다 — 줄은 띄어쓰기에서만 바뀝니다(keep-all). */
 .legText {
   display: block;
