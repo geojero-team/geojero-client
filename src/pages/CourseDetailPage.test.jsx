@@ -230,8 +230,13 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     renderCourse(101)
 
     expect(await screen.findByRole('heading', { level: 1, name: '학동몽돌해변에서 바람의언덕까지' })).toBeInTheDocument()
-    // 체인은 이름마다 nowrap 조각이라 한 문단의 textContent 로 봅니다.
-    expect(screen.getByText((_, el) => el.tagName === 'P' && el.textContent === '학동몽돌해변 · 해금강 · 바람의언덕')).toBeInTheDocument()
+    /* 회색 스팟 체인 줄은 2026-09-18 뺐습니다(사용자 결정) — 아래 구간 고르기 칩이 같은 이름을 담고,
+       거기서는 누르면 그 구간만 볼 수 있습니다. */
+    expect(screen.queryByText((_, el) => el.tagName === 'P' && el.textContent === '학동몽돌해변 · 해금강 · 바람의언덕')).not.toBeInTheDocument()
+    for (const name of ['학동몽돌해변', '해금강', '바람의언덕']) {
+      expect(screen.getByRole('button', { name })).toBeInTheDocument()
+    }
+    expect(screen.getByRole('button', { name: '전체 경로' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '뒤로' })).toHaveTextContent('코스')
     // 머리 「평일」 알약은 뺐다(2026-09-17 사용자 결정) — 확인용 편 사슬의 요일이라 「평일용 코스」로 읽혔다.
     // 요일 사정은 구간 줄(「평일 N회 · 휴일 M회」 · 「휴일엔 이 구간 버스가 없어요」)이 말한다.
@@ -243,7 +248,8 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     expect(screen.queryByText('고현터미널에서 출발해 고현터미널로 돌아와요')).not.toBeInTheDocument()
     expect(screen.getByText('버스 약 1시간 54분')).toBeInTheDocument()
     // 「구간」은 방문하는 곳 수로 읽혔다(왼쪽 「남부권 · 3곳」과 나란히 보인다) — 버스 타는 횟수로 적는다(2026-09-16 사용자 결정).
-    expect(screen.getByText('버스 4번')).toBeInTheDocument()
+    // 「버스 4번」은 노선 번호로 읽혀 2026-09-18 「버스 탑승 4번」으로 바꿨다(사용자 결정).
+    expect(screen.getByText('버스 탑승 4번')).toBeInTheDocument()
     expect(screen.queryByText('4구간')).not.toBeInTheDocument()
     // 코스 name 은 줄임말(「학동」 · 「기성관」)이라 제목으로 쓰지 않는다 — TourAPI 정본은 shortName 쪽이다
     expect(screen.queryByText('학동 · 해금강 · 바람의언덕')).not.toBeInTheDocument()
@@ -321,8 +327,8 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: '환승 없이 남부 9경 세 곳' })).toBeInTheDocument()
     expect(screen.queryByText('학동몽돌해변에서 바람의언덕까지')).not.toBeInTheDocument()
-    // 체인 부제는 그대로 — 제목이 사람 말이 되면 가운데 스팟은 여기서만 보입니다
-    expect(screen.getByText((_, el) => el.tagName === 'P' && el.textContent === '학동몽돌해변 · 해금강 · 바람의언덕')).toBeInTheDocument()
+    // 가운데 스팟(해금강)은 이제 구간 고르기 칩에서 보입니다 — 체인 줄은 뺐습니다(2026-09-18).
+    expect(screen.getByRole('button', { name: '해금강' })).toBeInTheDocument()
   })
 
   it('제목 규칙은 두 곳 이상일 때만 — 한 곳이면 「해금강에서 해금강까지」 대신 이름 그대로', async () => {
@@ -521,11 +527,11 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     expect(await screen.findByText(/버스 시간에는 걷는 시간이 빠져 있어요/)).toBeInTheDocument()
   })
 
-  it('칩은 버스를 타는 구간만 센다 — 같은 정류장으로 걸어가는 구간은 빼고 「버스 3번」(서버 legCount 는 4)', async () => {
+  it('칩은 버스를 타는 구간만 센다 — 같은 정류장으로 걸어가는 구간은 빼고 「버스 탑승 3번」(서버 legCount 는 4)', async () => {
     renderCourse(110)
 
-    expect(await screen.findByText('버스 3번')).toBeInTheDocument()
-    expect(screen.queryByText('버스 4번')).not.toBeInTheDocument()
+    expect(await screen.findByText('버스 탑승 3번')).toBeInTheDocument()
+    expect(screen.queryByText('버스 탑승 4번')).not.toBeInTheDocument()
   })
 
   it('두 스팟 사이 걷는 칸에 「길찾기 ↗」 — 두 스팟 좌표로 카카오맵 도보 길찾기, 스팟 줄에는 버튼이 없다(2026-09-18 사용자 결정)', async () => {
@@ -683,8 +689,9 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     // 「2시간 머물러요」는 그 스팟에 대한 것이라 이름 아래가 맞다 — Tripadvisor·Booking 투어도 그렇다.
     // 이름이 바로 위에 있으니 「외도보타니아에」를 되풀이하지 않는다.
     // 「입장료 별도」는 상품 원문 코스명에 든 사실이라 화면에 남아야 한다(부록 G).
-    const name = await screen.findByText('외도보타니아')
-    const row = name.closest('[data-stop]')
+    // 이름은 구간 고르기 칩에도 있습니다(2026-09-18) — 타임라인 줄에 있는 쪽만 고릅니다.
+    const names = await screen.findAllByText('외도보타니아')
+    const row = names.map((el) => el.closest('[data-stop]')).find(Boolean)
     expect(within(row).getByText('2시간 머물러요 · 입장료 별도')).toBeInTheDocument()
   })
 
@@ -737,7 +744,7 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     renderCourse(124)
 
     // 구간 다섯 중 버스는 둘(고현터미널 → 도장포 · 바람의언덕 → 고현터미널)이다.
-    await screen.findByText('버스 2번')
+    await screen.findByText('버스 탑승 2번')
   })
 
   it('배가 없는 코스에는 배 칩을 그리지 않는다', async () => {
@@ -847,7 +854,7 @@ describe('CourseDetailPage — 되짚기: 가운데 고현터미널 줄(코스�
 
     await screen.findByText(VIA)
     expect(walkBefore(screen.getByText('학동 정류장에서 타요'))).toBe('도보 약 310m')
-    expect(screen.getByText('버스 6번')).toBeInTheDocument()
+    expect(screen.getByText('버스 탑승 6번')).toBeInTheDocument()
   })
 
   it('터미널을 거치는 스팟의 「시간표 ›」는 다음 스팟을 넘기지 않는다 — 바로 가는 버스가 없어 「운행 없음」이 뜬다', async () => {
@@ -1109,7 +1116,7 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     order.slice(1).forEach((el, i) => expect(order[i].compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
     expect(screen.getAllByText('휴일엔 이 구간 버스가 없어요')).toHaveLength(1)
     expect(screen.queryByText(busLine(/^100번/))).not.toBeInTheDocument()
-    expect(screen.getByText('버스 6번')).toBeInTheDocument()
+    expect(screen.getByText('버스 탑승 6번')).toBeInTheDocument()
     expect(screen.getByText(/적힌 것보다 짧습니다/)).toBeInTheDocument()
   })
 
@@ -1133,7 +1140,7 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
     // 배를 타는 스팟의 「시간표 ›」는 배 시간표를 연다 — 걷기 전 스팟이 아니라 남는다
     expect(screen.getByRole('button', { name: '도장포유람선 시간표' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '외도보타니아 시간표' })).toBeInTheDocument()
-    expect(screen.getByText('버스 2번')).toBeInTheDocument()
+    expect(screen.getByText('버스 탑승 2번')).toBeInTheDocument()
   })
 })
 
@@ -1151,5 +1158,41 @@ describe('CourseDetailPage — 거제시 추천 관광코스 안내 줄을 두�
     expect(screen.queryByText(/거제시 추천 관광코스/)).not.toBeInTheDocument()
     expect(screen.queryByText(/곳 중/)).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /원문/ })).not.toBeInTheDocument()
+  })
+})
+
+/* 구간 고르기(2026-09-18 사용자 결정) — 코스가 길어 스크롤이 깊습니다. 「전체 경로」와 스팟 이름 칩을 두고,
+   스팟을 고르면 거기 **닿기까지의 구간**만 남깁니다. 되짚기가 있으면 두 구간이 한 묶음으로 옵니다. */
+describe('CourseDetailPage — 구간 고르기', () => {
+  const depart = t('courseDetail.departNode', { origin: '고현터미널' })
+  const arrive = t('courseDetail.arriveNode', { origin: '고현터미널' })
+
+  it('고르면 그 구간만 남고, 전체 경로로 되돌릴 수 있다', async () => {
+    const user = userEvent.setup()
+    renderCourse(101)
+
+    // 전체 경로 — 출발 · 도착 줄이 모두 있습니다
+    expect(await screen.findByText(depart)).toBeInTheDocument()
+    expect(screen.getByText(arrive)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '해금강' }))
+
+    // 어디서 어디까지인지 한 줄로 — 시작점(앞 스팟)이 타임라인에 없기 때문입니다
+    expect(screen.getByText('학동몽돌해변 → 해금강')).toBeInTheDocument()
+    expect(screen.queryByText(depart)).not.toBeInTheDocument()
+    expect(screen.queryByText(arrive)).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '전체 경로' }))
+    expect(screen.getByText(depart)).toBeInTheDocument()
+    expect(screen.queryByText('학동몽돌해변 → 해금강')).not.toBeInTheDocument()
+  })
+
+  it('첫 스팟을 고르면 고현터미널에서 시작한다', async () => {
+    const user = userEvent.setup()
+    renderCourse(101)
+
+    await user.click(await screen.findByRole('button', { name: '학동몽돌해변' }))
+
+    expect(screen.getByText('고현터미널 → 학동몽돌해변')).toBeInTheDocument()
   })
 })

@@ -406,7 +406,14 @@ export default {
   'courseDetail.busChip': '버스 약 {time}',
   // 「구간」은 방문하는 곳 수로 읽혔다 — 왼쪽 「남부권 · 3곳」과 나란히 보여 곳 수를 두 번 말하는 것처럼 됐다(2026-09-16 사용자 결정).
   // 타임라인의 버스 줄 개수와 같은 값이라 눈으로 맞춰볼 수 있다. 걸어서 옮기는 구간(같은 정류장)은 세지 않는다.
-  'courseDetail.legChip': '버스 {n}번',
+  // 「버스 4번」은 노선 번호(4번 버스)로 읽혀서 「탑승」을 넣습니다(2026-09-18 사용자 결정).
+  'courseDetail.legChip': '버스 탑승 {n}번',
+
+  /* 구간 고르기(2026-09-18 사용자 결정) — 코스가 길어 스크롤이 깊습니다. 「전체 경로」와 스팟 이름을 칩으로 두고,
+     스팟을 고르면 **그 스팟에 닿는 구간 하나만** 남깁니다(고현터미널 → 학동몽돌해변, 학동몽돌해변 → 바람의언덕 …). */
+  'courseDetail.segmentAll': '전체 경로',
+  'courseDetail.segmentAria': '볼 구간 고르기',
+  'courseDetail.segmentTo': '{from} → {to}',
   'courseDetail.departNode': '{origin} 출발',
   'courseDetail.arriveNode': '{origin} 도착',
   // 되짚기(2026-09-17 코스재설계 §3-3) — 가운데 구간이 고현터미널로 갔다가 다시 나옵니다(구간 둘: A → 터미널 · 터미널 → B).

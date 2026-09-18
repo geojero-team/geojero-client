@@ -506,3 +506,47 @@
   color: var(--status-no, var(--text-primary));
   word-break: keep-all;
 }
+
+/* 구간 고르기 줄(2026-09-18) — 칩 줄 바로 아래. 분류 칩(CategoryBar)과 같은 방식으로 가로 스크롤합니다:
+   칸은 글자만큼만 차지하고 넘치면 옆으로 흐릅니다. 화면 가장자리까지 흘려 「더 있다」가 보이게 합니다. */
+.segments {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  margin: 12px -20px 0;
+  padding: 0 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.segments::-webkit-scrollbar {
+  display: none;
+}
+
+.segment {
+  flex: none;
+  padding: 7px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segmentOn {
+  border-color: var(--brand-strong);
+  background: var(--brand-tint);
+  color: var(--brand-strong);
+  font-weight: 700;
+}
+
+/* 고른 구간의 제목 — 「고현터미널 → 학동몽돌해변」. 타임라인 바로 위에서 지금 무엇을 보고 있는지 말합니다. */
+.segmentTitle {
+  margin: 16px 0 -8px;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+  word-break: keep-all;
+}

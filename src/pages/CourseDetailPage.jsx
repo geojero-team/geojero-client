@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Button from '../components/Button'
 import CourseMiniMap from '../components/CourseMiniMap'
@@ -9,6 +9,7 @@ import { api, beginKakaoLoginTo } from '../lib/api'
 import { courseImage, onImageError } from '../lib/courseImage'
 import { formatDistance } from '../lib/format'
 import { courseTitle } from '../lib/courseTitle'
+import { fitOneLine } from '../lib/fitOneLine'
 import { distanceMeters } from '../lib/geo'
 import { getToken } from '../lib/session'
 import { formatDuration } from '../lib/format'
@@ -477,6 +478,22 @@ export default function CourseDetailPage() {
   const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
   const [sheetOpen, setSheetOpen] = useState(false)
   const [saveState, setSaveState] = useState({ status: 'idle', error: '' })
+  /* 구간 고르기(2026-09-18 사용자 결정) — null 이면 전체 경로, 숫자면 그 스팟에 닿는 구간만 봅니다.
+     코스가 길어 스크롤이 깊다는 것이 이유입니다. 주소에 싣지 않습니다 — 다시 들어오면 전체부터 보는 편이 예측하기 쉽습니다. */
+  const [segment, setSegment] = useState(null)
+
+  /* 제목은 **한 줄이 먼저입니다**(2026-09-18 사용자 결정) — 넘치면 그만큼만 글자를 줄입니다.
+     「파도가 몽돌을 굴리는 소리 따라」가 마지막 줄에 두 글자만 남기고 넘어가던 것을 없앱니다.
+     DOM 을 직접 고칩니다(상태를 두지 않습니다). 글꼴이 늦게 오면 폭이 달라지므로 그때 한 번 더 재고,
+     화면 폭이 바뀔 때도 다시 잽니다. */
+  const titleRef = useRef(null)
+  useLayoutEffect(() => {
+    const fit = () => fitOneLine(titleRef.current, { max: 30, min: 22 })
+    fit()
+    document.fonts?.ready?.then(fit)
+    window.addEventListener('resize', fit)
+    return () => window.removeEventListener('resize', fit)
+  })
   // 이미 내 일정에 있는 코스인지 — 있으면 저장 버튼 대신 「이미 저장한 코스예요」(2026-09-15 사용자 요청: 중복 저장 막기).
   const [alreadySaved, setAlreadySaved] = useState(false)
 
@@ -621,11 +638,14 @@ export default function CourseDetailPage() {
           {/* 권역만(/api/pois 에서 붙인다 — 여러 권역이면 방문 순서대로 한 번씩 「남부권·동부권」). 곳 수(「· 4곳」)는 2026-09-18 뺐다 —
               사용자 결정. 스팟 체인과 타임라인 번호가 이미 센다. 권역을 모르면 줄을 그리지 않는다(곳 수만 남기지 않는다). */}
           {hasLegs && course.regions && <p className={styles.meta}>{course.regions}</p>}
-          <h1 className={styles.title}>{hasLegs ? title : course.name}</h1>
+          <h1 ref={titleRef} className={styles.title}>
+            {hasLegs ? title : course.name}
+          </h1>
 
           {hasLegs ? (
             <>
-              <p className={styles.subtitle}>{chain}</p>
+              {/* 회색 스팟 이름 줄(체인)은 2026-09-18 뺐습니다 — 아래 구간 고르기 칩이 같은 이름을 담고,
+                  거기서는 누를 수도 있습니다(사용자 결정). */}
 
               {/* 거제시 추천 관광코스 안내 줄(「당일코스」 여섯 곳 중 네 곳 · 원문 보기 ↗)은 2026-09-18 뺐다 — 사용자: 「너무 번잡해 보인다」.
                   어느 축으로 고른 코스인지는 카드 배지가 말한다. */}
@@ -644,8 +664,42 @@ export default function CourseDetailPage() {
                 <span className={styles.chipLegs}>{t('courseDetail.legChip', { n: legs.filter((leg) => leg.mode === 'BUS').length })}</span>
               </div>
 
+              {/* 구간 고르기 — 「전체 경로」와 스팟 이름들. 스팟을 고르면 거기 **닿기까지의 구간**만 남습니다.
+                  되짚기가 있는 스팟은 구간이 둘입니다(해금강 → 고현터미널 → 조선해양문화관) — 묶어서 함께 보여줍니다. */}
+              <div className={styles.segments} role="group" aria-label={t('courseDetail.segmentAria')}>
+                <button
+                  type="button"
+                  className={segment == null ? `${styles.segment} ${styles.segmentOn}` : styles.segment}
+                  aria-pressed={segment == null}
+                  onClick={() => setSegment(null)}
+                >
+                  {t('courseDetail.segmentAll')}
+                </button>
+                {names.map((name, i) => (
+                  <button
+                    key={`${i}-${name}`}
+                    type="button"
+                    className={segment === i ? `${styles.segment} ${styles.segmentOn}` : styles.segment}
+                    aria-pressed={segment === i}
+                    onClick={() => setSegment(i)}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+
+              {/* 고른 구간이면 어디서 어디까지인지 한 줄로 — 시작점(앞 스팟 · 고현터미널)이 타임라인에 없기 때문입니다. */}
+              {segment != null && (
+                <p className={styles.segmentTitle}>
+                  {t('courseDetail.segmentTo', {
+                    from: segment === 0 ? origin : names[segment - 1],
+                    to: names[segment],
+                  })}
+                </p>
+              )}
+
               <div className={styles.timeline}>
-                <TerminalRow label={t('courseDetail.departNode', { origin })} />
+                {segment == null && <TerminalRow label={t('courseDetail.departNode', { origin })} />}
                 {/*
                   구간과 스팟이 번갈아 옵니다 — 구간이 스팟보다 하나 많습니다.
                   ⚠️ **배는 예외입니다.** 배는 떠난 선착장으로 돌아오므로 왕복 한 번마다 구간이 하나 더 있는데,
@@ -658,10 +712,17 @@ export default function CourseDetailPage() {
                 */}
                 {(() => {
                   let si = 0
+                  // 구간 번호 — 그 구간이 어느 스팟에 닿는지(0부터). 되짚기 구간은 뒤 스팟과 같은 번호를 갖고,
+                  // 마지막 복귀 구간은 어느 스팟에도 닿지 않아 번호가 없습니다(전체 경로에서만 보입니다).
+                  let seg = 0
                   return legs.map((leg, i) => {
                     const ferryReturn = leg.mode === 'FERRY' && leg.durationMin === 0
                     const viaTerminal = i < legs.length - 1 && leg.toPoiId === null
+                    const lastLeg = i === legs.length - 1
                     const stop = ferryReturn || viaTerminal ? null : stops[si++]
+                    const mySeg = lastLeg ? null : seg
+                    if (!ferryReturn && !viaTerminal && !lastLeg) seg += 1
+                    if (segment != null && mySeg !== segment) return null
                     // 다음 스팟을 목적지로 넘겨 그 스팟 시간표가 「여기 → 다음」을 열게 합니다.
                     // 같은 정류장·배로 이어지는 구간, 고현터미널로 가는 구간에는 넘기지 않습니다 — 버스로 바로 가는 구간이 아니라
                     // 서버가 NO_SERVICE 를 줍니다. 터미널로 가는 구간이면 목적지 없이 열어야 「여기 → 고현터미널」이 열려 그 구간과 맞습니다.
@@ -695,7 +756,7 @@ export default function CourseDetailPage() {
                     )
                   })
                 })()}
-                <TerminalRow label={t('courseDetail.arriveNode', { origin })} />
+                {segment == null && <TerminalRow label={t('courseDetail.arriveNode', { origin })} />}
               </div>
 
               <div className={styles.notes}>
