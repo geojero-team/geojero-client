@@ -237,7 +237,9 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     // 요일 사정은 구간 줄(「평일 N회 · 휴일 M회」 · 「휴일엔 이 구간 버스가 없어요」)이 말한다.
     expect(screen.queryByText('평일')).not.toBeInTheDocument()
     expect(screen.queryByText('휴일')).not.toBeInTheDocument()
-    expect(screen.getByText('남부권 · 3곳')).toBeInTheDocument()
+    // 곳 수는 뺐다(2026-09-18 사용자) — 스팟 체인과 타임라인 번호가 이미 센다
+    expect(screen.getByText('남부권')).toBeInTheDocument()
+    expect(screen.queryByText(/3곳/)).not.toBeInTheDocument()
     expect(screen.queryByText('고현터미널에서 출발해 고현터미널로 돌아와요')).not.toBeInTheDocument()
     expect(screen.getByText('버스 약 1시간 54분')).toBeInTheDocument()
     // 「구간」은 방문하는 곳 수로 읽혔다(왼쪽 「남부권 · 3곳」과 나란히 보인다) — 버스 타는 횟수로 적는다(2026-09-16 사용자 결정).
@@ -301,15 +303,16 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
   it('권역이 섞이면 방문 순서대로 한 번씩 적는다', async () => {
     renderCourse(110)
 
-    expect(await screen.findByText('남부권·동부권 · 3곳')).toBeInTheDocument()
+    expect(await screen.findByText('남부권·동부권')).toBeInTheDocument()
   })
 
-  it('스팟 목록을 못 받으면 권역 없이 곳 수만 — 빈 가운뎃점을 남기지 않는다', async () => {
+  it('스팟 목록을 못 받아 권역을 모르면 그 줄이 없다 — 빈 줄 · 곳 수만 남기지 않는다', async () => {
     loadSpots.mockResolvedValue(new Map())
-    renderCourse(101)
+    const { container } = renderCourse(101)
 
-    expect(await screen.findByText('3곳')).toBeInTheDocument()
-    expect(screen.queryByText(/^ · 3곳/)).not.toBeInTheDocument()
+    await screen.findByText('버스 약 1시간 54분')
+    expect(container.querySelector(`.${styles.meta}`)).toBeNull()
+    expect(screen.queryByText(/3곳/)).not.toBeInTheDocument()
   })
 
   it('서버가 title 을 주면 제목은 그것 — 규칙 제목은 쓰지 않는다(코스 추천 카드와 같은 이름이어야 고른 카드를 알아본다)', async () => {
@@ -1134,79 +1137,19 @@ describe('CourseDetailPage — 구간 줄은 그 구간을 가장 자주 다니�
   })
 })
 
-describe('CourseDetailPage — 거제시 추천 관광코스 안내 줄(2026-09-17 저녁 — 카드 배지에서 뺀 숫자를 여기로)', () => {
+describe('CourseDetailPage — 거제시 추천 관광코스 안내 줄을 두지 않는다', () => {
+  // 2026-09-17 저녁 카드 배지에서 뺀 숫자(「당일코스」 여섯 곳 중 네 곳 · 원문 순서대로 · 원문 보기 ↗)를 여기 한 줄로 옮겼는데,
+  // 2026-09-18 사용자가 뺐다 — *"너무 번잡해 보인다"*. 제목 · 스팟 체인 · 칩 사이에 줄이 하나 더 끼어 머리가 무거웠다.
+  // 어느 축으로 고른 코스인지는 카드 배지(「거제시 추천 관광코스」)가 말한다.
   const OFFICIAL = { name: '당일코스', total: 6, matched: 4, orderKept: true, sourceUrl: 'https://tour.geoje.go.kr/index.geoje?menuCd=DOM_000008502008002000' }
-  const LINE = '거제시 추천 관광코스 「당일코스」 여섯 곳 중 네 곳 · 원문 순서대로'
 
-  it('원문 코스 이름 · 몇 곳 중 몇 곳(한글 수 낱말) · 원문 순서대로 — 제목 · 스팟 체인 아래, 「버스 약 …」 칩 위', async () => {
+  it('서버가 officialCourse 를 줘도 안내 줄 · 원문 링크가 없다', async () => {
     api.course.mockResolvedValue({ ...COURSE_301, officialCourse: OFFICIAL })
     renderCourse(101)
 
-    const line = await screen.findByText(LINE)
-    const chain = screen.getByText((_, el) => el.tagName === 'P' && el.textContent === '학동몽돌해변 · 해금강 · 바람의언덕')
-    const chip = screen.getByText('버스 약 1시간 54분')
-    expect(chain.compareDocumentPosition(line) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(line.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    // 숫자 글자로 적지 않는다(사용자 결정)
-    expect(line.textContent).not.toMatch(/[0-9]/)
-  })
-
-  it('원문 페이지로 가는 링크 — 새 창', async () => {
-    api.course.mockResolvedValue({ ...COURSE_301, officialCourse: OFFICIAL })
-    renderCourse(101)
-
-    const link = await screen.findByRole('link', { name: /원문.*새 창에서 열려요/ })
-    expect(link).toHaveTextContent('원문 보기 ↗')
-    expect(link).toHaveAttribute('href', OFFICIAL.sourceUrl)
-    expect(link).toHaveAttribute('target', '_blank')
-    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
-  })
-
-  it('방문 순서가 원문과 다르면 「원문 순서대로」를 적지 않는다', async () => {
-    api.course.mockResolvedValue({
-      ...COURSE_301,
-      officialCourse: { ...OFFICIAL, name: '2일코스', total: 16, matched: 6, orderKept: false },
-    })
-    renderCourse(101)
-
-    expect(await screen.findByText('거제시 추천 관광코스 「2일코스」 열여섯 곳 중 여섯 곳')).toBeInTheDocument()
-    expect(screen.queryByText(/원문 순서/)).not.toBeInTheDocument()
-  })
-
-  it('원문 주소가 없으면 줄만 — 갈 곳 없는 링크를 두지 않는다', async () => {
-    api.course.mockResolvedValue({ ...COURSE_301, officialCourse: { ...OFFICIAL, sourceUrl: null } })
-    renderCourse(101)
-
-    // 걷는 칸의 「길찾기 ↗」 링크(2026-09-18)는 따로 있다 — 원문 링크만 본다
-    expect(await screen.findByText(LINE)).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /원문/ })).not.toBeInTheDocument()
-  })
-
-  it('officialCourse 가 없거나 null 이면 줄 없음 — 9경 · 분류 코스와 옛 응답', async () => {
-    api.course.mockResolvedValue({ ...COURSE_301, officialCourse: null })
-    const { unmount } = renderCourse(101)
     await screen.findByText('버스 약 1시간 54분')
     expect(screen.queryByText(/거제시 추천 관광코스/)).not.toBeInTheDocument()
-    unmount()
-
-    api.course.mockResolvedValue(COURSE_301)
-    renderCourse(101)
-    await screen.findByText('버스 약 1시간 54분')
-    expect(screen.queryByText(/거제시 추천 관광코스/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/곳 중/)).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /원문/ })).not.toBeInTheDocument()
-  })
-
-  it('이름 · 곳 수를 셀 수 없으면 줄 없음 — 「undefined 곳」 · 「0 곳 중」을 남기지 않는다', async () => {
-    for (const officialCourse of [
-      { ...OFFICIAL, name: null },
-      { ...OFFICIAL, matched: 0 },
-      { ...OFFICIAL, total: undefined },
-    ]) {
-      api.course.mockResolvedValue({ ...COURSE_301, officialCourse })
-      const { unmount } = renderCourse(101)
-      await screen.findByText('버스 약 1시간 54분')
-      expect(screen.queryByText(/거제시 추천 관광코스|undefined/)).not.toBeInTheDocument()
-      unmount()
-    }
   })
 })

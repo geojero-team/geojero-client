@@ -83,43 +83,6 @@
   white-space: nowrap;
 }
 
-/* 거제시 추천 관광코스 한 줄(2026-09-17 저녁 — Figma 프레임 없음). 카드 초록 배지에서 뺀 원문 코스 이름 · 곳 수 · 순서.
-   체인(14/21)보다 한 단계 작은 13/18 Medium 보조 글씨(.stopSub 와 같은 크기), 앞의 6px 초록 점(--official-course)이 카드 배지와 이어 줍니다.
-   링크는 오른쪽 끝에 「시간표 ›」와 같은 13 Medium brand-strong. 글이 두 줄이 되면 점 · 링크는 첫 줄에 섭니다. */
-.official {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 10px 0 0;
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 18px;
-  color: var(--text-secondary);
-}
-
-.officialDot {
-  flex: none;
-  width: 6px;
-  height: 6px;
-  margin-top: 6px;
-  border-radius: var(--radius-pill);
-  background: var(--official-course);
-}
-
-.officialText {
-  flex: 1;
-  min-width: 0;
-  word-break: keep-all;
-}
-
-.officialLink {
-  flex: none;
-  color: var(--brand-strong);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
 /* 532:340 — 칩 둘, 간격 6 */
 .chips {
   display: flex;
