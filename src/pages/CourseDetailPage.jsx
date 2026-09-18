@@ -704,7 +704,14 @@ export default function CourseDetailPage() {
               )}
 
               <div className={styles.timeline}>
-                {segment == null && <TerminalRow label={t('courseDetail.departNode', { origin })} />}
+                {/* 출발점은 **늘** 그립니다. 구간만 볼 때도 「어디서 출발해 여기 오는지」가 있어야 경로가 말이 됩니다
+                    (2026-09-18 사용자 — 「학동몽돌해변이면 고현터미널 출발이 아래에 있어야 한다」).
+                    첫 구간의 출발점은 고현터미널이고, 그 뒤 구간은 **앞 스팟**입니다(names 는 stops 에서 뽑아 번호가 같습니다). */}
+                {segment == null || segment === 0 ? (
+                  <TerminalRow label={t('courseDetail.departNode', { origin })} />
+                ) : (
+                  <StopRow stop={stops[segment - 1]} sub={t('courseDetail.departHere')} showTimetable={false} />
+                )}
                 {/*
                   구간과 스팟이 번갈아 옵니다 — 구간이 스팟보다 하나 많습니다.
                   ⚠️ **배는 예외입니다.** 배는 떠난 선착장으로 돌아오므로 왕복 한 번마다 구간이 하나 더 있는데,

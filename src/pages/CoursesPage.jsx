@@ -368,6 +368,8 @@ export default function CoursesPage() {
             )
           ) : (
             <>
+              {/* 칩이 무엇을 거르는지 먼저 말합니다 — 붙는 칩 줄(.chips) 위라 스크롤하면 함께 올라갑니다. */}
+              <p className={styles.countHint}>{t('courses.countHint')}</p>
               {/* 623:451 — OptionChip 넷. 헤더 아래 붙습니다(카드 한 장이 500px 를 넘어 — 메모 623:520). */}
               <div className={styles.chips} role="group" aria-label={t('courses.countAria')} ref={chipsRef}>
                 <OptionChip selected={spotCount === null} onClick={() => pickCount(null)}>

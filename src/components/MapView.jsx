@@ -17,9 +17,11 @@ const MAX_FIT_LEVEL = 10
 /** 겹친 핀을 탭했을 때 당길 배율 단계. 2단계면 250m가 40px 넘게 벌어집니다. */
 const CLUSTER_ZOOM_STEP = 2
 
-/** 핀을 눌렀을 때 당기는 배율(2026-09-18 사용자: 「스팟을 클릭하면 줌인되며 중앙에」).
-    4 는 주변 길과 마을 이름이 함께 읽히는 선입니다 — 더 당기면 어디쯤인지 감이 사라집니다. */
-const SELECTED_LEVEL = 4
+/** 핀을 눌렀을 때의 배율 — **축척바 8km**(2026-09-18 사용자: 「확대 비율은 8km를 유지하라」).
+    레벨 9 가 8km 라는 것은 헤드리스에서 확대·축소를 눌러가며 축척바 글자를 읽어 확인했습니다
+    (9=8km · 10=16km · 8=4km · 7=2km). 지도의 초기 배율과 같은 값이라, 핀을 눌러도 배율은 그대로입니다.
+    앞서 4(=100m)로 당겼더니 어디쯤인지 감이 사라졌습니다. */
+const SELECTED_LEVEL = 9
 
 /**
  * 화면 맞추기 여백(px). 38e0255의 배율을 그대로 씁니다.
@@ -148,7 +150,18 @@ export default function MapView({
   useEffect(() => {
     if (phase !== 'ready' || !containerRef.current) return
 
-    const observer = new ResizeObserver(() => mapRef.current?.relayout())
+    const observer = new ResizeObserver(() => {
+      const map = mapRef.current
+      if (!map) return
+      map.relayout()
+      /* 고른 스팟이 있으면 **줄어든 칸의 가운데**로 다시 보냅니다(2026-09-18 사용자 —
+         「아래 카드가 뜨는 영역을 제외한 영역에서 중앙」). 시트가 올라오는 0.22초 동안 이 콜백이
+         여러 번 오므로, 애니메이션 없는 setCenter 로 매번 제자리를 잡습니다(panTo 면 매번 다시 미끄러집니다). */
+      const selectedId = liveRef.current.selectedSpotId
+      if (selectedId == null) return
+      const selected = pinsRef.current.find((pin) => pin.spotId === selectedId)
+      if (selected) map.setCenter(selected.overlay.getPosition())
+    })
     observer.observe(containerRef.current)
     return () => observer.disconnect()
   }, [phase])
@@ -278,10 +291,10 @@ export default function MapView({
     const selected = pinsRef.current.find((pin) => pin.spotId === selectedSpotId)
     if (!selected) return
 
-    /* 고른 스팟으로 당깁니다. 이미 더 가까이 보고 있으면 그대로 둡니다 —
-       눌렀다고 뒤로 물러나면 방금까지 보던 것을 잃습니다. */
-    if (map.getLevel() > SELECTED_LEVEL) map.setLevel(SELECTED_LEVEL, { animate: true })
-    // 지도 영역이 시트만큼 줄어 있으므로 그냥 가운데로 보내면 됩니다.
+    /* 배율은 늘 8km(레벨 9)로 맞춥니다 — 사용자가 정한 값입니다. */
+    if (map.getLevel() !== SELECTED_LEVEL) map.setLevel(SELECTED_LEVEL, { animate: true })
+    /* 지도 칸은 시트가 올라오는 0.22초 동안 **천천히** 줄어듭니다. 그래서 여기서 한 번 보내는 것만으로는
+       카드가 다 올라온 뒤의 가운데가 아닙니다 — 칸이 줄 때마다 아래 ResizeObserver 가 다시 가운데로 보냅니다. */
     map.panTo(selected.overlay.getPosition())
   }, [selectedSpotId, spots, phase, topReserved])
 

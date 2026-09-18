@@ -117,6 +117,11 @@
   justify-content: flex-start;
   gap: 8px;
   overflow-x: auto;
+  /* 번호 배지(.num)가 사진 밖으로 4px 나와 있습니다. 가로 스크롤 상자는 세로도 자르므로
+     그만큼 안쪽 여백을 두고 같은 크기의 음수 마진으로 제자리에 되돌립니다 —
+     없으면 사진 위가 잘려 보입니다(2026-09-18 사용자, 분류 칩 때와 같은 유형). */
+  padding: 4px 0 0 4px;
+  margin: -4px 0 0 -4px;
   scrollbar-width: none;
 }
 

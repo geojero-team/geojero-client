@@ -423,6 +423,9 @@ export default {
   'courseDetail.segmentAria': '볼 구간 고르기',
   'courseDetail.segmentTo': '{from} → {to}',
   'courseDetail.departNode': '{origin} 출발',
+  /* 구간만 볼 때 그 구간이 어디서 시작하는지(2026-09-18 사용자 — 「그 전 출발지도 적어줘야 한다」).
+     첫 구간은 고현터미널이라 위의 departNode 를 쓰고, 그 뒤 구간은 앞 스팟 줄에 이 말을 답니다. */
+  'courseDetail.departHere': '여기서 출발',
   'courseDetail.arriveNode': '{origin} 도착',
   // 되짚기(2026-09-17 코스재설계 §3-3) — 가운데 구간이 고현터미널로 갔다가 다시 나옵니다(구간 둘: A → 터미널 · 터미널 → B).
   // 2026-09-17 한 줄로 줄였습니다. 「갈아타요」 — 내려서 다음 버스를 기다린다는 것을 덜어 말하지 않습니다.
@@ -515,6 +518,9 @@ export default {
   'courses.originNote': '교외에서 오면 고현터미널에서 출발해요',
   'courses.total': '대표 코스 {count}가지 · 여러 개 고를 수 있어요',
   // 개수 칩(OptionChip 넷)과 칩을 고른 뒤의 상태줄 — 전체면 위 courses.total 을 씁니다.
+  /* 칩이 무엇을 거르는지 말합니다(2026-09-18 사용자 — 「전체/3곳/4곳/5곳이 뭔지 모를 수 있다」).
+     숫자만 있으면 코스 수인지 들르는 곳 수인지 갈리지 않습니다. */
+  'courses.countHint': '코스가 들르는 스팟 수예요',
   'courses.countAria': '코스 곳 수',
   'courses.countAll': '전체',
   'courses.countN': '{n}곳',
