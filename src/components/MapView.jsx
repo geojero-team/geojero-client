@@ -192,11 +192,20 @@ export default function MapView({
     if (phase !== 'ready' || !map || spots.length === 0) return
 
     const kakao = window.kakao
+    let relabelFrame = 0
+    const scheduleRelabel = () => {
+      if (relabelFrame) return
+      relabelFrame = requestAnimationFrame(() => {
+        relabelFrame = 0
+        updateLabelVisibility(map, pinsRef.current, liveRef.current.selectedSpotId, liveRef.current.topReserved)
+      })
+    }
 
     pinsRef.current = spots.map((spot) => {
       const order = orderBySpotId?.get(spot.spotId) ?? null
       const isStop = order != null
-      const { element, label, badge, isTerminal, isNineScenic, width, height } = createPinElement(spot, { order })
+      // 숙소 · 맛집 액자는 사진이 오면 폭이 바뀐다 — 그때 이름표 자리를 다시 잽니다(한 프레임에 한 번).
+      const { element, label, badge, isTerminal, isNineScenic, size } = createPinElement(spot, { order, onResize: scheduleRelabel })
       const position = new kakao.maps.LatLng(spot.lat, spot.lng)
 
       element.addEventListener('click', (event) => {
@@ -222,7 +231,7 @@ export default function MapView({
         clickable: true,
       })
 
-      return { spotId: spot.spotId, isStop, isTerminal, isNineScenic, width, height, overlay, element, label, badge }
+      return { spotId: spot.spotId, isStop, isTerminal, isNineScenic, size, overlay, element, label, badge }
     })
 
     // 화면 맞추기는 아래 전용 이펙트가 합니다 — 시트 높이가 정해진 뒤에 맞춰야 해서.
@@ -239,6 +248,7 @@ export default function MapView({
 
     return () => {
       cancelAnimationFrame(frame)
+      cancelAnimationFrame(relabelFrame)
       pinsRef.current.forEach(({ overlay }) => overlay.setMap(null))
       pinsRef.current = []
     }
