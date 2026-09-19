@@ -141,6 +141,31 @@ export default {
   'timetableList.docks': '{docks} 선착장',
   'spots.loading': '스팟을 불러오는 중',
 
+  /* ── 맛집 · 숙소 (2026-09-19 — 기준문서 §6 「맛집 · 숙소」) ─────────────────
+     스팟 탭 분류 칩 끝의 두 칸. 순서는 서버가 준 T맵 인기순 그대로입니다.
+     위치는 동네 이름을 짓지 않고 **가까운 스팟과의 직선거리**로 말합니다(원문에 없는 이름을 만들지 않는다 — 절대규칙 1). */
+  'places.chip.FOOD': '맛집',
+  'places.chip.STAY': '숙소',
+  'places.loading': '불러오는 중',
+  'places.loadFailed.FOOD': '맛집을 불러오지 못했어요 — {error}',
+  'places.loadFailed.STAY': '숙소를 불러오지 못했어요 — {error}',
+  // 타는 곳 카드의 「{place}에서 직선 약 {dist}」와 같은 말입니다(boarding.distance).
+  'places.near': '{place}에서 직선 약 {dist}',
+  'places.restDay': '쉬는 날 {day}',
+  'placeDetail.loadFailed': '불러오지 못했어요 — {error}',
+  'placeDetail.fallback': '{reason} · {time} 확인 — 기본 정보만 보여드려요',
+  'placeDetail.checkInOut': '체크인 {in} · 체크아웃 {out}',
+  'placeDetail.book': '여기어때에서 예약하기 ↗',
+  'placeDetail.bookAria': '{name} 여기어때 예약 페이지 — 새 창에서 열려요',
+  'placeDetail.photoCount': '{n} / {total}',
+  'placeDetail.route': '길찾기 ↗',
+  'placeDetail.where': '위치',
+  'placeDetail.nearSpots': '가까운 스팟',
+  'placeDetail.straight': '직선 약 {dist}',
+  'placeDetail.facilities': '부대시설',
+  'placeDetail.mapAria': '{name} 위치를 카카오맵에서 크게 보기 — 새 창에서 열려요',
+  'placeDetail.routeAria': '{from}에서 {to}까지 카카오맵 대중교통 길찾기 — 새 창에서 열려요',
+
   /* ── 스팟 고르기 (233:417 / 285:419) ──────────────────────────────────── */
 
   /* ── 스팟 시트 (지도에서 핀을 누를 때 · 2026-09-13) ───────────────────── */

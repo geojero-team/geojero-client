@@ -1,0 +1,39 @@
+/* 맛집 · 숙소 위치 지도 — 타는 곳 지도(BoardingMap)와 같은 180px 칸 · 카드 모서리. 칸 전체가 카카오맵으로 가는 링크다. */
+.frame {
+  position: relative;
+  display: block;
+  height: 180px;
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  background: var(--bg-surface);
+}
+
+/* 지도는 손가락을 받지 않는다 — 누름은 링크(.frame)가, 위아래 끌기는 페이지 스크롤이 받는다(TerminalMap 과 같다).
+   z-index 0 으로 카카오 지도 안쪽 층을 가둔다. */
+.map {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.placePin {
+  display: block;
+  width: 28px;
+  height: 28px;
+  line-height: 0;
+}
+
+/* 24px 사진 원 — 타는 곳 지도의 출발 곳 썸네일(BoardingMap .fromThumb)과 같은 그림. 스팟 사진은 Type1 이라 잘라 써도 된다. */
+.spotPin {
+  display: block;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--bg-page);
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.35);
+  object-fit: cover;
+}

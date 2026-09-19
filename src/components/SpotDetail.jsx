@@ -55,8 +55,9 @@ function PhotoCountIcon() {
 /**
  * 주소 줄 핀 · 내리는 곳 버스 — Figma 607:6 · 607:12 내보낸 자산 그대로(20×20, stroke 1.5).
  * 색은 CSS(text/secondary)에서 받습니다. 버스는 원본의 조각 7개를 한 path 로 이었습니다(선 끝 round 는 조각마다 그대로).
+ * 핀은 맛집 · 숙소 상세(PlaceDetailPage)의 주소 줄도 씁니다.
  */
-function PinIcon() {
+export function PinIcon() {
   return (
     <svg className={styles.infoIcon} width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
       <path

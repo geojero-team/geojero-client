@@ -123,6 +123,29 @@ export const api = {
   poi: (poiId, lang = 'ko') => request(`/api/pois/${poiId}?lang=${lang}`),
 
   /**
+   * 맛집 · 숙소(2026-09-19 — 기준문서 §6 「맛집 · 숙소」). kind = 'FOOD' | 'STAY'.
+   * PlacesRes { places: [{ placeId, kind, name, category, imageUrl, grade, restDay,
+   *                        nearSpot: { poiId, shortName, distanceM, lat, lng } | null }] }
+   * placeId 는 TourAPI 국문 contentId 다(서버 V40 — 환경마다 같은 자연키).
+   * 순서는 서버가 정한다(T맵 인기순) — 화면은 바꾸지 않는다. category 는 맛집이면 대표 메뉴, 숙소면 「4성 호텔」 · 「콘도」.
+   */
+  places: (kind) => request(`/api/places?kind=${kind}`),
+
+  /**
+   * PlaceDetailRes { placeId, kind, name, category, grade, lat, lng, bookingUrl(숙소만 · 여기어때 숙소 페이지),
+   *                  nearSpots: [{ poiId, shortName, distanceM, lat, lng }] — 5km 안 우리 스팟, 가까운 순 최대 3곳(없으면 []).
+   *                             배로만 가는 스팟(외도 · 공곶이·내도 · 지심도 — 정류장 없이 선착장만)은 뺀다: 직선이 바다를 건넌다.
+   *                  detail: { source: 'TourAPI', address, images[],
+   *                            (맛집) overview, openTime, restDay · (숙소) checkIn, checkOut, facilities }
+   *                        | { source: 'FALLBACK', reason, checkedAt } }
+   * category 는 목록과 같은 값(숙소 「2성 호텔」 · 「콘도」, 맛집 대표 메뉴). facilities = TourAPI subfacility 원문.
+   * 글은 TourAPI 원문 그대로다(<br> 만 줄바꿈으로). 사진은 대부분 Type3 라 **자르지 않고** 그린다.
+   * bookingUrl · nearSpots 는 TourAPI 상세 값이 아니라 서버가 들고 있는 값이다 — 관광정보가 실패해도(FALLBACK) 온다.
+   * 숙소 소개문은 보내지 않는다(호텔 자기 홍보 글). 전화 · 주차 · 객실 수는 화면이 쓰지 않는다(2026-09-19 사용자 — 정보를 줄인다).
+   */
+  place: (placeId) => request(`/api/places/${placeId}`),
+
+  /**
    * 카카오 인증 화면으로 보내는 앞단. REST 키가 서버에만 있으므로 서버가 302합니다.
    * fetch가 아니라 주소창을 옮깁니다 — 카카오 로그인 화면을 사용자가 봐야 합니다.
    */

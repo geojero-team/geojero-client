@@ -33,10 +33,15 @@ const ITEMS = [
   })),
 ]
 
-export default function CategoryBar({ value, onChange }) {
+/**
+ * extras — 분류 끝에 붙는 칸(스팟 탭의 「맛집」 「숙소」, 2026-09-19). 스팟 분류가 아니라 시간표 탭에는 넘기지 않습니다.
+ * value 로는 그 칸의 key('FOOD' · 'STAY')가 옵니다.
+ */
+export default function CategoryBar({ value, onChange, extras = [] }) {
+  const items = [...ITEMS, ...extras.map(({ key, label }) => ({ theme: key, label, icon: key }))]
   return (
     <div className={styles.bar} role="tablist" aria-label={t('category.aria')}>
-      {ITEMS.map(({ theme, label, icon }) => {
+      {items.map(({ theme, label, icon }) => {
         const selected = theme === value
         return (
           <button

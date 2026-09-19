@@ -1,0 +1,303 @@
+/* 맛집 · 숙소 상세 — 스팟 상세(SpotDetail.module.css)의 값을 따른다. Figma 프레임이 아직 없다(2026-09-19). */
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--bg-page);
+}
+
+/* 사진 칸 — 3:2. 사진은 자르지 않고(contain) 남는 곳은 옅은 회색이다(Type3 변경금지 — 기준문서 §7). */
+.hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  background: var(--bg-surface);
+}
+
+.track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  user-select: none;
+}
+
+.noPhoto {
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* 스팟 상세 .back 과 같은 36px 흰 원 + 옅은 그림자(2026-09-19). */
+.backOver,
+.back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 4px rgba(16, 24, 40, 0.18);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.backOver {
+  position: absolute;
+  left: var(--space-lg);
+  top: var(--space-lg);
+}
+
+.bar {
+  padding: var(--space-lg) var(--space-lg) 0;
+}
+
+/* 사진 칸 안 아래 — 장수(왼쪽) · 출처(오른쪽) 칩. 스팟 상세 .countChip · .creditChip 과 같은 반투명 먹색 알약 · 같은 자리(2026-09-19 사용자).
+   모서리에서 띄워(아래 16) 사진 모서리에 박힌 찍은 사람 표기를 가리지 않는다. */
+.countChip,
+.creditChip {
+  position: absolute;
+  bottom: 16px;
+  padding: 4px var(--space-sm);
+  border-radius: var(--radius-pill);
+  background: rgba(16, 24, 40, 0.55);
+  font: var(--type-label);
+  color: var(--text-on-brand);
+  white-space: nowrap;
+}
+
+.countChip {
+  left: var(--space-lg);
+}
+
+.creditChip {
+  right: var(--space-lg);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 20px 24px;
+}
+
+/* 이름 + 한 줄(종류 · 읍면) — 숙소 앱들이 이름 바로 아래 「4성급 호텔」을 두는 자리. */
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.subtitle {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+/* 부대시설 칩 — TourAPI 원문을 「/」로 나눈 것. 회색 면 알약, 넘치면 줄바꿈. */
+.facilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.facility {
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+/* 구획(위치 · 가까운 스팟 · 소개) — 위에 굵은 회색 띠(8)로 가른다. 국내 장소 · 숙소 앱의 구획 나눔. */
+.section {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: 20px 20px 24px;
+  border-top: 8px solid var(--bg-surface);
+}
+
+.sectionHead {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+/* 가까운 스팟 — [사진 56] 이름 / 직선 약 N   길찾기 ↗. 스팟 사진은 Type1 이라 잘라 써도 된다. */
+.nearList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nearItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.nearLink {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  color: inherit;
+  text-decoration: none;
+}
+
+.nearPhoto {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  background: var(--bg-surface);
+}
+
+.nearText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nearName {
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+.nearDist {
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.name {
+  margin: 0;
+  font: var(--type-display);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+.fallback {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* 정보 줄 — 스팟 상세의 주소 · 내리는 곳 줄(613:3)을 그대로 가져온다(2026-09-19 사용자). 한 곳에서만 고치도록 composes 로 잇는다.
+   다른 점은 하나 — 값이 TourAPI 원문 줄바꿈을 품고 있어(영업시간) pre-line 이다. */
+.info {
+  composes: info from '../components/SpotDetail.module.css';
+}
+
+.infoRow {
+  composes: infoRow from '../components/SpotDetail.module.css';
+}
+
+.infoIcon {
+  composes: infoIcon from '../components/SpotDetail.module.css';
+}
+
+.infoText {
+  composes: infoText from '../components/SpotDetail.module.css';
+}
+
+.infoMain {
+  composes: infoMain from '../components/SpotDetail.module.css';
+  white-space: pre-line;
+}
+
+.infoSub {
+  composes: infoSub from '../components/SpotDetail.module.css';
+  white-space: pre-line;
+}
+
+/* 숙소 예약 — 화면의 주인공 행동이라 화면 아래에 고정한다(스크롤 칸 밖). 모양은 코스 추천 하단 바(585:483)와 같다.
+   버튼은 Button primary 와 같은 모양이고, 새 창으로 여는 링크라 <button> 이 아니라 <a> 다. */
+.bookBar {
+  flex-shrink: 0;
+  padding: 16px 20px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-page);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.book {
+  composes: button primary from '../components/Button.module.css';
+  text-decoration: none;
+}
+
+/* 가까운 스팟 줄 오른쪽 「길찾기 ↗」 — 코스 상세 걷는 칸의 「길찾기 ↗」(.walkLink)와 같은 글자. */
+.routeLink {
+  flex: none;
+  font: 500 13px/18px var(--font-sans);
+  color: var(--brand-strong);
+  text-decoration: none;
+}
+
+.overview,
+.overviewFull {
+  margin: 0;
+  width: 100%;
+  font: var(--type-body);
+  color: var(--text-secondary);
+  word-break: keep-all;
+  white-space: pre-line;
+}
+
+.overview {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+}
+
+.more {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: var(--type-caption);
+  color: var(--brand-strong);
+  cursor: pointer;
+}
+
+.pending {
+  margin: 40px 20px;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}

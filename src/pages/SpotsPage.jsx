@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import CategoryBar from '../components/CategoryBar'
 import ListTools from '../components/ListTools'
+import PlaceCard from '../components/PlaceCard'
 import Screen from '../components/Screen'
 import SpotCardLarge from '../components/SpotCardLarge'
 import { t } from '../i18n'
+import { api } from '../lib/api'
 import { filterAndSort } from '../lib/listTools'
 import { loadVisibleSpots } from '../lib/spots'
 import { courseImage, onImageError } from '../lib/courseImage'
@@ -45,6 +47,10 @@ function SpotCard({ spot, onOpen, tour }) {
   )
 }
 
+/* 맛집 · 숙소(2026-09-19 사용자 결정) — 분류 칩 끝의 두 칸. 스팟 분류가 아니라 시간표 탭 칩에는 넣지 않습니다. */
+const PLACE_KINDS = ['FOOD', 'STAY']
+const PLACE_CHIPS = PLACE_KINDS.map((key) => ({ key, label: t(`places.chip.${key}`) }))
+
 export default function SpotsPage() {
   const navigate = useNavigate()
   const [theme, setTheme] = useState(null)
@@ -54,6 +60,27 @@ export default function SpotsPage() {
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('default')
   const [view, setView] = useState('compact')
+  /* 칸을 누를 때 부릅니다 — 스팟만 보는 사람에게 TourAPI 호출을 쓰지 않습니다. 받은 목록은 남겨 두어 다시 누르면
+     그것부터 보이고(서버는 24시간 캐시라 다시 불러도 싸다), 실패했으면 다른 칸을 갔다 오면 다시 부릅니다.
+     목록 상태(places)를 의존성에 넣지 않습니다 — 넣으면 실패가 곧 다음 호출을 불러 끝없이 재시도합니다. */
+  const [places, setPlaces] = useState({})
+  const placeKind = PLACE_KINDS.includes(theme) ? theme : null
+
+  useEffect(() => {
+    if (!placeKind) return
+    let cancelled = false
+    api
+      .places(placeKind)
+      .then((res) => {
+        if (!cancelled) setPlaces((prev) => ({ ...prev, [placeKind]: { status: 'ready', list: res.places ?? [] } }))
+      })
+      .catch((error) => {
+        if (!cancelled) setPlaces((prev) => ({ ...prev, [placeKind]: { status: 'error', error: error.message } }))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [placeKind])
 
   useEffect(() => {
     let cancelled = false
@@ -70,6 +97,7 @@ export default function SpotsPage() {
   }, [])
 
   const inTheme = theme ? result.spots.filter((spot) => spot.theme === theme) : result.spots
+  const placeState = placeKind ? places[placeKind] ?? { status: 'loading' } : null
   const spots = filterAndSort(inTheme, { query, sort })
 
   return (
@@ -79,18 +107,33 @@ export default function SpotsPage() {
       </header>
 
       <div className={styles.body}>
-        <CategoryBar value={theme} onChange={setTheme} />
+        <CategoryBar value={theme} onChange={setTheme} extras={PLACE_CHIPS} />
 
-        <ListTools
-          query={query}
-          onQuery={setQuery}
-          sort={sort}
-          onSort={setSort}
-          view={view}
-          onView={setView}
-        />
+        {/* 맛집 · 숙소는 19곳뿐이고 서버 순서가 곧 인기순이라 찾기 · 정렬을 두지 않습니다. */}
+        {!placeKind && (
+          <ListTools
+            query={query}
+            onQuery={setQuery}
+            sort={sort}
+            onSort={setSort}
+            view={view}
+            onView={setView}
+          />
+        )}
 
-        {result.status === 'error' ? (
+        {placeState ? (
+          placeState.status === 'error' ? (
+            <p className={styles.notice}>{t(`places.loadFailed.${placeKind}`, { error: placeState.error })}</p>
+          ) : placeState.status === 'loading' ? (
+            <p className={styles.notice}>{t('places.loading')}</p>
+          ) : (
+            <div className={styles.cards}>
+              {placeState.list.map((place) => (
+                <PlaceCard key={place.placeId} place={place} onOpen={({ placeId }) => navigate(`/places/${placeId}`)} />
+              ))}
+            </div>
+          )
+        ) : result.status === 'error' ? (
           <p className={styles.notice}>{t('common.loadFailed', { error: result.error })}</p>
         ) : result.status === 'loading' ? (
           <p className={styles.notice}>{t('spots.loading')}</p>

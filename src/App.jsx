@@ -6,6 +6,7 @@ import CourseMapPage from './pages/CourseMapPage'
 import CoursesPage from './pages/CoursesPage'
 import HomePage from './pages/HomePage'
 import MyPlansPage from './pages/MyPlansPage'
+import PlaceDetailPage from './pages/PlaceDetailPage'
 import SpotDetailPage from './pages/SpotDetailPage'
 import SpotsPage from './pages/SpotsPage'
 import SpotTimetablePage from './pages/SpotTimetablePage'
@@ -46,6 +47,8 @@ export default function App() {
         <Route path="/timetable" element={<TimetableListPage />} />
         <Route path="/timetable/:poiId" element={<SpotTimetablePage />} />
         <Route path="/spots/:spotId" element={<SpotDetailPage />} />
+        {/* 맛집 · 숙소 상세(2026-09-19) — 스팟 탭 「맛집」 「숙소」 칩에서 들어온다. */}
+        <Route path="/places/:placeId" element={<PlaceDetailPage />} />
         <Route path="/my" element={<MyPlansPage />} />
         {/* 개인정보처리방침 — 스토어 등재에 필요한 공개 주소(www.geojero.com/privacy) */}
         <Route path="/privacy" element={<PrivacyPage />} />
