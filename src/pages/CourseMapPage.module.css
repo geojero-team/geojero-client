@@ -28,6 +28,31 @@
 /* condition-pill(446:719)은 2026-09-18 뺐습니다(사용자) — 곳 수는 아래 카드가 번호로 이미 세고,
    고른 개수는 지도에 겹쳐 둘 만큼 급한 정보가 아니었습니다. */
 
+/* 뒤로가기 — 지도 위 왼쪽 위에 떠 있는 36px 원(2026-09-19 사용자: 이 화면에 뒤로가기가 없었습니다).
+   머리말 띠를 두지 않은 이유: 띠 높이만큼 지도가 줄어듭니다. 스팟 상세의 ‹ 와 같은 모양이라
+   앱 안에서 뒤로가기가 한 가지로 읽힙니다.
+   카카오 지도가 자기 z-index 를 쓰므로 z-index 가 없으면 지도에 덮입니다(HomePage .cta 참고). */
+.back {
+  position: absolute;
+  z-index: 2;
+  left: var(--space-lg);
+  top: var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  /* ‹ 는 글꼴에서 오른쪽·아래로 치우쳐 그려집니다 — 원 가운데로 당깁니다(SpotDetail 과 같은 값). */
+  padding: 0 2px 2px 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px rgb(16 24 40 / 12%);
+  font: 700 26px/1 var(--font-sans);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
 /* course-sheet(446:733): 지도 아래, 탭바 위 */
 .sheet {
   flex: none;

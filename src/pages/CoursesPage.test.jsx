@@ -156,7 +156,7 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
     expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument()
     /* 2026-09-18 사용자 문장 — 고현터미널이 왜 출발지인지 말합니다(전에는 근거만 나열했습니다).
        같은 날 저녁 한 줄에 들어오게 줄였습니다(31자 → 22자). 길이가 곧 요구사항이라 문장을 그대로 붙잡아 둡니다. */
-    expect(screen.getByText('교외에서 오면 고현터미널에서 출발해요')).toBeInTheDocument()
+    expect(screen.getByText('교외에서 오면 고현터미널에서 출발하는 것이 매우 효율적이에요')).toBeInTheDocument()
     expect(screen.queryByText(/총 코스/)).not.toBeInTheDocument()
     expect(api.courses).toHaveBeenCalledWith({ featured: true })
   })

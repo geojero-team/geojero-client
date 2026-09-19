@@ -5,6 +5,7 @@ import Button from '../components/Button'
 import CourseMiniMap from '../components/CourseMiniMap'
 import LoginSheet from '../components/LoginSheet'
 import Screen from '../components/Screen'
+import Toast from '../components/Toast'
 import { t } from '../i18n'
 import { api, beginKakaoLoginTo } from '../lib/api'
 import { courseImage, onImageError } from '../lib/courseImage'
@@ -12,7 +13,6 @@ import { formatDistance } from '../lib/format'
 import { courseTitle } from '../lib/courseTitle'
 import { fitOneLine } from '../lib/fitOneLine'
 import { distanceMeters } from '../lib/geo'
-import { pinToBottom } from '../lib/pinToBottom'
 import { getToken } from '../lib/session'
 import { formatDuration } from '../lib/format'
 import { ICON_PATHS } from '../lib/spotIcons'
@@ -478,6 +478,9 @@ export default function CourseDetailPage() {
   const [result, setResult] = useState({ status: 'loading', data: null, error: '' })
   const [sheetOpen, setSheetOpen] = useState(false)
   const [saveState, setSaveState] = useState({ status: 'idle', error: '' })
+  /* 저장했다고 알리는 띠(2026-09-19 사용자). 저장 결과는 본문 맨 아래에 나타나는데, 로그인하고 돌아온
+     사람에게는 그 자리가 화면 밖입니다 — 결과를 눈이 있는 자리로 가져옵니다. */
+  const [toastOpen, setToastOpen] = useState(false)
   /* 구간 고르기(2026-09-18 사용자 결정) — null 이면 전체 경로, 숫자면 그 스팟에 닿는 구간만 봅니다.
      코스가 길어 스크롤이 깊다는 것이 이유입니다. 주소에 싣지 않습니다 — 다시 들어오면 전체부터 보는 편이 예측하기 쉽습니다. */
   const [segment, setSegment] = useState(null)
@@ -532,10 +535,10 @@ export default function CourseDetailPage() {
         if (new URLSearchParams(window.location.search).get('save') === '1') {
           navigate(`/courses/${courseId}`, { replace: true })
           if (getToken()) save()
-          /* 저장 자리는 본문 맨 아래입니다 — 로그인하고 돌아오면 화면이 맨 위라 저장된 것을 볼 수 없습니다(2026-09-18 사용자).
-             한 프레임 뒤에 한 번만 내리면 그때의 높이까지만 갑니다. 미니 지도와 스팟 사진이 그 뒤에 자리를 잡아
-             맨 아래가 다시 밀려났습니다 — 높이가 자라는 동안 따라 내려갑니다(손을 대면 놓습니다). */
-          pinToBottom(scrollRef.current)
+          /* 여기서 화면을 맨 아래로 내리지 않습니다(2026-09-19 사용자 결정).
+             미니 지도와 스팟 사진이 뒤늦게 자리를 잡아 높이가 계속 바뀌는 자리라 번번이 어긋났고,
+             맞더라도 화면이 제멋대로 움직이는 느낌이 났습니다. 대신 저장이 끝나면 아래 Toast 가
+             결과를 화면 아래 가운데로 가져옵니다 — 사람이 보고 있는 자리입니다. */
         }
       })
       .catch((error) => {
@@ -585,7 +588,10 @@ export default function CourseDetailPage() {
     setSaveState({ status: 'saving', error: '' })
     api
       .saveTrip({ courseId: Number(courseId), travelDate })
-      .then(() => setSaveState({ status: 'saved', error: '' }))
+      .then(() => {
+        setSaveState({ status: 'saved', error: '' })
+        setToastOpen(true)
+      })
       // 409 — 이미 저장한 코스(다른 탭 · 다른 기기에서 저장했거나 목록을 못 받았을 때). 오류가 아니라 저장된 상태로 보입니다.
       .catch((error) =>
         setSaveState(error.status === 409 ? { status: 'already', error: '' } : { status: 'error', error: error.message }),
@@ -824,6 +830,10 @@ export default function CourseDetailPage() {
         onClose={() => setSheetOpen(false)}
         onLogin={() => beginKakaoLoginTo(`/courses/${courseId}?save=1`)}
       />
+
+      {/* 저장 결과 — 화면 아래 가운데에 떴다가 스스로 사라집니다. 본문 맨 아래의 「내 일정 보기」 줄은
+          그대로 둡니다: 띠는 방금 끝난 일을 알리고, 그 줄은 지금 상태를 계속 말합니다. */}
+      <Toast open={toastOpen} message={t('courseDetail.saved')} onDone={() => setToastOpen(false)} />
     </Screen>
   )
 }

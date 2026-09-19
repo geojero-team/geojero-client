@@ -296,8 +296,8 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
     await screen.findByText(busLine('[55] 40분'))
     // 각주 두 줄은 2026-09-18 뺐습니다(사용자 결정) — 줄마다 붙는 「약」과 걷는 칸이 이미 말합니다.
     expect(screen.queryByText(/실제 이동 시간은 적힌 것보다 짧습니다/)).not.toBeInTheDocument()
-    expect(screen.getByText('출처 거제시 BIS 원문 · 2026-08-18')).toBeInTheDocument()
-    expect(screen.getByText('모든 첫 출발지는 고현터미널로 가정합니다')).toBeInTheDocument()
+    expect(screen.getByText('거제시에서 제공한 시간표를 활용하여 직접 계산')).toBeInTheDocument()
+    expect(screen.getByText('모든 첫 출발지는 고현터미널입니다.')).toBeInTheDocument()
     expect(container).not.toHaveTextContent('시간표를 클릭하면')
     expect(container).not.toHaveTextContent('소요 예정')
     expect(screen.getByRole('button', { name: '이 코스 저장하기' })).toBeInTheDocument()

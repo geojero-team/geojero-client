@@ -8,7 +8,8 @@
   padding: 0;
   border: 0;
   background: rgba(16, 24, 40, 0.4); /* 로그인 시트와 같은 scrim(02-1 274:570) */
-  animation: fadeIn 160ms ease-out;
+  /* 시트(300ms)보다 조금 빨리 차오릅니다 — 배경이 먼저 어두워져야 시트가 그 위로 올라오는 것으로 읽힙니다. */
+  animation: fadeIn 240ms ease-out both;
 }
 
 /* 목록이 아홉 줄이라 작은 폰에서는 넘칠 수 있습니다. 위에 32px 을 남기고 시트 안에서 스크롤합니다 —
@@ -29,8 +30,18 @@
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   background: var(--bg-page);
   box-shadow: var(--elevation-sheet);
+  /* 손잡이를 조금 끌다 놓으면 제자리로 돌아갑니다(끄는 동안은 useSheetDismiss 가 전환을 끕니다). */
   transition: transform 160ms ease;
-  animation: slideUp 200ms ease-out;
+  /* 올라오는 동작 — 2026-09-19 사용자: 「위로 날았다가 아래로 내려온다, 부자연스럽다」. 원인 둘:
+       ① 앞 판의 keyframes 에 **끝값(to)과 fill-mode 가 없어** 애니메이션이 끝나는 순간 값이 기준값으로
+          되돌아갔고, 같은 요소에 걸린 위의 transition 이 그 되돌아감을 한 번 더 그렸습니다.
+       ② 200ms ease-out 은 움직임의 대부분을 첫 50ms 에 몰아넣습니다 — 실측에서 51ms 만에 끝났습니다.
+          튀어 오르듯 보입니다.
+     끝값을 분명히 적고 both 로 고정하며, 뒤쪽이 길게 감속하는 곡선으로 바꿉니다. */
+  animation: slideUp 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  /* 지도 위에서 올라옵니다. 따로 그려 두지 않으면 시트가 움직일 때마다 지도까지 다시 그려
+     화면이 멎습니다 — 실측에서 261ms 동안 프레임이 한 장도 없었습니다. */
+  will-change: transform;
 }
 
 .handleRow {
@@ -174,9 +185,14 @@
   color: var(--text-secondary);
 }
 
+/* 끝값을 반드시 적습니다 — 없으면 브라우저가 '기준값'을 끝으로 삼고, 애니메이션이 끝나는 순간
+   값이 한 번 더 바뀌면서 transition 이 그 변화를 또 그립니다(그게 내려오는 것처럼 보였습니다). */
 @keyframes slideUp {
   from {
     transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
   }
 }
 

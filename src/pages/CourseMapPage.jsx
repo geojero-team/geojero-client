@@ -23,8 +23,9 @@ import styles from './CourseMapPage.module.css'
  * MapView는 `spotId`로 핀을 식별하므로 poiId를 그 자리에 맞춰 넘깁니다.
  */
 
-/** 지도 위에 코스 카드 스트립이 얹히므로 그만큼 위쪽을 비워 핀이 가려지지 않게 합니다. */
-const TOP_RESERVED = 16
+/** 지도 위에 얹히는 것(왼쪽 위 뒤로가기 버튼)만큼 위쪽을 비워 핀 이름표가 가려지지 않게 합니다.
+    16(여백) + 36(버튼) + 12(틈) = 64. 버튼 크기나 자리를 바꾸면 이 값도 같이 바꿉니다. */
+const TOP_RESERVED = 64
 
 export default function CourseMapPage() {
   const navigate = useNavigate()
@@ -100,6 +101,11 @@ export default function CourseMapPage() {
     return ordered.length >= 2 ? ordered.map(({ lat, lng }) => ({ lat, lng })) : null
   }, [active])
 
+  /* 뒤로가기 — 바로 연 주소(공유 링크)면 기록이 없어 navigate(-1)이 앱 밖으로 나갑니다.
+     그때는 코스 추천으로 보냅니다(CoursesPage.goBack 과 같은 방법). */
+  const goBack = () =>
+    (window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate('/courses', { replace: true })
+
   const openDetail = () => {
     if (!active) return
     const no = courses.findIndex((c) => c.courseId === active.courseId) + 1
@@ -123,6 +129,12 @@ export default function CourseMapPage() {
             topReserved={TOP_RESERVED}
           />
         </div>
+
+        {/* 뒤로가기 — 지도 위 왼쪽 위(2026-09-19 사용자: 이 화면에 뒤로가기가 없었습니다).
+            머리말 띠 대신 떠 있는 원형 버튼입니다 — 띠를 두면 그 높이만큼 지도가 줄어듭니다. */}
+        <button type="button" className={styles.back} onClick={goBack} aria-label={t('common.back')}>
+          ‹
+        </button>
 
         <SpotSheet
           key={picked?.poiId ?? 'none'}
