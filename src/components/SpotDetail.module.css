@@ -67,6 +67,25 @@
   cursor: pointer;
 }
 
+/* 지도 시트를 펼쳤을 때의 ✕(2026-09-19) — ‹ 맞은편에 같은 원 · 같은 그림자로 짝을 맞춥니다. */
+.close {
+  position: absolute;
+  right: var(--space-lg);
+  top: var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 4px rgba(16, 24, 40, 0.18);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
 /* 264:238 / 264:241 — 반투명 알약 두 개. 면 색은 text/primary의 55%입니다. */
 .countChip,
 .creditChip {

@@ -1,8 +1,9 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../lib/api'
+import { loadKakaoMaps } from '../lib/kakaoLoader'
 import { loadSpotDetail } from '../lib/spots'
 import SpotDetail from './SpotDetail'
 
@@ -13,6 +14,27 @@ vi.mock('../lib/api', () => ({
 }))
 
 vi.mock('../lib/spots', () => ({ loadSpotDetail: vi.fn() }))
+
+// 고현터미널의 위치 지도만 부릅니다. 기본은 실패(지도 도구 없음) — 지도 테스트만 가짜 SDK 를 줍니다.
+vi.mock('../lib/kakaoLoader', () => ({ loadKakaoMaps: vi.fn() }))
+
+/** 카카오 지도 SDK 흉내 — 만든 지도의 옵션과 핀만 봅니다. */
+function fakeKakao() {
+  const Map = vi.fn(function () {
+    this.setZoomable = vi.fn()
+  })
+  const CustomOverlay = vi.fn()
+  const LatLng = vi.fn(function (lat, lng) {
+    this.lat = lat
+    this.lng = lng
+  })
+  return { maps: { Map, CustomOverlay, LatLng } }
+}
+
+const TERMINAL = {
+  poiId: 23, kind: 'TERMINAL', name: '고현터미널', shortName: '고현터미널', lat: 34.8906148, lng: 128.6242507,
+  theme: null, region: null, category: null, overview: null, overviewSource: 'FALLBACK', photos: [],
+}
 
 const TOUR_PHOTOS = [
   'https://tong.visitkorea.or.kr/a.jpg',
@@ -45,6 +67,7 @@ const VISITOR = [1, 2].map((n) => ({
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
+  loadKakaoMaps.mockRejectedValue(new Error('no sdk'))
 })
 
 function renderDetail(spot = SPOT) {
@@ -59,6 +82,40 @@ function renderDetail(spot = SPOT) {
 
 /** 문단의 날 글(textContent) 그대로 찾습니다 — 기본 매처는 줄바꿈을 공백으로 접어서 개행을 확인할 수 없습니다. */
 const paragraphWithText = (text) => (_, el) => el?.tagName === 'P' && el.textContent === text
+
+describe('SpotDetail — 고현터미널 사진 자리 = 위치 지도 (2026-09-19)', () => {
+  it('자리그림 대신 움직이지 않는 지도에 파란 버스 핀 하나 — 터미널 좌표가 가운데', async () => {
+    const kakao = fakeKakao()
+    loadKakaoMaps.mockResolvedValue(kakao)
+    renderDetail(TERMINAL)
+
+    const map = await screen.findByRole('img', { name: '고현터미널 위치 지도' })
+    await waitFor(() => expect(kakao.maps.Map).toHaveBeenCalledTimes(1))
+    const [container, options] = kakao.maps.Map.mock.calls[0]
+    expect(container).toBe(map)
+    expect(options.center).toEqual({ lat: 34.8906148, lng: 128.6242507 })
+    expect(options.draggable).toBe(false)
+    expect(kakao.maps.CustomOverlay).toHaveBeenCalledTimes(1)
+    // 사진 자리에 자리그림이 같이 깔리지 않는다
+    expect(map.parentElement.querySelector('img')).toBeNull()
+  })
+
+  it('지도 도구를 못 받으면 자리그림으로 — 빈 칸을 남기지 않는다', async () => {
+    renderDetail(TERMINAL)
+
+    await screen.findByRole('heading', { name: '고현터미널' })
+    await waitFor(() => expect(screen.queryByRole('img', { name: '고현터미널 위치 지도' })).not.toBeInTheDocument())
+    expect(document.querySelector('img[alt=""]')).not.toBeNull()
+  })
+
+  it('터미널이 아닌 스팟은 사진이 없어도 지도가 아니라 자리그림 — 지도 도구도 부르지 않는다', async () => {
+    renderDetail({ ...SPOT, photos: [] })
+
+    await screen.findByRole('heading', { name: '학동몽돌해변' })
+    expect(screen.queryByRole('img', { name: /위치 지도/ })).not.toBeInTheDocument()
+    expect(loadKakaoMaps).not.toHaveBeenCalled()
+  })
+})
 
 describe('SpotDetail — 소개 (2026-09-15: 우리 요약 + TourAPI 원문)', () => {
   it('요약이 원문 위에 오고, 둘 다 문장마다 줄이 바뀐다 — 원문 글자는 그대로', async () => {

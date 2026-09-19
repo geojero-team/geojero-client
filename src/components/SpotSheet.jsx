@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import SpotDetail from './SpotDetail'
 import { t } from '../i18n'
@@ -133,21 +134,25 @@ export default function SpotSheet({ spot, onClose, onFullChange }) {
           <span className={styles.grabberBar} aria-hidden="true" />
         </button>
 
-        <button
-          type="button"
-          className={styles.close}
-          onClick={onClose}
-          aria-label={t('common.close')}
-        >
-          ✕
-        </button>
+        {/* 펼치면 ✕ 는 스팟 상세의 사진 위 ‹ 맞은편으로 옮깁니다(2026-09-19) — 여기 두면 시트 맨 위에 걸쳐 잘려 보이고,
+            스크롤하면 ‹ 는 올라가는데 ✕ 만 떠 있었습니다. */}
+        {!full && (
+          <button
+            type="button"
+            className={styles.close}
+            onClick={onClose}
+            aria-label={t('common.close')}
+          >
+            <X size={18} strokeWidth={2.25} aria-hidden="true" />
+          </button>
+        )}
 
         {full ? (
           /* 끌어올리면 스팟 상세가 그대로 나옵니다.
              2026-09-18: 펼친 상태에 **‹ 버튼**을 줍니다(사용자 — 「지도에서 스팟 상세로 들어가면 뒤로가기가 없다」).
              전에는 손잡이와 ✕뿐이었는데, 펼치면 사진이 화면을 채워 둘 다 눈에 띄지 않았습니다.
              ‹ 는 **지도로 돌아가기**(시트를 peek 으로)이고 ✕ 는 닫기라 뜻이 갈립니다. */
-          <SpotDetail key={spot.poiId} poiId={spot.poiId} seed={spot} onBack={() => setFull(false)} />
+          <SpotDetail key={spot.poiId} poiId={spot.poiId} seed={spot} onBack={() => setFull(false)} onClose={onClose} />
         ) : (
           /* peek — 이름 · 권역·분류 · 사진 한 장.
              「자세히 보기」 버튼을 뺐습니다(2026-09-13). 손잡이로 바로 올릴 수 있어 버튼이

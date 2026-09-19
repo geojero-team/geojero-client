@@ -86,8 +86,7 @@
   border: 0;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.92);
-  /* ✕ 는 14px 로는 원(28) 안에서 점처럼 보였습니다 — 글자만 키웁니다(2026-09-18 사용자). */
-  font: 500 20px/1 var(--font-sans);
+  /* ✕ 는 14px 글자로는 원(28) 안에서 점처럼 보여 20px 로 키웠다가(2026-09-18 사용자) 09-19 SVG 아이콘으로 바꿨습니다(‹ 와 같은 선). */
   color: var(--text-secondary);
   cursor: pointer;
 }

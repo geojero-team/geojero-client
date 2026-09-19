@@ -1,0 +1,17 @@
+/* 사진 자리(hero)를 그대로 채웁니다. 지도가 뜨기 전에는 옅은 회색입니다.
+   z-index 0 으로 층을 가둡니다 — 없으면 카카오 지도 안쪽 층(z-index)이 위의 ‹ · ✕ 버튼을 덮습니다. */
+.map {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--bg-surface);
+  pointer-events: none;
+}
+
+/* 홈 지도 고현터미널 마커(Figma 501:213)와 같은 28px 원 — 중심이 좌표에 옵니다. */
+.pin {
+  display: block;
+  width: 28px;
+  height: 28px;
+  line-height: 0;
+}

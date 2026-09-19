@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, X } from 'lucide-react'
+import TerminalMap from './TerminalMap'
 import VisitorPhotos from './VisitorPhotos'
 import { t } from '../i18n'
 import { loadSpotDetail } from '../lib/spots'
@@ -99,13 +100,17 @@ function FerryIcon() {
  * @param poiId   서버 poi_id. 주소의 :spotId가 곧 이 값입니다
  * @param seed    목록에서 이미 아는 것(이름·권역·분류). 있으면 사진을 기다리는 동안에도
  *                제목이 먼저 뜹니다 — 시트는 누른 즉시 이름이 보여야 합니다
- * @param onBack  주면 사진 위에 ‹ 버튼을 그립니다. 시트에서는 주지 않습니다
+ * @param onBack  주면 사진 위에 ‹ 버튼을 그립니다
+ * @param onClose 주면 사진 위 ‹ 맞은편에 ✕ 를 그립니다 — 지도 시트를 펼쳤을 때(2026-09-19). 시트의 ✕ 가
+ *                시트 맨 위에 걸쳐 잘려 보였고, 스크롤하면 ‹ 는 올라가는데 ✕ 만 떠 있었습니다
  * @param uploadInUrl  `/spots/:id` 화면이면 참 — 방문자 사진 올리기 뜻을 주소(`?upload=1`)에 둡니다.
  *                지도 시트는 주소를 바꾸지 않으므로 주지 않습니다
  */
-export default function SpotDetail({ poiId, seed = null, onBack = null, uploadInUrl = false }) {
+export default function SpotDetail({ poiId, seed = null, onBack = null, onClose = null, uploadInUrl = false }) {
   const navigate = useNavigate()
   const [loaded, setLoaded] = useState(null)
+  // 고현터미널 위치 지도를 못 띄웠으면 자리그림으로 되돌립니다(TerminalMap).
+  const [mapFailed, setMapFailed] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [photoIndex, setPhotoIndex] = useState(0)
   const trackRef = useRef(null)
@@ -185,6 +190,8 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, uploadIn
   const slides = hasPhotos ? photos : [courseImage(spot)]
   // 한 장뿐이면 넘길 것도 셀 것도 없습니다. 안내를 붙이면 없는 동작을 약속하게 됩니다.
   const swipeable = photos.length > 1
+  // 고현터미널은 사진이 없는 곳이라 사진 자리에 위치 지도를 둡니다(2026-09-19 사용자 결정). 좌표가 없거나 지도가 못 뜨면 자리그림.
+  const showTerminalMap = isTerminal && !hasPhotos && spot.lat != null && spot.lng != null && !mapFailed
 
   /* 스크롤 위치로 현재 장을 셉니다. 스크롤 이벤트마다 setState가 불리지만 값이 같으면
      React가 리렌더를 걸러주므로, 장이 바뀌는 순간에만 실제로 다시 그려집니다. */
@@ -197,7 +204,15 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, uploadIn
   return (
     <div className={styles.scroll}>
       <div className={styles.hero}>
-        {/* 좌우 스와이프(264:228). 스냅이라 관성·고무줄이 브라우저 기본 그대로입니다. */}
+        {showTerminalMap ? (
+          <TerminalMap
+            lat={spot.lat}
+            lng={spot.lng}
+            name={spot.shortName ?? spot.name}
+            onFail={() => setMapFailed(true)}
+          />
+        ) : (
+          /* 좌우 스와이프(264:228). 스냅이라 관성·고무줄이 브라우저 기본 그대로입니다. */
         <div
           ref={trackRef}
           className={styles.track}
@@ -222,6 +237,7 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, uploadIn
             />
           ))}
         </div>
+        )}
 
         {onBack && (
           <button
@@ -231,6 +247,17 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, uploadIn
             aria-label={t('common.back')}
           >
             <ChevronLeft size={22} strokeWidth={2.25} aria-hidden="true" />
+          </button>
+        )}
+
+        {onClose && (
+          <button
+            type="button"
+            className={styles.close}
+            onClick={onClose}
+            aria-label={t('common.close')}
+          >
+            <X size={20} strokeWidth={2.25} aria-hidden="true" />
           </button>
         )}
 

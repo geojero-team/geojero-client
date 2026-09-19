@@ -100,6 +100,34 @@ describe('SpotSheet — 방문자 사진', () => {
 /* 펼친 시트의 ‹ 버튼(2026-09-18 사용자 — 「지도에서 스팟 상세로 들어가면 뒤로가기가 없다」).
    손잡이와 ✕ 는 있었지만 펼치면 사진이 화면을 채워 둘 다 눈에 띄지 않았습니다.
    ‹ 는 **지도로 돌아가기**(시트를 peek 으로)이고 ✕ 는 닫기라 뜻이 갈립니다. */
+describe('SpotSheet — 닫기 ✕ (2026-09-19)', () => {
+  it('글자가 아니라 아이콘이고, 펼치면 사진 안 ‹ 맞은편으로 옮겨 하나만 남는다(스크롤해도 ‹ 와 같이 움직인다)', async () => {
+    loadSpotDetail.mockResolvedValue({ ...SPOT, photos: [] })
+    api.getVisitorPhotos.mockResolvedValue({ poiId: SPOT.poiId, count: 0, photos: [] })
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <SpotSheet spot={SPOT} onClose={onClose} />
+      </MemoryRouter>,
+    )
+
+    const peekClose = screen.getByRole('button', { name: '닫기' })
+    expect(peekClose.querySelector('svg')).not.toBeNull()
+    expect(peekClose.textContent.trim()).toBe('')
+
+    await user.click(screen.getByRole('button', { name: '자세히 보기', expanded: false }))
+    const back = await screen.findByRole('button', { name: '뒤로' })
+    const closes = screen.getAllByRole('button', { name: '닫기' })
+    expect(closes).toHaveLength(1)
+    expect(closes[0].parentElement).toBe(back.parentElement)
+    expect(closes[0].querySelector('svg')).not.toBeNull()
+
+    await user.click(closes[0])
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('SpotSheet — 펼친 뒤 돌아가기', () => {
   it('펼치면 ‹ 가 보이고, 누르면 닫지 않고 peek 으로 돌아온다', async () => {
     loadSpotDetail.mockResolvedValue({ ...SPOT, photos: [] })

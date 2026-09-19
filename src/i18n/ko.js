@@ -148,6 +148,8 @@ export default {
   // 남깁니다 — 마우스·키보드만 쓰는 사람에게는 세로로 끄는 동작이 어렵습니다.
   // 고현터미널(Figma 02-2 501:213) — 시트·상세에서 권역·분류 자리에 들어갑니다.
   'terminal.startPoint': '모든 코스의 출발 지점',
+  // 고현터미널 상세의 사진 자리 지도(2026-09-19) — 읽기 도구가 읽는 이름입니다.
+  'terminal.mapLabel': '{name} 위치 지도',
   'spotSheet.expand': '자세히 보기',
   'spotSheet.collapse': '시트 내리기',
 

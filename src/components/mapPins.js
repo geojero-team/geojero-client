@@ -69,7 +69,7 @@ function themeIconSvg(theme) {
  * 모든 코스의 출발 지점이라 스팟(흰 면 + 사진)과 반대로 **브랜드 면 + 흰 버스**입니다.
  * 원 r=13 + 흰 테두리 2 = 28px 박스라 스팟 마커와 크기·중심이 같습니다.
  */
-const TERMINAL_MARKER_SVG =
+export const TERMINAL_MARKER_SVG =
   '<svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">' +
   '<circle cx="14" cy="14" r="13" fill="#0069B3" stroke="white" stroke-width="2"/>' +
   '<path d="M17.3333 8H10.6667C9.5621 8 8.66667 8.89543 8.66667 10V15.3333C8.66667 16.4379 9.5621 17.3333 10.6667 17.3333H17.3333C18.4379 17.3333 19.3333 16.4379 19.3333 15.3333V10C19.3333 8.89543 18.4379 8 17.3333 8Z" stroke="white" stroke-width="1.33333"/>' +
