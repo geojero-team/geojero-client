@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import mongkkuArm from '../assets/mongkku-arm.png'
+import mongkkuArmRaise from '../assets/mongkku-arm-raise.png'
+import mongkkuArmRest from '../assets/mongkku-arm-rest.png'
 import mongkkuBody from '../assets/mongkku-body.png'
 import { t } from '../i18n'
 import styles from './MascotButton.module.css'
@@ -26,10 +27,12 @@ function reducedMotion() {
  * 평소엔 **왼팔(보는 쪽 왼쪽)을 내리고** 천천히 둥실, 누르면 **팔을 올려 흔들며** 말풍선 「거제 9경이 뭘까?」가 뜨고
  * 곧 시트가 열립니다(2026-09-19 사용자). 처음 들어올 때 저절로 뜨는 말풍선은 없습니다 — 누를 때만.
  *
- * 그림: 거제시청 캐릭터 페이지의 공식 PNG(팔을 든 모습 한 장)에서 **든 팔만 떼어** 몸 · 팔 두 장으로 나눴습니다.
- * 팔은 몸 뒤에 있어 어깨(몸 테두리 안쪽)를 축으로 돌립니다 — 팔 뿌리를 축까지 늘이고 끝을 축 중심 반원으로 둥글려,
- * 어느 각도에서도 몸 가장자리에서 잘린 면이 보이지 않습니다. 팔을 다 올리면 공식 그림과 같은 모습입니다.
- * 내린 각도는 반대쪽(이미 내린) 팔을 좌우로 뒤집은 방향입니다. 색 · 선은 원본 그대로입니다(만든 스크립트: 세션 scratchpad split_arm2.py).
+ * 그림: 거제시청 캐릭터 페이지의 공식 PNG(팔을 든 모습 한 장)를 세 장으로 나눴습니다. 색 · 선은 원본 그대로입니다.
+ *   몸        — 든 팔만 떼어 낸 원본
+ *   평소 팔   — **반대쪽(이미 내린) 팔을 몸 대칭축으로 좌우로 뒤집은 것**. 좌우 팔이 대칭이다(2026-09-19 사용자)
+ *   올리는 팔 — 원본의 든 팔. 몸 뒤에서 어깨(몸 테두리 안쪽)를 축으로 돈다 — 뿌리를 축까지 늘이고 끝을 축 중심 반원으로 둥글려
+ *               어느 각도에서도 잘린 면이 보이지 않는다. 다 올리면 공식 그림과 같다. 내린 각도(-101°)는 평소 팔과 가장 잘 겹치는 각도
+ * 누르면 평소 팔이 사라지며(0.08초) 올리는 팔이 그 자리에서 올라갑니다 — 두 팔이 거의 같은 자리라 바뀌는 게 보이지 않습니다.
  *
  * 움직임 줄이기 설정이면 둥실 · 흔들기를 멈추고 누르자마자 엽니다.
  * 화면 읽기 프로그램에는 캐릭터가 아니라 **하는 일**(「거제9경이란?」)을 이름으로 줍니다.
@@ -72,7 +75,8 @@ export default function MascotButton({ onOpen, ref }) {
         aria-haspopup="dialog"
       >
         {/* 팔이 몸 뒤라 팔을 먼저 그립니다. */}
-        <img className={styles.arm} src={mongkkuArm} alt="" draggable="false" />
+        <img className={styles.armRest} src={mongkkuArmRest} alt="" draggable="false" />
+        <img className={styles.arm} src={mongkkuArmRaise} alt="" draggable="false" />
         <img className={styles.body} src={mongkkuBody} alt="" draggable="false" />
       </button>
     </div>

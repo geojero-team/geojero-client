@@ -191,9 +191,13 @@ describe('홈 — 몽꾸(거제시 캐릭터)가 「거제9경이란?」을 연�
     renderHome()
     await screen.findByRole('button', { name: '핀 학동몽돌해변' })
     const mascot = screen.getByRole('button', { name: '거제9경이란?' })
-    // 몸과 팔을 따로 그린다(팔만 어깨를 축으로 돈다) — 거제시청 공식 그림에서 팔을 떼어 낸 두 장
+    // 거제시청 공식 그림에서 나눈 세 장 — 평소 팔(반대쪽 팔을 좌우로 뒤집어 대칭) · 올리는 팔(어깨를 축으로 돈다) · 몸
     const srcs = [...mascot.querySelectorAll('img')].map((img) => img.getAttribute('src'))
-    expect(srcs).toEqual([expect.stringMatching(/mongkku-arm/), expect.stringMatching(/mongkku-body/)])
+    expect(srcs).toEqual([
+      expect.stringMatching(/mongkku-arm-rest/),
+      expect.stringMatching(/mongkku-arm-raise/),
+      expect.stringMatching(/mongkku-body/),
+    ])
     expect(mascot).toHaveAttribute('data-arm', 'down')
     expect(screen.queryByText('거제 9경이 뭘까?')).not.toBeInTheDocument()
 

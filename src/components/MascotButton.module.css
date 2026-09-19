@@ -23,6 +23,7 @@
   filter: drop-shadow(0 3px 4px rgba(15, 23, 30, 0.28));
 }
 
+.armRest,
 .arm,
 .body {
   position: absolute;
@@ -34,22 +35,37 @@
   user-select: none;
 }
 
-/* 팔 — 어깨(원본 좌표 71, 181 = 23.7% 56.13%)를 축으로. 평소엔 내림(-123.7° — 반대쪽 팔을 뒤집은 방향). */
+/* 평소 팔 — 반대쪽 팔을 뒤집은 그림(좌우 대칭). 올리는 동안은 감춘다. 내려올 때는 올리는 팔이 다 내려온 뒤(0.3초) 나타난다. */
+.armRest {
+  transition: opacity 0.08s linear 0.3s;
+}
+
+.mascot[data-arm='up'] .armRest {
+  opacity: 0;
+  transition: opacity 0.08s linear;
+}
+
+/* 올리는 팔 — 어깨(원본 좌표 64.7, 173.7 = 21.55% 53.76%)를 축으로. 평소엔 평소 팔 자리(-101°)에 숨어 있다. */
 .arm {
-  transform-origin: 23.7% 56.13%;
-  transform: rotate(-123.7deg);
-  transition: transform 0.3s ease;
+  opacity: 0;
+  transform-origin: 21.55% 53.76%;
+  transform: rotate(-101deg);
+  transition:
+    transform 0.3s ease,
+    opacity 0.08s linear 0.3s;
 }
 
 /* 누르면 — 올리며 한 번 흔들고 든 채로(공식 그림 모습). */
 .mascot[data-arm='up'] .arm {
+  opacity: 1;
   transform: rotate(0deg);
+  transition: opacity 0.08s linear;
   animation: raise 620ms cubic-bezier(0.3, 0.8, 0.4, 1) both;
 }
 
 @keyframes raise {
   0% {
-    transform: rotate(-123.7deg);
+    transform: rotate(-101deg);
   }
   45% {
     transform: rotate(8deg);
@@ -124,6 +140,7 @@
     animation: none;
   }
 
+  .armRest,
   .arm {
     transition: none;
   }
