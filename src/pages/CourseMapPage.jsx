@@ -12,6 +12,7 @@ import { api } from '../lib/api'
 import { courseImage, onImageError } from '../lib/courseImage'
 import { formatDuration } from '../lib/format'
 import { loadSpotPhotos, loadVisibleSpots, withPhotos } from '../lib/spots'
+import { useSheetHistory } from '../lib/useSheetHistory'
 import styles from './CourseMapPage.module.css'
 
 /**
@@ -42,6 +43,8 @@ export default function CourseMapPage() {
   const [activeId, setActiveId] = useState(null)
   // 핀을 누른 스팟. 홈과 같은 동작입니다 — 화면을 옮기지 않고 시트만 올립니다.
   const [picked, setPicked] = useState(null)
+  // 폰 뒤로가기는 시트부터 닫습니다(2026-09-20 — 홈과 같다). 시트 기록 위인지는 머리 ‹ 가 씁니다.
+  const sheetOnTop = useSheetHistory(picked != null, () => setPicked(null))
   /* 시트를 끝까지 올려 스팟 상세를 보는 중인지. 그동안은 아래 코스 카드를 감춥니다
      (2026-09-18 사용자) — 지금 하는 일은 이 스팟을 읽는 것이고, 상세를 닫으면 카드가 그대로 돌아옵니다. */
   const [sheetFull, setSheetFull] = useState(false)
@@ -103,9 +106,12 @@ export default function CourseMapPage() {
   }, [active])
 
   /* 뒤로가기 — 바로 연 주소(공유 링크)면 기록이 없어 navigate(-1)이 앱 밖으로 나갑니다.
-     그때는 코스 추천으로 보냅니다(CoursesPage.goBack 과 같은 방법). */
-  const goBack = () =>
-    (window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate('/courses', { replace: true })
+     그때는 코스 추천으로 보냅니다(CoursesPage.goBack 과 같은 방법).
+     머리 ‹ 는 이 화면을 떠나는 버튼이라, 시트가 떠 있으면 시트 기록(useSheetHistory)까지 한 번에 물러납니다. */
+  const goBack = () => {
+    const steps = sheetOnTop ? 2 : 1
+    return (window.history.state?.idx ?? 0) >= steps ? navigate(-steps) : navigate('/courses', { replace: true })
+  }
 
   const openDetail = () => {
     if (!active) return

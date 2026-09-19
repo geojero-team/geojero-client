@@ -14,6 +14,7 @@ import { peekHeightOf } from '../components/spotSheetHeight'
 import { t } from '../i18n'
 import { api } from '../lib/api'
 import { poiIdsByNineScenic } from '../lib/nineScenic'
+import { useSheetHistory } from '../lib/useSheetHistory'
 import styles from './HomePage.module.css'
 
 /**
@@ -55,6 +56,8 @@ export default function HomePage() {
   const [result, setResult] = useState({ status: 'loading', spots: [], error: '' })
   // 핀을 누른 스팟. 화면을 옮기지 않고 시트만 올립니다(2026-09-13).
   const [picked, setPicked] = useState(null)
+  // 폰 뒤로가기는 시트부터 닫습니다(2026-09-20 — 전에는 시트를 건너뛰고 홈 직전 화면으로 갔다).
+  useSheetHistory(picked != null, () => setPicked(null))
   /* 9경 시트가 열려 있는지는 **주소**(`?nine=1`)에 둡니다. 시트의 9경 이름은 스팟 상세로 가는 링크라,
      상세에서 뒤로 오면 홈이 새로 그려집니다 — 상태를 useState 에 두면 시트가 닫힌 채로 돌아와
      다음 9경을 보려면 버튼부터 다시 눌러야 합니다. 열고 닫을 때는 replace 라 기록이 쌓이지 않습니다. */
