@@ -9,6 +9,7 @@ import { courseImage, onImageError } from '../lib/courseImage'
 import { formatDistance } from '../lib/format'
 import { splitHours } from '../lib/openHours'
 import { loadVisibleSpots } from '../lib/spots'
+import { usePhotoSwipe } from '../lib/usePhotoSwipe'
 import styles from './PlaceDetail.module.css'
 
 /**
@@ -302,6 +303,9 @@ function splitTags(value) {
 function Photos({ images, onBack, onClose }) {
   const trackRef = useRef(null)
   const [index, setIndex] = useState(0)
+  // 넘기기는 스팟 상세와 같다 — 손가락 · 마우스 끌기 · ← → 키, 마지막 장에서 더 넘기면 첫 장(2026-09-19 사용자).
+  const { handlers: swipe } = usePhotoSwipe(trackRef)
+  const swipeable = images.length > 1
   const sync = () => {
     const track = trackRef.current
     if (track && track.clientWidth > 0) setIndex(Math.round(track.scrollLeft / track.clientWidth))
@@ -309,7 +313,15 @@ function Photos({ images, onBack, onClose }) {
   return (
     <div className={styles.hero} data-hero="">
       {images.length > 0 ? (
-        <div className={styles.track} ref={trackRef} onScroll={sync}>
+        <div
+          className={styles.track}
+          ref={trackRef}
+          onScroll={sync}
+          {...(swipeable ? swipe : {})}
+          tabIndex={swipeable ? 0 : undefined}
+          role={swipeable ? 'group' : undefined}
+          aria-label={swipeable ? t('spotDetail.photosLabel', { count: images.length }) : undefined}
+        >
           {images.map((src) => (
             <img key={src} className={styles.slide} src={src} alt="" draggable="false" />
           ))}

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -150,6 +150,54 @@ describe('맛집 · 숙소 상세 — 머리', () => {
     renderPage(913)
     await screen.findByRole('heading', { level: 1 })
     expect(screen.getByText('사진 없음 — TourAPI 사진 0장')).toBeInTheDocument()
+  })
+})
+
+describe('맛집 · 숙소 상세 — 사진 넘기기: 스팟처럼 마지막 장에서 더 넘기면 첫 장 (2026-09-19)', () => {
+  /** jsdom 은 크기 · 스크롤이 없어 트랙 폭과 scrollTo 를 흉내 내고, 지금 몇 번째 장인지 스크롤 위치로 맞춥니다. */
+  async function trackAt(index) {
+    renderPage(909)
+    const track = await screen.findByRole('group', { name: '사진 2장 — 좌우로 넘겨보세요' })
+    Object.defineProperty(track, 'clientWidth', { configurable: true, value: 390 })
+    track.scrollTo = vi.fn()
+    track.scrollLeft = index * 390
+    fireEvent.scroll(track)
+    return track
+  }
+
+  it('키보드 → — 마지막 장이면 첫 장으로', async () => {
+    const track = await trackAt(1)
+    fireEvent.keyDown(track, { key: 'ArrowRight' })
+    expect(track.scrollTo).toHaveBeenCalledWith({ left: 0, behavior: 'smooth' })
+  })
+
+  it('손가락으로 마지막 장을 왼쪽으로 밀면 첫 장으로 — 마지막 장이 아니면 브라우저에 맡긴다', async () => {
+    const track = await trackAt(0)
+    fireEvent.touchStart(track, { touches: [{ clientX: 300, clientY: 100 }] })
+    fireEvent.touchEnd(track, { changedTouches: [{ clientX: 200, clientY: 104 }] })
+    expect(track.scrollTo).not.toHaveBeenCalled()
+
+    track.scrollLeft = 390
+    fireEvent.scroll(track)
+    fireEvent.touchStart(track, { touches: [{ clientX: 300, clientY: 100 }] })
+    fireEvent.touchEnd(track, { changedTouches: [{ clientX: 200, clientY: 104 }] })
+    expect(track.scrollTo).toHaveBeenCalledWith({ left: 0, behavior: 'smooth' })
+  })
+
+  it('마우스로 마지막 장을 끌어도 첫 장으로', async () => {
+    const track = await trackAt(1)
+    Object.defineProperty(track, 'scrollWidth', { configurable: true, value: 780 })
+    track.getBoundingClientRect = () => ({ width: 390 })
+    track.setPointerCapture = vi.fn()
+    fireEvent.pointerDown(track, { pointerType: 'mouse', clientX: 300, pointerId: 1 })
+    fireEvent.pointerMove(track, { pointerType: 'mouse', clientX: 200, pointerId: 1 })
+    fireEvent.pointerUp(track, { pointerType: 'mouse', clientX: 200, pointerId: 1 })
+    expect(track.scrollTo).toHaveBeenLastCalledWith({ left: 0, behavior: 'smooth' })
+  })
+
+  it('장수 칩이 넘긴 장을 따라간다', async () => {
+    await trackAt(1)
+    expect(screen.getByText('2 / 2')).toBeInTheDocument()
   })
 })
 
