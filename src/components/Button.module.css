@@ -12,6 +12,20 @@
   font: var(--type-body-strong);
   white-space: nowrap;
   cursor: pointer;
+  /* 누르면 살짝 작아지며 **누른 쪽으로** 기웁니다(2026-09-19 사용자 — 토스식 촉감).
+     각도와 비율은 usePressTilt 가 포인터 좌표를 재어 변수로 넣습니다. 훅을 안 쓰면 기본값이라 평평합니다.
+     perspective 가 앞에 있어야 기울기가 원근으로 보입니다 — 없으면 그냥 찌그러집니다. */
+  transform: perspective(600px) rotateX(var(--press-rx, 0deg)) rotateY(var(--press-ry, 0deg))
+    scale(var(--press-scale, 1));
+  /* 놓을 때는 220ms 로 여운을 남깁니다. 누를 때는 아래 :active 가 80ms 로 줄여 손가락을 바로 따라갑니다. */
+  transition:
+    transform 220ms cubic-bezier(0.2, 0, 0, 1),
+    filter 120ms ease;
+}
+
+/* 들어갈 때는 빠르게, 돌아올 때는 천천히 — 같은 속도면 고무처럼 튕겨 보입니다. */
+.button:active {
+  transition-duration: 80ms;
 }
 
 .primary {
@@ -53,4 +67,14 @@
 
 .button:disabled {
   cursor: default;
+  /* 못 누르는 버튼은 움직이지 않습니다 — 움직이면 눌린 것으로 읽힙니다. */
+  transform: none;
+}
+
+/* 움직임을 줄이는 설정 — 누름 촉감은 장식이라 통째로 뺍니다. 색 반응(:active)은 그대로 남습니다. */
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transform: none;
+    transition: none;
+  }
 }

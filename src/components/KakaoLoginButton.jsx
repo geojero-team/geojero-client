@@ -1,4 +1,5 @@
 import { t } from '../i18n'
+import { usePressTilt } from '../lib/usePressTilt'
 import styles from './KakaoLoginButton.module.css'
 
 /**
@@ -11,8 +12,18 @@ import styles from './KakaoLoginButton.module.css'
  * 심볼 패스는 Figma 내보내기 원본(18×16)과 문자 단위로 같습니다.
  */
 export default function KakaoLoginButton({ className = '', ...props }) {
+  /* Button 과 같은 누름 촉감(2026-09-19) — 이것도 화면의 주요 버튼입니다(로그인 시트 · 내 일정 빈 상태).
+     핸들러를 맨 뒤에 펼치므로 호출부는 포인터 핸들러를 넘기지 않습니다(지금 onClick · data-api 만 넘깁니다). */
+  const { attach, handlers } = usePressTilt()
+
   return (
-    <button type="button" className={`${styles.button} ${className}`} {...props}>
+    <button
+      type="button"
+      className={`${styles.button} ${className}`}
+      ref={attach}
+      {...props}
+      {...handlers}
+    >
       <svg
         className={styles.symbol}
         width="18"
