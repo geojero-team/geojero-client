@@ -1,32 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import mongkku from '../assets/mongkku.png'
+import mongkkuArm from '../assets/mongkku-arm.png'
+import mongkkuBody from '../assets/mongkku-body.png'
 import { t } from '../i18n'
-import { isFirstVisit } from '../lib/onboarding'
 import styles from './MascotButton.module.css'
 
-/** 말풍선은 시작화면(2초 — App.jsx useSplash)이 걷힌 뒤에 뜨고, 4초 떠 있습니다(ms). */
-const BUBBLE_DELAY_MS = 2400
-const BUBBLE_MS = 4000
-/** 말풍선은 **탭마다 한 번** — 홈에 돌아올 때마다 뜨면 시끄럽습니다. 저장소가 막혔으면 띄우지 않습니다. */
-const BUBBLE_KEY = 'gj_nine_bubble'
-
-function bubbleSeen() {
-  try {
-    return sessionStorage.getItem(BUBBLE_KEY) != null
-  } catch {
-    return true
-  }
-}
-
-function markBubble() {
-  try {
-    sessionStorage.setItem(BUBBLE_KEY, '1')
-  } catch {
-    // 남길 수 없으면 bubbleSeen 이 true 라 애초에 뜨지 않습니다.
-  }
-}
-/** 누르면 이만큼 튀어 오른 뒤 시트를 엽니다(ms) — 움직임의 앞 절반. 움직임 줄이기면 기다리지 않습니다. */
-const HOP_MS = 180
+/** 누르면 팔을 올리고 말풍선을 띄운 뒤 이만큼 있다가 시트를 엽니다(ms) — 팔이 다 올라가 한 번 흔드는 시간. */
+const RAISE_MS = 650
+/** 시트가 열리고 나서 팔을 내리는 때(ms) — 시트 뒤에서 내려, 시트를 닫으면 처음 모습입니다. */
+const LOWER_AFTER_MS = 300
 
 function reducedMotion() {
   try {
@@ -38,54 +19,45 @@ function reducedMotion() {
 
 /**
  * 몽꾸 — 거제시 캐릭터(2024-09-26 지정). 누르면 「거제9경이란?」 시트를 엽니다(2026-09-19 사용자 결정. Figma 프레임 없음).
- * 사용 승인은 거제시에서 받았다(2026-09 팀 확인). 그림은 거제시청 캐릭터 페이지의 공식 PNG 그대로다 — 색 · 모양을 바꾸지 않는다.
+ * 사용 승인은 거제시에서 받았다(2026-09 팀 확인 — 따로 받은 파일은 없다).
  *
- * 전에는 지도 왼쪽 위 보라 글자 버튼 「거제9경이란?」이었습니다. 그 자리는 스팟 · 숙소 · 맛집 칩에 주고,
- * 설명은 캐릭터가 맡습니다. 캐릭터만 있으면 누르면 무엇이 나오는지 모르므로 **말풍선**이 말합니다(Speak 앱처럼) —
- * 시작화면이 걷힌 뒤 4초, 탭마다 한 번. 첫 방문에는 튜토리얼이 먼저라 띄우지 않습니다(두 안내가 겹칩니다).
+ * 전에는 지도 왼쪽 위 보라 글자 버튼 「거제9경이란?」이었습니다. 그 자리는 스팟 · 숙소 · 맛집 칩에 주고, 설명은 캐릭터가 맡습니다.
  *
- * 움직임: 평소엔 천천히 둥실(위아래 4px), 누르면 찌그러졌다 튀어 오르고 그 사이에 시트가 열립니다.
- * 움직임 줄이기 설정이면 둘 다 멈추고 바로 엽니다.
+ * 평소엔 **왼팔(보는 쪽 왼쪽)을 내리고** 천천히 둥실, 누르면 **팔을 올려 흔들며** 말풍선 「거제 9경이 뭘까?」가 뜨고
+ * 곧 시트가 열립니다(2026-09-19 사용자). 처음 들어올 때 저절로 뜨는 말풍선은 없습니다 — 누를 때만.
  *
+ * 그림: 거제시청 캐릭터 페이지의 공식 PNG(팔을 든 모습 한 장)에서 **든 팔만 떼어** 몸 · 팔 두 장으로 나눴습니다.
+ * 팔은 몸 뒤에 있어 어깨(몸 테두리 안쪽)를 축으로 돌립니다 — 팔 뿌리를 축까지 늘이고 끝을 축 중심 반원으로 둥글려,
+ * 어느 각도에서도 몸 가장자리에서 잘린 면이 보이지 않습니다. 팔을 다 올리면 공식 그림과 같은 모습입니다.
+ * 내린 각도는 반대쪽(이미 내린) 팔을 좌우로 뒤집은 방향입니다. 색 · 선은 원본 그대로입니다(만든 스크립트: 세션 scratchpad split_arm2.py).
+ *
+ * 움직임 줄이기 설정이면 둥실 · 흔들기를 멈추고 누르자마자 엽니다.
  * 화면 읽기 프로그램에는 캐릭터가 아니라 **하는 일**(「거제9경이란?」)을 이름으로 줍니다.
  */
 export default function MascotButton({ onOpen, ref }) {
-  const [bubble, setBubble] = useState(false)
-  const [hopping, setHopping] = useState(false)
-  const timerRef = useRef(null)
+  const [raised, setRaised] = useState(false)
+  const timersRef = useRef([])
 
-  useEffect(() => {
-    if (isFirstVisit() || bubbleSeen()) return
-    const show = setTimeout(() => {
-      setBubble(true)
-      markBubble()
-    }, BUBBLE_DELAY_MS)
-    const hide = setTimeout(() => setBubble(false), BUBBLE_DELAY_MS + BUBBLE_MS)
-    return () => {
-      clearTimeout(show)
-      clearTimeout(hide)
-    }
-  }, [])
-
-  useEffect(() => () => clearTimeout(timerRef.current), [])
+  useEffect(() => () => timersRef.current.forEach(clearTimeout), [])
 
   const open = () => {
-    setBubble(false)
+    if (raised) return
     if (reducedMotion()) {
       onOpen()
       return
     }
-    setHopping(true)
-    clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => {
-      setHopping(false)
-      onOpen()
-    }, HOP_MS)
+    setRaised(true)
+    timersRef.current.push(
+      setTimeout(() => {
+        onOpen()
+        timersRef.current.push(setTimeout(() => setRaised(false), LOWER_AFTER_MS))
+      }, RAISE_MS),
+    )
   }
 
   return (
     <div className={styles.wrap}>
-      {bubble && (
+      {raised && (
         <span className={styles.bubble} aria-hidden="true">
           {t('nineScenic.bubble')}
         </span>
@@ -93,12 +65,15 @@ export default function MascotButton({ onOpen, ref }) {
       <button
         ref={ref}
         type="button"
-        className={hopping ? `${styles.mascot} ${styles.hop}` : styles.mascot}
+        className={styles.mascot}
+        data-arm={raised ? 'up' : 'down'}
         onClick={open}
         aria-label={t('nineScenic.title')}
         aria-haspopup="dialog"
       >
-        <img className={styles.img} src={mongkku} alt="" draggable="false" />
+        {/* 팔이 몸 뒤라 팔을 먼저 그립니다. */}
+        <img className={styles.arm} src={mongkkuArm} alt="" draggable="false" />
+        <img className={styles.body} src={mongkkuBody} alt="" draggable="false" />
       </button>
     </div>
   )

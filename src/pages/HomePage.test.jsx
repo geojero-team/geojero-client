@@ -186,32 +186,23 @@ describe('홈 — 몽꾸(거제시 캐릭터)가 「거제9경이란?」을 연�
       </MemoryRouter>,
     )
 
-  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-  it('글자 버튼 대신 캐릭터가 있고, 시작화면(2초)이 걷힌 뒤 말풍선이 무엇을 여는지 말한다 — 탭마다 한 번', async () => {
-    const { unmount } = renderHome()
+  it('평소엔 팔을 내리고 말풍선이 없다 — 누르면 팔을 올리며 말풍선 「거제 9경이 뭘까?」, 곧 9경 시트', async () => {
+    const user = userEvent.setup()
+    renderHome()
     await screen.findByRole('button', { name: '핀 학동몽돌해변' })
     const mascot = screen.getByRole('button', { name: '거제9경이란?' })
-    expect(mascot.querySelector('img')).toHaveAttribute('src', expect.stringMatching(/mongkku/))
-    // 시작화면 아래에서 이미 떠 있으므로 바로 띄우면 가려진 채로 지나갑니다
+    // 몸과 팔을 따로 그린다(팔만 어깨를 축으로 돈다) — 거제시청 공식 그림에서 팔을 떼어 낸 두 장
+    const srcs = [...mascot.querySelectorAll('img')].map((img) => img.getAttribute('src'))
+    expect(srcs).toEqual([expect.stringMatching(/mongkku-arm/), expect.stringMatching(/mongkku-body/)])
+    expect(mascot).toHaveAttribute('data-arm', 'down')
     expect(screen.queryByText('거제 9경이 뭘까?')).not.toBeInTheDocument()
-    expect(await screen.findByText('거제 9경이 뭘까?', {}, { timeout: 3500 })).toBeInTheDocument()
 
-    // 같은 탭에서 홈으로 돌아오면 다시 띄우지 않는다
-    unmount()
-    renderHome()
-    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
-    await wait(2600)
-    expect(screen.queryByText('거제 9경이 뭘까?')).not.toBeInTheDocument()
-  }, 10000)
-
-  it('첫 방문이면 튜토리얼이 먼저라 말풍선을 띄우지 않는다', async () => {
-    localStorage.removeItem('gj_onboarded_v1')
-    renderHome()
-    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
-    await wait(2600)
-    expect(screen.queryByText('거제 9경이 뭘까?')).not.toBeInTheDocument()
-  }, 10000)
+    await user.click(mascot)
+    expect(mascot).toHaveAttribute('data-arm', 'up')
+    expect(screen.getByText('거제 9경이 뭘까?')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: '거제9경이란?' })).not.toBeInTheDocument()
+    expect(await screen.findByRole('dialog', { name: '거제9경이란?' }, { timeout: 2000 })).toBeInTheDocument()
+  })
 
   it('스팟 시트가 올라오면 캐릭터와 칩을 감춘다', async () => {
     const user = userEvent.setup()
