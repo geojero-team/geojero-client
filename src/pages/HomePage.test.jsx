@@ -131,8 +131,9 @@ describe('홈 — 거제9경(2026-09-14)', () => {
     renderHome()
     await screen.findByRole('button', { name: '핀 학동몽돌해변' })
 
-    await user.click(screen.getByRole('button', { name: '거제9경이란?' }))
-    const dialog = await screen.findByRole('dialog', { name: '거제9경이란?' })
+    await user.click(screen.getByRole('button', { name: '몽꾸' }))
+    await user.click(screen.getByRole('button', { name: '거제 9경이 뭘까?' }))
+    const dialog = screen.getByRole('dialog', { name: '거제9경이란?' })
     expect(dialog).toHaveTextContent('2024년')
     expect(dialog).toHaveTextContent('보라색 테두리')
     expect(screen.getByTestId('loc')).toHaveTextContent('/?nine=1')
@@ -162,14 +163,15 @@ describe('홈 — 거제9경(2026-09-14)', () => {
     expect(within(dialog).queryByText('지도에 없음')).not.toBeInTheDocument()
   })
 
-  it('Esc 로 닫히면 주소에서 nine 이 빠지고 포커스가 연 버튼으로 돌아온다', async () => {
+  it('Esc 로 닫히면 주소에서 nine 이 빠지고 포커스가 몽꾸로 돌아온다(말풍선은 시트를 열면 닫힌다)', async () => {
     const user = userEvent.setup()
     renderHome()
     await screen.findByRole('button', { name: '핀 학동몽돌해변' })
 
-    const opener = screen.getByRole('button', { name: '거제9경이란?' })
+    const opener = screen.getByRole('button', { name: '몽꾸' })
     await user.click(opener)
-    expect(await screen.findByRole('heading', { name: '거제9경이란?' })).toHaveFocus()
+    await user.click(screen.getByRole('button', { name: '거제 9경이 뭘까?' }))
+    expect(screen.getByRole('heading', { name: '거제9경이란?' })).toHaveFocus()
 
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog', { name: '거제9경이란?' })).not.toBeInTheDocument()
@@ -178,7 +180,7 @@ describe('홈 — 거제9경(2026-09-14)', () => {
   })
 })
 
-describe('홈 — 몽꾸(거제시 캐릭터)가 「거제9경이란?」을 연다(2026-09-19)', () => {
+describe('홈 — 몽꾸(거제시 캐릭터) → 말풍선 → 「거제9경이란?」(2026-09-19)', () => {
   const renderHome = () =>
     render(
       <MemoryRouter>
@@ -186,11 +188,11 @@ describe('홈 — 몽꾸(거제시 캐릭터)가 「거제9경이란?」을 연�
       </MemoryRouter>,
     )
 
-  it('평소엔 팔을 내리고 말풍선이 없다 — 누르면 팔을 올리며 말풍선 「거제 9경이 뭘까?」, 곧 9경 시트', async () => {
+  it('평소엔 팔을 내리고 말풍선이 없다 — 누르면 팔을 올리며 말풍선만, 말풍선을 눌러야 9경 시트', async () => {
     const user = userEvent.setup()
     renderHome()
     await screen.findByRole('button', { name: '핀 학동몽돌해변' })
-    const mascot = screen.getByRole('button', { name: '거제9경이란?' })
+    const mascot = screen.getByRole('button', { name: '몽꾸' })
     // 거제시청 공식 그림에서 나눈 세 장 — 평소 팔(반대쪽 팔을 좌우로 뒤집어 대칭) · 올리는 팔(어깨를 축으로 돈다) · 몸
     const srcs = [...mascot.querySelectorAll('img')].map((img) => img.getAttribute('src'))
     expect(srcs).toEqual([
@@ -199,20 +201,38 @@ describe('홈 — 몽꾸(거제시 캐릭터)가 「거제9경이란?」을 연�
       expect.stringMatching(/mongkku-body/),
     ])
     expect(mascot).toHaveAttribute('data-arm', 'down')
-    expect(screen.queryByText('거제 9경이 뭘까?')).not.toBeInTheDocument()
+    expect(mascot).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('button', { name: '거제 9경이 뭘까?' })).not.toBeInTheDocument()
 
     await user.click(mascot)
     expect(mascot).toHaveAttribute('data-arm', 'up')
-    expect(screen.getByText('거제 9경이 뭘까?')).toBeInTheDocument()
+    expect(mascot).toHaveAttribute('aria-expanded', 'true')
+    const bubble = screen.getByRole('button', { name: '거제 9경이 뭘까?' })
+    // 기다려도 저절로 열리지 않는다
+    await new Promise((resolve) => setTimeout(resolve, 900))
     expect(screen.queryByRole('dialog', { name: '거제9경이란?' })).not.toBeInTheDocument()
-    expect(await screen.findByRole('dialog', { name: '거제9경이란?' }, { timeout: 2000 })).toBeInTheDocument()
+
+    await user.click(bubble)
+    expect(screen.getByRole('dialog', { name: '거제9경이란?' })).toBeInTheDocument()
+  })
+
+  it('몽꾸를 한 번 더 누르면 말풍선이 닫히고 팔을 내린다', async () => {
+    const user = userEvent.setup()
+    renderHome()
+    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
+    const mascot = screen.getByRole('button', { name: '몽꾸' })
+
+    await user.click(mascot)
+    await user.click(mascot)
+    expect(mascot).toHaveAttribute('data-arm', 'down')
+    expect(screen.queryByRole('button', { name: '거제 9경이 뭘까?' })).not.toBeInTheDocument()
   })
 
   it('스팟 시트가 올라오면 캐릭터와 칩을 감춘다', async () => {
     const user = userEvent.setup()
     renderHome()
     await user.click(await screen.findByRole('button', { name: '핀 학동몽돌해변' }))
-    expect(screen.queryByRole('button', { name: '거제9경이란?' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '몽꾸' })).not.toBeInTheDocument()
     expect(screen.queryByRole('radiogroup', { name: '지도에 보일 곳' })).not.toBeInTheDocument()
   })
 })

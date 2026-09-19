@@ -92,13 +92,19 @@
   }
 }
 
-/* 말풍선 — 캐릭터 왼쪽(든 팔 옆), 꼬리는 캐릭터 쪽. 흰 면 + 그림자는 지도 위 칩과 같다. 팔이 올라가는 사이에 톡 튀어나온다. */
+/* 말풍선 — 캐릭터 왼쪽(든 팔 옆), 꼬리는 캐릭터 쪽. 흰 면 + 그림자는 지도 위 칩과 같다. 팔이 올라가는 사이에 톡 튀어나온다.
+   누르면 9경 시트가 열리는 버튼이라 끝에 › 를 붙인다(누를 수 있다는 표시). */
 .bubble {
   position: absolute;
   right: calc(100% + 14px);
   top: 4px;
-  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 8px 8px 12px;
+  border: 0;
   border-radius: var(--radius-pill);
+  cursor: pointer;
   background: var(--bg-page);
   box-shadow: var(--elevation-chip);
   color: var(--text-primary);
@@ -120,6 +126,10 @@
   background: var(--bg-page);
   transform: rotate(45deg);
   border-radius: 2px;
+}
+
+.bubble:active {
+  filter: brightness(0.95);
 }
 
 @keyframes pop {
