@@ -1,9 +1,11 @@
-import { BadgeCheck, Route } from 'lucide-react'
+import { Route } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import Button from '../components/Button'
+import MapLayerChips from '../components/MapLayerChips'
 import MapView from '../components/MapView'
+import MascotButton from '../components/MascotButton'
 import NineScenicSheet from '../components/NineScenicSheet'
 import Screen from '../components/Screen'
 import SpotSheet from '../components/SpotSheet'
@@ -29,7 +31,22 @@ import styles from './HomePage.module.css'
  * 2026-09-14: 거제9경을 지도에 색 테두리로 표시하고, 왼쪽 위 「거제9경이란?」 버튼이 그 뜻을
  * (2026-09-17 그 색을 주황에서 보라로 바꿨습니다 — 토큰 nine-scenic 하나만 바꾸면 모든 자리가 따라옵니다)
  * 설명하는 시트를 엽니다(사용자 결정, Figma 프레임 없음).
+ *
+ * 2026-09-19(사용자 결정, Figma 프레임 없음): 그 버튼을 빼고 —
+ *   · 왼쪽 위에 「스팟 · 숙소 · 맛집」 칩(MapLayerChips) — 하나만 골라 그것만 찍습니다. 고현터미널은 늘 찍습니다(모든 코스의 출발 지점).
+ *     고른 칩은 주소(`?layer=stay|food`)에 둡니다 — 핀을 눌러 상세로 갔다 뒤로 오면 그 칩 그대로입니다.
+ *     숙소 · 맛집은 스팟처럼 핀 + 이름표 + 시트인데, 핀에 사진 대신 아이콘입니다(공공누리 3유형이라 원으로 자르지 않는다 — mapPins).
+ *   · 「거제9경이란?」은 오른쪽 아래 **몽꾸**(거제시 캐릭터 — 사용 승인 받음)가 엽니다(MascotButton).
  */
+
+/** 주소의 칩 값 ↔ 칩. 스팟이 기본이라 주소에 적지 않습니다. */
+const LAYER_OF_PARAM = { stay: 'STAY', food: 'FOOD' }
+const PARAM_OF_LAYER = { STAY: 'stay', FOOD: 'food' }
+
+/** 숙소 · 맛집 → 지도 핀. spotId 는 스팟 poiId 와 섞이지 않게 따로 이름 붙입니다. 사진은 핀에 넘기지 않습니다(위). */
+function placePin(place) {
+  return { ...place, spotId: `place-${place.placeId}`, shortName: place.name, thumbnailUrl: null }
+}
 export default function HomePage() {
   const navigate = useNavigate()
   const [result, setResult] = useState({ status: 'loading', spots: [], error: '' })
@@ -40,8 +57,11 @@ export default function HomePage() {
      다음 9경을 보려면 버튼부터 다시 눌러야 합니다. 열고 닫을 때는 replace 라 기록이 쌓이지 않습니다. */
   const [searchParams, setSearchParams] = useSearchParams()
   const nineOpen = searchParams.get('nine') === '1'
-  // 시트를 닫으면 연 버튼으로 포커스를 돌려줍니다 — 키보드로 쓰는 사람이 제자리를 잃지 않게.
+  // 시트를 닫으면 연 버튼(몽꾸)으로 포커스를 돌려줍니다 — 키보드로 쓰는 사람이 제자리를 잃지 않게.
   const nineButtonRef = useRef(null)
+  const layer = LAYER_OF_PARAM[searchParams.get('layer')] ?? 'SPOT'
+  // 숙소 · 맛집 목록 — 그 칩을 처음 누를 때 한 번 받습니다(스팟만 보는 사람에게 TourAPI 호출을 늘리지 않게).
+  const [places, setPlaces] = useState({})
 
   useEffect(() => {
     let cancelled = false
@@ -75,7 +95,50 @@ export default function HomePage() {
     }
   }, [])
 
-  const spots = useMemo(() => result.spots, [result.spots])
+  /* 부른 적 있는 칩은 ref 로 셉니다 — `places` 를 의존성에 두면 받는 중 상태를 넣는 순간 이펙트가 다시 돌고,
+     앞 호출의 정리 함수가 그 응답을 버립니다. 응답은 칩을 바꾼 뒤에 와도 그 칩 자리에 넣습니다(버릴 이유가 없습니다). */
+  const requestedRef = useRef(new Set())
+  const [retryToken, setRetryToken] = useState(0)
+  useEffect(() => {
+    if (layer === 'SPOT' || requestedRef.current.has(layer)) return
+    requestedRef.current.add(layer)
+    api
+      .places(layer)
+      .then(({ places: items }) => {
+        setPlaces((prev) => ({ ...prev, [layer]: { status: 'ready', items: items ?? [] } }))
+      })
+      .catch((error) => {
+        // 빈 지도로 두지 않고 이유를 말합니다(절대규칙 3). 칩을 다시 누르면 다시 받습니다(setLayer).
+        requestedRef.current.delete(layer)
+        setPlaces((prev) => ({ ...prev, [layer]: { status: 'error', items: [], error: error.message } }))
+      })
+  }, [layer, retryToken])
+
+  const placeState = layer === 'SPOT' ? null : places[layer]
+  const spots = useMemo(() => {
+    if (layer === 'SPOT') return result.spots
+    const terminal = result.spots.filter((spot) => spot.kind === 'TERMINAL')
+    const pins = (placeState?.items ?? []).filter((place) => place.lat != null && place.lng != null).map(placePin)
+    return [...terminal, ...pins]
+  }, [layer, result.spots, placeState])
+
+  const setLayer = (next) => {
+    setPicked(null)
+    // 실패한 칩을 다시 누르면 다시 받습니다.
+    if (places[next]?.status === 'error') {
+      setPlaces((prev) => ({ ...prev, [next]: undefined }))
+      setRetryToken((token) => token + 1)
+    }
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev)
+        if (PARAM_OF_LAYER[next]) params.set('layer', PARAM_OF_LAYER[next])
+        else params.delete('layer')
+        return params
+      },
+      { replace: true },
+    )
+  }
   // 설명 시트의 9경 줄 → 스팟 상세 링크(몇 경 → poiId). 목록을 받기 전·실패하면 null —
   // 시트가 링크도 「지도에 없음」도 그리지 않습니다(없는 걸 없다고 말하지 않게).
   const nineLinks = useMemo(
@@ -115,7 +178,7 @@ export default function HomePage() {
         <div className={styles.mapWrap} style={{ bottom: picked ? peekHeightOf(picked) : 0 }}>
           <MapView
             spots={spots}
-            selectedSpotId={picked?.poiId ?? null}
+            selectedSpotId={picked?.spotId ?? null}
             onSelectSpot={setPicked}
             onDeselect={() => setPicked(null)}
             topReserved={16}
@@ -125,22 +188,24 @@ export default function HomePage() {
           />
         </div>
 
-        {/* 「거제9경이란?」 — 왼쪽 위. 2026-09-19 오른쪽 위 확대·축소를 빼면서 지도 위에 뜬 것은 이 버튼
-            하나만 남았습니다(높이·top 은 그대로 둡니다 — 코스 지도의 확대·축소와 같은 자리입니다).
-            버튼 면은 지도의 9경 테두리와 같은 색이라 버튼 자체가 범례입니다.
-            스팟 시트가 올라오면 '코스 추천 받기'와 같은 이유로 감춥니다 — 지금 할 일은 이 스팟을 보는 것이고,
+        {/* 왼쪽 위 칩 · 오른쪽 아래 몽꾸(2026-09-19). 칩은 옛 「거제9경이란?」 버튼 자리(top · 높이 그대로)입니다.
+            시트가 올라오면 '코스 추천 받기'와 같은 이유로 감춥니다 — 지금 할 일은 이 곳을 보는 것이고,
             시트를 끝까지 올리면 시트(z 3)보다 위(z 4)라 상세 위에 떠 버립니다. */}
         {!picked && (
-          <button
-            ref={nineButtonRef}
-            type="button"
-            className={styles.nineButton}
-            onClick={() => setNine(true)}
-            aria-haspopup="dialog"
-          >
-            <BadgeCheck size={16} strokeWidth={2.25} aria-hidden="true" />
-            {t('nineScenic.title')}
-          </button>
+          <div className={styles.layers}>
+            <MapLayerChips value={layer} onChange={setLayer} />
+            {placeState?.status === 'error' && (
+              <p className={styles.layerError} role="status">
+                {t(`places.loadFailed.${layer}`, { error: placeState.error })}
+              </p>
+            )}
+          </div>
+        )}
+
+        {!picked && (
+          <div className={styles.mascot}>
+            <MascotButton ref={nineButtonRef} onOpen={() => setNine(true)} />
+          </div>
         )}
 
         {/* 버튼은 지도 위에 떠 있습니다(프레임 이름의 "버튼은 지도 위에 떠 있음").
@@ -160,7 +225,7 @@ export default function HomePage() {
         )}
 
         <SpotSheet
-          key={picked?.poiId ?? 'none'}
+          key={picked?.spotId ?? 'none'}
           spot={picked}
           onClose={() => setPicked(null)}
         />

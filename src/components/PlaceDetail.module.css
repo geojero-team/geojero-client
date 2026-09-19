@@ -71,6 +71,14 @@
   top: var(--space-lg);
 }
 
+/* 지도 시트에서 펼쳤을 때 ‹ 맞은편 ✕ — 스팟 상세 .close 와 같은 자리 · 모양. */
+.closeOver {
+  composes: back;
+  position: absolute;
+  right: var(--space-lg);
+  top: var(--space-lg);
+}
+
 .bar {
   padding: var(--space-lg) var(--space-lg) 0;
 }
@@ -163,7 +171,7 @@
 }
 
 .srOnly {
-  composes: srOnly from '../components/SpotDetail.module.css';
+  composes: srOnly from './SpotDetail.module.css';
 }
 
 /* 구획(위치 · 가까운 스팟 · 소개) — 위에 굵은 회색 띠(8)로 가른다. 국내 장소 · 숙소 앱의 구획 나눔. */
@@ -251,28 +259,28 @@
 /* 정보 줄 — 스팟 상세의 주소 · 내리는 곳 줄(613:3)을 그대로 가져온다(2026-09-19 사용자). 한 곳에서만 고치도록 composes 로 잇는다.
    다른 점은 하나 — 값이 TourAPI 원문 줄바꿈을 품고 있어(영업시간) pre-line 이다. */
 .info {
-  composes: info from '../components/SpotDetail.module.css';
+  composes: info from './SpotDetail.module.css';
 }
 
 .infoRow {
-  composes: infoRow from '../components/SpotDetail.module.css';
+  composes: infoRow from './SpotDetail.module.css';
 }
 
 .infoIcon {
-  composes: infoIcon from '../components/SpotDetail.module.css';
+  composes: infoIcon from './SpotDetail.module.css';
 }
 
 .infoText {
-  composes: infoText from '../components/SpotDetail.module.css';
+  composes: infoText from './SpotDetail.module.css';
 }
 
 .infoMain {
-  composes: infoMain from '../components/SpotDetail.module.css';
+  composes: infoMain from './SpotDetail.module.css';
   white-space: pre-line;
 }
 
 .infoSub {
-  composes: infoSub from '../components/SpotDetail.module.css';
+  composes: infoSub from './SpotDetail.module.css';
   white-space: pre-line;
 }
 
@@ -287,7 +295,7 @@
 }
 
 .book {
-  composes: button primary from '../components/Button.module.css';
+  composes: button primary from './Button.module.css';
   text-decoration: none;
 }
 

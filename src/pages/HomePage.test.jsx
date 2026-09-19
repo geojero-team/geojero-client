@@ -8,12 +8,15 @@ import { peekHeightOf } from '../components/spotSheetHeight'
 import HomePage from './HomePage'
 
 vi.mock('../lib/api', () => ({
-  api: { pois: vi.fn(), getVisitorPhotos: vi.fn(), me: vi.fn() },
+  api: { pois: vi.fn(), getVisitorPhotos: vi.fn(), me: vi.fn(), places: vi.fn(), place: vi.fn() },
   beginKakaoLogin: vi.fn(),
   beginKakaoLoginTo: vi.fn(),
 }))
 
-vi.mock('../lib/spots', () => ({ loadSpotDetail: vi.fn() }))
+vi.mock('../lib/spots', () => ({ loadSpotDetail: vi.fn(), loadVisibleSpots: vi.fn(() => Promise.resolve([])) }))
+
+// 맛집 · 숙소 상세의 위치 지도도 카카오라 jsdom 에서 뜨지 않습니다.
+vi.mock('../components/PlaceMap', () => ({ default: () => null }))
 
 // 카카오 지도는 jsdom에서 뜨지 않습니다. 받은 핀을 버튼으로 그려 누를 수 있게만 합니다.
 let mapProps = null
@@ -40,10 +43,27 @@ const POIS = [
   { poiId: 3, name: '해금강', shortName: '해금강', kind: 'SPOT', theme: 'VIEW', region: '남부권', category: '언덕·전망', lat: 34.7333, lng: 128.6839, imageUrl: null, nineScenicNo: 1 },
 ]
 
+const STAYS = [
+  { placeId: 2578495, kind: 'STAY', name: '소노캄 거제', category: '콘도', imageUrl: 'https://tong.visitkorea.or.kr/a.jpg', grade: null, restDay: null, nearSpot: null, lat: 34.8433682, lng: 128.7029354 },
+  { placeId: 976736, kind: 'STAY', name: '호텔상상', category: '2성 호텔', imageUrl: null, grade: 2, restDay: null, nearSpot: null, lat: 34.8475732, lng: 128.7098527 },
+]
+const FOODS = [
+  { placeId: 2783696, kind: 'FOOD', name: '대박난맛집', category: '문어해물칼국수', imageUrl: null, grade: null, restDay: '연중무휴', nearSpot: null, lat: 34.7721525, lng: 128.6380248 },
+]
+
 beforeEach(() => {
   vi.clearAllMocks()
   mapProps = null
+  // 튜토리얼을 이미 본 기기 — 말풍선 확인용(첫 방문이면 튜토리얼이 먼저라 말풍선을 띄우지 않는다)
+  localStorage.setItem('gj_onboarded_v1', '2026-09-19')
+  sessionStorage.clear() // 말풍선은 탭마다 한 번 — 테스트마다 새 탭
   api.pois.mockResolvedValue({ pois: POIS })
+  api.places.mockImplementation((kind) => Promise.resolve({ places: kind === 'STAY' ? STAYS : FOODS }))
+  api.place.mockResolvedValue({
+    placeId: 2578495, kind: 'STAY', name: '소노캄 거제', category: '콘도', grade: null, lat: 34.8433682, lng: 128.7029354,
+    bookingUrl: 'https://www.yeogi.com/domestic-accommodations/6605', nearSpots: [],
+    detail: { source: 'TourAPI', address: '경상남도 거제시 일운면 거제대로 2660', images: [], checkIn: '15:00', checkOut: '11:00' },
+  })
   api.getVisitorPhotos.mockResolvedValue({ poiId: 23, count: 0, photos: [] })
   loadSpotDetail.mockResolvedValue({ ...POIS[2], photos: [] })
 })
@@ -112,7 +132,7 @@ describe('홈 — 거제9경(2026-09-14)', () => {
     await screen.findByRole('button', { name: '핀 학동몽돌해변' })
 
     await user.click(screen.getByRole('button', { name: '거제9경이란?' }))
-    const dialog = screen.getByRole('dialog', { name: '거제9경이란?' })
+    const dialog = await screen.findByRole('dialog', { name: '거제9경이란?' })
     expect(dialog).toHaveTextContent('2024년')
     expect(dialog).toHaveTextContent('보라색 테두리')
     expect(screen.getByTestId('loc')).toHaveTextContent('/?nine=1')
@@ -149,11 +169,131 @@ describe('홈 — 거제9경(2026-09-14)', () => {
 
     const opener = screen.getByRole('button', { name: '거제9경이란?' })
     await user.click(opener)
-    expect(screen.getByRole('heading', { name: '거제9경이란?' })).toHaveFocus()
+    expect(await screen.findByRole('heading', { name: '거제9경이란?' })).toHaveFocus()
 
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog', { name: '거제9경이란?' })).not.toBeInTheDocument()
     expect(screen.getByTestId('loc')).toHaveTextContent(/^\/$/)
     expect(opener).toHaveFocus()
+  })
+})
+
+describe('홈 — 몽꾸(거제시 캐릭터)가 「거제9경이란?」을 연다(2026-09-19)', () => {
+  const renderHome = () =>
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>,
+    )
+
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+  it('글자 버튼 대신 캐릭터가 있고, 시작화면(2초)이 걷힌 뒤 말풍선이 무엇을 여는지 말한다 — 탭마다 한 번', async () => {
+    const { unmount } = renderHome()
+    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
+    const mascot = screen.getByRole('button', { name: '거제9경이란?' })
+    expect(mascot.querySelector('img')).toHaveAttribute('src', expect.stringMatching(/mongkku/))
+    // 시작화면 아래에서 이미 떠 있으므로 바로 띄우면 가려진 채로 지나갑니다
+    expect(screen.queryByText('거제 9경이 뭘까?')).not.toBeInTheDocument()
+    expect(await screen.findByText('거제 9경이 뭘까?', {}, { timeout: 3500 })).toBeInTheDocument()
+
+    // 같은 탭에서 홈으로 돌아오면 다시 띄우지 않는다
+    unmount()
+    renderHome()
+    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
+    await wait(2600)
+    expect(screen.queryByText('거제 9경이 뭘까?')).not.toBeInTheDocument()
+  }, 10000)
+
+  it('첫 방문이면 튜토리얼이 먼저라 말풍선을 띄우지 않는다', async () => {
+    localStorage.removeItem('gj_onboarded_v1')
+    renderHome()
+    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
+    await wait(2600)
+    expect(screen.queryByText('거제 9경이 뭘까?')).not.toBeInTheDocument()
+  }, 10000)
+
+  it('스팟 시트가 올라오면 캐릭터와 칩을 감춘다', async () => {
+    const user = userEvent.setup()
+    renderHome()
+    await user.click(await screen.findByRole('button', { name: '핀 학동몽돌해변' }))
+    expect(screen.queryByRole('button', { name: '거제9경이란?' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup', { name: '지도에 보일 곳' })).not.toBeInTheDocument()
+  })
+})
+
+describe('홈 — 스팟 · 숙소 · 맛집 칩(2026-09-19)', () => {
+  function LocationProbe() {
+    const location = useLocation()
+    return <output data-testid="loc">{location.pathname + location.search}</output>
+  }
+  const renderHome = (entry = '/') =>
+    render(
+      <MemoryRouter initialEntries={[entry]}>
+        <HomePage />
+        <LocationProbe />
+      </MemoryRouter>,
+    )
+
+  it('처음엔 「스팟」이 골라져 있고 맛집 · 숙소는 부르지 않는다', async () => {
+    renderHome()
+    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
+    const group = screen.getByRole('radiogroup', { name: '지도에 보일 곳' })
+    expect(within(group).getAllByRole('radio').map((r) => r.textContent)).toEqual(['스팟', '숙소', '맛집'])
+    expect(within(group).getByRole('radio', { name: '스팟' })).toHaveAttribute('aria-checked', 'true')
+    expect(api.places).not.toHaveBeenCalled()
+  })
+
+  it('「숙소」를 누르면 숙소 핀과 고현터미널만 남고, 주소에 남는다', async () => {
+    const user = userEvent.setup()
+    renderHome()
+    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
+
+    await user.click(screen.getByRole('radio', { name: '숙소' }))
+
+    expect(await screen.findByRole('button', { name: '핀 소노캄 거제' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '핀 호텔상상' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '핀 고현터미널' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '핀 학동몽돌해변' })).not.toBeInTheDocument()
+    expect(api.places).toHaveBeenCalledWith('STAY')
+    expect(screen.getByRole('radio', { name: '숙소' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('loc')).toHaveTextContent('/?layer=stay')
+    // 숙소 · 맛집 핀에는 사진을 넘기지 않는다 — 사진 대부분이 공공누리 3유형(변경금지)이라 원으로 자를 수 없다
+    const pin = mapProps.spots.find((s) => s.name === '소노캄 거제')
+    expect(pin).toMatchObject({ kind: 'STAY', lat: 34.8433682, lng: 128.7029354, thumbnailUrl: null })
+    expect(pin.spotId).not.toBe(2578495) // 스팟 poiId 와 섞이지 않게 따로 이름 붙인다
+  })
+
+  it('주소가 ?layer=food 면 맛집이 골라진 채로 열린다 — 상세에서 뒤로 와도 그대로', async () => {
+    renderHome('/?layer=food')
+    expect(await screen.findByRole('button', { name: '핀 대박난맛집' })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: '맛집' })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('숙소 핀을 누르면 스팟처럼 시트 — 이름과 종류, 펼치면 숙소 상세', async () => {
+    const user = userEvent.setup()
+    renderHome('/?layer=stay')
+    await user.click(await screen.findByRole('button', { name: '핀 소노캄 거제' }))
+
+    const sheet = screen.getByRole('dialog', { name: '소노캄 거제' })
+    expect(sheet).toHaveTextContent('콘도')
+    expect(screen.getByTestId('map').parentElement.style.bottom).toBe(`${peekHeightOf(STAYS[0])}px`)
+
+    await user.click(within(sheet).getAllByRole('button', { name: '자세히 보기' })[0])
+    expect(await within(sheet).findByRole('heading', { name: '소노캄 거제' })).toBeInTheDocument()
+    expect(api.place).toHaveBeenCalledWith(2578495)
+    expect(within(sheet).getByRole('link', { name: /여기어때/ })).toHaveAttribute(
+      'href',
+      'https://www.yeogi.com/domestic-accommodations/6605',
+    )
+  })
+
+  it('목록을 못 받으면 빈 지도로 두지 않고 이유를 말한다', async () => {
+    const user = userEvent.setup()
+    api.places.mockRejectedValue(new Error('down'))
+    renderHome()
+    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
+    await user.click(screen.getByRole('radio', { name: '맛집' }))
+    expect(await screen.findByText('맛집을 불러오지 못했어요 — down')).toBeInTheDocument()
   })
 })

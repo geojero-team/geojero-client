@@ -144,3 +144,16 @@
   border-radius: var(--radius-card);
   object-fit: cover;
 }
+
+/* 숙소 · 맛집 사진 — 자르지 않습니다(공공누리 3유형 변경금지, 기준문서 §7). 남는 곳은 옅은 회색(상세 사진 칸과 같다). */
+.photoWhole {
+  object-fit: contain;
+  background: var(--bg-surface);
+}
+
+/* 사진이 없을 때 — 같은 칸에 침대 · 수저 아이콘. 빈 칸으로 두지 않는다. */
+.photoNone {
+  display: grid;
+  place-items: center;
+  background: var(--bg-surface);
+}

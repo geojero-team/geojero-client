@@ -1,0 +1,32 @@
+/* 홈 지도 왼쪽 위 칩(2026-09-19). 자리 · 높이는 옛 「거제9경이란?」 버튼과 같습니다 — top 32 · 높이 40(HomePage.module.css).
+   흰 알약 + 그림자(지도 위에 떠 있는 것은 그림자로 띄웁니다 — 코스 추천 버튼과 같은 방법), 고른 칩은 브랜드 면 + 흰 글씨. */
+.bar {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px 0 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font: var(--type-caption);
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: var(--elevation-chip);
+  cursor: pointer;
+}
+
+.chip:active {
+  filter: brightness(0.94);
+}
+
+.chipOn {
+  background: var(--brand-strong);
+  color: var(--text-on-brand);
+}

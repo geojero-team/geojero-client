@@ -1,6 +1,8 @@
 import { X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import PlaceDetail from './PlaceDetail'
 import SpotDetail from './SpotDetail'
+import SpotMarkerIcon from './SpotMarkerIcon'
 import { t } from '../i18n'
 import { courseImage, onImageError } from '../lib/courseImage'
 import { peekHeightOf } from './spotSheetHeight'
@@ -24,6 +26,10 @@ import styles from './SpotSheet.module.css'
  *         고현터미널은 이름 · 「모든 코스의 출발 지점」뿐이라 더 낮습니다
  *   full  스팟 상세 전체(사진 캐러셀·소개·시간표 보기)
  * 중간에 멈추지 않습니다 — 반쯤 열린 시트는 사진도 글도 못 읽는 상태입니다.
+ *
+ * 숙소 · 맛집(홈 칩, 2026-09-19 사용자 — 「스팟처럼 똑같이」)도 이 시트를 씁니다(`kind` STAY · FOOD).
+ *   peek  이름 · 종류(「2성 호텔」 · 대표 메뉴) · 사진 한 장 — 사진은 **자르지 않습니다**(공공누리 3유형 변경금지, 기준문서 §7)
+ *   full  맛집 · 숙소 상세(`PlaceDetail` — `/places/:placeId` 화면과 같은 것)
  *
  * 올리고 내리는 방식(2026-09-14): 시트는 늘 틀을 꽉 채우고, 보이는 높이만큼만 드러나게 **아래로 밀어 둡니다**.
  * 전에는 시트의 height 를 바꿨는데, height 애니메이션은 매 프레임 레이아웃을 다시 계산해 폰에서 버벅입니다.
@@ -62,6 +68,7 @@ export default function SpotSheet({ spot, onClose, onFullChange }) {
   // 9경 번호는 서버 값(/api/pois nineScenicNo, V28). 배지는 어느 지도에서 열든 붙입니다 —
   // 테두리와 달리 글이라 코스 지도에서도 방해되지 않습니다.
   const nineRank = spot?.nineScenicNo ?? null
+  const isPlace = spot?.kind === 'STAY' || spot?.kind === 'FOOD'
 
   const onPointerDown = (event) => {
     // 손잡이에서만 끕니다. 본문에서 끌면 사진 캐러셀·본문 스크롤과 싸웁니다.
@@ -152,7 +159,11 @@ export default function SpotSheet({ spot, onClose, onFullChange }) {
              2026-09-18: 펼친 상태에 **‹ 버튼**을 줍니다(사용자 — 「지도에서 스팟 상세로 들어가면 뒤로가기가 없다」).
              전에는 손잡이와 ✕뿐이었는데, 펼치면 사진이 화면을 채워 둘 다 눈에 띄지 않았습니다.
              ‹ 는 **지도로 돌아가기**(시트를 peek 으로)이고 ✕ 는 닫기라 뜻이 갈립니다. */
-          <SpotDetail key={spot.poiId} poiId={spot.poiId} seed={spot} onBack={() => setFull(false)} onClose={onClose} />
+          isPlace ? (
+            <PlaceDetail key={spot.placeId} placeId={spot.placeId} onBack={() => setFull(false)} onClose={onClose} />
+          ) : (
+            <SpotDetail key={spot.poiId} poiId={spot.poiId} seed={spot} onBack={() => setFull(false)} onClose={onClose} />
+          )
         ) : (
           /* peek — 이름 · 권역·분류 · 사진 한 장.
              「자세히 보기」 버튼을 뺐습니다(2026-09-13). 손잡이로 바로 올릴 수 있어 버튼이
@@ -166,7 +177,19 @@ export default function SpotSheet({ spot, onClose, onFullChange }) {
             aria-label={t('spotSheet.expand')}
           >
             <span className={styles.name}>{spot.shortName ?? spot.name}</span>
-            {spot.kind === 'TERMINAL' ? (
+            {isPlace ? (
+              <>
+                {spot.category && <span className={styles.category}>{spot.category}</span>}
+                {/* 사진은 자르지 않습니다(contain) — 남는 곳은 옅은 회색. 사진이 없으면(관광정보 실패) 침대 · 수저 아이콘 칸. */}
+                {spot.imageUrl ? (
+                  <img className={`${styles.photo} ${styles.photoWhole}`} src={spot.imageUrl} alt="" />
+                ) : (
+                  <span className={`${styles.photo} ${styles.photoNone}`} aria-hidden="true">
+                    <SpotMarkerIcon category={spot.kind} />
+                  </span>
+                )}
+              </>
+            ) : spot.kind === 'TERMINAL' ? (
               /* 고현터미널 — 권역·분류 자리에 무엇인지 말합니다. 사진은 없습니다(TourAPI 장소가 아님). */
               <span className={styles.category}>{t('terminal.startPoint')}</span>
             ) : (

@@ -81,9 +81,15 @@ export const TERMINAL_MARKER_SVG =
 /** 이름표를 마커 아래 가운데에 둘 때 마커와의 간격(px) — Figma 501:220이 501:213 아래 30(28 + 2). */
 const LABEL_BELOW_GAP = 2
 
+/** 숙소 · 맛집(홈 칩, 2026-09-19) — 스팟 마커와 같은 흰 원 + 이름표. 사진은 넣지 않는다(아래). */
+function isPlaceKind(kind) {
+  return kind === 'STAY' || kind === 'FOOD'
+}
+
 export function createPinElement(spot, { order }) {
   const isStop = order != null
   const isTerminal = spot.kind === 'TERMINAL'
+  const isPlace = isPlaceKind(spot.kind)
   // 거제9경 — 홈만 spot.nineScenic 을 붙입니다(2026-09-14). 코스 정류소는 번호 마커가 우선입니다.
   const isNineScenic = spot.nineScenic != null && !isStop && !isTerminal
 
@@ -93,6 +99,7 @@ export function createPinElement(spot, { order }) {
     styles.pin,
     isTerminal ? styles.pinTerminal : isStop ? styles.pinStop : styles.pinSpot,
     isNineScenic && styles.pinNineScenic,
+    isPlace && styles.pinPlace,
   ]
     .filter(Boolean)
     .join(' ')
@@ -111,6 +118,9 @@ export function createPinElement(spot, { order }) {
     dot.innerHTML = TERMINAL_MARKER_SVG
   } else if (isStop) {
     dot.textContent = String(order)
+  } else if (isPlace) {
+    /* 숙소 · 맛집은 사진 대신 침대 · 수저 아이콘이다. 사진 대부분이 공공누리 3유형(변경금지)이라 원으로 자를 수 없다(기준문서 §7). */
+    dot.innerHTML = themeIconSvg(spot.kind)
   } else if (spot.thumbnailUrl) {
     const photo = document.createElement('img')
     photo.className = styles.pinPhoto

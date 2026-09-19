@@ -31,6 +31,20 @@ describe('고현터미널 마커 — Figma 02-2 `501:213`', () => {
   })
 })
 
+describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
+  it('스팟 마커와 같은 흰 원 + 이름표인데, 사진 대신 침대 · 수저 아이콘이다(공공누리 3유형이라 원으로 자르지 않는다)', () => {
+    const STAY = { spotId: 'place-2578495', kind: 'STAY', name: '소노캄 거제', shortName: '소노캄 거제', thumbnailUrl: 'https://x/s.jpg' }
+    const { element, label } = createPinElement(STAY, { order: null })
+
+    expect(element.classList.contains(styles.pinSpot)).toBe(true)
+    expect(element.classList.contains(styles.pinPlace)).toBe(true)
+    expect(element.querySelector('img')).toBeNull()
+    expect(element.querySelector('svg path')).not.toBeNull()
+    expect(element).toHaveAttribute('aria-label', '소노캄 거제')
+    expect(label).toHaveTextContent('소노캄 거제')
+  })
+})
+
 /** 카카오 지도 대신 — 좌표를 그대로 픽셀로 쓰는 투영. */
 function fakeMap(width = 390, height = 780) {
   return {

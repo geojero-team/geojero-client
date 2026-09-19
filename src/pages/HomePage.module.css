@@ -46,31 +46,39 @@
   box-shadow: var(--elevation-pin);
 }
 
-/* 「거제9경이란?」 — 지도 왼쪽 위(2026-09-14 사용자 결정, Figma 프레임 없음).
-   top·높이는 MapView 확대·축소 묶음(.controls: top = topReserved 16 + 16, 버튼 40px)과 맞춥니다.
-   left 는 그 묶음의 right(space-md)와 대칭입니다. 지도 첫 화면은 위쪽을 76px 비워 두고
-   섬을 맞추므로(MapView FIT_TOP_EXTRA) 이 버튼이 처음부터 핀을 덮지는 않습니다.
-   z-index 는 .cta 와 같은 값·같은 이유(카카오 지도 · 로딩·오류 화면 위)로 4 입니다. */
-.nineButton {
+/* 왼쪽 위 칩 — 옛 「거제9경이란?」 버튼 자리(2026-09-14 → 2026-09-19 칩으로).
+   top 은 그 버튼 그대로(topReserved 16 + 16). 지도 첫 화면은 위쪽을 76px 비워 두고 섬을 맞추므로(MapView FIT_TOP_EXTRA)
+   처음부터 핀을 덮지는 않습니다. z-index 는 .cta 와 같은 값 · 같은 이유(카카오 지도 · 로딩·오류 화면 위)로 4 입니다.
+   칩 줄 오른쪽 빈 곳은 지도를 누를 수 있게 비워 둡니다(pointer-events). */
+.layers {
   position: absolute;
   z-index: 4;
   top: 32px;
   left: var(--space-md);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 40px;
-  padding: 0 14px 0 12px;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: var(--nine-scenic);
-  color: var(--text-on-brand);
-  font: var(--type-caption);
-  font-weight: 700;
-  white-space: nowrap;
-  box-shadow: var(--elevation-chip);
+  right: var(--space-md);
+  pointer-events: none;
 }
 
-.nineButton:active {
-  filter: brightness(0.94);
+.layers > * {
+  pointer-events: auto;
+}
+
+/* 목록을 못 받았을 때 — 칩 바로 아래 한 줄(빈 지도로 두지 않는다). */
+.layerError {
+  display: inline-block;
+  margin: var(--space-sm) 0 0;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+  box-shadow: var(--elevation-chip);
+  color: var(--text-primary);
+  font: var(--type-caption);
+}
+
+/* 몽꾸 — 오른쪽 아래, 「코스 추천 받기」(아래 16 + 높이 48) 위 12(2026-09-19 사용자가 동그라미 친 자리). */
+.mascot {
+  position: absolute;
+  z-index: 4;
+  right: 20px;
+  bottom: 76px;
 }
