@@ -29,18 +29,17 @@
   pointer-events: none;
 }
 
-/* 말풍선 — 몽꾸 위. 오른쪽 끝을 몽꾸 쪽에 맞추고 왼쪽으로 펼칩니다(꼬리가 오른쪽 아래).
-   전체 폭으로 두지 않습니다(2026-09-19) — 지도를 가로로 다 덮어 9경 핀이 뒤로 숨었습니다.
-   왼쪽을 비워 두면 서쪽 핀들이 말풍선 옆으로 보입니다. */
+/* 말풍선 — 몽꾸 **왼쪽**에 가로로(2026-09-19 사용자). 위에 두면 지도 아래쪽 9경(해금강 · 바람의언덕)을
+   덮고, 좁은 폭에 갇혀 글이 여러 줄로 접힙니다. 옆으로 뻗으면 그 자리가 비고 한 줄이 길어져 읽기 쉽습니다.
+   오른쪽 끝(right)과 세로 가운데(top)는 몽꾸를 재서 JS 가 정합니다. */
 .bubble {
   position: absolute;
-  right: var(--space-lg);
-  left: auto;
-  max-width: 248px;
+  left: var(--space-md);
+  transform: translateY(-50%);
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
-  padding: 14px 16px;
+  gap: 6px;
+  padding: 12px 14px;
   border-radius: var(--radius-card);
   background: var(--bg-page);
   box-shadow: 0 6px 20px rgb(16 24 40 / 24%);
@@ -73,17 +72,17 @@
   cursor: pointer;
 }
 
-/* 꼬리 — 오른쪽 아래에서 몽꾸를 가리킵니다. 말풍선과 같은 면색이라 이어져 보입니다. */
+/* 꼬리 — 오른쪽 가운데에서 몽꾸를 가리킵니다. 말풍선과 같은 면색이라 이어져 보입니다.
+   그림자는 말풍선이 이미 갖고 있습니다 — 꼬리에 또 주면 이음매에 선이 생깁니다. */
 .tail {
   position: absolute;
-  right: 28px;
-  bottom: -7px;
-  width: 16px;
+  right: -8px;
+  top: 50%;
+  width: 8px;
   height: 16px;
+  margin-top: -8px;
   background: var(--bg-page);
-  transform: rotate(45deg);
-  /* 그림자는 말풍선이 이미 갖고 있습니다 — 꼬리에 또 주면 이음매에 선이 생깁니다. */
-  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
 
 /* 움직임을 줄이는 설정 — 흐림은 움직임이 아니라 그대로 둡니다(무엇을 보라는 말이라 뜻이 사라지면 안 됩니다). */

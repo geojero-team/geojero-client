@@ -181,6 +181,9 @@ export function createPinElement(spot, { order, onResize } = {}) {
   const label = document.createElement('span')
   label.className = styles.pinLabel
   label.textContent = spot.shortName ?? spot.name
+  /* 9경 설명이 이름표도 뚫습니다(2026-09-19 사용자 — 동그라미만 선명하고 이름이 흐리면 어디인지 모릅니다).
+     동그라미는 원, 이름표는 둥근 네모로 뚫습니다(NineScenicTour). */
+  if (isNineScenic) label.dataset.nineLabel = ''
 
   // 겹친 곳 수. 배율마다 달라지므로 여기서는 빈 채로 두고 updateLabelVisibility가 채웁니다.
   const badge = document.createElement('span')
