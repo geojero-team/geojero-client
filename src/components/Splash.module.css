@@ -1,0 +1,83 @@
+/* 시작화면(2026-09-19 사용자) — 앱을 열면 1초 동안 떴다가 홈으로 넘어갑니다.
+   움직임 없이 정지 상태로만 둡니다(사용자 결정). */
+
+/* 도현체 — 「Travel / Explore / Inspire」 전용. 앱의 나머지는 Noto Sans KR 입니다.
+   자체 호스팅인 이유: CDN 을 거치면 DNS·TLS 가 한 번 더 붙는데, 1초짜리 화면에는
+   그 왕복이 그대로 손해입니다. index.html 이 preload 로 먼저 당겨옵니다.
+   swap — 글꼴이 늦으면 Noto Sans KR 로 먼저 보이고 도착하는 대로 바뀝니다.
+   글자가 안 보이는 구간을 만들지 않으려는 것입니다(block 은 최대 3초를 비웁니다). */
+@font-face {
+  font-family: 'BMDOHYEON';
+  src: url('/fonts/BMDOHYEON.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 앱 위를 덮습니다. 아래에서 홈이 그대로 뜨고 있어서 1초 뒤에는 이미 지도가 준비돼 있습니다.
+   바닥색은 프레임 바깥이라 앱의 다른 화면과 같은 --bg-surface 를 씁니다. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+}
+
+/* 사진이 오기 전에도 화면이 비지 않게 사진 윗변 색을 깔아 둡니다 — 흰 깜빡임을 막습니다. */
+.root {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #2f98ec;
+}
+
+/* 사진 칸을 화면보다 10.27% 길게 잡습니다(844 → 930.7).
+   그러면 사진이 그만큼 더 커져 위쪽이 바다로 채워지고, 아래로 넘친 풀밭은 잘려 나갑니다.
+   풍차가 우하단에 앉는 구도가 이 비율에서 나옵니다. */
+.box {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 110.27%;
+}
+
+/* object-position 70% — 16:9 사진을 세로 화면에 담으면 가로의 26%만 남습니다.
+   70%가 풍차를 통째로 담으면서 왼쪽 바다를 최대한 남기는 지점입니다.
+   filter — 원본은 차분한 편이라 바다 파랑과 풀 초록을 올립니다. */
+.box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 70% 50%;
+  display: block;
+  filter: saturate(1.16) brightness(1.05) contrast(1.03);
+}
+
+/* 왼쪽 위, 잔잔한 바다 위. 풍차 날개와 겹치지 않는 자리입니다.
+   그림자는 장식이 아니라 밝은 물결 위에서도 흰 글씨가 읽히게 하는 것입니다. */
+.hero {
+  position: absolute;
+  left: 24px;
+  top: 76px;
+  color: #fff;
+  text-shadow: 0 4px 28px rgba(0, 38, 72, 0.45);
+}
+
+.line {
+  font-family: 'BMDOHYEON', var(--font-sans);
+  font-size: 50px;
+  line-height: 1.1;
+}
+
+.sub {
+  margin-top: 13px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  opacity: 0.92;
+}
