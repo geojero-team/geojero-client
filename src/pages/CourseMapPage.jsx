@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
+import { ChevronLeft } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import Button from '../components/Button'
@@ -131,9 +132,10 @@ export default function CourseMapPage() {
         </div>
 
         {/* 뒤로가기 — 지도 위 왼쪽 위(2026-09-19 사용자: 이 화면에 뒤로가기가 없었습니다).
-            머리말 띠 대신 떠 있는 원형 버튼입니다 — 띠를 두면 그 높이만큼 지도가 줄어듭니다. */}
+            머리말 띠 대신 떠 있는 원형 버튼입니다 — 띠를 두면 그 높이만큼 지도가 줄어듭니다.
+            화살표는 앱 전체와 같은 SVG 하나입니다(67933df — 글꼴마다 다르게 그려지는 글자 ‹ 를 버렸습니다). */}
         <button type="button" className={styles.back} onClick={goBack} aria-label={t('common.back')}>
-          ‹
+          <ChevronLeft size={24} strokeWidth={2} aria-hidden="true" />
         </button>
 
         <SpotSheet

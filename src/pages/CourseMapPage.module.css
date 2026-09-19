@@ -42,13 +42,12 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  /* ‹ 는 글꼴에서 오른쪽·아래로 치우쳐 그려집니다 — 원 가운데로 당깁니다(SpotDetail 과 같은 값). */
-  padding: 0 2px 2px 0;
+  padding: 0;
   border: 0;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 2px 8px rgb(16 24 40 / 12%);
-  font: 700 26px/1 var(--font-sans);
+  /* 지도 위에 떠 있으므로 스팟 상세의 사진 위 버튼과 같은 옅은 그림자를 씁니다(67933df). */
+  box-shadow: 0 1px 4px rgba(16, 24, 40, 0.18);
   color: var(--text-primary);
   cursor: pointer;
 }
