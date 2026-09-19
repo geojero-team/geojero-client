@@ -34,7 +34,7 @@ describe('고현터미널 마커 — Figma 02-2 `501:213`', () => {
 const STAY = { spotId: 'place-2578495', kind: 'STAY', name: '소노캄 거제', shortName: '소노캄 거제' }
 
 describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
-  it('대표 사진이 있으면 사진을 자르지 않고 통째로 담는 작은 사각 액자(46 × 32)다 — 공공누리 3유형(변경금지)이라 원으로 자르지 않는다', () => {
+  it('대표 사진이 있으면 사진을 자르지 않고 통째로 담는 작은 사각 액자(42 × 28 — 높이는 스팟 원과 같다)다 — 공공누리 3유형(변경금지)이라 원으로 자르지 않는다', () => {
     const { element, label, width, height } = createPinElement({ ...STAY, thumbnailUrl: 'https://x/s.jpg' }, { order: null })
 
     expect(element.classList.contains(styles.pinPlace)).toBe(true)
@@ -42,7 +42,7 @@ describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
     const photo = element.querySelector('img')
     expect(photo).toHaveAttribute('src', 'https://x/s.jpg')
     expect(photo.classList.contains(styles.pinPhotoWhole)).toBe(true)
-    expect([width, height]).toEqual([46, 32])
+    expect([width, height]).toEqual([42, 28])
     expect(element).toHaveAttribute('aria-label', '소노캄 거제')
     expect(label).toHaveTextContent('소노캄 거제')
   })
@@ -57,7 +57,7 @@ describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
     expect([width, height]).toEqual([28, 28])
   })
 
-  it('이름표 자리는 액자 폭(46)으로 잰다 — 28px 원이면 오른쪽에 들어갈 이름표도 액자면 넘쳐 왼쪽으로 뒤집는다', () => {
+  it('이름표 자리는 액자 폭(42)으로 잰다 — 28px 원이면 오른쪽에 들어갈 이름표도 액자면 넘쳐 왼쪽으로 뒤집는다', () => {
     const photoPin = pinAt({ ...STAY, thumbnailUrl: 'https://x/s.jpg' }, 300, 300, 70)
     updateLabelVisibility(fakeMap(390), [photoPin], null, 16)
     expect(photoPin.label.classList.contains(styles.pinLabelLeft)).toBe(true)
@@ -74,13 +74,13 @@ describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
     expect(a.badge.textContent).toBe('+1')
     expect(b.element.style.display).toBe('none')
 
-    // 39px 떨어져 7px 겹치는 액자 둘(운영 지세포)도 묶는다 — 42px 부터 따로 그린다
+    // 35px 떨어져 7px 겹치는 액자 둘도 묶는다 — 38px(4px 겹침)부터 따로 그린다
     const e = pinAt({ ...STAY, spotId: 'place-e', thumbnailUrl: 'https://x/e.jpg' }, 200, 300, 40)
-    const f = pinAt({ ...STAY, spotId: 'place-f', thumbnailUrl: 'https://x/f.jpg' }, 239, 300, 40)
+    const f = pinAt({ ...STAY, spotId: 'place-f', thumbnailUrl: 'https://x/f.jpg' }, 235, 300, 40)
     updateLabelVisibility(fakeMap(), [e, f], null, 16)
     expect(f.element.style.display).toBe('none')
     const g = pinAt({ ...STAY, spotId: 'place-g', thumbnailUrl: 'https://x/g.jpg' }, 200, 300, 40)
-    const h = pinAt({ ...STAY, spotId: 'place-h', thumbnailUrl: 'https://x/h.jpg' }, 243, 300, 40)
+    const h = pinAt({ ...STAY, spotId: 'place-h', thumbnailUrl: 'https://x/h.jpg' }, 238, 300, 40)
     updateLabelVisibility(fakeMap(), [g, h], null, 16)
     expect(h.element.style.display).toBe('')
 
