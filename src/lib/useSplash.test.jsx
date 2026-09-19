@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSplash } from './useSplash'
 
-describe('useSplash — 앱을 열면 시작화면을 2.3초 동안 띄운다(2026-09-20 사용자 — 2초에서 0.3초 늘림)', () => {
+describe('useSplash — 앱을 열면 시작화면을 3초 동안 띄운다(2026-09-20 사용자 — 2초 → 2.3초 → 2.8초 → 3초)', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     window.history.replaceState(null, '', '/')
@@ -36,11 +36,11 @@ describe('useSplash — 앱을 열면 시작화면을 2.3초 동안 띄운다(20
     expect(result.current).toBe(true)
   })
 
-  it('2.3초가 되기 직전까지는 떠 있고, 2.3초에 닫힌다', () => {
+  it('3초가 되기 직전까지는 떠 있고, 3초에 닫힌다', () => {
     const { result } = renderHook(() => useSplash())
     expect(result.current).toBe(true)
 
-    act(() => vi.advanceTimersByTime(2299))
+    act(() => vi.advanceTimersByTime(2999))
     expect(result.current).toBe(true)
 
     act(() => vi.advanceTimersByTime(1))
