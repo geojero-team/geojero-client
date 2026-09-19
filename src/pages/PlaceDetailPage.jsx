@@ -15,7 +15,7 @@ import styles from './PlaceDetailPage.module.css'
 /**
  * 맛집 · 숙소 상세 — `/places/:placeId` (2026-09-19, 기준문서 §6 「맛집 · 숙소」). Figma 프레임은 아직 없다.
  * 짜임(2026-09-19 사용자 — 숙소 앱 레퍼런스를 보고 다시 짬): 사진 → 이름 + 한 줄(종류 · 읍면) → 가기 전에 볼 것 →
- * 「위치」(지도 + 주소) → 「가까운 스팟」 → (맛집) 「소개」. 구획 사이는 굵은 회색 띠. 숙소 예약은 화면 아래 고정.
+ * 「위치」(지도 + 주소) → 「가까운 스팟」. 구획 사이는 굵은 회색 띠. 숙소 예약은 화면 아래 고정.
  *
  * - 사진은 **자르지 않는다**(object-fit: contain). 대부분 Type3 = 공공누리 제3유형(변경금지)이다(기준문서 §7).
  * - 글은 TourAPI 원문 그대로다. 서버가 `<br>` 만 줄바꿈으로 바꿔 주고 화면은 pre-line 으로 그린다.
@@ -27,7 +27,8 @@ import styles from './PlaceDetailPage.module.css'
  * - **가까운 스팟**(서버 `nearSpots` — 5km 안에서 가까운 순으로 최대 3곳): 이 숙소 · 맛집을 거점으로 우리 스팟을 돈다는 것을 보여 준다.
  *   직선거리(TourAPI 좌표)만 적고, 버스로 갈지 걸어갈지는 스팟마다 「길찾기 ↗」(카카오맵 **대중교통**)가 답한다
  *   (「길찾기 직접 구현 — 카카오맵 딥링크로 위임」, 기준문서 §6 배제 표). 줄을 누르면 그 스팟 상세.
- * - 숙소는 소개문을 싣지 않는다 — 호텔 자기 홍보 글이다. 맛집 소개문은 음식 설명이라 싣는다.
+ * - 소개문(TourAPI overview)은 싣지 않는다 — 숙소는 호텔 자기 홍보 글이고, 맛집은 네이버 · 카카오도 첫 화면에 긴 소개글을 두지 않는다
+ *   (둘 다 한 줄 · 세 줄 요약만 위에 둔다, 2026-09-19 확인). 원문은 고칠 수 없어 요약할 수도 없다(2026-09-19 사용자).
  * - 숙소 예약은 **여기어때 숙소 페이지**(`bookingUrl` — TourAPI 값이 아니라 서버가 들고 있는 값이라 관광정보가 실패해도 남는다).
  * - 출처는 사진 칸 안의 「출처 TourAPI」가 맡는다 — 맨 아래 출처 줄은 없다.
  */
@@ -105,7 +106,6 @@ function PlaceBody({ place, onBack }) {
   const detail = place.detail ?? {}
   const ok = detail.source === 'TourAPI'
   const images = ok ? (detail.images ?? []) : []
-  const [open, setOpen] = useState(false)
   /* 가까운 스팟 사진 — 사진 · 분류는 스팟 목록(모듈 캐시, 스팟 탭에서 왔으면 이미 받아 둠)에서 꺼낸다.
      못 받으면 분류 자리그림이다 — 목록 · 지도를 막지 않는다. */
   const [spots, setSpots] = useState([])
@@ -193,18 +193,6 @@ function PlaceBody({ place, onBack }) {
               <NearSpotItem key={spot.poiId} spot={spot} place={place} />
             ))}
           </ul>
-        </section>
-      )}
-
-      {ok && place.kind === 'FOOD' && detail.overview && (
-        <section className={styles.section}>
-          <h2 className={styles.sectionHead}>{t('spotDetail.introHead')}</h2>
-          <p className={open ? styles.overviewFull : styles.overview}>{detail.overview}</p>
-          {!open && (
-            <button type="button" className={styles.more} onClick={() => setOpen(true)}>
-              {t('common.more')}
-            </button>
-          )}
         </section>
       )}
     </>

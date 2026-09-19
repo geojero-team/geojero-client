@@ -233,9 +233,11 @@ describe('맛집 · 숙소 상세 — 예약 · 소개 · 출처', () => {
     expect(screen.queryByRole('heading', { name: '소개' })).not.toBeInTheDocument()
   })
 
-  it('맛집 소개문은 그대로 싣는다', async () => {
+  it('맛집도 소개문을 싣지 않는다 — 네이버 · 카카오도 첫 화면에 긴 소개글을 두지 않는다(2026-09-19 사용자)', async () => {
     renderPage(909)
-    expect(await screen.findByText('멸치쌈밥 원문 소개.')).toBeInTheDocument()
+    await screen.findByRole('heading', { level: 1 })
+    expect(screen.queryByText('멸치쌈밥 원문 소개.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '소개' })).not.toBeInTheDocument()
   })
 
   it('「많이 찾아간 곳이에요」 줄 · 맨 아래 출처 줄은 두지 않는다 — 사진 칸의 「출처 TourAPI」만 남는다', async () => {

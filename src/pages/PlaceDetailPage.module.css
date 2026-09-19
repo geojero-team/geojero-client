@@ -299,33 +299,6 @@
   text-decoration: none;
 }
 
-.overview,
-.overviewFull {
-  margin: 0;
-  width: 100%;
-  font: var(--type-body);
-  color: var(--text-secondary);
-  word-break: keep-all;
-  white-space: pre-line;
-}
-
-.overview {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 5;
-  overflow: hidden;
-}
-
-.more {
-  align-self: flex-start;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  font: var(--type-caption);
-  color: var(--brand-strong);
-  cursor: pointer;
-}
-
 .pending {
   margin: 40px 20px;
   font: var(--type-caption);

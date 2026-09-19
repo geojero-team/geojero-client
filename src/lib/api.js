@@ -136,12 +136,12 @@ export const api = {
    *                  nearSpots: [{ poiId, shortName, distanceM, lat, lng }] — 5km 안 우리 스팟, 가까운 순 최대 3곳(없으면 []).
    *                             배로만 가는 스팟(외도 · 공곶이·내도 · 지심도 — 정류장 없이 선착장만)은 뺀다: 직선이 바다를 건넌다.
    *                  detail: { source: 'TourAPI', address, images[],
-   *                            (맛집) overview, openTime, restDay · (숙소) checkIn, checkOut, facilities }
+   *                            (맛집) openTime, restDay · (숙소) checkIn, checkOut, facilities }
    *                        | { source: 'FALLBACK', reason, checkedAt } }
    * category 는 목록과 같은 값(숙소 「2성 호텔」 · 「콘도」, 맛집 대표 메뉴). facilities = TourAPI subfacility 원문.
    * 글은 TourAPI 원문 그대로다(<br> 만 줄바꿈으로). 사진은 대부분 Type3 라 **자르지 않고** 그린다.
    * bookingUrl · nearSpots 는 TourAPI 상세 값이 아니라 서버가 들고 있는 값이다 — 관광정보가 실패해도(FALLBACK) 온다.
-   * 숙소 소개문은 보내지 않는다(호텔 자기 홍보 글). 전화 · 주차 · 객실 수는 화면이 쓰지 않는다(2026-09-19 사용자 — 정보를 줄인다).
+   * 소개문은 보내지 않는다(숙소는 자기 홍보 글, 맛집도 싣지 않기로). 전화 · 주차 · 객실 수는 화면이 쓰지 않는다(2026-09-19 사용자 — 정보를 줄인다).
    */
   place: (placeId) => request(`/api/places/${placeId}`),
 
