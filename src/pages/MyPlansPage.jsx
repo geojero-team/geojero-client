@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import Button from '../components/Button'
@@ -63,26 +63,21 @@ function SavedTripCard({ trip, course, busy, confirming, onAsk, onCancel, onDele
 
         {stops.length > 0 ? (
           <span className={styles.order} data-count={stops.length}>
+            {/* 스팟 사이 화살표(→)는 2026-09-19 뺐습니다(사용자) — 번호 ①②③ 가 이미 순서를 말하고,
+                화살표가 3곳에서만 나와(4곳부터는 자리가 없어 뺐었습니다) 같은 목록이 두 모습이었습니다. */}
             {stops.map((spot, i) => (
-              <Fragment key={spot.poiId}>
-                {i > 0 && stops.length <= 3 && (
-                  <span className={styles.arrow} aria-hidden="true">
-                    →
-                  </span>
-                )}
-                <span className={styles.stop}>
-                  <span className={styles.thumb}>
-                    <img
-                      className={styles.thumbImg}
-                      src={courseImage(spot)}
-                      alt=""
-                      onError={onImageError(spot)}
-                    />
-                    <span className={styles.num}>{i + 1}</span>
-                  </span>
-                  <span className={styles.stopName}>{spot.shortName ?? spot.name}</span>
+              <span className={styles.stop} key={spot.poiId}>
+                <span className={styles.thumb}>
+                  <img
+                    className={styles.thumbImg}
+                    src={courseImage(spot)}
+                    alt=""
+                    onError={onImageError(spot)}
+                  />
+                  <span className={styles.num}>{i + 1}</span>
                 </span>
-              </Fragment>
+                <span className={styles.stopName}>{spot.shortName ?? spot.name}</span>
+              </span>
             ))}
           </span>
         ) : (

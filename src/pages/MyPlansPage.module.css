@@ -89,14 +89,11 @@
 .order {
   display: flex;
   align-items: flex-start;
+  /* 화살표를 뺀 뒤(2026-09-19)로는 곳 수와 상관없이 양끝으로 폅니다 — 3곳일 때 화살표가 채우던
+     66px 이 비어 왼쪽으로 몰리기 때문입니다. */
+  justify-content: space-between;
   width: 100%;
   padding-top: 7px;
-}
-
-.order[data-count='4'],
-.order[data-count='5'],
-.order[data-count='6'] {
-  justify-content: space-between;
 }
 
 .stop {
@@ -168,37 +165,24 @@
   color: var(--text-on-brand);
 }
 
+/* 이름 11/15 — 2026-09-19 사용자가 더 줄이라고 했습니다. 전에는 3곳만 14px, 4곳부터 12px 로
+   갈렸는데 곳 수와 상관없이 **한 크기**로 둡니다: 같은 목록인데 카드마다 글씨가 다르면 들쭉날쭉해 보입니다.
+   토큰에 11px 이 없어 원시값을 적습니다(SpotDetail 의 15/22 · 13/18 과 같은 선례).
+   글씨가 작아져 3곳(84px 칸)에서는 대개 한 줄에 들어오고, 6곳(52px 칸)에서만 두 줄로 접힙니다. */
 .stopName {
   max-width: 100%;
-  font: var(--type-caption);
+  font: 500 11px/15px var(--font-sans);
   color: var(--text-primary);
   text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.order[data-count='4'] .stopName,
-.order[data-count='5'] .stopName,
-.order[data-count='6'] .stopName {
-  font: var(--type-label);
-  white-space: normal;
   overflow-wrap: anywhere;
   text-wrap: balance;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.arrow {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 33px;
-  height: 60px;
-  font: var(--type-body);
-  color: var(--text-disabled);
-}
+/* .arrow 는 2026-09-19 지웠습니다(사용자) — 스팟 사이 화살표를 뺐습니다. */
 
 .chain {
   margin: 0;
