@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { ChevronLeft } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Button from '../components/Button'
 import OptionChip from '../components/OptionChip'
@@ -337,7 +338,7 @@ export default function CoursesPage() {
     <Screen data-api="GET /api/courses">
       <header className={styles.header}>
         <button type="button" className={styles.back} onClick={goBack} aria-label={t('common.back')}>
-          ‹
+          <ChevronLeft size={24} strokeWidth={2} aria-hidden="true" />
         </button>
         <h1 className={styles.title}>{t('courses.title')}</h1>
       </header>

@@ -18,6 +18,26 @@ afterEach(() => {
   window.history.replaceState(null, '', '/')
 })
 
+describe('SpotDetailPage — 사진 위 뒤로 버튼', () => {
+  it('글자 「‹」가 아니라 화살표 아이콘이다(2026-09-19 — 글자는 작고 한쪽으로 치우쳤다)', async () => {
+    window.history.replaceState(null, '', '/spots/4')
+    loadSpotDetail.mockResolvedValue({ poiId: 4, shortName: '학동몽돌해변', region: '남부권', category: '해수욕장', photos: [] })
+    api.getVisitorPhotos.mockResolvedValue({ poiId: 4, count: 0, photos: [] })
+
+    render(
+      <BrowserRouter>
+        <Routes>
+          <Route path="/spots/:spotId" element={<SpotDetailPage />} />
+        </Routes>
+      </BrowserRouter>,
+    )
+
+    const back = await screen.findByRole('button', { name: '뒤로' })
+    expect(back.querySelector('svg')).not.toBeNull()
+    expect(back.textContent.trim()).toBe('')
+  })
+})
+
 describe('SpotDetailPage — 방문자 사진 올리기 주소', () => {
   it('주소로 바로 연 화면: 올리기는 ?upload=1 을 붙이고, 닫은 뒤 ‹ 는 앱 밖이 아니라 홈으로 간다', async () => {
     window.history.replaceState(null, '', '/spots/4')

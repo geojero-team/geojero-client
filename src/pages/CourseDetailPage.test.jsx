@@ -237,7 +237,10 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
       expect(screen.getByRole('button', { name })).toBeInTheDocument()
     }
     expect(screen.getByRole('button', { name: '전체 경로' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '뒤로' })).toHaveTextContent('코스')
+    // 「‹」는 글자가 아니라 화살표 아이콘이다(2026-09-19) — 글자로 남은 건 「코스」뿐.
+    const back = screen.getByRole('button', { name: '뒤로' })
+    expect(back.textContent).toBe('코스')
+    expect(back.querySelector('svg')).not.toBeNull()
     // 머리 「평일」 알약은 뺐다(2026-09-17 사용자 결정) — 확인용 편 사슬의 요일이라 「평일용 코스」로 읽혔다.
     // 요일 사정은 구간 줄(「평일 N회 · 휴일 M회」 · 「휴일엔 이 구간 버스가 없어요」)이 말한다.
     expect(screen.queryByText('평일')).not.toBeInTheDocument()

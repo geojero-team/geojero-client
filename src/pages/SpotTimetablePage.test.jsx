@@ -181,6 +181,15 @@ beforeEach(() => {
 })
 
 describe('SpotTimetablePage — 버스만 있는 스팟 (회귀 가드)', () => {
+  it('「뒤로」는 글자 「←」가 아니라 화살표 아이콘이다(다른 화면과 같은 모양)', async () => {
+    renderAt(`/timetable/4?date=${DATE}&now=${NOW}`)
+
+    await screen.findByRole('button', { name: '학동몽돌해변 → 고현터미널' })
+    const back = screen.getByRole('button', { name: '뒤로' })
+    expect(back.querySelector('svg')).not.toBeNull()
+    expect(back.textContent.trim()).toBe('')
+  })
+
   it('/timetable/4 — 고현터미널 왕복 칩 둘, 버스 호출 인자는 전과 같다', async () => {
     renderAt(`/timetable/4?date=${DATE}&now=${NOW}`)
 

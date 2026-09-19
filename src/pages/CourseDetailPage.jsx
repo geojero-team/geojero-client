@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { ChevronLeft } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Button from '../components/Button'
 import CourseMiniMap from '../components/CourseMiniMap'
@@ -594,7 +595,7 @@ export default function CourseDetailPage() {
   const header = (
     <header className={styles.header}>
       <button type="button" className={styles.back} onClick={() => navigate(-1)} aria-label={t('common.back')}>
-        {'‹  '}
+        <ChevronLeft size={18} strokeWidth={2} aria-hidden="true" />
         {t('courseDetail.back')}
       </button>
       {/* 요일 알약(547:200)은 뺐습니다(2026-09-17 사용자 결정) — course.service 는 확인용 편 사슬의 요일이라

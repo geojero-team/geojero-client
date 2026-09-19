@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ChevronLeft } from 'lucide-react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import BoardingMap from '../components/BoardingMap'
 import FerryTimetable from '../components/FerryTimetable'
@@ -292,7 +293,7 @@ export default function SpotTimetablePage() {
       <Screen data-api="GET /api/pois/{id}/departures">
         <header className={styles.header}>
           <button type="button" className={styles.back} onClick={() => navigate(-1)} aria-label={t('common.back')}>
-            ←
+            <ChevronLeft size={24} strokeWidth={2} aria-hidden="true" />
           </button>
         </header>
         <p className={styles.notice}>{t('spotTime.loading')}</p>
@@ -368,7 +369,7 @@ export default function SpotTimetablePage() {
     <Screen data-api="GET /api/pois/{id}/departures">
       <header className={styles.header}>
         <button type="button" className={styles.back} onClick={() => navigate(-1)} aria-label={t('common.back')}>
-          ←
+          <ChevronLeft size={24} strokeWidth={2} aria-hidden="true" />
         </button>
         <h1 className={styles.title}>{spot}</h1>
         {/* 배에는 평일/휴일 구분이 없습니다 — 날짜마다 원문이 있습니다. 버스 답이 오기 전에도

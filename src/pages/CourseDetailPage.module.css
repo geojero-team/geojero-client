@@ -15,6 +15,10 @@
 }
 
 .back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: -4px;
   padding: 8px 0;
   border: 0;
   background: transparent;
@@ -22,7 +26,6 @@
   font-size: 15px;
   font-weight: 500;
   color: var(--text-secondary);
-  white-space: pre;
   cursor: pointer;
 }
 

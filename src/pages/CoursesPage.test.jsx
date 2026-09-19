@@ -363,6 +363,15 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
     expect(screen.queryByText(/대표 코스 \d+가지/)).not.toBeInTheDocument()
   })
 
+  it('「뒤로」는 글자 「‹」가 아니라 화살표 아이콘이다', async () => {
+    renderPage()
+
+    await screen.findByText('환승 없이 남부 9경 세 곳')
+    const back = screen.getByRole('button', { name: '뒤로' })
+    expect(back.querySelector('svg')).not.toBeNull()
+    expect(back.textContent.trim()).toBe('')
+  })
+
   it('「뒤로」 — 처음 들어온 화면이면 홈으로', async () => {
     const user = userEvent.setup()
     renderPage()

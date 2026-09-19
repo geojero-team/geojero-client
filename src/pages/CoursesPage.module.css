@@ -14,11 +14,14 @@
 }
 
 .back {
+  display: inline-flex;
+  align-items: center;
+  margin-left: -6px;
   padding: 0;
   border: 0;
   background: transparent;
-  font: var(--type-title);
   color: var(--text-primary);
+  cursor: pointer;
 }
 
 .title {

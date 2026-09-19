@@ -46,7 +46,8 @@
   user-select: none;
 }
 
-/* 264:229 — 36×36 원형. 그림자 없이 반투명 면으로만 대비를 냅니다. */
+/* 264:229 — 36×36 원형. 2026-09-19: 글자 「‹」를 SVG 화살표로 바꾸고 옅은 그림자를 더했습니다(사용자 결정) —
+   글자는 작고 한쪽으로 치우쳐 여백으로 억지로 맞췄고, 그림자가 없으니 밝은 하늘 사진 위에서 원만 떠 보였습니다. */
 .back {
   position: absolute;
   left: var(--space-lg);
@@ -56,13 +57,12 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  padding: 0 2px 2px 0;
+  padding: 0;
   border: 0;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.92);
-  /* 글자만 키웁니다(2026-09-18 사용자 — 「버튼 크기는 괜찮은데 문자가 너무 작다」).
-     ‹ 는 글꼴에서 작게 그려지는 글자라 원 크기(36)에 견줘 더 작아 보였습니다. */
-  font: 700 26px/1 var(--font-sans);
+  /* 09-18 글자 ‹ 를 26px 로 키웠다가(사용자 — 「문자가 너무 작다」) 09-19 SVG 화살표로 바꿨습니다(위 머리 주석). */
+  box-shadow: 0 1px 4px rgba(16, 24, 40, 0.18);
   color: var(--text-primary);
   cursor: pointer;
 }

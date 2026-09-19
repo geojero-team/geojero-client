@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ChevronLeft } from 'lucide-react'
 import VisitorPhotos from './VisitorPhotos'
 import { t } from '../i18n'
 import { loadSpotDetail } from '../lib/spots'
@@ -229,7 +230,7 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, uploadIn
             onClick={onBack}
             aria-label={t('common.back')}
           >
-            ‹
+            <ChevronLeft size={22} strokeWidth={2.25} aria-hidden="true" />
           </button>
         )}
 
