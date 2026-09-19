@@ -114,6 +114,8 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, onClose 
   const [expanded, setExpanded] = useState(false)
   const [photoIndex, setPhotoIndex] = useState(0)
   const trackRef = useRef(null)
+  // 손가락 넘기기의 시작점 — 마지막 장에서 더 밀었는지 보려고 둡니다(아래 onTouchEnd).
+  const touchRef = useRef(null)
 
   /* poiId 가 바뀌면 **부모가 key 로 다시 마운트**합니다(`key={poiId}`). 그래서 여기서
      앞 스팟의 사진 번호·더보기 상태를 지울 필요가 없습니다 — effect 안에서 setState 를
@@ -139,6 +141,42 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, onClose 
     track.scrollTo({ left: clamped * track.clientWidth, behavior: 'smooth' })
   }
 
+  /* 다음 장 — 마지막 장이면 첫 장으로 돌아갑니다(2026-09-19 사용자: 「오른쪽으로 넘기면 다시 1로」).
+     앞으로 가는 쪽만 돕니다. 첫 장에서 뒤로 넘기면 그대로 멈춥니다. */
+  const goNext = (from) => {
+    const track = trackRef.current
+    if (!track) return
+    goTo(from >= track.children.length - 1 ? 0 : from + 1)
+  }
+
+  /* 지금 몇 번째 장인지 — 스크롤 위치에서 바로 셉니다(state 는 한 박자 늦을 수 있습니다). */
+  const currentIndex = () => {
+    const track = trackRef.current
+    if (!track || track.clientWidth === 0) return 0
+    return Math.round(track.scrollLeft / track.clientWidth)
+  }
+
+  /* 손가락은 브라우저가 넘겨 줍니다(관성·고무줄). 다만 **마지막 장에서는 더 밀 곳이 없어** 아무 일도 안 일어나므로,
+     그 장에서 시작해 왼쪽으로 문턱(DRAG_STEP)보다 더 밀었으면 — 세로로 민 게 아니라면 — 첫 장으로 보냅니다. */
+  const onTouchStart = (event) => {
+    const touch = event.touches[0]
+    const track = trackRef.current
+    touchRef.current = touch && track
+      ? { x: touch.clientX, y: touch.clientY, atLast: currentIndex() >= track.children.length - 1 }
+      : null
+  }
+
+  const onTouchEnd = (event) => {
+    const start = touchRef.current
+    touchRef.current = null
+    const touch = event.changedTouches[0]
+    const track = trackRef.current
+    if (!start?.atLast || !touch || !track) return
+    const dx = touch.clientX - start.x
+    const dy = touch.clientY - start.y
+    if (dx < -track.clientWidth * DRAG_STEP && Math.abs(dx) > Math.abs(dy)) goTo(0)
+  }
+
   /* 한 번 끌면 **한 장만** 넘어갑니다.
      끌린 거리를 그대로 스크롤에 주기 때문에, 세 장 너비를 끌면 세 장이 지나갑니다.
      그래서 멈출 자리를 거리가 아니라 방향으로 정합니다 — 문턱을 넘겨 끌었으면 그쪽으로
@@ -148,13 +186,15 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, onClose 
     if (!track || track.clientWidth === 0) return
     const from = Math.round(startLeft / track.clientWidth)
     const past = Math.abs(delta) > track.clientWidth * DRAG_STEP
-    goTo(from + (past ? (delta < 0 ? 1 : -1) : 0))
+    if (past && delta < 0) goNext(from)
+    else goTo(from + (past ? -1 : 0))
   })
 
   const onKeyDown = (event) => {
     if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
     event.preventDefault()
-    goTo(photoIndex + (event.key === 'ArrowRight' ? 1 : -1))
+    if (event.key === 'ArrowRight') goNext(currentIndex())
+    else goTo(currentIndex() - 1)
   }
 
   // seed가 있으면 로딩 중에도 제목·분류를 그립니다. 둘 다 없을 때만 안내만 둡니다.
@@ -217,6 +257,8 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, onClose 
           ref={trackRef}
           className={styles.track}
           onScroll={swipeable ? syncIndex : undefined}
+          onTouchStart={swipeable ? onTouchStart : undefined}
+          onTouchEnd={swipeable ? onTouchEnd : undefined}
           {...dragHandlers}
           onKeyDown={onKeyDown}
           tabIndex={swipeable ? 0 : undefined}

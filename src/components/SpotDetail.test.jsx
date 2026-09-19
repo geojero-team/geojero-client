@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -114,6 +114,56 @@ describe('SpotDetail — 고현터미널 사진 자리 = 위치 지도 (2026-09-
     await screen.findByRole('heading', { name: '학동몽돌해변' })
     expect(screen.queryByRole('img', { name: /위치 지도/ })).not.toBeInTheDocument()
     expect(loadKakaoMaps).not.toHaveBeenCalled()
+  })
+})
+
+describe('SpotDetail — 사진 넘기기: 마지막 장에서 더 넘기면 첫 장 (2026-09-19)', () => {
+  /** jsdom 은 크기 · 스크롤이 없어 트랙 폭과 scrollTo 를 흉내 내고, 지금 몇 번째 장인지 스크롤 위치로 맞춥니다. */
+  async function trackAt(index) {
+    renderDetail(SPOT)
+    const track = await screen.findByRole('group', { name: '사진 3장 — 좌우로 넘겨보세요' })
+    Object.defineProperty(track, 'clientWidth', { configurable: true, value: 390 })
+    track.scrollTo = vi.fn()
+    track.scrollLeft = index * 390
+    fireEvent.scroll(track)
+    return track
+  }
+
+  it('키보드 → — 마지막 장이면 첫 장으로', async () => {
+    const track = await trackAt(2)
+    fireEvent.keyDown(track, { key: 'ArrowRight' })
+    expect(track.scrollTo).toHaveBeenCalledWith({ left: 0, behavior: 'smooth' })
+  })
+
+  it('손가락으로 마지막 장을 왼쪽으로 밀면 첫 장으로', async () => {
+    const track = await trackAt(2)
+    fireEvent.touchStart(track, { touches: [{ clientX: 300, clientY: 100 }] })
+    fireEvent.touchEnd(track, { changedTouches: [{ clientX: 200, clientY: 104 }] })
+    expect(track.scrollTo).toHaveBeenCalledWith({ left: 0, behavior: 'smooth' })
+  })
+
+  it('마지막 장이 아니면 손가락 넘기기는 브라우저에 맡긴다 · 세로로 민 것은 넘기기가 아니다', async () => {
+    const track = await trackAt(1)
+    fireEvent.touchStart(track, { touches: [{ clientX: 300, clientY: 100 }] })
+    fireEvent.touchEnd(track, { changedTouches: [{ clientX: 200, clientY: 104 }] })
+    expect(track.scrollTo).not.toHaveBeenCalled()
+
+    track.scrollLeft = 780
+    fireEvent.scroll(track)
+    fireEvent.touchStart(track, { touches: [{ clientX: 300, clientY: 100 }] })
+    fireEvent.touchEnd(track, { changedTouches: [{ clientX: 280, clientY: 260 }] })
+    expect(track.scrollTo).not.toHaveBeenCalled()
+  })
+
+  it('마우스로 마지막 장을 끌어도 첫 장으로', async () => {
+    const track = await trackAt(2)
+    Object.defineProperty(track, 'scrollWidth', { configurable: true, value: 1170 })
+    track.getBoundingClientRect = () => ({ width: 390 })
+    track.setPointerCapture = vi.fn()
+    fireEvent.pointerDown(track, { pointerType: 'mouse', clientX: 300, pointerId: 1 })
+    fireEvent.pointerMove(track, { pointerType: 'mouse', clientX: 200, pointerId: 1 })
+    fireEvent.pointerUp(track, { pointerType: 'mouse', clientX: 200, pointerId: 1 })
+    expect(track.scrollTo).toHaveBeenLastCalledWith({ left: 0, behavior: 'smooth' })
   })
 })
 
