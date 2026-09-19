@@ -78,7 +78,11 @@ export default function MapView({
    */
   fitSpots = null,
   topReserved = 16,
-  compact = false, // 판정 결과의 200px 미리보기 — 줌 버튼을 숨깁니다
+  /* 오른쪽 위 확대·축소 버튼을 보일지(2026-09-19 사용자 — 홈에서는 뺍니다. 두 손가락으로 확대되고,
+     지도 위에 뜬 것이 적을수록 지도가 넓어 보입니다). 코스 지도는 그대로 둡니다.
+     전에는 `compact` 라는 이름이었는데 그 뜻(판정 결과 200px 미리보기)의 화면이 2026-09-12 에 지워져
+     아무도 넘기지 않는 죽은 속성이었습니다 — 하는 일이 이 버튼 숨기기뿐이라 이름을 맞췄습니다. */
+  zoomControls = true,
 }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
@@ -317,7 +321,7 @@ export default function MapView({
       {/* 확대·축소 — 한 덩어리로 묶었습니다(2026-09-13). 전에는 36px 버튼 두 개가 8px 떨어져
           따로 떠 있었습니다(Figma 240:169/171). 같은 일을 하는 두 버튼이 갈라져 보여서,
           흰 면 하나에 구분선으로 나눴습니다. 색·그림자는 기존 토큰 그대로입니다. */}
-      {phase === 'ready' && !compact && (
+      {phase === 'ready' && zoomControls && (
         <div className={styles.controls} style={{ top: topReserved + 16 }}>
           <button
             type="button"
