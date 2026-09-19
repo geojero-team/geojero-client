@@ -1,4 +1,4 @@
-import { ChevronLeft, Clock } from 'lucide-react'
+import { ChevronDown, ChevronLeft, Clock } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import PlaceMap from '../components/PlaceMap'
@@ -8,6 +8,7 @@ import { t } from '../i18n'
 import { api } from '../lib/api'
 import { courseImage, onImageError } from '../lib/courseImage'
 import { formatDistance } from '../lib/format'
+import { splitHours } from '../lib/openHours'
 import { loadVisibleSpots } from '../lib/spots'
 import styles from './PlaceDetailPage.module.css'
 
@@ -19,7 +20,9 @@ import styles from './PlaceDetailPage.module.css'
  * - 사진은 **자르지 않는다**(object-fit: contain). 대부분 Type3 = 공공누리 제3유형(변경금지)이다(기준문서 §7).
  * - 글은 TourAPI 원문 그대로다. 서버가 `<br>` 만 줄바꿈으로 바꿔 주고 화면은 pre-line 으로 그린다.
  * - 이름 아래 한 줄: 숙소는 종류 · 등급(`category` — 「2성 호텔」 · 「콘도」, 호텔업 등급), 맛집은 대표 메뉴 + 주소의 읍면.
- * - 숙소 부대시설은 TourAPI `subfacility` 원문을 「/」로 나눈 칩이다(글자는 바꾸지 않는다).
+ * - 칩: 숙소 부대시설(`subfacility`) — 원문을 「/」로만 나눈다. 맛집 메뉴는 두지 않는다 — 사용자가 원한 건 **메뉴판 이미지**인데
+ *   TourAPI 12곳 어디에도 없고(음식 메뉴 이미지는 백만석의 음식 사진 3장뿐), 취급 메뉴 글자 칩은 쓸모가 없다(2026-09-19 사용자).
+ * - 맛집 영업시간은 본 시간 한 줄 + 쉬는 날, 준비시간 · 마지막 주문은 펼쳐 본다(HoursRow).
  * - 값이 없는 줄 · 구획은 그리지 않는다 — 빈 줄 · 빈 칸을 두지 않는다(절대규칙 3). 전화 · 주차 · 객실 수 · 정류장은 뺐다.
  * - **가까운 스팟**(서버 `nearSpots` — 5km 안에서 가까운 순으로 최대 3곳): 이 숙소 · 맛집을 거점으로 우리 스팟을 돈다는 것을 보여 준다.
  *   직선거리(TourAPI 좌표)만 적고, 버스로 갈지 걸어갈지는 스팟마다 「길찾기 ↗」(카카오맵 **대중교통**)가 답한다
@@ -122,7 +125,8 @@ function PlaceBody({ place, onBack }) {
     return { ...near, thumbnailUrl: listed?.thumbnailUrl ?? null, theme: listed?.theme }
   })
   const subtitle = [place.category, ok ? townOf(detail.address) : null].filter(Boolean).join(' · ')
-  const facilities = place.kind === 'STAY' && ok ? splitFacilities(detail.facilities) : []
+  // 숙소 부대시설 칩 — TourAPI 원문을 「/」로만 나눈다. 맛집에는 메뉴 칩을 두지 않는다(아래 머리 주석).
+  const tags = ok && place.kind === 'STAY' ? splitTags(detail.facilities) : []
 
   return (
     <>
@@ -147,11 +151,7 @@ function PlaceBody({ place, onBack }) {
         {ok && (
           <div className={styles.info}>
             {place.kind === 'FOOD' ? (
-              <InfoRow
-                icon={<Icon of={Clock} />}
-                main={detail.openTime ?? (detail.restDay && t('places.restDay', { day: detail.restDay }))}
-                sub={detail.openTime && detail.restDay && t('places.restDay', { day: detail.restDay })}
-              />
+              <HoursRow openTime={detail.openTime} restDay={detail.restDay} />
             ) : (
               <InfoRow
                 icon={<Icon of={Clock} />}
@@ -164,11 +164,11 @@ function PlaceBody({ place, onBack }) {
           </div>
         )}
 
-        {facilities.length > 0 && (
-          <ul className={styles.facilities} aria-label={t('placeDetail.facilities')}>
-            {facilities.map((facility) => (
-              <li key={facility} className={styles.facility}>
-                {facility}
+        {tags.length > 0 && (
+          <ul className={styles.tags} aria-label={t('placeDetail.facilities')}>
+            {tags.map((tag) => (
+              <li key={tag} className={styles.tag}>
+                {tag}
               </li>
             ))}
           </ul>
@@ -263,8 +263,48 @@ function townOf(address) {
   return address?.match(/거제시\s+(\S+[읍면동])(?:\s|$)/)?.[1] ?? null
 }
 
+/**
+ * 맛집 영업시간 — 본 시간 한 줄을 크게, 준비시간 · 마지막 주문은 펼쳐 본다(2026-09-19 사용자 「너무 길다」 — 네이버 · 카카오 장소 화면처럼).
+ * 쉬는 날은 늘 보인다(쉬는 날 가면 헛걸음이다). 펼칠 것이 없으면 누르는 줄로 만들지 않는다. 「영업 중」 판단은 하지 않는다(lib/openHours).
+ */
+function HoursRow({ openTime, restDay }) {
+  const [open, setOpen] = useState(false)
+  const hours = splitHours(openTime)
+  const rest = restDay ? t('places.restDay', { day: restDay }) : null
+  if (!hours) return <InfoRow icon={<Icon of={Clock} />} main={rest} />
+  const more = hours.details.length > 0
+  return (
+    <div className={styles.infoRow}>
+      <Icon of={Clock} />
+      <span className={styles.infoText}>
+        {more ? (
+          <button type="button" className={styles.hoursToggle} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+            <span className={styles.infoMain}>{hours.main}</span>
+            <ChevronDown
+              className={open ? styles.hoursChevOpen : styles.hoursChev}
+              size={16}
+              strokeWidth={2}
+              aria-hidden="true"
+            />
+            <span className={styles.srOnly}>{t('placeDetail.hoursMore')}</span>
+          </button>
+        ) : (
+          <span className={styles.infoMain}>{hours.main}</span>
+        )}
+        {open &&
+          hours.details.map((detail) => (
+            <span key={detail} className={styles.infoSub}>
+              {detail}
+            </span>
+          ))}
+        {rest && <span className={styles.infoSub}>{rest}</span>}
+      </span>
+    </div>
+  )
+}
+
 /** TourAPI 부대시설 원문 「사우나 / 산책로 / 노래방」 → 칩. 글자는 바꾸지 않고 「/」로만 나눈다. */
-function splitFacilities(value) {
+function splitTags(value) {
   return (value ?? '')
     .split('/')
     .map((part) => part.trim())

@@ -118,8 +118,8 @@
   word-break: keep-all;
 }
 
-/* 부대시설 칩 — TourAPI 원문을 「/」로 나눈 것. 회색 면 알약, 넘치면 줄바꿈. */
-.facilities {
+/* 숙소 부대시설 칩(TourAPI 원문을 「/」로 나눈 것). 회색 면 알약, 넘치면 줄바꿈. */
+.tags {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -128,12 +128,42 @@
   list-style: none;
 }
 
-.facility {
+.tag {
   padding: 5px 10px;
   border-radius: var(--radius-pill);
   background: var(--bg-surface);
   font: var(--type-label);
   color: var(--text-secondary);
+}
+
+/* 맛집 영업시간 — 본 시간 줄 전체가 펼침 버튼(펼칠 것이 있을 때만). 글 모양은 .infoMain 그대로, 오른쪽에 ▾. */
+.hoursToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hoursChev,
+.hoursChevOpen {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  transition: transform 160ms ease;
+}
+
+.hoursChevOpen {
+  transform: rotate(180deg);
+}
+
+.srOnly {
+  composes: srOnly from '../components/SpotDetail.module.css';
 }
 
 /* 구획(위치 · 가까운 스팟 · 소개) — 위에 굵은 회색 띠(8)로 가른다. 국내 장소 · 숙소 앱의 구획 나눔. */

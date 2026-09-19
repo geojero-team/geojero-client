@@ -31,6 +31,7 @@ const FOOD = {
     menu: '멸치쌈밥정식 A코스',
     openTime: '10:30~20:30\n준비시간 15:00~17:00',
     restDay: '매월 두번째·네번째 수요일',
+    menus: '멸치쌈밥정식 B코스 / 멸치회무침 등', // 서버가 보내도 그리지 않는다
   },
 }
 
@@ -100,11 +101,33 @@ describe('맛집 · 숙소 상세 — 머리', () => {
     expect(within(chips).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['사우나', '산책로', '노래방'])
   })
 
-  it('맛집 — 영업시간(원문 줄바꿈 그대로) + 쉬는 날', async () => {
+  it('맛집 영업시간 — 본 시간 한 줄 + 쉬는 날이 보이고, 준비시간 · 마지막 주문은 펼쳐야 보인다(네이버 · 카카오 장소 화면처럼)', async () => {
+    const user = userEvent.setup()
     renderPage(909)
     await screen.findByRole('heading', { level: 1 })
-    expect(screen.getByText(/10:30~20:30/).textContent).toBe('10:30~20:30\n준비시간 15:00~17:00')
+    expect(screen.getByText('10:30~20:30')).toBeInTheDocument()
     expect(screen.getByText('쉬는 날 매월 두번째·네번째 수요일')).toBeInTheDocument()
+    expect(screen.queryByText('준비시간 15:00~17:00')).not.toBeInTheDocument()
+
+    const toggle = screen.getByRole('button', { name: /10:30~20:30/ })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('준비시간 15:00~17:00')).toBeInTheDocument()
+  })
+
+  it('영업시간이 한 줄뿐이면 펼칠 것이 없다 — 누르는 줄로 만들지 않는다', async () => {
+    api.place.mockResolvedValue({ ...FOOD, detail: { ...FOOD.detail, openTime: '08:00~17:00' } })
+    renderPage(909)
+    expect(await screen.findByText('08:00~17:00')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /08:00~17:00/ })).not.toBeInTheDocument()
+  })
+
+  it('맛집에는 메뉴 칩을 두지 않는다 — 메뉴판 이미지가 TourAPI 에 없고, 글자 목록은 쓸모가 없다(2026-09-19 사용자)', async () => {
+    renderPage(909)
+    await screen.findByRole('heading', { level: 1 })
+    expect(screen.queryByRole('list', { name: '메뉴' })).not.toBeInTheDocument()
+    expect(screen.queryByText('멸치회무침 등')).not.toBeInTheDocument()
   })
 
   it('정보가 많지 않게 — 전화 · 주차 · 객실 수 · 정류장은 두지 않는다', async () => {

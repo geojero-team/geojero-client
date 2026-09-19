@@ -163,6 +163,7 @@ export default {
   'placeDetail.nearSpots': '가까운 스팟',
   'placeDetail.straight': '직선 약 {dist}',
   'placeDetail.facilities': '부대시설',
+  'placeDetail.hoursMore': '준비시간 · 마지막 주문 보기',
   'placeDetail.mapAria': '{name} 위치를 카카오맵에서 크게 보기 — 새 창에서 열려요',
   'placeDetail.routeAria': '{from}에서 {to}까지 카카오맵 대중교통 길찾기 — 새 창에서 열려요',
 
