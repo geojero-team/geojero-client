@@ -34,7 +34,7 @@ describe('고현터미널 마커 — Figma 02-2 `501:213`', () => {
 const STAY = { spotId: 'place-2578495', kind: 'STAY', name: '소노캄 거제', shortName: '소노캄 거제' }
 
 describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
-  it('대표 사진이 있으면 사진을 자르지 않고 통째로 담는 사각 액자다 — 높이는 스팟 원과 같은 28, 폭은 3:2 로 시작', () => {
+  it('대표 사진이 있으면 사진을 자르지 않고 통째로 담는 사각 액자다 — 높이 22(스팟 원 28 보다 낮게 — 폭까지 더하면 원만큼 무겁다), 폭은 3:2 로 시작', () => {
     const { element, label, size } = createPinElement({ ...STAY, thumbnailUrl: 'https://x/s.jpg' }, { order: null })
 
     expect(element.classList.contains(styles.pinPlace)).toBe(true)
@@ -42,12 +42,12 @@ describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
     const photo = element.querySelector('img')
     expect(photo).toHaveAttribute('src', 'https://x/s.jpg')
     expect(photo.classList.contains(styles.pinPhotoWhole)).toBe(true)
-    expect(size).toEqual({ width: 41, height: 28 }) // 25 × 1.5 = 37.5 → 38 + 테두리 3
+    expect(size).toEqual({ width: 32, height: 22 }) // 19 × 1.5 = 28.5 → 29 + 테두리 3
     expect(element).toHaveAttribute('aria-label', '소노캄 거제')
     expect(label).toHaveTextContent('소노캄 거제')
   })
 
-  it('사진이 오면 액자 폭을 사진 비율에 맞춘다 — 빈칸 없이, 자르지 않고(높이 28 · 테두리 안 25)', () => {
+  it('사진이 오면 액자 폭을 사진 비율에 맞춘다 — 빈칸 없이, 자르지 않고(높이 22 · 테두리 안 19)', () => {
     const onResize = vi.fn()
     const { element, size } = createPinElement({ ...STAY, thumbnailUrl: 'https://x/wide.jpg' }, { order: null, onResize })
     const photo = element.querySelector('img')
@@ -55,8 +55,8 @@ describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
     Object.defineProperty(photo, 'naturalHeight', { value: 470 })
     photo.dispatchEvent(new Event('load'))
 
-    expect(size.width).toBe(53) // 25 × 2 + 테두리 3
-    expect(element.style.width).toBe('53px')
+    expect(size.width).toBe(41) // 19 × 2 + 테두리 3
+    expect(element.style.width).toBe('41px')
     expect(onResize).toHaveBeenCalledTimes(1)
 
     // 세로 사진은 좁게
@@ -65,7 +65,7 @@ describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
     Object.defineProperty(tallPhoto, 'naturalWidth', { value: 705 })
     Object.defineProperty(tallPhoto, 'naturalHeight', { value: 940 })
     tallPhoto.dispatchEvent(new Event('load'))
-    expect(tall.size.width).toBe(22) // 25 × 0.75 = 18.75 → 19 + 3
+    expect(tall.size.width).toBe(17) // 19 × 0.75 = 14.25 → 14 + 3
   })
 
   it('사진이 없으면 스팟 마커와 같은 28px 원에 침대 · 수저 아이콘', () => {
@@ -90,24 +90,24 @@ describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
 
   it('액자끼리 4px 넘게 겹치면 「+1」로 묶는다 — 원(중심 16px · 12px 겹침 허용)보다 엄격하게, 액자 크기로 잰다', () => {
     const a = pinAt({ ...STAY, spotId: 'place-a', thumbnailUrl: 'https://x/a.jpg' }, 200, 300, 40)
-    const b = pinAt({ ...STAY, spotId: 'place-b', thumbnailUrl: 'https://x/b.jpg' }, 230, 305, 40)
+    const b = pinAt({ ...STAY, spotId: 'place-b', thumbnailUrl: 'https://x/b.jpg' }, 224, 305, 40)
     updateLabelVisibility(fakeMap(), [a, b], null, 16)
     expect(a.badge.textContent).toBe('+1')
     expect(b.element.style.display).toBe('none')
 
-    // 34px 떨어져 7px 겹치는 액자(폭 41) 둘도 묶는다 — 37px(4px 겹침)부터 따로 그린다
+    // 27px 떨어져 5px 겹치는 액자(폭 32) 둘도 묶는다 — 28px(4px 겹침)부터 따로 그린다
     const e = pinAt({ ...STAY, spotId: 'place-e', thumbnailUrl: 'https://x/e.jpg' }, 200, 300, 40)
-    const f = pinAt({ ...STAY, spotId: 'place-f', thumbnailUrl: 'https://x/f.jpg' }, 234, 300, 40)
+    const f = pinAt({ ...STAY, spotId: 'place-f', thumbnailUrl: 'https://x/f.jpg' }, 227, 300, 40)
     updateLabelVisibility(fakeMap(), [e, f], null, 16)
     expect(f.element.style.display).toBe('none')
     const g = pinAt({ ...STAY, spotId: 'place-g', thumbnailUrl: 'https://x/g.jpg' }, 200, 300, 40)
-    const h = pinAt({ ...STAY, spotId: 'place-h', thumbnailUrl: 'https://x/h.jpg' }, 237, 300, 40)
+    const h = pinAt({ ...STAY, spotId: 'place-h', thumbnailUrl: 'https://x/h.jpg' }, 228, 300, 40)
     updateLabelVisibility(fakeMap(), [g, h], null, 16)
     expect(h.element.style.display).toBe('')
 
-    // 같은 거리(30px)의 원 두 개는 묶지 않는다 — 원 규칙은 그대로
+    // 같은 거리(24px)의 원 두 개는 묶지 않는다 — 원 규칙은 그대로
     const c = pinAt({ ...SPOT, spotId: 71 }, 200, 300, 40)
-    const d = pinAt({ ...SPOT, spotId: 72 }, 230, 305, 40)
+    const d = pinAt({ ...SPOT, spotId: 72 }, 224, 305, 40)
     updateLabelVisibility(fakeMap(), [c, d], null, 16)
     expect(d.element.style.display).toBe('')
     expect(c.badge.hidden).toBe(true)

@@ -28,15 +28,16 @@ const LABEL_RIGHT_GAP = 30
 const LABEL_LEFT_GAP = 4
 
 /**
- * 숙소 · 맛집 사진 액자(2026-09-19) — **높이는 스팟 원과 같은 28**(사용자 — 통일성), **폭은 사진 비율대로**.
- * 테두리(1.5)만 두르고 여백 없이 사진을 통째로 담는다 — 사진이 오면 테두리 안 높이 25 에 맞춰 폭을 정하므로
+ * 숙소 · 맛집 사진 액자(2026-09-19) — **높이 22**, **폭은 사진 비율대로**. 처음엔 스팟 원과 같은 28 이었는데
+ * 폭(3:2 면 41)까지 더해 원보다 두 배 무거워 보였다(사용자 — 「너무너무 크게 보인다」, 20 · 22 · 28 을 나란히 보고 22).
+ * 테두리(1.5)만 두르고 여백 없이 사진을 통째로 담는다 — 사진이 오면 테두리 안 높이 19 에 맞춰 폭을 정하므로
  * 자르지도 않고(공공누리 3유형 변경금지, 기준문서 §7) 빈칸도 남지 않는다(사용자 — 「흰 공백 없애줘」).
  * 사진이 오기 전에는 3:2(대표 사진 대부분)로 둔다. 이름표 · 겹침 계산은 핀마다 `size` 로 한다(원 28 × 28).
  */
-const PHOTO_FRAME_H = 28
+const PHOTO_FRAME_H = 22
 const PHOTO_FRAME_BORDER = 1.5
 const PHOTO_INNER_H = PHOTO_FRAME_H - PHOTO_FRAME_BORDER * 2
-const PHOTO_FRAME_W_DEFAULT = frameWidthFor(1.5) // 3:2 → 41
+const PHOTO_FRAME_W_DEFAULT = frameWidthFor(1.5) // 3:2 → 32
 
 /**
  * 마커 중심끼리 이보다 가까우면 한 덩어리로 봅니다.
@@ -95,7 +96,7 @@ function isPlaceKind(kind) {
   return kind === 'STAY' || kind === 'FOOD'
 }
 
-/** 사진 비율에 맞춘 액자 폭 — 테두리 안 높이 25 × 비율(반올림) + 테두리. 너무 가늘거나 넓은 사진은 16 ~ 64 로 묶는다. */
+/** 사진 비율에 맞춘 액자 폭 — 테두리 안 높이 19 × 비율(반올림) + 테두리. 너무 가늘거나 넓은 사진은 16 ~ 64 로 묶는다. */
 function frameWidthFor(ratio) {
   return Math.min(64, Math.max(16, Math.round(PHOTO_INNER_H * ratio) + PHOTO_FRAME_BORDER * 2))
 }
