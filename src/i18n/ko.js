@@ -411,6 +411,14 @@ export default {
 
   // ── 코스 상세 (09-14 확정 · Figma 547:200) ───────────────────────────────
   'courseDetail.back': '코스',
+
+  /* 공유(2026-09-19 사용자) — 머리말 오른쪽 끝. 폰에서는 OS 공유 시트가 뜨고, 없는 브라우저에서는 링크를 복사합니다. */
+  'courseDetail.share': '공유',
+  // 공유 시트에 뜨는 이름 — 서버 코스 제목이 없을 때만 씁니다.
+  'courseDetail.shareTitle': '거제로 코스',
+  'courseDetail.shareCopied': '링크를 복사했어요',
+  // 복사까지 막힌 드문 경우. 못 한다고만 하지 않고 어떻게 하면 되는지 함께 적습니다(문구 규칙 3).
+  'courseDetail.shareFailed': '링크를 복사하지 못했어요. 주소창에서 복사해 주세요',
   // 제목은 서버 title, 없으면 common.courseTitleRange 규칙(lib/courseTitle).
   // {time}은 formatDuration(busMinTotal) — 서버 busTotalText는 60분 미만이면 「약 0시간 40분」이 되어 쓰지 않습니다.
   'courseDetail.busChip': '버스 약 {time}',

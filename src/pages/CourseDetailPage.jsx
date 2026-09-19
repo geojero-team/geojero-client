@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Share2 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Button from '../components/Button'
 import CourseMiniMap from '../components/CourseMiniMap'
@@ -480,7 +480,7 @@ export default function CourseDetailPage() {
   const [saveState, setSaveState] = useState({ status: 'idle', error: '' })
   /* 저장했다고 알리는 띠(2026-09-19 사용자). 저장 결과는 본문 맨 아래에 나타나는데, 로그인하고 돌아온
      사람에게는 그 자리가 화면 밖입니다 — 결과를 눈이 있는 자리로 가져옵니다. */
-  const [toastOpen, setToastOpen] = useState(false)
+  const [toast, setToast] = useState('')
   /* 구간 고르기(2026-09-18 사용자 결정) — null 이면 전체 경로, 숫자면 그 스팟에 닿는 구간만 봅니다.
      코스가 길어 스크롤이 깊다는 것이 이유입니다. 주소에 싣지 않습니다 — 다시 들어오면 전체부터 보는 편이 예측하기 쉽습니다. */
   const [segment, setSegment] = useState(null)
@@ -590,12 +590,39 @@ export default function CourseDetailPage() {
       .saveTrip({ courseId: Number(courseId), travelDate })
       .then(() => {
         setSaveState({ status: 'saved', error: '' })
-        setToastOpen(true)
+        setToast(t('courseDetail.saved'))
       })
       // 409 — 이미 저장한 코스(다른 탭 · 다른 기기에서 저장했거나 목록을 못 받았을 때). 오류가 아니라 저장된 상태로 보입니다.
       .catch((error) =>
         setSaveState(error.status === 409 ? { status: 'already', error: '' } : { status: 'error', error: error.message }),
       )
+  }
+
+  /* 공유(2026-09-19 사용자) — 폰에서는 OS 공유 시트가 뜨고(navigator.share), 없는 브라우저에서는
+     링크를 클립보드에 넣고 띠로 알립니다.
+     주소는 **지금 보고 있는 주소가 아니라 코스 주소**입니다 — `?no=1` 은 내가 고른 순서라
+     받는 사람에게는 뜻이 없습니다.
+     onClick 에서만 부르므로 아래에 선언된 값들을 읽어도 됩니다(렌더 중에는 돌지 않습니다). */
+  const share = async () => {
+    const url = `${window.location.origin}/courses/${courseId}`
+    const name = course?.title ?? t('courseDetail.shareTitle')
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: name, url })
+        return
+      } catch (error) {
+        // 공유 시트를 그냥 닫은 것은 실패가 아닙니다 — 아무 말도 하지 않습니다.
+        if (error?.name === 'AbortError') return
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url)
+      setToast(t('courseDetail.shareCopied'))
+    } catch {
+      setToast(t('courseDetail.shareFailed'))
+    }
   }
 
   const header = (
@@ -604,6 +631,13 @@ export default function CourseDetailPage() {
         <ChevronLeft size={18} strokeWidth={2} aria-hidden="true" />
         {t('courseDetail.back')}
       </button>
+
+      {/* 코스를 아직 못 받았으면 공유할 것이 없습니다 — 그때는 버튼을 두지 않습니다. */}
+      {course && (
+        <button type="button" className={styles.share} onClick={share} aria-label={t('courseDetail.share')}>
+          <Share2 size={20} strokeWidth={2} aria-hidden="true" />
+        </button>
+      )}
       {/* 요일 알약(547:200)은 뺐습니다(2026-09-17 사용자 결정) — course.service 는 확인용 편 사슬의 요일이라
           「평일용 코스」로 읽혔습니다. 휴일에 버스가 정말 없는 구간은 구간 줄 아래 「휴일엔 이 구간 버스가 없어요」가 말하고,
           평일 · 휴일 횟수는 스팟 「시간표 ›」가 말합니다(2026-09-17 구간 줄에서 횟수를 뺐습니다). */}
@@ -833,7 +867,7 @@ export default function CourseDetailPage() {
 
       {/* 저장 결과 — 화면 아래 가운데에 떴다가 스스로 사라집니다. 본문 맨 아래의 「내 일정 보기」 줄은
           그대로 둡니다: 띠는 방금 끝난 일을 알리고, 그 줄은 지금 상태를 계속 말합니다. */}
-      <Toast open={toastOpen} message={t('courseDetail.saved')} onDone={() => setToastOpen(false)} />
+      <Toast open={Boolean(toast)} message={toast} onDone={() => setToast('')} />
     </Screen>
   )
 }
