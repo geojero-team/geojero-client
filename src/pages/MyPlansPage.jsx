@@ -57,11 +57,15 @@ function SavedTripCard({ trip, course, busy, confirming, onAsk, onCancel, onDele
         onClick={() => onOpen(trip)}
         aria-label={t('myPlans.openAria', { title })}
       >
+        {/* 사진 줄은 넘치면 좌우로 스크롤합니다(2026-09-19 사용자). 앞 판은 곳 수(data-count)마다 칸을 줄여
+            끼워 넣었는데 좁은 폰에서 그래도 넘쳤습니다 — 그 3단계를 CSS 에서 지우면서 속성도 뺐습니다.
+            화살표도 곳 수를 가리지 않고 늘 그립니다(전에는 4·5곳에서 자리가 없어 뺐습니다).
+            ⚠️ 주석을 삼항 괄호 `? (` 안에 두면 안 됩니다 — 거기에는 표현식이 하나만 올 수 있어 문법이 깨집니다. */}
         {stops.length > 0 ? (
-          <span className={styles.order} data-count={stops.length}>
+          <span className={styles.order}>
             {stops.map((spot, i) => (
               <Fragment key={spot.poiId}>
-                {i > 0 && stops.length <= 3 && (
+                {i > 0 && (
                   <span className={styles.arrow} aria-hidden="true">
                     →
                   </span>
