@@ -23,11 +23,17 @@ const LABEL_GAP = 4
  * 이름표 충돌 계산이 어긋나지 않습니다.
  */
 const MARKER_SIZE = 28
-const MARKER_HALF = MARKER_SIZE / 2
 const LABEL_HEIGHT = 18
-const LABEL_TOP_INSET = 5
 const LABEL_RIGHT_GAP = 30
 const LABEL_LEFT_GAP = 4
+
+/**
+ * 숙소 · 맛집 사진 액자(2026-09-19) — 46 × 32. 테두리 1.5 + 여백 2 안쪽이 39 × 25 로 3:2(대표 사진 대부분)에 가깝다.
+ * 사진을 자르지 않고(contain) 통째로 줄여 담는다 — 공공누리 3유형(변경금지, 기준문서 §7). 남는 곳은 옅은 회색.
+ * 이름표 · 겹침 계산은 핀마다 폭 · 높이를 받아 한다(원 28 · 액자 46 × 32). 이름표는 마커 오른쪽 +2(원은 +30 = 28 + 2).
+ */
+const PHOTO_FRAME_W = 46
+const PHOTO_FRAME_H = 32
 
 /**
  * 마커 중심끼리 이보다 가까우면 한 덩어리로 봅니다.
@@ -81,7 +87,7 @@ export const TERMINAL_MARKER_SVG =
 /** 이름표를 마커 아래 가운데에 둘 때 마커와의 간격(px) — Figma 501:220이 501:213 아래 30(28 + 2). */
 const LABEL_BELOW_GAP = 2
 
-/** 숙소 · 맛집(홈 칩, 2026-09-19) — 스팟 마커와 같은 흰 원 + 이름표. 사진은 넣지 않는다(아래). */
+/** 숙소 · 맛집(홈 칩, 2026-09-19) — 대표 사진이 있으면 사각 액자(자르지 않음), 없으면 스팟 마커와 같은 원에 아이콘. */
 function isPlaceKind(kind) {
   return kind === 'STAY' || kind === 'FOOD'
 }
@@ -100,6 +106,7 @@ export function createPinElement(spot, { order }) {
     isTerminal ? styles.pinTerminal : isStop ? styles.pinStop : styles.pinSpot,
     isNineScenic && styles.pinNineScenic,
     isPlace && styles.pinPlace,
+    isPlace && spot.thumbnailUrl && styles.pinPlacePhoto,
   ]
     .filter(Boolean)
     .join(' ')
@@ -118,8 +125,19 @@ export function createPinElement(spot, { order }) {
     dot.innerHTML = TERMINAL_MARKER_SVG
   } else if (isStop) {
     dot.textContent = String(order)
+  } else if (isPlace && spot.thumbnailUrl) {
+    /* 숙소 · 맛집 대표 사진 — 사각 액자에 **통째로**(원으로 자르지 않는다 — 공공누리 3유형 변경금지, 기준문서 §7).
+       링크가 죽으면 액자는 그대로 두고 아이콘을 담는다(핀 크기가 바뀌면 이름표 자리 계산이 어긋난다). */
+    const photo = document.createElement('img')
+    photo.className = styles.pinPhotoWhole
+    photo.src = spot.thumbnailUrl
+    photo.alt = ''
+    photo.addEventListener('error', () => {
+      dot.innerHTML = themeIconSvg(spot.kind)
+    })
+    dot.append(photo)
   } else if (isPlace) {
-    /* 숙소 · 맛집은 사진 대신 침대 · 수저 아이콘이다. 사진 대부분이 공공누리 3유형(변경금지)이라 원으로 자를 수 없다(기준문서 §7). */
+    // 사진이 없으면(관광정보 실패 등) 스팟 마커와 같은 원에 침대 · 수저 아이콘.
     dot.innerHTML = themeIconSvg(spot.kind)
   } else if (spot.thumbnailUrl) {
     const photo = document.createElement('img')
@@ -145,7 +163,16 @@ export function createPinElement(spot, { order }) {
   badge.hidden = true
 
   element.append(dot, label, badge)
-  return { element, label, badge, isTerminal, isNineScenic }
+  const framed = isPlace && Boolean(spot.thumbnailUrl)
+  return {
+    element,
+    label,
+    badge,
+    isTerminal,
+    isNineScenic,
+    width: framed ? PHOTO_FRAME_W : MARKER_SIZE,
+    height: framed ? PHOTO_FRAME_H : MARKER_SIZE,
+  }
 }
 
 /**
@@ -198,14 +225,25 @@ export function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
    * 몇 곳이 더 있는지 배지로 말한 뒤, 탭하면 확대해서 실제로 갈라 보여줍니다. */
   const heads = []
   const hidden = new Set()
+  /* 원끼리는 중심 거리 16px 안이면 묶는다(위 CLUSTER_GAP — 원은 12px 겹쳐도 둘 다 읽히고 눌린다).
+     숙소 · 맛집 사진 액자(46 × 32)가 끼면 두 핀의 폭 · 높이로 재고, 겹침은 4px 까지만 둔다 — 사진은 조금만 겹쳐도
+     지저분하고 가려진 사진이 무엇인지 알 수 없다(운영 미리보기 · 지세포 맛집 둘이 7px 겹침). */
+  const OVERLAP_ALLOWED = 4
+  const tooClose = (a, p, b, q) => {
+    const aw = a.width ?? MARKER_SIZE
+    const bw = b.width ?? MARKER_SIZE
+    if (aw === MARKER_SIZE && bw === MARKER_SIZE) return Math.hypot(p.x - q.x, p.y - q.y) < CLUSTER_GAP
+    const ah = a.height ?? MARKER_SIZE
+    const bh = b.height ?? MARKER_SIZE
+    return (
+      Math.abs(p.x - q.x) < (aw + bw) / 2 - OVERLAP_ALLOWED && Math.abs(p.y - q.y) < (ah + bh) / 2 - OVERLAP_ALLOWED
+    )
+  }
 
   ordered.forEach((pin) => {
     const point = points.get(pin.spotId)
     if (!point) return
-    const head = heads.find((other) => {
-      const q = points.get(other.pin.spotId)
-      return Math.hypot(point.x - q.x, point.y - q.y) < CLUSTER_GAP
-    })
+    const head = heads.find((other) => tooClose(pin, point, other.pin, points.get(other.pin.spotId)))
     if (head) {
       hidden.add(pin.spotId)
       head.covered += 1
@@ -235,15 +273,17 @@ export function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
 
   // 4) 마커가 이름표보다 먼저 자리를 차지합니다. 이름표가 남의 마커에 걸치면 둘 다
   //    못 읽습니다. 숨긴 마커는 자리를 차지하지 않습니다 — 그리지 않으니까요.
+  const halfW = (pin) => (pin.width ?? MARKER_SIZE) / 2
+  const halfH = (pin) => (pin.height ?? MARKER_SIZE) / 2
   const occupied = []
   heads.forEach(({ pin }) => {
     const point = points.get(pin.spotId)
     occupied.push({
       owner: pin.spotId,
-      left: point.x - MARKER_HALF,
-      right: point.x + MARKER_HALF,
-      top: point.y - MARKER_HALF,
-      bottom: point.y + MARKER_HALF,
+      left: point.x - halfW(pin),
+      right: point.x + halfW(pin),
+      top: point.y - halfH(pin),
+      bottom: point.y + halfH(pin),
     })
   })
 
@@ -255,8 +295,9 @@ export function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
     const point = points.get(pin.spotId)
     if (!point || width === 0) return
 
-    const markerLeft = point.x - MARKER_HALF
-    const top = point.y - MARKER_HALF + LABEL_TOP_INSET
+    const markerLeft = point.x - halfW(pin)
+    // 이름표는 마커 높이 가운데(원 28 이면 위 +5 — Figma).
+    const top = point.y - LABEL_HEIGHT / 2
     const boxAt = (left, boxTop = top) => ({
       left,
       right: left + width,
@@ -264,10 +305,10 @@ export function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
       bottom: boxTop + LABEL_HEIGHT,
     })
 
-    const right = boxAt(markerLeft + LABEL_RIGHT_GAP)
+    const right = boxAt(markerLeft + halfW(pin) * 2 + (LABEL_RIGHT_GAP - MARKER_SIZE))
     const left = boxAt(markerLeft - LABEL_LEFT_GAP - width)
     const below = pin.isTerminal
-      ? boxAt(point.x - width / 2, point.y + MARKER_HALF + LABEL_BELOW_GAP)
+      ? boxAt(point.x - width / 2, point.y + halfH(pin) + LABEL_BELOW_GAP)
       : null
     const candidates = below ? [below, right, left] : [right, left]
 

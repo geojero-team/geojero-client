@@ -31,17 +31,65 @@ describe('고현터미널 마커 — Figma 02-2 `501:213`', () => {
   })
 })
 
-describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
-  it('스팟 마커와 같은 흰 원 + 이름표인데, 사진 대신 침대 · 수저 아이콘이다(공공누리 3유형이라 원으로 자르지 않는다)', () => {
-    const STAY = { spotId: 'place-2578495', kind: 'STAY', name: '소노캄 거제', shortName: '소노캄 거제', thumbnailUrl: 'https://x/s.jpg' }
-    const { element, label } = createPinElement(STAY, { order: null })
+const STAY = { spotId: 'place-2578495', kind: 'STAY', name: '소노캄 거제', shortName: '소노캄 거제' }
 
-    expect(element.classList.contains(styles.pinSpot)).toBe(true)
+describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
+  it('대표 사진이 있으면 사진을 자르지 않고 통째로 담는 작은 사각 액자(46 × 32)다 — 공공누리 3유형(변경금지)이라 원으로 자르지 않는다', () => {
+    const { element, label, width, height } = createPinElement({ ...STAY, thumbnailUrl: 'https://x/s.jpg' }, { order: null })
+
     expect(element.classList.contains(styles.pinPlace)).toBe(true)
-    expect(element.querySelector('img')).toBeNull()
-    expect(element.querySelector('svg path')).not.toBeNull()
+    expect(element.classList.contains(styles.pinPlacePhoto)).toBe(true)
+    const photo = element.querySelector('img')
+    expect(photo).toHaveAttribute('src', 'https://x/s.jpg')
+    expect(photo.classList.contains(styles.pinPhotoWhole)).toBe(true)
+    expect([width, height]).toEqual([46, 32])
     expect(element).toHaveAttribute('aria-label', '소노캄 거제')
     expect(label).toHaveTextContent('소노캄 거제')
+  })
+
+  it('사진이 없으면 스팟 마커와 같은 28px 원에 침대 · 수저 아이콘', () => {
+    const { element, width, height } = createPinElement({ ...STAY, thumbnailUrl: null }, { order: null })
+
+    expect(element.classList.contains(styles.pinSpot)).toBe(true)
+    expect(element.classList.contains(styles.pinPlacePhoto)).toBe(false)
+    expect(element.querySelector('img')).toBeNull()
+    expect(element.querySelector('svg path')).not.toBeNull()
+    expect([width, height]).toEqual([28, 28])
+  })
+
+  it('이름표 자리는 액자 폭(46)으로 잰다 — 28px 원이면 오른쪽에 들어갈 이름표도 액자면 넘쳐 왼쪽으로 뒤집는다', () => {
+    const photoPin = pinAt({ ...STAY, thumbnailUrl: 'https://x/s.jpg' }, 300, 300, 70)
+    updateLabelVisibility(fakeMap(390), [photoPin], null, 16)
+    expect(photoPin.label.classList.contains(styles.pinLabelLeft)).toBe(true)
+
+    const iconPin = pinAt({ ...STAY, spotId: 'place-1', thumbnailUrl: null }, 300, 300, 70)
+    updateLabelVisibility(fakeMap(390), [iconPin], null, 16)
+    expect(iconPin.label.classList.contains(styles.pinLabelLeft)).toBe(false)
+  })
+
+  it('액자끼리 4px 넘게 겹치면 「+1」로 묶는다 — 원(중심 16px · 12px 겹침 허용)보다 엄격하게, 액자 크기로 잰다', () => {
+    const a = pinAt({ ...STAY, spotId: 'place-a', thumbnailUrl: 'https://x/a.jpg' }, 200, 300, 40)
+    const b = pinAt({ ...STAY, spotId: 'place-b', thumbnailUrl: 'https://x/b.jpg' }, 230, 305, 40)
+    updateLabelVisibility(fakeMap(), [a, b], null, 16)
+    expect(a.badge.textContent).toBe('+1')
+    expect(b.element.style.display).toBe('none')
+
+    // 39px 떨어져 7px 겹치는 액자 둘(운영 지세포)도 묶는다 — 42px 부터 따로 그린다
+    const e = pinAt({ ...STAY, spotId: 'place-e', thumbnailUrl: 'https://x/e.jpg' }, 200, 300, 40)
+    const f = pinAt({ ...STAY, spotId: 'place-f', thumbnailUrl: 'https://x/f.jpg' }, 239, 300, 40)
+    updateLabelVisibility(fakeMap(), [e, f], null, 16)
+    expect(f.element.style.display).toBe('none')
+    const g = pinAt({ ...STAY, spotId: 'place-g', thumbnailUrl: 'https://x/g.jpg' }, 200, 300, 40)
+    const h = pinAt({ ...STAY, spotId: 'place-h', thumbnailUrl: 'https://x/h.jpg' }, 243, 300, 40)
+    updateLabelVisibility(fakeMap(), [g, h], null, 16)
+    expect(h.element.style.display).toBe('')
+
+    // 같은 거리(30px)의 원 두 개는 묶지 않는다 — 원 규칙은 그대로
+    const c = pinAt({ ...SPOT, spotId: 71 }, 200, 300, 40)
+    const d = pinAt({ ...SPOT, spotId: 72 }, 230, 305, 40)
+    updateLabelVisibility(fakeMap(), [c, d], null, 16)
+    expect(d.element.style.display).toBe('')
+    expect(c.badge.hidden).toBe(true)
   })
 })
 
@@ -54,12 +102,14 @@ function fakeMap(width = 390, height = 780) {
 }
 
 function pinAt(spot, x, y, labelWidth) {
-  const { element, label, badge, isTerminal } = createPinElement(spot, { order: null })
+  const { element, label, badge, isTerminal, width, height } = createPinElement(spot, { order: null })
   Object.defineProperty(label, 'offsetWidth', { value: labelWidth })
   return {
     spotId: spot.spotId,
     isStop: false,
     isTerminal,
+    width,
+    height,
     element,
     label,
     badge,

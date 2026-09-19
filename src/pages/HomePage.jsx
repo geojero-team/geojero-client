@@ -35,7 +35,8 @@ import styles from './HomePage.module.css'
  * 2026-09-19(사용자 결정, Figma 프레임 없음): 그 버튼을 빼고 —
  *   · 왼쪽 위에 「스팟 · 숙소 · 맛집」 칩(MapLayerChips) — 하나만 골라 그것만 찍습니다. 고현터미널은 늘 찍습니다(모든 코스의 출발 지점).
  *     고른 칩은 주소(`?layer=stay|food`)에 둡니다 — 핀을 눌러 상세로 갔다 뒤로 오면 그 칩 그대로입니다.
- *     숙소 · 맛집은 스팟처럼 핀 + 이름표 + 시트인데, 핀에 사진 대신 아이콘입니다(공공누리 3유형이라 원으로 자르지 않는다 — mapPins).
+ *     숙소 · 맛집은 스팟처럼 핀 + 이름표 + 시트인데, 핀이 원이 아니라 **사진을 통째로 담는 사각 액자**입니다
+ *     (공공누리 3유형이라 원으로 자르지 않는다 — mapPins). 사진이 없으면 원에 아이콘.
  *   · 「거제9경이란?」은 오른쪽 아래 **몽꾸**(거제시 캐릭터 — 사용 승인 받음)가 엽니다(MascotButton).
  */
 
@@ -43,9 +44,10 @@ import styles from './HomePage.module.css'
 const LAYER_OF_PARAM = { stay: 'STAY', food: 'FOOD' }
 const PARAM_OF_LAYER = { STAY: 'stay', FOOD: 'food' }
 
-/** 숙소 · 맛집 → 지도 핀. spotId 는 스팟 poiId 와 섞이지 않게 따로 이름 붙입니다. 사진은 핀에 넘기지 않습니다(위). */
+/** 숙소 · 맛집 → 지도 핀. spotId 는 스팟 poiId 와 섞이지 않게 따로 이름 붙입니다.
+    대표 사진은 핀에서 자르지 않는 사각 액자로 그립니다(mapPins — 2026-09-19 사용자). */
 function placePin(place) {
-  return { ...place, spotId: `place-${place.placeId}`, shortName: place.name, thumbnailUrl: null }
+  return { ...place, spotId: `place-${place.placeId}`, shortName: place.name, thumbnailUrl: place.imageUrl ?? null }
 }
 export default function HomePage() {
   const navigate = useNavigate()

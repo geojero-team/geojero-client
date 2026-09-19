@@ -273,9 +273,10 @@ describe('홈 — 스팟 · 숙소 · 맛집 칩(2026-09-19)', () => {
     expect(api.places).toHaveBeenCalledWith('STAY')
     expect(screen.getByRole('radio', { name: '숙소' })).toHaveAttribute('aria-checked', 'true')
     expect(screen.getByTestId('loc')).toHaveTextContent('/?layer=stay')
-    // 숙소 · 맛집 핀에는 사진을 넘기지 않는다 — 사진 대부분이 공공누리 3유형(변경금지)이라 원으로 자를 수 없다
+    // 숙소 · 맛집 핀에도 대표 사진을 넘긴다 — 핀은 사진을 자르지 않는 사각 액자로 그린다(mapPins)
     const pin = mapProps.spots.find((s) => s.name === '소노캄 거제')
-    expect(pin).toMatchObject({ kind: 'STAY', lat: 34.8433682, lng: 128.7029354, thumbnailUrl: null })
+    expect(pin).toMatchObject({ kind: 'STAY', lat: 34.8433682, lng: 128.7029354, thumbnailUrl: 'https://tong.visitkorea.or.kr/a.jpg' })
+    expect(mapProps.spots.find((s) => s.name === '호텔상상').thumbnailUrl).toBeNull()
     expect(pin.spotId).not.toBe(2578495) // 스팟 poiId 와 섞이지 않게 따로 이름 붙인다
   })
 

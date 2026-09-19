@@ -150,6 +150,22 @@ export default function MapView({
     }
   }, [retryToken])
 
+  // ── 웹폰트가 늦게 오면 이름표 자리를 다시 잽니다 ─────────────────────────
+  // 한글 웹폰트는 글자 묶음을 필요할 때 받아 옵니다. 처음 보는 글자(「점순이네밥집」)는 폰트가 오기 전 대체 글꼴로
+  // 폭을 재는데 대체 글꼴이 더 좁아, 오른쪽에 들어간다고 잡은 이름표가 폰트가 온 뒤 화면 밖으로 넘쳤습니다
+  // (2026-09-19 운영 미리보기 — 홈 맛집 칩). 폰트가 올 때마다 다시 잽니다.
+  useEffect(() => {
+    const fonts = typeof document !== 'undefined' ? document.fonts : null
+    if (phase !== 'ready' || !fonts?.addEventListener) return
+    const relayoutLabels = () => {
+      const map = mapRef.current
+      if (!map) return
+      updateLabelVisibility(map, pinsRef.current, liveRef.current.selectedSpotId, liveRef.current.topReserved)
+    }
+    fonts.addEventListener('loadingdone', relayoutLabels)
+    return () => fonts.removeEventListener('loadingdone', relayoutLabels)
+  }, [phase])
+
   // ── 컨테이너 크기가 바뀌면 지도 다시 그리기 (시트가 열리며 지도가 줄 때 등) ──
   useEffect(() => {
     if (phase !== 'ready' || !containerRef.current) return
@@ -180,7 +196,7 @@ export default function MapView({
     pinsRef.current = spots.map((spot) => {
       const order = orderBySpotId?.get(spot.spotId) ?? null
       const isStop = order != null
-      const { element, label, badge, isTerminal, isNineScenic } = createPinElement(spot, { order })
+      const { element, label, badge, isTerminal, isNineScenic, width, height } = createPinElement(spot, { order })
       const position = new kakao.maps.LatLng(spot.lat, spot.lng)
 
       element.addEventListener('click', (event) => {
@@ -206,7 +222,7 @@ export default function MapView({
         clickable: true,
       })
 
-      return { spotId: spot.spotId, isStop, isTerminal, isNineScenic, overlay, element, label, badge }
+      return { spotId: spot.spotId, isStop, isTerminal, isNineScenic, width, height, overlay, element, label, badge }
     })
 
     // 화면 맞추기는 아래 전용 이펙트가 합니다 — 시트 높이가 정해진 뒤에 맞춰야 해서.
