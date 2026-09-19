@@ -35,9 +35,9 @@ import Tutorial from './components/Tutorial'
  * /plan(일정 고르기) · /verdict/:routeId(판정 결과) · /conditions(판정 조건).
  * 판정을 제품에서 뺐고(기준문서 §9) 그 화면들이 하던 일은 코스 추천·코스 상세가 대신합니다.
  */
-/* 시작화면을 띄울지(2026-09-19 사용자) — 앱을 열면 1초.
+/* 시작화면을 띄울지(2026-09-19 사용자) — 앱을 열면 3초.
    카카오가 돌려보내는 자리만 뺍니다: 거기는 앱을 여는 순간이 아니라 로그인 도중이라,
-   1초를 끼우면 로그인이 그만큼 느려집니다. */
+   3초를 끼우면 로그인이 그만큼 느려집니다. */
 function useSplash() {
   const [open, setOpen] = useState(
     () => !window.location.pathname.startsWith('/auth/callback'),
@@ -45,7 +45,7 @@ function useSplash() {
 
   useEffect(() => {
     if (!open) return undefined
-    const id = setTimeout(() => setOpen(false), 1000)
+    const id = setTimeout(() => setOpen(false), 3000)
     return () => clearTimeout(id)
     // 여는 순간 한 번만 재니 open 을 의존성에 넣지 않습니다 — 넣으면 false 가 될 때 한 번 더 돕니다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -83,7 +83,7 @@ export default function App() {
       {/* 첫 방문 튜토리얼(Figma 02-2 558:200) — 홈에 처음 올 때 한 번. 지금 화면 프레임 안에 그립니다. */}
       <Tutorial />
 
-      {/* 시작화면 — 화면을 **대신** 그리지 않고 위에 얹습니다. 그 1초 동안 아래에서 홈이
+      {/* 시작화면 — 화면을 **대신** 그리지 않고 위에 얹습니다. 그 3초 동안 아래에서 홈이
           이미 뜨고 있어야 넘어간 순간 지도가 준비돼 있습니다. */}
       {splash && <Splash />}
 
