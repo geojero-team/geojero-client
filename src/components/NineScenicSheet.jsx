@@ -72,12 +72,9 @@ export default function NineScenicSheet({ open, onClose, links = null }) {
           {t('nineScenic.title')}
         </h2>
 
-        {/* 문장마다 줄을 바꿉니다(사용자 요청 — 두 문장 이상이면 개행). */}
-        <p className={styles.lead}>
-          <span>{t('nineScenic.lead1')}</span>
-          <span>{t('nineScenic.lead2')}</span>
-          <span>{t('nineScenic.lead3')}</span>
-        </p>
+        {/* 설명 세 문장(lead1~3)은 2026-09-19 여기서 뺐습니다 — 이 시트를 여는 길이
+            몽꾸 → 말풍선 → **9경 설명(NineScenicTour)** 하나뿐인데, 거기서 방금 읽은 문장을
+            시트가 다시 보여주고 있었습니다. 설명은 투어가, 이 시트는 범례와 목록을 맡습니다. */}
 
         {/* 범례 — 지도 마커와 같은 모양(흰 원 + 보라 테두리)을 그대로 그려 "이게 그거"를 말합니다. */}
         <p className={styles.legend}>

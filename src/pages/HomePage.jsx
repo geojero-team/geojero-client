@@ -7,6 +7,7 @@ import MapLayerChips from '../components/MapLayerChips'
 import MapView from '../components/MapView'
 import MascotButton from '../components/MascotButton'
 import NineScenicSheet from '../components/NineScenicSheet'
+import NineScenicTour from '../components/NineScenicTour'
 import Screen from '../components/Screen'
 import SpotSheet from '../components/SpotSheet'
 import { peekHeightOf } from '../components/spotSheetHeight'
@@ -61,6 +62,13 @@ export default function HomePage() {
   const nineOpen = searchParams.get('nine') === '1'
   // 시트를 닫으면 연 버튼(몽꾸)으로 포커스를 돌려줍니다 — 키보드로 쓰는 사람이 제자리를 잃지 않게.
   const nineButtonRef = useRef(null)
+  /* 9경 설명(2026-09-19 사용자) — 몽꾸 말풍선을 누르면 곧장 목록으로 가지 않고, 지도를 아홉 곳에
+     맞춰 보여주며 두 번에 나눠 말합니다. 0 이면 꺼짐, 1·2 가 단계입니다.
+     주소에 싣지 않습니다 — 설명은 한 번 보는 것이고, 스팟 상세에 갔다 오면 목록(?nine=1)부터가 맞습니다. */
+  const [tour, setTour] = useState(0)
+  /* 지도를 9경 아홉 곳에만 맞출지. 설명을 시작하면 켜고 **끄지 않습니다** — 끄면 지도가 섬 전체로
+     다시 튕겨 나가, 방금 「이 아홉 곳」이라고 가리킨 화면이 사라집니다. */
+  const [fitNine, setFitNine] = useState(false)
   const layer = LAYER_OF_PARAM[searchParams.get('layer')] ?? 'SPOT'
   // 숙소 · 맛집 목록 — 그 칩을 처음 누를 때 한 번 받습니다(스팟만 보는 사람에게 TourAPI 호출을 늘리지 않게).
   const [places, setPlaces] = useState({})
@@ -148,6 +156,20 @@ export default function HomePage() {
     [result.status, result.spots],
   )
 
+  // 설명이 지도를 맞출 아홉 곳(서버 nineScenicNo — 4km 쯤에서 아홉 개가 한 화면에 들어옵니다).
+  const nineSpots = useMemo(
+    () => result.spots.filter((spot) => spot.nineScenic != null),
+    [result.spots],
+  )
+
+  /* 설명 시작 — 숙소 · 맛집 칩을 고른 상태면 지도에 9경 핀이 없습니다. 스팟 칩으로 되돌려야
+     흐린 화면에 뚫을 동그라미가 생깁니다. */
+  const startTour = () => {
+    if (layer !== 'SPOT') setLayer('SPOT')
+    setFitNine(true)
+    setTour(1)
+  }
+
   const setNine = (on) =>
     setSearchParams(
       (prev) => {
@@ -184,6 +206,14 @@ export default function HomePage() {
             onSelectSpot={setPicked}
             onDeselect={() => setPicked(null)}
             topReserved={16}
+            /* 9경 설명을 시작하면 지도를 **아홉 곳에만** 맞춥니다(2026-09-19 사용자) — 기본 배율에서는
+               가까운 핀들이 묶여(+1) 아홉 개가 다 보이지 않습니다. 맞추면 4km 쯤에서 전부 갈라집니다. */
+            fitSpots={fitNine ? nineSpots : null}
+            /* 말풍선과 몽꾸가 아래를 덮으므로 그만큼 비우고 맞춥니다 — 안 그러면 남쪽 9경(학동 · 바람의언덕 ·
+               해금강)이 말풍선 뒤로 숨습니다. fitNine 과 함께 켜고 끄지 않습니다(끄면 지도가 다시 맞춰집니다). */
+            /* 250 까지 올리면 아홉 개가 말풍선을 완전히 피하지만 축척이 8km 로 물러납니다 —
+               사용자가 4km 를 지정했으므로 200 에서 멈춥니다(2026-09-19 실측). */
+            bottomReserved={fitNine ? 200 : 0}
             /* 오른쪽 위 확대·축소 버튼을 빼 둡니다(2026-09-19 사용자) — 두 손가락으로 확대되고,
                지도 위에 뜬 것이 적을수록 지도가 넓어 보입니다. 코스 지도에는 그대로 있습니다. */
             zoomControls={false}
@@ -204,9 +234,12 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* data-nine-mascot — 9경 설명이 흐린 화면에 몽꾸 자리도 뚫습니다(말하는 사람이 흐리면 안 됩니다).
+            ⚠️ 이 주석을 아래 `{!picked && (` 괄호 **안**에 두면 안 됩니다 — 거기에는 표현식이 하나만 올 수 있어
+            문법이 깨집니다(MyPlansPage 에서 같은 실수를 한 적이 있습니다). */}
         {!picked && (
-          <div className={styles.mascot}>
-            <MascotButton ref={nineButtonRef} onOpen={() => setNine(true)} />
+          <div className={styles.mascot} data-nine-mascot>
+            <MascotButton ref={nineButtonRef} onOpen={startTour} />
           </div>
         )}
 
@@ -234,6 +267,17 @@ export default function HomePage() {
       </div>
 
       <BottomNav />
+
+      {/* 9경 설명 — 지도를 아홉 곳에 맞춘 채 흐리게 하고 몽꾸가 두 번에 나눠 말합니다.
+          끝나면 목록 시트로 넘깁니다(설명은 투어가, 목록·범례는 시트가). */}
+      <NineScenicTour
+        step={tour}
+        onNext={() => setTour(2)}
+        onDone={() => {
+          setTour(0)
+          setNine(true)
+        }}
+      />
 
       {/* 탭바까지 덮도록 지도 영역 밖(화면 껍데기 바로 아래)에 둡니다 — 로그인 시트와 같은 자리입니다. */}
       <NineScenicSheet open={nineOpen} onClose={closeNine} links={nineLinks} />

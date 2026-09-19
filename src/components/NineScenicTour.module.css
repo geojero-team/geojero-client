@@ -1,0 +1,89 @@
+/* 거제9경 설명(2026-09-19 사용자) — 9경 핀과 몽꾸만 남기고 흐리게. Figma 프레임 없음.
+   흐림 3px + 본문색 40% 는 첫 방문 튜토리얼과 같은 값입니다(Tutorial.module.css) —
+   같은 앱에서 "지금은 이것만 보세요"가 두 가지 모습이면 안 됩니다. */
+
+.root {
+  position: absolute;
+  inset: 0;
+  /* 스팟 시트(3) · 지도 위 버튼(4)보다 위, 로그인 시트(6)보다 아래. */
+  z-index: 5;
+}
+
+/* 뒤 화면을 누르지 못하게 받아 냅니다. 구멍 안(선명한 곳)을 눌러도 핀이 열리지 않아야 합니다 —
+   지금 할 일은 설명을 읽는 것입니다. 누르면 다음으로 넘어갑니다. */
+.catcher {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.4);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  pointer-events: none;
+}
+
+/* 말풍선 — 몽꾸 위. 오른쪽 끝을 몽꾸 쪽에 맞추고 왼쪽으로 펼칩니다(꼬리가 오른쪽 아래).
+   전체 폭으로 두지 않습니다(2026-09-19) — 지도를 가로로 다 덮어 9경 핀이 뒤로 숨었습니다.
+   왼쪽을 비워 두면 서쪽 핀들이 말풍선 옆으로 보입니다. */
+.bubble {
+  position: absolute;
+  right: var(--space-lg);
+  left: auto;
+  max-width: 248px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: 14px 16px;
+  border-radius: var(--radius-card);
+  background: var(--bg-page);
+  box-shadow: 0 6px 20px rgb(16 24 40 / 24%);
+  /* 말풍선은 눌러도 다음으로 갑니다(아래 .next). 배경 누름이 먼저 먹지 않게 위로 올립니다. */
+  pointer-events: auto;
+}
+
+/* 문장마다 한 줄 — 9경 시트와 같은 규칙입니다. */
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+.next {
+  display: inline-flex;
+  align-self: flex-end;
+  align-items: center;
+  gap: 2px;
+  margin: -4px -4px -4px 0;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  font: var(--type-body-strong);
+  color: var(--nine-scenic-text);
+  cursor: pointer;
+}
+
+/* 꼬리 — 오른쪽 아래에서 몽꾸를 가리킵니다. 말풍선과 같은 면색이라 이어져 보입니다. */
+.tail {
+  position: absolute;
+  right: 28px;
+  bottom: -7px;
+  width: 16px;
+  height: 16px;
+  background: var(--bg-page);
+  transform: rotate(45deg);
+  /* 그림자는 말풍선이 이미 갖고 있습니다 — 꼬리에 또 주면 이음매에 선이 생깁니다. */
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+/* 움직임을 줄이는 설정 — 흐림은 움직임이 아니라 그대로 둡니다(무엇을 보라는 말이라 뜻이 사라지면 안 됩니다). */

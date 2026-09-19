@@ -133,8 +133,12 @@ describe('홈 — 거제9경(2026-09-14)', () => {
 
     await user.click(screen.getByRole('button', { name: '몽꾸' }))
     await user.click(screen.getByRole('button', { name: '거제 9경이 뭘까?' }))
+    // 말풍선 다음은 **9경 설명** 두 단계입니다(2026-09-19) — 넘겨야 목록 시트가 나옵니다.
+    await user.click(screen.getByRole('button', { name: '다음' }))
+    await user.click(screen.getByRole('button', { name: '다음' }))
     const dialog = screen.getByRole('dialog', { name: '거제9경이란?' })
-    expect(dialog).toHaveTextContent('2024년')
+    // 설명 세 문장은 투어가 말하므로 시트에서 뺐습니다 — 시트는 범례와 목록을 맡습니다.
+    expect(dialog).not.toHaveTextContent('2024년')
     expect(dialog).toHaveTextContent('보라색 테두리')
     expect(screen.getByTestId('loc')).toHaveTextContent('/?nine=1')
 
@@ -171,6 +175,9 @@ describe('홈 — 거제9경(2026-09-14)', () => {
     const opener = screen.getByRole('button', { name: '몽꾸' })
     await user.click(opener)
     await user.click(screen.getByRole('button', { name: '거제 9경이 뭘까?' }))
+    // 설명 두 단계를 넘겨야 목록 시트입니다(2026-09-19).
+    await user.click(screen.getByRole('button', { name: '다음' }))
+    await user.click(screen.getByRole('button', { name: '다음' }))
     expect(screen.getByRole('heading', { name: '거제9경이란?' })).toHaveFocus()
 
     await user.keyboard('{Escape}')
@@ -188,7 +195,7 @@ describe('홈 — 몽꾸(거제시 캐릭터) → 말풍선 → 「거제9경이
       </MemoryRouter>,
     )
 
-  it('평소엔 팔을 내리고 말풍선이 없다 — 누르면 팔을 올리며 말풍선만, 말풍선을 눌러야 9경 시트', async () => {
+  it('평소엔 팔을 내리고 말풍선이 없다 — 누르면 팔을 올리며 말풍선만, 말풍선을 눌러야 9경 설명', async () => {
     const user = userEvent.setup()
     renderHome()
     await screen.findByRole('button', { name: '핀 학동몽돌해변' })
@@ -212,8 +219,10 @@ describe('홈 — 몽꾸(거제시 캐릭터) → 말풍선 → 「거제9경이
     await new Promise((resolve) => setTimeout(resolve, 900))
     expect(screen.queryByRole('dialog', { name: '거제9경이란?' })).not.toBeInTheDocument()
 
+    // 말풍선을 누르면 목록이 아니라 **설명**이 먼저 뜹니다(2026-09-19 사용자).
     await user.click(bubble)
-    expect(screen.getByRole('dialog', { name: '거제9경이란?' })).toBeInTheDocument()
+    expect(screen.getByText('2024년 거제시가 새로 뽑은 대표 경관 아홉 곳이에요.')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: '거제9경이란?' })).not.toBeInTheDocument()
   })
 
   it('몽꾸를 한 번 더 누르면 말풍선이 닫히고 팔을 내린다', async () => {
@@ -234,6 +243,55 @@ describe('홈 — 몽꾸(거제시 캐릭터) → 말풍선 → 「거제9경이
     await user.click(await screen.findByRole('button', { name: '핀 학동몽돌해변' }))
     expect(screen.queryByRole('button', { name: '몽꾸' })).not.toBeInTheDocument()
     expect(screen.queryByRole('radiogroup', { name: '지도에 보일 곳' })).not.toBeInTheDocument()
+  })
+})
+
+/* 9경 설명(2026-09-19 사용자) — 말풍선 다음은 목록이 아니라 설명 두 단계입니다.
+   전에는 시트가 「지도의 보라색 테두리 스팟이 9경이에요」라고 말하면서 그 지도를 자기가 덮고 있었습니다. */
+describe('홈 — 거제9경 설명(2026-09-19)', () => {
+  const renderHome = () =>
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>,
+    )
+
+  const openTour = async (user) => {
+    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
+    await user.click(screen.getByRole('button', { name: '몽꾸' }))
+    await user.click(screen.getByRole('button', { name: '거제 9경이 뭘까?' }))
+  }
+
+  it('지도를 9경 아홉 곳에만 맞추고, 두 번에 나눠 말한 뒤 목록으로 넘어간다', async () => {
+    const user = userEvent.setup()
+    renderHome()
+    await openTour(user)
+
+    // 1단계 — 지도는 **전체 스팟이 아니라** 9경에만 맞춥니다(기본 배율에서는 핀이 묶여 다 안 보입니다).
+    expect(screen.getByText('2024년 거제시가 새로 뽑은 대표 경관 아홉 곳이에요.')).toBeInTheDocument()
+    expect(mapProps.fitSpots.length).toBeGreaterThan(0)
+    expect(mapProps.fitSpots.every((spot) => spot.nineScenic != null)).toBe(true)
+    expect(screen.queryByRole('dialog', { name: '거제9경이란?' })).not.toBeInTheDocument()
+
+    // 2단계 — 호흡이 길어 끊었습니다(사용자 판단). 1단계 문장은 물러납니다.
+    await user.click(screen.getByRole('button', { name: '다음' }))
+    expect(screen.getByText('시민 여론조사와 전문가 위원 평가를 함께 반영했어요.')).toBeInTheDocument()
+    expect(screen.queryByText('2024년 거제시가 새로 뽑은 대표 경관 아홉 곳이에요.')).not.toBeInTheDocument()
+
+    // 끝나면 목록 시트
+    await user.click(screen.getByRole('button', { name: '다음' }))
+    expect(screen.getByRole('dialog', { name: '거제9경이란?' })).toBeInTheDocument()
+    expect(screen.queryByText('시민 여론조사와 전문가 위원 평가를 함께 반영했어요.')).not.toBeInTheDocument()
+  })
+
+  it('설명이 끝나도 지도는 9경에 맞춘 그대로 둔다 — 되돌리면 방금 가리킨 화면이 사라진다', async () => {
+    const user = userEvent.setup()
+    renderHome()
+    await openTour(user)
+    await user.click(screen.getByRole('button', { name: '다음' }))
+    await user.click(screen.getByRole('button', { name: '다음' }))
+
+    expect(mapProps.fitSpots.every((spot) => spot.nineScenic != null)).toBe(true)
   })
 })
 

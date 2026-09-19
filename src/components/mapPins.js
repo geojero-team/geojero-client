@@ -133,6 +133,10 @@ export function createPinElement(spot, { order, onResize } = {}) {
 
   const dot = document.createElement('span')
   dot.className = styles.pinDot
+  /* 9경 설명(NineScenicTour)이 블러에 **동그란 구멍**을 뚫을 자리입니다(2026-09-19 사용자).
+     핀 버튼이 아니라 이 동그라미에 다는 이유: 버튼 상자에는 옆에 붙는 이름표까지 들어가
+     구멍이 길쭉한 네모가 됩니다. 클래스로 찾지 않는 것은 CSS Modules 가 이름을 해시로 바꾸기 때문입니다. */
+  if (isNineScenic) dot.dataset.nine = ''
   if (isTerminal) {
     dot.innerHTML = TERMINAL_MARKER_SVG
   } else if (isStop) {

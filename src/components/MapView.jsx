@@ -43,7 +43,7 @@ const FIT_PADDING = 56
  * 남쪽 스팟(해금강·도장포)이 둘러보기 안내 카드 뒤로 들어갔습니다.
  * 배율은 38e0255 그대로 두고 보정만 뺐습니다.
  */
-function fitToSpots(kakao, map, spots, topReserved) {
+function fitToSpots(kakao, map, spots, topReserved, bottomReserved = 0) {
   const points = spots.filter(
     (spot) => Number.isFinite(spot.lat) && Number.isFinite(spot.lng),
   )
@@ -55,7 +55,7 @@ function fitToSpots(kakao, map, spots, topReserved) {
   })
 
   // (bounds, top, right, bottom, left)
-  map.setBounds(bounds, topReserved + FIT_TOP_EXTRA, FIT_PADDING, FIT_PADDING, FIT_PADDING)
+  map.setBounds(bounds, topReserved + FIT_TOP_EXTRA, FIT_PADDING, FIT_PADDING + bottomReserved, FIT_PADDING)
 
   const level = map.getLevel()
   if (level < MIN_FIT_LEVEL) map.setLevel(MIN_FIT_LEVEL)
@@ -83,6 +83,9 @@ export default function MapView({
      전에는 `compact` 라는 이름이었는데 그 뜻(판정 결과 200px 미리보기)의 화면이 2026-09-12 에 지워져
      아무도 넘기지 않는 죽은 속성이었습니다 — 하는 일이 이 버튼 숨기기뿐이라 이름을 맞췄습니다. */
   zoomControls = true,
+  /** 화면을 맞출 때 **아래쪽**으로 비워 둘 높이(px). 9경 설명의 말풍선처럼 아래에 덮개가 있을 때 씁니다 —
+      비워 두지 않으면 맞춘 핀 일부가 그 뒤로 숨습니다(2026-09-19). 위쪽은 topReserved 가 같은 일을 합니다. */
+  bottomReserved = 0,
 }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
@@ -295,7 +298,7 @@ export default function MapView({
 
     map.relayout()
     if (liveRef.current.selectedSpotId == null) {
-      fitToSpots(window.kakao, map, fitSpots ?? spots, topReserved)
+      fitToSpots(window.kakao, map, fitSpots ?? spots, topReserved, bottomReserved)
     }
     updateLabelVisibility(
       map,
@@ -303,7 +306,7 @@ export default function MapView({
       liveRef.current.selectedSpotId,
       topReserved,
     )
-  }, [spots, fitSpots, topReserved, phase])
+  }, [spots, fitSpots, topReserved, bottomReserved, phase])
 
   // ── 선택 상태를 마커에 반영 + 선택한 핀으로 이동 ────────────────────────
   useEffect(() => {
