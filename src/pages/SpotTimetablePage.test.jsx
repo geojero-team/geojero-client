@@ -191,15 +191,36 @@ describe('SpotTimetablePage — 버스만 있는 스팟 (회귀 가드)', () => 
   })
 
   it('/timetable/4 — 고현터미널 왕복 칩 둘, 버스 호출 인자는 전과 같다', async () => {
+    const user = userEvent.setup()
     renderAt(`/timetable/4?date=${DATE}&now=${NOW}`)
 
-    expect(await screen.findByRole('button', { name: '학동몽돌해변 → 고현터미널' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: '고현터미널 → 학동몽돌해변' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: '고현터미널 → 학동몽돌해변' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: '학동몽돌해변 → 고현터미널' })).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: /→/ })).toHaveLength(2)
     expect(await screen.findByText('다음 버스 13:00 · 55번')).toBeInTheDocument()
     expect(await screen.findByText('평일')).toBeInTheDocument()
     expect(api.spotDepartures).toHaveBeenCalledTimes(1)
-    expect(api.spotDepartures).toHaveBeenCalledWith('4', { date: DATE, after: NOW })
+    expect(api.spotDepartures).toHaveBeenCalledWith('4', { date: DATE, after: NOW, from: 'origin' })
+
+    // 복귀 칩은 전과 같은 인자로 부른다(파라미터 없음)
+    await user.click(screen.getByRole('button', { name: '학동몽돌해변 → 고현터미널' }))
+    expect(api.spotDepartures).toHaveBeenLastCalledWith('4', { date: DATE, after: NOW })
+  })
+
+  /**
+   * 2026-09-20 사용자 결정 — 코스를 거치지 않고 들어오면(시간표 탭 · 스팟 상세) **가는 방향이 먼저**입니다.
+   * 여기서 스팟을 고르는 사람의 질문은 「어떻게 가나」이지 「어떻게 돌아오나」가 아닙니다.
+   * 코스 상세에서 오면 `to`가 붙어 「이 스팟 → 다음 스팟」이 그대로 먼저입니다(아래 유람선 블록이 지킵니다).
+   */
+  it('시간표 탭에서 들어오면 「고현터미널 → 스팟」이 먼저다', async () => {
+    renderAt(`/timetable/4?date=${DATE}&now=${NOW}`)
+
+    expect(await screen.findByRole('button', { name: '고현터미널 → 학동몽돌해변' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getAllByRole('button', { name: /→/ }).map((b) => b.textContent)).toEqual([
+      '고현터미널 → 학동몽돌해변',
+      '학동몽돌해변 → 고현터미널',
+    ])
+    expect(api.spotDepartures).toHaveBeenCalledWith('4', { date: DATE, after: NOW, from: 'origin' })
   })
 })
 
@@ -362,9 +383,9 @@ describe('SpotTimetablePage — 유람선', () => {
     api.spotFerries.mockResolvedValue(ferriesOf(5, { hasBusStop: false, ferries: [] }))
     renderAt(`/timetable/5?date=${DATE}&now=${NOW}`)
 
-    expect(await screen.findByRole('button', { name: '외도보타니아 → 고현터미널' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: '고현터미널 → 외도보타니아' })).toBeInTheDocument()
-    expect(api.spotDepartures).toHaveBeenCalledWith('5', { date: DATE, after: NOW })
+    expect(await screen.findByRole('button', { name: '고현터미널 → 외도보타니아' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: '외도보타니아 → 고현터미널' })).toBeInTheDocument()
+    expect(api.spotDepartures).toHaveBeenCalledWith('5', { date: DATE, after: NOW, from: 'origin' })
   })
 
   it('정류장도 배 연결도 없는 스팟(서버 TIMETABLE_PENDING) — 「준비 중」, 타는 곳 문장·BIS 출처 줄은 없다', async () => {
@@ -433,10 +454,10 @@ describe('SpotTimetablePage — 유람선', () => {
     api.spotFerries.mockResolvedValue(DOJANGPO_DOCK)
     renderAt(`/timetable/2?date=${DATE}&now=${NOW}`)
 
-    expect(await screen.findByRole('button', { name: '도장포유람선 → 고현터미널' })).toHaveAttribute('aria-pressed', 'true')
+    expect(await screen.findByRole('button', { name: '고현터미널 → 도장포유람선' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getAllByRole('button', { name: /→|배 시간표$/ }).map((b) => b.textContent)).toEqual([
-      '도장포유람선 → 고현터미널',
       '고현터미널 → 도장포유람선',
+      '도장포유람선 → 고현터미널',
       '도장포 선착장 배 시간표',
     ])
     expect(api.spotDepartures).toHaveBeenCalledTimes(1)
@@ -447,20 +468,20 @@ describe('SpotTimetablePage — 유람선', () => {
     expect(screen.queryByText('평일')).not.toBeInTheDocument()
     expect(api.spotDepartures).toHaveBeenCalledTimes(1)
 
-    await user.click(screen.getByRole('button', { name: '고현터미널 → 도장포유람선' }))
+    await user.click(screen.getByRole('button', { name: '도장포유람선 → 고현터미널' }))
     expect(await screen.findByText('평일')).toBeInTheDocument()
     expect(api.spotDepartures).toHaveBeenCalledTimes(2)
-    expect(api.spotDepartures).toHaveBeenLastCalledWith('2', { date: DATE, after: NOW, from: 'origin' })
+    expect(api.spotDepartures).toHaveBeenLastCalledWith('2', { date: DATE, after: NOW })
   })
 
   it('배 요청이 실패하면 버스 칩은 그대로 두고 한 줄만 알린다', async () => {
     api.spotFerries.mockRejectedValue(new Error('서버가 제때 응답하지 않았습니다'))
     renderAt(`/timetable/4?date=${DATE}&now=${NOW}`)
 
-    expect(await screen.findByRole('button', { name: '학동몽돌해변 → 고현터미널' })).toHaveAttribute('aria-pressed', 'true')
+    expect(await screen.findByRole('button', { name: '고현터미널 → 학동몽돌해변' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getAllByText(/배 시간표를 불러오지 못했어요/)).toHaveLength(1)
     expect(await screen.findByText('다음 버스 13:00 · 55번')).toBeInTheDocument()
-    expect(api.spotDepartures).toHaveBeenCalledWith('4', { date: DATE, after: NOW })
+    expect(api.spotDepartures).toHaveBeenCalledWith('4', { date: DATE, after: NOW, from: 'origin' })
   })
 })
 
@@ -524,21 +545,23 @@ describe('SpotTimetablePage — 칩을 바꾼 직후', () => {
   it('버스 칩을 바꾸면 새 요청이 끝날 때까지 앞 칩의 타는 곳·다음 버스·타는 문장을 그리지 않는다', async () => {
     const user = userEvent.setup()
     const pending = deferred()
+    /* 기본 칩이 「고현터미널 → 학동몽돌해변」이 됐으므로(2026-09-20) 붙잡아 둘 쪽은 눌러서 가는
+       복귀 칩(스팟 → 고현터미널, from 파라미터 없음)입니다. */
     api.spotDepartures.mockImplementation((poiId, args) =>
-      args.from === 'origin' ? pending.promise : Promise.resolve(busOf(poiId, { boarding: BOARDING_HAKDONG })),
+      args.from === 'origin' ? Promise.resolve(busOf(poiId, { boarding: BOARDING_HAKDONG })) : pending.promise,
     )
     renderAt(`/timetable/4?date=${DATE}&now=${NOW}`)
 
     expect(await screen.findByRole('region', { name: '타는 곳' })).toBeInTheDocument()
     expect(screen.getByText('다음 버스 13:00 · 55번')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: '고현터미널 → 학동몽돌해변' }))
+    await user.click(screen.getByRole('button', { name: '학동몽돌해변 → 고현터미널' }))
 
-    expect(screen.getByRole('button', { name: '고현터미널 → 학동몽돌해변' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: '학동몽돌해변 → 고현터미널' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByText('시간표를 불러오는 중')).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: '타는 곳' })).not.toBeInTheDocument()
     expect(screen.queryByText('다음 버스 13:00 · 55번')).not.toBeInTheDocument()
-    expect(screen.queryByText('학동 정류장에서 타요.')).not.toBeInTheDocument()
+    expect(screen.queryByText('고현터미널에서 타요.')).not.toBeInTheDocument()
     expect(screen.queryByText('평일')).not.toBeInTheDocument()
 
     await act(async () =>
@@ -551,7 +574,7 @@ describe('SpotTimetablePage — 칩을 바꾼 직후', () => {
     )
 
     expect(await screen.findByText('다음 버스 14:00 · 55번')).toBeInTheDocument()
-    expect(screen.getByText('고현터미널에서 타요.')).toBeInTheDocument()
+    expect(screen.getByText('학동 정류장에서 타요.')).toBeInTheDocument()
     expect(screen.queryByText('시간표를 불러오는 중')).not.toBeInTheDocument()
   })
 

@@ -98,8 +98,11 @@ function directionsFor({ hasNext, ferry }) {
     const docks = f.ferries.filter((x) => x.relation === 'DESTINATION').map(dockDir)
     if (docks.length > 0 || shuttleDirs.length > 0) return [...docks, ...shuttleDirs]
   }
+  /* 코스를 거치지 않고 들어오면(시간표 탭 · 스팟 상세) **가는 방향이 먼저**입니다(2026-09-20 사용자).
+     거기서 스팟을 고르는 사람의 질문은 「어떻게 가나」이고, 돌아오는 길은 그다음입니다.
+     코스에서 오면 `to`가 붙어 「이 스팟 → 다음 스팟」이 그대로 먼저라 아래 두 갈래는 건드리지 않습니다. */
   const bus = !hasNext
-    ? ['origin', 'fromOrigin']
+    ? ['fromOrigin', 'origin']
     : f.toIsFerryDestination
       ? ['next', 'origin', 'fromOrigin']
       : ['next', 'fromNext', 'origin', 'fromOrigin']
