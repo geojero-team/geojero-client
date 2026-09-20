@@ -621,6 +621,8 @@ export default {
   // 화면 제목은 코스 추천과 **같은 말**입니다(2026-09-20 사용자) — 목록에서 들어온 같은 일이라 이름이 갈리면 다른 기능처럼 보입니다.
   'courseQuiz.title': '코스 추천',
   'courseQuiz.step': '{n} / {total}',
+  // 선지를 고른 뒤 누릅니다(2026-09-20 사용자 — 참고 그림과 같게). 고르기 전에는 눌리지 않습니다.
+  'courseQuiz.next': '다음',
   'courseQuiz.prev': '이전 질문',
 
   'courseQuiz.q.scene': '어떤 풍경을 보고싶으세요?',

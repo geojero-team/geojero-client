@@ -28,8 +28,8 @@ import styles from './CourseQuizPage.module.css'
  *
  * 질문 화면 모양은 사용자가 준 참고 그림(personalizedreference.jpeg)을 따릅니다 —
  * 회색 바탕 · 흰 카드 선지 · 오른쪽 체크 동그라미 · 큰 질문 제목. 색만 우리 파랑입니다.
- * 고르면 **바로 다음 질문**으로 넘어갑니다(참고 그림의 「다음」 버튼은 두지 않았습니다) —
- * 질문이 셋뿐이라 버튼을 두면 누르는 수가 세 번에서 여섯 번이 됩니다.
+ * 고른 뒤 **「다음」을 눌러** 넘어갑니다(2026-09-20 사용자 — 참고 그림과 같게). 고르자마자 넘어가면
+ * 잘못 눌렀을 때 되돌릴 틈이 없고, 무엇을 골랐는지 확인할 새도 없습니다.
  */
 
 /** 질문에 답하는 중이면 그 번호(1~3), 다 답했으면 'result'. */
@@ -140,10 +140,10 @@ export default function CourseQuizPage() {
   // 사진은 보이는 카드 순서대로 정합니다 — 1등과 후보가 같은 사진을 쓰지 않게(목록 카드와 같은 규칙).
   const photos = heroPhotos(ranked.slice(0, 3).map((entry) => entry.course))
 
-  const pick = (questionId, optionId) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: optionId }))
-    setStep((prev) => (prev >= QUESTIONS.length ? RESULT : prev + 1))
-  }
+  // 고르기만 합니다 — 넘어가는 건 아래 「다음」 버튼입니다(2026-09-20 사용자).
+  const pick = (questionId, optionId) => setAnswers((prev) => ({ ...prev, [questionId]: optionId }))
+
+  const goNext = () => setStep((prev) => (prev >= QUESTIONS.length ? RESULT : prev + 1))
 
   const restart = () => {
     setAnswers({})
@@ -175,10 +175,6 @@ export default function CourseQuizPage() {
           <ChevronLeft size={24} strokeWidth={2} aria-hidden="true" />
         </button>
         <h1 className={styles.title}>{t('courseQuiz.title')}</h1>
-        {/* 몇 번째 질문인지 — 세 개 중 어디쯤인지 모르면 그만두고 싶어집니다. 결과에는 없습니다. */}
-        {question && (
-          <span className={styles.step}>{t('courseQuiz.step', { n: step, total: QUESTIONS.length })}</span>
-        )}
       </header>
 
       <div className={styles.scroll}>
@@ -187,6 +183,8 @@ export default function CourseQuizPage() {
             <p className={styles.notice}>{t('common.loadFailed', { error: result.error })}</p>
           ) : question ? (
             <>
+              {/* 몇 번째 질문인지 — 헤더가 아니라 질문 바로 위입니다(2026-09-20 사용자). 결과에는 없습니다. */}
+              <p className={styles.step}>{t('courseQuiz.step', { n: step, total: QUESTIONS.length })}</p>
               <h2 className={styles.question}>{t(`courseQuiz.q.${question.id}`)}</h2>
               <div className={styles.options}>
                 {question.options.map((optionId) => {
@@ -252,7 +250,19 @@ export default function CourseQuizPage() {
         </div>
       </div>
 
-      {/* 하단 고정 바 — 코스 추천 목록과 같은 버튼 · 같은 말(2026-09-20 사용자). 0개면 바 자체가 없습니다. */}
+      {/* 하단 고정 바 — 질문 중에는 「다음」, 결과에서는 코스 추천 목록과 같은 「코스 N개 선택하기」(2026-09-20 사용자).
+          고른 게 없으면 「다음」은 눌리지 않습니다 — 버튼을 숨기지 않습니다(자리가 사라지면 화면이 들썩입니다). */}
+      {question && result.status !== 'error' && (
+        <div className={styles.bar}>
+          <Button
+            variant={answers[question.id] ? 'primary' : 'disabled'}
+            disabled={!answers[question.id]}
+            onClick={goNext}
+          >
+            {t('courseQuiz.next')}
+          </Button>
+        </div>
+      )}
       {step === RESULT && selected.size > 0 && (
         <div className={styles.bar}>
           <Button onClick={openMap}>{t('courses.selectN', { count: selected.size })}</Button>

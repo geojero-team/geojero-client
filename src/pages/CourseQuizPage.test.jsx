@@ -81,10 +81,11 @@ const renderQuiz = () =>
     </MemoryRouter>,
   )
 
-/** 질문 셋에 차례로 답합니다. */
+/** 질문 셋에 차례로 답합니다 — 고르고 「다음」(2026-09-20 사용자). */
 const answer = async (user, ...labels) => {
   for (const label of labels) {
     await user.click(await screen.findByRole('button', { name: new RegExp(label) }))
+    await user.click(screen.getByRole('button', { name: '다음' }))
   }
 }
 
@@ -110,6 +111,23 @@ describe('성향으로 코스 찾기(2026-09-20)', () => {
     // 왜 골랐는지 — 값은 서버 데이터 그대로입니다.
     expect(within(best).getByText('바다·해변 2곳')).toBeInTheDocument()
     expect(within(best).getByText('3곳 · 총 8시간 30분')).toBeInTheDocument()
+  })
+
+  /* 고르자마자 넘어가지 않습니다(2026-09-20 사용자) — 고른 것을 보고 「다음」을 눌러야 넘어갑니다. */
+  it('고르기 전에는 「다음」이 눌리지 않고, 고른 뒤 눌러야 넘어간다', async () => {
+    const user = userEvent.setup()
+    renderQuiz()
+    await screen.findByText('어떤 풍경을 보고싶으세요?')
+
+    expect(screen.getByRole('button', { name: '다음' })).toBeDisabled()
+
+    await user.click(screen.getByRole('button', { name: /바다·해변/ }))
+    // 고르기만 해서는 질문이 그대로입니다.
+    expect(screen.getByText('어떤 풍경을 보고싶으세요?')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /바다·해변/ })).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(screen.getByRole('button', { name: '다음' }))
+    expect(await screen.findByText('하루를 어떻게 보내고 싶으세요?')).toBeInTheDocument()
   })
 
   it('대표 코스 밖이어도 고르고, 제목 · 소개가 없는 코스는 후보에서 뺀다', async () => {
