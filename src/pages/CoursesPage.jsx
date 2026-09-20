@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import mongkkuBody from '../assets/mongkku-body.png'
 import Button from '../components/Button'
 import OptionChip from '../components/OptionChip'
 import Screen from '../components/Screen'
@@ -356,7 +357,8 @@ export default function CoursesPage() {
               <span className={styles.quizTitle}>{t('courseQuiz.entry')}</span>
               <span className={styles.quizHint}>{t('courseQuiz.entryHint')}</span>
             </span>
-            <ChevronRight size={20} strokeWidth={2} aria-hidden="true" />
+            {/* 몽꾸 — 9경을 설명하던 그 캐릭터가 여기서도 권합니다. 장식이라 읽기 도구에서 뺍니다. */}
+            <img className={styles.quizMascot} src={mongkkuBody} alt="" aria-hidden="true" draggable="false" />
           </button>
 
           {result.status === 'error' ? (
