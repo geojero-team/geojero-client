@@ -157,11 +157,20 @@ export default function NineScenicTour({ step, onNext, onDone }) {
       <div className={styles.bubble} style={bubbleStyle}>
         <p id={titleId} className={styles.lines}>
           {step === 1 ? (
-            <span>{t('nineScenic.lead1')}</span>
+            <>
+              <span>{t('nineScenic.lead1Title')}</span>
+              {/* 문장 가운데 「대표 경관 아홉 곳」만 굵게(2026-09-20 사용자). 줄은 하나라 span 을 나누지 않습니다. */}
+              <span>
+                {t('nineScenic.lead1Head')}
+                <strong className={styles.strong}>{t('nineScenic.lead1Strong')}</strong>
+                {t('nineScenic.lead1Tail')}
+              </span>
+            </>
           ) : (
             <>
               <span>{t('nineScenic.lead2')}</span>
               <span>{t('nineScenic.lead3')}</span>
+              <span>{t('nineScenic.lead4')}</span>
             </>
           )}
         </p>
