@@ -312,8 +312,8 @@ describe('홈 — 스팟 · 숙소 · 맛집 칩(2026-09-19)', () => {
     renderHome()
     await screen.findByRole('button', { name: '핀 학동몽돌해변' })
     const group = screen.getByRole('radiogroup', { name: '지도에 보일 곳' })
-    expect(within(group).getAllByRole('radio').map((r) => r.textContent)).toEqual(['스팟', '숙소', '맛집'])
-    expect(within(group).getByRole('radio', { name: '스팟' })).toHaveAttribute('aria-checked', 'true')
+    expect(within(group).getAllByRole('radio').map((r) => r.textContent)).toEqual(['관광지', '숙소', '맛집'])
+    expect(within(group).getByRole('radio', { name: '관광지' })).toHaveAttribute('aria-checked', 'true')
     expect(api.places).not.toHaveBeenCalled()
   })
 
