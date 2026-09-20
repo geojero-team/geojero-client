@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import mongkkuArmRest from '../assets/mongkku-arm-rest.png'
 import mongkkuBody from '../assets/mongkku-body.png'
 import Button from '../components/Button'
 import OptionChip from '../components/OptionChip'
@@ -354,11 +355,20 @@ export default function CoursesPage() {
               이미 뭘 볼지 아는 사람에게 질문 셋은 방해라, 목록이 먼저 있고 이 줄은 건너뛸 수 있습니다. */}
           <button type="button" className={styles.quiz} onClick={() => navigate('/course-quiz')}>
             <span className={styles.quizText}>
-              <span className={styles.quizTitle}>{t('courseQuiz.entry')}</span>
+              <span className={styles.quizTitle}>
+                {t('courseQuiz.entry')}
+                {/* 제목에 붙은 화살표 — 「누르면 어디로 간다」를 말합니다. 오른쪽 끝 화살표(목록 줄 문법)와 다릅니다. */}
+                <ChevronRight className={styles.quizGo} size={20} strokeWidth={2.5} aria-hidden="true" />
+              </span>
               <span className={styles.quizHint}>{t('courseQuiz.entryHint')}</span>
             </span>
-            {/* 몽꾸 — 9경을 설명하던 그 캐릭터가 여기서도 권합니다. 장식이라 읽기 도구에서 뺍니다. */}
-            <img className={styles.quizMascot} src={mongkkuBody} alt="" aria-hidden="true" draggable="false" />
+            {/* 몽꾸 — 9경을 설명하던 그 캐릭터가 여기서도 권합니다. 장식이라 읽기 도구에서 뺍니다.
+                **몸 · 팔 두 장을 겹칩니다**(MascotButton 과 같은 방식) — 몸 그림은 든 팔을 떼어 낸 것이라
+                혼자 쓰면 한쪽 팔이 없습니다(2026-09-20 사용자). 여기 몽꾸는 팔을 들지 않으므로 평소 팔만 깝니다. */}
+            <span className={styles.quizMascot} aria-hidden="true">
+              <img className={styles.quizMascotLayer} src={mongkkuArmRest} alt="" draggable="false" />
+              <img className={styles.quizMascotLayer} src={mongkkuBody} alt="" draggable="false" />
+            </span>
           </button>
 
           {result.status === 'error' ? (

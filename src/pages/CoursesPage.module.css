@@ -65,6 +65,7 @@
 }
 
 /* 성향으로 찾기 입구 — A안(토스식). 연한 brand 면 위에 **굵은 두 줄 카피 + 캐릭터**.
+   누를 수 있다는 표시는 제목 옆 화살표와 눌림 효과로 합니다(2026-09-20 사용자 — 「클릭해야 한다는 느낌이 안 난다」).
    화살표(›)를 뺐습니다 — 면 전체가 누르는 자리이고, 화살표가 있으면 목록 줄처럼 읽혀 제안이 약해집니다.
    코스 카드(흰 면 + 사진)와 다른 모양이라 「이것도 코스인가」로 읽히지 않습니다. */
 .quiz {
@@ -82,9 +83,13 @@
   text-align: left;
   overflow: hidden;
   cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.12s ease;
 }
 
+/* 누르면 살짝 눌립니다 — 주요 버튼(Button)의 누름 촉감과 같은 결입니다(2026-09-19 「토스처럼」).
+   카드 전체가 반응해야 「이 면을 누르는 것」이 손에 전해집니다. */
 .quiz:active {
+  transform: scale(0.985);
   background: var(--bg-pressed);
 }
 
@@ -97,6 +102,8 @@
 
 /* 제목은 카드 제목과 같은 굵기 · 크기로 올립니다 — 이 줄이 제안의 주인공입니다. */
 .quizTitle {
+  display: flex;
+  align-items: center;
   font: var(--type-title);
   color: var(--text-primary);
   word-break: keep-all;
@@ -108,14 +115,34 @@
   word-break: keep-all;
 }
 
-/* 캐릭터는 오른쪽 아래에 살짝 잠기게 둡니다(토스식 일러스트 배치) — 글을 밀어내지 않고 분위기만 만듭니다. */
+/* 캐릭터는 오른쪽 아래에 살짝 잠기게 둡니다(토스식 일러스트 배치) — 글을 밀어내지 않고 분위기만 만듭니다.
+   몸 · 팔 두 장을 같은 칸에 겹칩니다(원본 300 × 323 비율 — MascotButton 과 같은 방식). */
 .quizMascot {
+  position: relative;
   flex: none;
+  display: block;
   width: 84px;
-  height: 84px;
+  height: 90px;
   margin: -18px -8px -34px 0;
-  object-fit: contain;
   pointer-events: none;
+}
+
+.quizMascotLayer {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+/* 제목 옆 화살표 — 제목과 같은 색 · 굵기로 붙여 「이 말을 누르면 간다」로 읽히게 합니다. */
+.quizGo {
+  flex: none;
+  margin: -2px 0 0 2px;
+  color: var(--brand-strong);
+  vertical-align: -3px;
 }
 
 /* 칩 줄 설명 — 칩(12px 라벨)과 같은 크기의 보조색으로, 칩에 딸린 말임을 크기로 알립니다. */
