@@ -70,7 +70,8 @@ function Check({ on }) {
 function tagsOf(course) {
   return [
     t('courses.tagBus', { time: formatDuration(course.busMinTotal) }),
-    course.regions,
+    /* 권역 태그를 뺐습니다(2026-09-20) — 바로 위 스팟 체인이 어디를 도는지 이미 말합니다.
+       카드에 같은 말이 두 번 있으면 무엇을 보라는 말인지 흐려지고, 카드만 길어집니다. */
     course.holidayNoBusLegs?.length > 0 ? t('courses.tagHolidayNoBus') : null,
   ].filter(Boolean)
 }
@@ -348,9 +349,6 @@ export default function CoursesPage() {
           {/* 제목(「거제 9경을 버스로 잇는 대표 코스」)은 2026-09-17에 뺐습니다 — 문장이 어색하고,
               화면 제목(「코스 추천」)과 카드가 이미 같은 말을 하고 있었습니다(사용자 결정). */}
 
-          {/* 출발지 가정과 근거를 숨기지 않습니다 — 모든 시각이 이 위에 있습니다. */}
-          <p className={styles.note}>{t('courses.originNote')}</p>
-
           {/* 성향으로 찾기 입구(2026-09-20 사용자) — 목록을 **대신하지 않고** 옆에 둡니다.
               이미 뭘 볼지 아는 사람에게 질문 셋은 방해라, 목록이 먼저 있고 이 줄은 건너뛸 수 있습니다. */}
           <button type="button" className={styles.quiz} onClick={() => navigate('/course-quiz')}>
@@ -379,9 +377,9 @@ export default function CoursesPage() {
             )
           ) : (
             <>
-              {/* 칩이 무엇을 거르는지 먼저 말합니다 — 붙는 칩 줄(.chips) 위라 스크롤하면 함께 올라갑니다. */}
-              <p className={styles.countHint}>{t('courses.countHint')}</p>
-              {/* 623:451 — OptionChip 넷. 헤더 아래 붙습니다(카드 한 장이 500px 를 넘어 — 메모 623:520). */}
+              {/* 623:451 — OptionChip 넷. 헤더 아래 붙습니다(카드 한 장이 500px 를 넘어 — 메모 623:520).
+                  2026-09-20: 칩 위 설명줄(「코스를 몇 개의 스팟으로…」)을 뺐습니다 — 칩 넷이 이미 같은 말을 하고,
+                  그 두 줄 때문에 첫 카드가 화면 40% 아래에서 시작했습니다(실측 y=340). */}
               <div className={styles.chips} role="group" aria-label={t('courses.countAria')} ref={chipsRef}>
                 <OptionChip selected={spotCount === null} onClick={() => pickCount(null)}>
                   {t('courses.countAll')}
@@ -397,11 +395,17 @@ export default function CoursesPage() {
                   </OptionChip>
                 ))}
               </div>
-              {/* role="status" — 칩을 누르면 바뀐 코스 수를 읽기 도구가 읽습니다(목록이 제자리에서 바뀌므로). */}
+              {/* 출발지 가정과 근거는 숨기지 않습니다 — 모든 시각이 이 위에 서 있습니다(기준문서 §0).
+                  다만 카드 위 머리말이 길어 칩 **아래** 한 줄로 내렸습니다(2026-09-20).
+                  role="status" — 칩을 누르면 바뀐 코스 수를 읽기 도구가 읽습니다(목록이 제자리에서 바뀌므로). */}
               <p className={styles.total} ref={totalRef} role="status">
-                {spotCount
-                  ? t('courses.totalN', { n: spotCount, count: shown.length })
-                  : t('courses.total', { count: courses.length })}
+                {/* 코스 수는 읽기 도구에만 — 칩을 누르면 바뀐 개수를 말합니다(화면에는 칩과 카드가 이미 답합니다). */}
+                <span className={styles.srOnly}>
+                  {spotCount
+                    ? t('courses.totalN', { n: spotCount, count: shown.length })
+                    : t('courses.total', { count: courses.length })}
+                </span>
+                {t('courses.originNote')}
               </p>
               {/* 저장한 코스를 뺐으면 한 줄 — 대표 코스가 이유 없이 줄어 보이지 않게(2026-09-15). */}
               {hiddenCount > 0 && (

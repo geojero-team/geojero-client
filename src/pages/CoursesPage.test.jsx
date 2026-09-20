@@ -161,7 +161,7 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
     expect(api.courses).toHaveBeenCalledWith({ featured: true })
   })
 
-  it('카드 — 제목 · 스팟 체인 · 소개 · 태그 둘(버스 시간 · 권역)', async () => {
+  it('카드 — 제목 · 스팟 체인 · 소개 · 태그 하나(버스 시간)', async () => {
     renderPage()
 
     await screen.findByText('환승 없이 남부 9경 세 곳')
@@ -169,33 +169,24 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
     expect(c.getByText('학동몽돌해변 → 해금강 → 바람의언덕')).toBeInTheDocument()
     expect(c.getByText(COURSE_301.intro)).toBeInTheDocument()
     expect(c.getByText('버스 약 1시간 54분')).toBeInTheDocument()
-    // 노선 번호 태그(「55번 한 노선」)는 2026-09-14 밤 권역으로 바꿨다 — 노선은 코스 상세가 구간마다 말한다
-    // 배차(「매일 6회」) · 요일(「평일·휴일」) 태그는 2026-09-17 뺐다 — 코스가 저장한 편 사슬 하나에서 나온 값이라
-    // 「휴일엔 못 가는 코스」로 읽혔다. 노선 · 횟수는 코스 상세가 구간마다 말한다.
+    /* 노선 번호 태그(「55번 한 노선」)는 2026-09-14 밤 권역으로, 그 **권역 태그는 2026-09-20 에 뺐다** —
+       바로 위 스팟 체인이 어디를 도는지 이미 말하고, 카드만 길어졌다(사용자: 「목록이 조잡하다」).
+       배차 · 요일 태그는 2026-09-17 뺐다. 노선 · 횟수는 코스 상세가 구간마다 말한다. */
     expect([...card(101).querySelectorAll(`.${styles.tag}`)].map((e) => e.textContent)).toEqual([
-      '버스 약 1시간 54분', '남부권',
+      '버스 약 1시간 54분',
     ])
     // 코스 name 은 줄임말 체인이라 화면에 내지 않는다(코스 상세와 같은 이유)
     expect(c.queryByText('학동 · 해금강 · 바람의언덕')).not.toBeInTheDocument()
   })
 
-  it('권역이 섞인 카드 — 가는 순서대로 「동부권·남부권」', async () => {
+  it('권역은 카드에 적지 않는다 — 스팟 체인이 이미 어디를 도는지 말한다(2026-09-20)', async () => {
     renderPage()
 
     await screen.findByText('돌고래 보고 몽돌 밟고 바람의언덕')
     expect([...card(104).querySelectorAll(`.${styles.tag}`)].map((e) => e.textContent)).toEqual([
-      '버스 약 2시간 14분', '동부권·남부권',
+      '버스 약 2시간 14분',
     ])
-  })
-
-  it('스팟 목록을 못 받으면 권역 태그만 빠진다 — 빈 태그를 남기지 않는다', async () => {
-    loadSpots.mockResolvedValue(new Map())
-    renderPage()
-
-    await screen.findByText('환승 없이 남부 9경 세 곳')
-    const c = within(card(101))
-    expect(c.queryByText(/권$/)).not.toBeInTheDocument()
-    expect(card(101).querySelectorAll(`.${styles.tag}`)).toHaveLength(1)
+    expect(within(card(104)).queryByText(/권$/)).not.toBeInTheDocument()
   })
 
   it('휴일에 버스가 없는 구간이 있을 때만 태그 「휴일엔 버스 없는 구간이 있어요」 — 요일 · 배차 태그는 어느 코스에도 없다', async () => {
@@ -210,7 +201,7 @@ describe('CoursesPage — v3 대표 코스 카드(585:417 · 585:485 · 582:416)
 
     await screen.findByText('돌고래 보고 몽돌 밟고 바람의언덕')
     expect([...card(104).querySelectorAll(`.${styles.tag}`)].map((e) => e.textContent)).toEqual([
-      '버스 약 2시간 14분', '동부권·남부권', '휴일엔 버스 없는 구간이 있어요',
+      '버스 약 2시간 14분', '휴일엔 버스 없는 구간이 있어요',
     ])
     expect(within(card(101)).queryByText('휴일엔 버스 없는 구간이 있어요')).not.toBeInTheDocument()
     // holidayService · tripsPerDay 는 응답에 남아 있어도 쓰지 않는다
@@ -540,7 +531,8 @@ describe('CoursesPage — 개수 칩(Figma 623:444 · 메모 623:520, 2026-09-16
     const user = userEvent.setup()
     renderPage()
 
-    const total = await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')
+    // 코스 수는 읽기 도구 전용 span 안에 있다(2026-09-20) — 자리를 재는 건 그 부모 줄(.total)이다
+    const total = (await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')).closest('p')
     const { state, place } = fakeLayout(total, { scrollTop: 1200 })
     // 상태줄이 스크롤 칸 위로 300px 지나가 있다 → 칩 줄(56) + 8 아래로 오려면 300 + 64 만큼 올린다.
     // 칩 줄 띠의 아래 8 은 음수 마진이라 칩(40)과 상태줄 사이가 그림처럼 16 이 된다.
@@ -561,7 +553,8 @@ describe('CoursesPage — 개수 칩(Figma 623:444 · 메모 623:520, 2026-09-16
     const user = userEvent.setup()
     renderPage()
 
-    const total = await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')
+    // 코스 수는 읽기 도구 전용 span 안에 있다(2026-09-20) — 자리를 재는 건 그 부모 줄(.total)이다
+    const total = (await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')).closest('p')
     const { state, place } = fakeLayout(total, { zoom: 1.5, scrollTop: 1200 })
     place(-300)
     await user.click(chip('3곳'))
@@ -574,14 +567,15 @@ describe('CoursesPage — 개수 칩(Figma 623:444 · 메모 623:520, 2026-09-16
     expect(state.scrollTop).toBe(150 - 24)
   })
 
+  /* 코스 수는 2026-09-20 부터 **화면에 없고 읽기 도구에만** 있다(카드를 아래로 밀지 않으려고).
+     칩을 눌렀을 때 결과 개수를 말해 주는 일은 그대로 남는다. */
   it('상태줄은 읽기 도구가 바뀔 때 읽는 자리(role="status") — 칩을 누르면 새 코스 수를 말한다', async () => {
     const user = userEvent.setup()
     renderPage()
 
     await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')
     await user.click(chip('3곳'))
-    // (테스트의 주소 표시 <output> 도 status 역할이라 글로 찾고 역할을 확인합니다)
-    expect(screen.getByText('3곳 코스 2가지 · 여러 개 고를 수 있어요')).toHaveAttribute('role', 'status')
+    expect(screen.getByText('3곳 코스 2가지 · 여러 개 고를 수 있어요').closest('p')).toHaveAttribute('role', 'status')
   })
 
   it('바로 연 화면에서 칩을 누른 뒤 「뒤로」 — 앱 밖이 아니라 홈으로(칩이 주소를 replace 해도)', async () => {
