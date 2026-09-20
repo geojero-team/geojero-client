@@ -64,6 +64,44 @@
   word-break: keep-all;
 }
 
+/* 성향으로 찾기 입구(2026-09-20 사용자) — 연한 brand 면의 한 줄. 카드가 아니라 **줄**입니다:
+   아래 코스 카드와 같은 흰 카드로 두면 코스 하나처럼 보여 「이것도 코스인가」가 됩니다. */
+.quiz {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--brand-tint);
+  border-radius: var(--radius-card);
+  background: var(--brand-tint);
+  color: var(--brand-strong);
+  text-align: left;
+  cursor: pointer;
+}
+
+.quiz:active {
+  background: var(--bg-pressed);
+}
+
+.quizText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.quizTitle {
+  font: var(--type-body-strong);
+  color: var(--brand-strong);
+}
+
+.quizHint {
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
 /* 칩 줄 설명 — 칩(12px 라벨)과 같은 크기의 보조색으로, 칩에 딸린 말임을 크기로 알립니다. */
 .countHint {
   margin: 0;

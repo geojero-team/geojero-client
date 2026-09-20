@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Button from '../components/Button'
 import OptionChip from '../components/OptionChip'
@@ -350,6 +350,16 @@ export default function CoursesPage() {
 
           {/* 출발지 가정과 근거를 숨기지 않습니다 — 모든 시각이 이 위에 있습니다. */}
           <p className={styles.note}>{t('courses.originNote')}</p>
+
+          {/* 성향으로 찾기 입구(2026-09-20 사용자) — 목록을 **대신하지 않고** 옆에 둡니다.
+              이미 뭘 볼지 아는 사람에게 질문 셋은 방해라, 목록이 먼저 있고 이 줄은 건너뛸 수 있습니다. */}
+          <button type="button" className={styles.quiz} onClick={() => navigate('/course-quiz')}>
+            <span className={styles.quizText}>
+              <span className={styles.quizTitle}>{t('courseQuiz.entry')}</span>
+              <span className={styles.quizHint}>{t('courseQuiz.entryHint')}</span>
+            </span>
+            <ChevronRight size={20} strokeWidth={2} aria-hidden="true" />
+          </button>
 
           {result.status === 'error' ? (
             <p className={styles.notice}>{t('common.loadFailed', { error: result.error })}</p>

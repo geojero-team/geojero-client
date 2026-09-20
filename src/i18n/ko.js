@@ -613,6 +613,63 @@ export default {
   'courses.goMyPlans': '내 일정 보기',
 
 
+  /* ── 성향으로 코스 찾기 (2026-09-20 사용자) ─────────────────────────────
+     질문 셋에 답하면 코스 하나를 고릅니다. 무엇을 묻고 어떤 점수를 주는지는 lib/courseQuiz.js 에 있습니다.
+     선지는 **한 줄 이름 + 한 줄 설명**입니다 — 「여유롭게 세 곳」만으로는 무엇이 여유로운지 안 보입니다. */
+  'courseQuiz.entry': '성향으로 코스 찾기',
+  'courseQuiz.entryHint': '질문 세 개에 답하면 맞는 코스를 골라 드려요',
+  'courseQuiz.title': '성향으로 찾기',
+  'courseQuiz.step': '{n} / {total}',
+  'courseQuiz.prev': '이전 질문',
+
+  'courseQuiz.q.scene': '어떤 풍경을 보고 싶어요?',
+  'courseQuiz.opt.scene.BEACH': '바다·해변',
+  'courseQuiz.hint.scene.BEACH': '몽돌 소리를 들으며 걸어요',
+  'courseQuiz.opt.scene.VIEW': '전망·명소',
+  'courseQuiz.hint.scene.VIEW': '탁 트인 바다를 내려다봐요',
+  'courseQuiz.opt.scene.HISTORY': '역사·문화',
+  'courseQuiz.hint.scene.HISTORY': '거제의 이야기를 따라가요',
+  'courseQuiz.opt.scene.GARDEN': '정원·숲',
+  'courseQuiz.hint.scene.GARDEN': '초록 사이를 천천히 걸어요',
+
+  'courseQuiz.q.pace': '하루를 어떻게 보내고 싶어요?',
+  'courseQuiz.opt.pace.easy': '여유롭게 세 곳',
+  'courseQuiz.hint.pace.easy': '한 곳에 오래 머물러요',
+  'courseQuiz.opt.pace.full': '알차게 네다섯 곳',
+  'courseQuiz.hint.pace.full': '하루를 가득 채워요',
+  'courseQuiz.opt.pace.short': '이동이 짧은 쪽',
+  'courseQuiz.hint.pace.short': '버스에 덜 앉아 있어요',
+
+  'courseQuiz.q.taste': '어느 쪽이 더 끌려요?',
+  'courseQuiz.opt.taste.nine': '거제 9경 위주',
+  'courseQuiz.hint.taste.nine': '이름난 곳부터 보고 싶어요',
+  'courseQuiz.opt.taste.hidden': '덜 붐비는 곳',
+  'courseQuiz.hint.taste.hidden': '한적하게 둘러보고 싶어요',
+  'courseQuiz.opt.taste.ferry': '배 타고 섬까지',
+  'courseQuiz.hint.taste.ferry': '유람선을 타고 외도에 가요',
+  'courseQuiz.opt.taste.indoor': '실내 위주',
+  'courseQuiz.hint.taste.indoor': '비가 와도 괜찮게 다녀요',
+
+  /* 왜 이 코스인지 — 값은 전부 서버 데이터입니다(분류 · 곳 수 · 소요 시간 · 9경 수). 화면이 지어낸 수치가 없습니다. */
+  'courseQuiz.reason.theme': '{label} {n}곳',
+  'courseQuiz.reason.easy': '{n}곳 · 총 {time}',
+  'courseQuiz.reason.full': '하루에 {n}곳',
+  'courseQuiz.reason.short': '버스 {time}',
+  'courseQuiz.reason.nine': '거제 9경 {n}곳',
+  // 「덜 붐비는 곳」의 근거 — 9경이 몇 곳인지로만 말합니다(스팟 수로 세면 큰 코스가 한적한 코스가 됩니다).
+  'courseQuiz.reason.hiddenNone': '거제 9경 없이 한적하게',
+  'courseQuiz.reason.hiddenOne': '거제 9경은 한 곳만',
+  'courseQuiz.reason.ferry': '배 {time}',
+  'courseQuiz.reason.indoor': '실내 전시·체험 {n}곳',
+
+  'courseQuiz.resultTitle': '이 코스가 가장 잘 맞아요',
+  'courseQuiz.why': '고른 이유',
+  'courseQuiz.others': '이런 코스도 맞아요',
+  'courseQuiz.open': '코스 자세히 보기',
+  'courseQuiz.again': '다시 답해 보기',
+  // 답이 모두 안 맞아 점수가 0인 코스뿐일 때 — 그래도 가장 가까운 코스를 보여주고 이 줄을 덧붙입니다.
+  'courseQuiz.weakMatch': '딱 맞는 코스는 없어서 가장 가까운 코스를 골랐어요',
+
   /* ── 지도 (285:208 / 240:164) ─────────────────────────────────────────── */
   'map.zoomIn': '확대',
   'map.zoomOut': '축소',

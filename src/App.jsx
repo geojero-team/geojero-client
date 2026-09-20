@@ -5,6 +5,7 @@ import { useSplash } from './lib/useSplash'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import CourseDetailPage from './pages/CourseDetailPage'
 import CourseMapPage from './pages/CourseMapPage'
+import CourseQuizPage from './pages/CourseQuizPage'
 import CoursesPage from './pages/CoursesPage'
 import HomePage from './pages/HomePage'
 import MyPlansPage from './pages/MyPlansPage'
@@ -23,6 +24,7 @@ import Tutorial from './components/Tutorial'
  *
  *   /                     홈 — 지도 + '코스 추천 받기' (02-2 · 446:453)
  *   /courses              코스 추천 — 대표 코스 10개 카드, 여러 개 고름 (585:417)
+ *   /course-quiz          성향으로 찾기 — 질문 셋에 답하면 코스 하나 (2026-09-20, Figma 없음)
  *   /course-map?courses=  지도 — 고른 코스를 넘겨 비교 (446:717)
  *   /courses/:id?no=1     코스 상세 — 구간별 노선·이동시간·추정 (446:929)
  *   /timetable            시간표 탭 — 스팟 목록 (451:518)
@@ -46,6 +48,8 @@ export default function App() {
         <Route path="/home" element={<Navigate to="/" replace />} />
         <Route path="/spots" element={<SpotsPage />} />
         <Route path="/courses" element={<CoursesPage />} />
+        {/* /courses/:courseId 보다 먼저 두지 않아도 됩니다 — 라우터가 고정 경로를 먼저 맞춥니다. 헷갈리지 않게 경로를 나눠 뒀습니다. */}
+        <Route path="/course-quiz" element={<CourseQuizPage />} />
         <Route path="/courses/:courseId" element={<CourseDetailPage />} />
         <Route path="/course-map" element={<CourseMapPage />} />
         <Route path="/timetable" element={<TimetableListPage />} />
