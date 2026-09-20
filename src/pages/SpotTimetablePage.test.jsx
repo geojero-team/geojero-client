@@ -858,3 +858,36 @@ describe('SpotTimetablePage — 시계(주소에 now가 없을 때)', () => {
   })
 })
 
+/**
+ * 걸어갈 수 없는 스팟(해금강 — 바다 위 바위섬, 서버 V48 walkTo)을 타는 곳 카드로 흘려보내는지.
+ * 카드가 그 값으로 무엇을 그리는지는 BoardingMap.test 가 지킨다 — 여기서는 **배선**만 본다.
+ */
+describe('SpotTimetablePage — 걸어갈 수 없는 스팟을 타는 곳 카드에 넘긴다', () => {
+  it('/timetable/3 해금강 — 거리 · 길찾기가 우제봉전망대 기준이 된다', async () => {
+    loadSpots.mockResolvedValue(
+      new Map([
+        ...SPOTS,
+        [3, { poiId: 3, shortName: '해금강', name: '해금강',
+              walkTo: { name: '우제봉전망대', lat: 34.7305356, lng: 128.6750255,
+                        note: '해금강은 갈개마을 남쪽 약 500m 해상의 바위섬이에요' } }],
+      ]),
+    )
+    api.spotDepartures.mockImplementation(async (poiId) =>
+      busOf(poiId, {
+        boarding: {
+          from: { name: '해금강', kind: 'SPOT', lat: 34.7333, lng: 128.6839 },
+          stops: [{ nodeId: 'GJB900', name: '해금강종점', lat: 34.73829667, lng: 128.67388833, distanceM: 1070, routes: ['55'] }],
+          exceptions: [],
+          unresolved: [],
+          source: '정류소 좌표 국토교통부 TAGO · 2026-09-13',
+        },
+      }),
+    )
+    renderAt(`/timetable/3?dir=origin&date=${DATE}&now=${NOW}`)
+
+    const card = await screen.findByRole('region', { name: '타는 곳' })
+    expect(card).toHaveTextContent('우제봉전망대에서 직선 약 870m')
+    expect(card).not.toHaveTextContent('1.1km')
+    expect(card).toHaveTextContent('해금강은 갈개마을 남쪽 약 500m 해상의 바위섬이에요')
+  })
+})

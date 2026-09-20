@@ -390,15 +390,24 @@ export default function BoardingMap({ boarding, route = null, fromSpot = null })
   const [open, setOpen] = useState(false)
   const bodyId = useId()
 
-  const { from, stops, exceptions, unresolved } = forRoute(boarding, route)
+  const { from: spotFrom, stops, exceptions, unresolved } = forRoute(boarding, route)
   const places = placesOf({ stops, exceptions })
+  /* 걸어갈 수 없는 스팟이면 **걷기는 대신 걸어갈 곳에서 시작합니다**(서버 V48 walkTo · 2026-09-20 사용자가 운영에서 잡음).
+     해금강은 바다 위 바위섬이라(TourAPI 소개문 「약 500m 해상에 위치한 바위섬」) 그 좌표로 도보 길찾기를 걸면
+     카카오맵이 「도보 길찾기를 이용할 수 없는 지역이에요」로 답하고, 「해금강에서 직선 약 1.1km」도 바다를 건너는 직선입니다.
+     지도의 출발 곳 핀은 스팟 자리 그대로 둡니다 — 해금강은 실제로 거기 있고, 바뀌는 것은 **걷는 이야기**뿐입니다. */
+  const w = fromSpot?.walkTo
+  const walkTo = spotFrom.kind === 'SPOT' && w?.lat != null && w?.lng != null ? w : null
+  const from = walkTo ? { ...spotFrom, name: walkTo.name, lat: walkTo.lat, lng: walkTo.lng } : spotFrom
   const isTerminal = from.kind === 'TERMINAL'
   const isNear = (meters) => isTerminal && meters < TERMINAL_NEAR_M
   const nearestM = Math.min(...[...stops, ...exceptions].map((p) => p.distanceM))
+  // 걷기 출발이 옮겨졌으면 거리도 그 자리에서 다시 잽니다 — 서버 distanceM 은 스팟 ↔ 정류장입니다.
+  const metersTo = (stop) => (walkTo ? distanceMeters(from, stop) : stop.distanceM)
   const where = (stop) =>
     isNear(stop.distanceM)
       ? t('boarding.near', { place: from.name })
-      : t('boarding.distance', { place: from.name, dist: formatDistance(stop.distanceM) })
+      : t('boarding.distance', { place: from.name, dist: formatDistance(metersTo(stop)) })
 
   const withMain = exceptions.filter((ex) => ex.mainNodeId != null)
   const split = exceptions.filter((ex) => ex.mainNodeId == null)
@@ -509,6 +518,8 @@ export default function BoardingMap({ boarding, route = null, fromSpot = null })
       {/* 접혀 있어도 보이는 안내 둘 — 다음 버스가 이 편·이 노선일 수 있습니다.
           · 대표 정류장이 아닌 곳에서 타는 편(매미성 20:30에는 32번 20:37 길 건너편이 곧 다음 버스)
           · 타는 곳을 못 찍은 노선(맹종죽 10:32에는 37번이 다음 버스인데 카드가 와항마을만 말하면 거기서 타는 줄 안다) */}
+      {/* 왜 스팟까지 못 걷는지 — 이유 없이 출발 이름만 바뀌면 「왜 갑자기 우제봉이지」가 됩니다(절대규칙 3). */}
+      {walkTo && <p className={styles.note}>{walkTo.note}</p>}
       {unresolvedNote}
       {withMain.map((ex) => (
         <p key={`${ex.routeNo}-${ex.depart}-${ex.nodeId}`} className={styles.note}>

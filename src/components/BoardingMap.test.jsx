@@ -831,3 +831,60 @@ describe('BoardingMap — 출발 곳 썸네일', () => {
     expect(Math.abs(from.options.yAnchor - -39 / 24) < 1e-6 || Math.abs(from.options.yAnchor - 40 / 24) < 1e-6).toBe(true)
   })
 })
+
+/**
+ * 걸어갈 수 없는 스팟 — 해금강 (2026-09-20 사용자가 운영에서 잡음, 서버 V48)
+ *
+ * 스팟 좌표가 **바다 위 바위섬**이라 카카오맵이 「도보 길찾기를 이용할 수 없는 지역이에요」로 답한다.
+ * 코스 상세와 같은 값(walkTo)으로 이 카드도 대신 걸어갈 곳(우제봉전망대) 기준으로 적는다.
+ */
+describe('BoardingMap — 걸어갈 수 없는 스팟', () => {
+  const HAEGEUM = {
+    from: { name: '해금강', kind: 'SPOT', lat: 34.7333, lng: 128.6839 },
+    stops: [{ nodeId: 'GJB900', name: '해금강종점', lat: 34.73829667, lng: 128.67388833, distanceM: 1070, routes: ['55'] }],
+    exceptions: [],
+    unresolved: [],
+    source: SOURCE,
+  }
+  const SPOT = {
+    thumbnailUrl: null,
+    theme: 'VIEW',
+    walkTo: {
+      name: '우제봉전망대',
+      lat: 34.7305356,
+      lng: 128.6750255,
+      note: '해금강은 갈개마을 남쪽 약 500m 해상의 바위섬이에요',
+    },
+  }
+
+  it('거리 줄이 대신 걸어갈 곳 기준이다 — 바다를 건너는 1.1km 가 아니다', () => {
+    render(<BoardingMap boarding={HAEGEUM} fromSpot={SPOT} />)
+
+    const toggle = screen.getByRole('button', { name: /해금강종점/ })
+    expect(toggle).toHaveTextContent('우제봉전망대에서 직선 약 870m · 55번')
+    expect(toggle).not.toHaveTextContent('1.1km')
+  })
+
+  it('왜 스팟까지 못 걷는지 카드가 말한다', () => {
+    render(<BoardingMap boarding={HAEGEUM} fromSpot={SPOT} />)
+
+    expect(screen.getByText('해금강은 갈개마을 남쪽 약 500m 해상의 바위섬이에요')).toBeInTheDocument()
+  })
+
+  it('「도보 길찾기」가 대신 걸어갈 곳에서 출발한다', async () => {
+    const user = userEvent.setup()
+    render(<BoardingMap boarding={HAEGEUM} fromSpot={SPOT} />)
+    await user.click(screen.getByRole('button', { name: /해금강종점/ }))
+
+    const link = screen.getByRole('link', { name: /도보 길찾기/ })
+    expect(decodeURIComponent(link.getAttribute('href'))).toBe(
+      'https://map.kakao.com/link/by/walk/우제봉전망대,34.7305356,128.6750255/해금강종점 정류장,34.73829667,128.67388833',
+    )
+  })
+
+  it('걸어갈 수 있는 스팟은 그대로다', () => {
+    render(<BoardingMap boarding={BARAM} fromSpot={{ thumbnailUrl: null, theme: 'VIEW' }} />)
+
+    expect(screen.getByRole('button', { name: /도장포/ })).toHaveTextContent('바람의언덕에서 직선 약 380m · 55번')
+  })
+})

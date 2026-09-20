@@ -509,6 +509,10 @@ export default {
   // 그 사실은 각주(walkNote)가 한 번 말한다 — 줄마다 「직선」을 붙이니 「도보 · 직선」이 어색했다(같은 날 사용자).
   // 걷는 시간은 원천이 없어 적지 않는다(절대규칙 1).
   // 「약 110m」는 붙는 공백(\u00a0) — 「도보 약 / 110m」로 갈리지 않는다.
+  // 스팟까지 걸어갈 수 없을 때(해금강 — 바다 위 바위섬. 서버 V48 walkTo)는 **대신 걸어갈 곳을 이름으로** 적는다.
+  // 이름 없이 「도보 약 870m」만 두면 스팟까지 걸어가는 것으로 읽혀 고친 뜻이 사라진다(2026-09-20).
+  'courseDetail.walkSegToPlace': '{place}까지 도보 약 {dist}',
+  'courseDetail.walkSegFromPlace': '{place}에서 도보 약 {dist}',
   'courseDetail.walkSeg': '도보',
   'courseDetail.walkSegWithDistance': '도보\u00a0약\u00a0{dist}',
   // 돌아오는 배가 내려주는 선착장 점(2026-09-18 「점 = 장소, 사이 = 이동」).

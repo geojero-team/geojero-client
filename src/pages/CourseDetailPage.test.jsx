@@ -1200,3 +1200,70 @@ describe('CourseDetailPage — 구간 고르기', () => {
     expect(screen.getByText('고현터미널 → 학동몽돌해변')).toBeInTheDocument()
   })
 })
+
+/**
+ * 걸어갈 수 없는 스팟 — 해금강 (2026-09-20 사용자가 운영에서 잡음, 서버 V48)
+ *
+ * 해금강은 육지가 아니라 바다 위 바위섬이라(TourAPI 소개문 「약 500m 해상에 위치한 바위섬」)
+ * 그 좌표로 카카오맵 도보 길찾기를 걸면 「도보 길찾기를 이용할 수 없는 지역이에요」가 뜬다.
+ * 그리고 「도보 약 1.1km」는 **바다를 건너는 직선**이라 걸어갈 수 있다고 읽힌다 — 링크만 고치면 그 말이 남는다.
+ * 그래서 걷는 칸 전체를 서버가 준 「대신 걸어갈 곳」(우제봉전망대) 기준으로 다시 적는다.
+ */
+describe('CourseDetailPage — 걸어갈 수 없는 스팟', () => {
+  const VIEWPOINT = {
+    name: '우제봉전망대',
+    lat: 34.7305356,
+    lng: 128.6750255,
+    note: '해금강은 갈개마을 남쪽 약 500m 해상의 바위섬이에요',
+  }
+  const STOP = { stop: '해금강종점', distanceM: 1070, lat: 34.73829667, lng: 128.67388833 }
+  const walkRowAfter = (station) => station.closest(`.${styles.stationRow}`).nextElementSibling
+
+  beforeEach(() => {
+    loadSpots.mockResolvedValue(new Map([...POIS, [3, { ...POIS.get(3), walkTo: VIEWPOINT }]]))
+    api.course.mockResolvedValue({
+      ...COURSE_301,
+      legs: COURSE_301.legs.map((leg, i) =>
+        i === 1 ? { ...leg, alight: STOP } : i === 2 ? { ...leg, board: STOP } : leg,
+      ),
+    })
+  })
+
+  it('걷는 칸이 스팟이 아니라 「대신 걸어갈 곳」까지를 적는다 — 바다를 건너는 1.1km 가 아니다', async () => {
+    renderCourse(101)
+
+    const off = await screen.findByText('해금강종점에서 내려요')
+    expect(walkAfter(off)).toContain('우제봉전망대까지 도보 약 870m')
+    expect(walkAfter(off)).not.toContain('1.1km')
+  })
+
+  it('왜 스팟까지 못 걷는지 그 칸이 말한다 — 이유 없이 목적지만 바뀌지 않는다', async () => {
+    renderCourse(101)
+
+    const off = await screen.findByText('해금강종점에서 내려요')
+    expect(walkAfter(off)).toContain('해금강은 갈개마을 남쪽 약 500m 해상의 바위섬이에요')
+    // 되돌아 나가는 칸은 방향만 바꿔 적고 이유를 또 적지 않는다 — 바로 위에서 말했다
+    const on = screen.getByText('해금강종점에서 타요')
+    expect(walkBefore(on)).toContain('우제봉전망대에서 도보 약 870m')
+    expect(walkBefore(on)).not.toContain('바위섬')
+  })
+
+  it('「길찾기 ↗」가 대신 걸어갈 곳으로 열린다 — 바다 위 좌표로는 카카오가 길을 못 그린다', async () => {
+    renderCourse(101)
+
+    const off = await screen.findByText('해금강종점에서 내려요')
+    const href = walkRowAfter(off).querySelector('a').getAttribute('href')
+    expect(decodeURIComponent(href)).toBe(
+      'https://map.kakao.com/link/by/walk/해금강종점,34.73829667,128.67388833/우제봉전망대,34.7305356,128.6750255',
+    )
+  })
+
+  it('걸어갈 수 있는 스팟은 그대로다 — 모든 스팟의 길찾기가 엉뚱한 곳으로 열리면 안 된다', async () => {
+    renderCourse(101)
+
+    const station = await screen.findByText('학동 정류장에서 내려요')
+    expect(walkAfter(station)).toBe('도보 약 310m')
+    const href = walkRowAfter(station).querySelector('a').getAttribute('href')
+    expect(decodeURIComponent(href)).toContain('/학동몽돌해변,')
+  })
+})

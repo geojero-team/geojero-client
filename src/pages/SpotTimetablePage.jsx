@@ -253,7 +253,10 @@ export default function SpotTimetablePage() {
   const spot = names.get(String(poiId)) ?? spotFromResponse ?? ferryData?.shortName ?? ''
   // 타는 곳 지도의 출발 곳 — 이 스팟(스팟 → …) 또는 다음 스팟(다음 스팟 → 이 스팟). 고현터미널 출발이면 없다.
   const fromPoi = dir === 'fromOrigin' ? null : (spotsById.get(Number(dir === 'fromNext' ? nextId : poiId)) ?? null)
-  const fromSpot = fromPoi ? { thumbnailUrl: fromPoi.imageUrl ?? null, theme: fromPoi.theme } : null
+  // walkTo(서버 V48) — 걸어갈 수 없는 스팟(해금강)의 대신 걸어갈 곳. 타는 곳 카드가 거리 · 길찾기를 그 자리에서 다시 적습니다.
+  const fromSpot = fromPoi
+    ? { thumbnailUrl: fromPoi.imageUrl ?? null, theme: fromPoi.theme, walkTo: fromPoi.walkTo ?? null }
+    : null
   const nextFromResponse =
     dir === 'next' ? d?.to?.name : dir === 'fromNext' ? (d?.shortName ?? d?.name) : null
   const nextName = (nextId ? names.get(String(nextId)) : null) ?? nextFromResponse ?? ''

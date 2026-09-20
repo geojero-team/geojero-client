@@ -124,6 +124,21 @@ function walkText(distanceM) {
 }
 
 /**
+ * 걷는 칸의 **걸어갈 곳** — 스팟까지 걸어갈 수 없으면 서버가 준 대신 걸어갈 곳(walkTo, V48)입니다.
+ * 걸어갈 수 있는 스팟은 자기 자신이라 지금까지와 똑같이 그립니다.
+ *
+ * 해금강은 육지가 아니라 **바다 위 바위섬**이라(TourAPI 소개문 「약 500m 해상에 위치한 바위섬」)
+ * 그 좌표로 카카오맵 도보 길찾기를 걸면 「도보 길찾기를 이용할 수 없는 지역이에요」가 뜹니다
+ * (2026-09-20 사용자가 운영에서 잡음 — 앱이 만드는 길찾기 35쌍 중 해금강 왕복 2건만 그렇습니다).
+ * 링크만 고치면 「도보 약 1.1km」가 남는데 그 1.1km 는 **바다를 건너는 직선**이라 걸어갈 수 있다고 읽힙니다.
+ * 그래서 거리 · 링크 · 이유를 통째로 그곳 기준으로 다시 적습니다.
+ */
+function walkTarget(spot) {
+  const to = spot?.walkTo
+  return located(to) ? { shortName: to.name, name: to.name, lat: to.lat, lng: to.lng, note: to.note } : spot
+}
+
+/**
  * 앞 구간에서 내린 정류장과 이번에 타는 정류장이 **같은 정류장인가** — 이름이 같고 스팟까지 거리가 1m까지 같을 때만(2026-09-17).
  *
  * 이름만 같으면 길 건너편일 수 있습니다. 코스 33개에서 앞 구간 하차와 이름이 같은 승차 78곳 중 35곳은 거리가 다릅니다
@@ -360,11 +375,34 @@ function TimetableButton({ spot, nextPoiId, onOpen }) {
 function LegRow({ leg, prev, origin, stops = [], dest = null, onOpenTimetable }) {
   const byId = (id) => (id == null ? null : stops.find((stop) => stop.poiId === id))
   const fromSpot = byId(leg.fromPoiId)
-  const walkSeg = (distanceM, from, to) => (
-    <SegmentRow line={<span className={styles.lineDots} />} action={from && to ? <WalkLink from={from} to={to} /> : null}>
-      <span className={styles.legText}>{walkText(distanceM)}</span>
-    </SegmentRow>
-  )
+  /**
+   * 걷는 칸. 한쪽 끝이 걸어갈 수 없는 스팟이면 그 끝을 「대신 걸어갈 곳」으로 바꾸고 거리를 다시 잽니다
+   * (서버 거리는 정류장 ↔ 스팟이라 못 씁니다). 이유는 **닿는 쪽이 바뀐 칸에만** 적습니다 —
+   * 되돌아 나가는 칸이 바로 아래라 두 번 적으면 같은 문장이 붙어 나옵니다.
+   */
+  const walkSeg = (distanceM, from, to) => {
+    const a = walkTarget(from)
+    const b = walkTarget(to)
+    const moved = a !== from || b !== to
+    const dist = !moved ? distanceM : located(a) && located(b) ? distanceMeters(a, b) : null
+    const text = !moved
+      ? walkText(dist)
+      : dist == null
+        ? walkText(null)
+        : t(b !== to ? 'courseDetail.walkSegToPlace' : 'courseDetail.walkSegFromPlace', {
+            place: b !== to ? b.name : a.name,
+            dist: formatDistance(dist),
+          })
+    return (
+      <SegmentRow
+        line={<span className={styles.lineDots} />}
+        note={b !== to ? b.note : null}
+        action={a && b ? <WalkLink from={a} to={b} /> : null}
+      >
+        <span className={styles.legText}>{text}</span>
+      </SegmentRow>
+    )
+  }
 
   if (leg.mode === 'SAME_STOP') return walkSeg(spotDistance(leg, stops, dest), fromSpot, byId(leg.toPoiId) ?? dest)
 
@@ -523,7 +561,12 @@ export default function CourseDetailPage() {
       .then(([data, pois]) => {
         if (cancelled) return
         // 대표 사진은 목록(/api/pois)에만 있습니다. 못 받았거나(빈 Map) 없으면 null — 자리그림으로 떨어집니다.
-        const stops = (data.stops ?? []).map((stop) => ({ ...stop, thumbnailUrl: pois.get(stop.poiId)?.imageUrl ?? null }))
+        // walkTo(V48) — 걸어갈 수 없는 스팟의 대신 걸어갈 곳. 코스 응답에는 없고 /api/pois 에만 있습니다.
+        const stops = (data.stops ?? []).map((stop) => ({
+          ...stop,
+          thumbnailUrl: pois.get(stop.poiId)?.imageUrl ?? null,
+          walkTo: pois.get(stop.poiId)?.walkTo ?? null,
+        }))
         setResult({
           status: 'ready',
           data: { ...data, stops, regions: regionsOf(stops, pois) },
