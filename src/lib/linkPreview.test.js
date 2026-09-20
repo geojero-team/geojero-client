@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { cwd } from 'node:process'
 import { describe, expect, it } from 'vitest'
 
 /* 링크 미리보기(카카오톡 · 메시지 앱에서 주소를 보낼 때 뜨는 카드) — index.html 의 og 태그가 정본입니다.
    2026-09-20 사용자: 주소를 보내면 제목만 뜨고 로고가 안 뜬다. */
 // jsdom 에서 import.meta.url 은 http 주소라 파일 경로로 못 씁니다 — 저장소 뿌리에서 읽습니다.
-const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8')
+const html = readFileSync(resolve(cwd(), 'index.html'), 'utf8')
 const meta = (property) =>
   html.match(new RegExp(`<meta[^>]*property="${property}"[^>]*content="([^"]*)"`))?.[1]
 
