@@ -32,8 +32,20 @@ describe('고현터미널 마커 — Figma 02-2 `501:213`', () => {
 })
 
 const STAY = { spotId: 'place-2578495', kind: 'STAY', name: '소노캄 거제', shortName: '소노캄 거제' }
+const CAFE = { spotId: 'place-2783404', kind: 'CAFE', name: '심해', shortName: '심해' }
 
 describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
+  /* 카페 사진도 일곱 곳 모두 공공누리 3유형(변경금지)이다 — 원으로 자르면 저작권을 어긴다.
+     숙소 · 맛집과 같은 사각 액자여야 한다(2026-09-20). */
+  it('카페도 사진을 자르지 않는 사각 액자다 — 스팟 원이 아니다', () => {
+    const { element, size } = createPinElement({ ...CAFE, thumbnailUrl: 'https://x/s.jpg' }, { order: null })
+
+    expect(element.classList.contains(styles.pinPlace)).toBe(true)
+    expect(element.classList.contains(styles.pinPlacePhoto)).toBe(true)
+    expect(element.querySelector('img').classList.contains(styles.pinPhotoWhole)).toBe(true)
+    expect(size).toEqual({ width: 32, height: 22 })
+  })
+
   it('대표 사진이 있으면 사진을 자르지 않고 통째로 담는 사각 액자다 — 높이 22(스팟 원 28 보다 낮게 — 폭까지 더하면 원만큼 무겁다), 폭은 3:2 로 시작', () => {
     const { element, label, size } = createPinElement({ ...STAY, thumbnailUrl: 'https://x/s.jpg' }, { order: null })
 

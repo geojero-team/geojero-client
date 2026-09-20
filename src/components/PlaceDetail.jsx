@@ -13,14 +13,15 @@ import { usePhotoSwipe } from '../lib/usePhotoSwipe'
 import styles from './PlaceDetail.module.css'
 
 /**
- * 맛집 · 숙소 상세 — 화면(`/places/:placeId`)과 홈 지도 시트가 같이 쓴다(2026-09-19, 기준문서 §6 「맛집 · 숙소」). Figma 프레임은 아직 없다.
+ * 맛집 · 숙소 · 카페 상세 — 화면(`/places/:placeId`)과 홈 지도 시트가 같이 쓴다(2026-09-19 · 카페 09-20, 기준문서 §6). Figma 프레임은 아직 없다.
  * 스팟 상세(SpotDetail)와 같은 방식이다 — 둘로 나누면 한쪽만 고쳐진다.
- * 짜임(2026-09-19 사용자 — 숙소 앱 레퍼런스를 보고 다시 짬): 사진 → 이름 + 한 줄(종류 · 읍면) → 가기 전에 볼 것 →
+ * 짜임(2026-09-19 사용자 — 숙소 앱 레퍼런스를 보고 다시 짬): 사진 → 이름 + 한 줄(종류) → 가기 전에 볼 것 →
  * 「위치」(지도 + 주소) → 「가까운 스팟」. 구획 사이는 굵은 회색 띠. 숙소 예약은 화면 아래 고정.
  *
  * - 사진은 **자르지 않는다**(object-fit: contain). 대부분 Type3 = 공공누리 제3유형(변경금지)이다(기준문서 §7).
  * - 글은 TourAPI 원문 그대로다. 서버가 `<br>` 만 줄바꿈으로 바꿔 주고 화면은 pre-line 으로 그린다.
- * - 이름 아래 한 줄: 숙소는 종류 · 등급(`category` — 「2성 호텔」 · 「콘도」, 호텔업 등급), 맛집은 대표 메뉴 + 주소의 읍면.
+ * - 이름 아래 한 줄: 숙소는 종류 · 등급(`category` — 「2성 호텔」 · 「콘도」, 호텔업 등급), 맛집 · 카페는 대표 메뉴.
+ *   읍면은 2026-09-20 에 뺐다(사용자) — 바로 아래 「위치」에 주소 전문이 있어 같은 말을 두 번 했다.
  * - 칩: 숙소 부대시설(`subfacility`) — 원문을 「/」로만 나눈다. 맛집 메뉴는 두지 않는다 — 사용자가 원한 건 **메뉴판 이미지**인데
  *   TourAPI 12곳 어디에도 없고(음식 메뉴 이미지는 백만석의 음식 사진 3장뿐), 취급 메뉴 글자 칩은 쓸모가 없다(2026-09-19 사용자).
  * - 맛집 영업시간은 본 시간 한 줄 + 쉬는 날, 준비시간 · 마지막 주문은 펼쳐 본다(HoursRow).
@@ -120,7 +121,8 @@ function PlaceBody({ place, onBack, onClose }) {
     const listed = spots.find((spot) => spot.poiId === near.poiId)
     return { ...near, thumbnailUrl: listed?.thumbnailUrl ?? null, theme: listed?.theme }
   })
-  const subtitle = [place.category, ok ? townOf(detail.address) : null].filter(Boolean).join(' · ')
+  /* 읍면은 붙이지 않습니다(2026-09-20 사용자) — 바로 아래 「위치」에 주소 전문이 있어 같은 말을 두 번 했습니다. */
+  const subtitle = place.category
   // 숙소 부대시설 칩 — TourAPI 원문을 「/」로만 나눈다. 맛집에는 메뉴 칩을 두지 않는다(아래 머리 주석).
   const tags = ok && place.kind === 'STAY' ? splitTags(detail.facilities) : []
 
@@ -143,10 +145,10 @@ function PlaceBody({ place, onBack, onClose }) {
           </p>
         )}
 
-        {/* 가기 전에 볼 것 — 맛집 영업시간(+ 쉬는 날) / 숙소 체크인 · 체크아웃. 스팟 상세 613:3 과 같은 아이콘 줄. */}
+        {/* 가기 전에 볼 것 — 맛집 · 카페는 영업시간(+ 쉬는 날) / 숙소는 체크인 · 체크아웃. 스팟 상세 613:3 과 같은 아이콘 줄. */}
         {ok && (
           <div className={styles.info}>
-            {place.kind === 'FOOD' ? (
+            {place.kind === 'FOOD' || place.kind === 'CAFE' ? (
               <HoursRow openTime={detail.openTime} restDay={detail.restDay} />
             ) : (
               <InfoRow
@@ -240,11 +242,6 @@ function NearSpotItem({ spot, place }) {
       )}
     </li>
   )
-}
-
-/** 「경상남도 거제시 일운면 거제대로 2752」 → 「일운면」. 거제시 바로 뒤가 읍 · 면 · 동이 아니면(도로명) 없다. */
-function townOf(address) {
-  return address?.match(/거제시\s+(\S+[읍면동])(?:\s|$)/)?.[1] ?? null
 }
 
 /**

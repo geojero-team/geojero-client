@@ -43,8 +43,8 @@ import styles from './HomePage.module.css'
  */
 
 /** 주소의 칩 값 ↔ 칩. 스팟이 기본이라 주소에 적지 않습니다. */
-const LAYER_OF_PARAM = { stay: 'STAY', food: 'FOOD' }
-const PARAM_OF_LAYER = { STAY: 'stay', FOOD: 'food' }
+const LAYER_OF_PARAM = { stay: 'STAY', food: 'FOOD', cafe: 'CAFE' }
+const PARAM_OF_LAYER = { STAY: 'stay', FOOD: 'food', CAFE: 'cafe' }
 
 /** 숙소 · 맛집 → 지도 핀. spotId 는 스팟 poiId 와 섞이지 않게 따로 이름 붙입니다.
     대표 사진은 핀에서 자르지 않는 사각 액자로 그립니다(mapPins — 2026-09-19 사용자). */

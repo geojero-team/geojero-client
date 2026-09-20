@@ -123,7 +123,7 @@ export const api = {
   poi: (poiId, lang = 'ko') => request(`/api/pois/${poiId}?lang=${lang}`),
 
   /**
-   * 맛집 · 숙소(2026-09-19 — 기준문서 §6 「맛집 · 숙소」). kind = 'FOOD' | 'STAY'.
+   * 맛집 · 숙소(2026-09-19) · 카페(2026-09-20) — 기준문서 §6 「맛집 · 숙소」. kind = 'FOOD' | 'STAY' | 'CAFE'.
    * PlacesRes { places: [{ placeId, kind, name, category, imageUrl, grade, restDay,
    *                        nearSpot: { poiId, shortName, distanceM, lat, lng } | null }] }
    * placeId 는 TourAPI 국문 contentId 다(서버 V40 — 환경마다 같은 자연키).

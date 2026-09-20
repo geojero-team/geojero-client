@@ -50,6 +50,9 @@ const STAYS = [
 const FOODS = [
   { placeId: 2783696, kind: 'FOOD', name: '대박난맛집', category: '문어해물칼국수', imageUrl: null, grade: null, restDay: '연중무휴', nearSpot: null, lat: 34.7721525, lng: 128.6380248 },
 ]
+const CAFES = [
+  { placeId: 2783404, kind: 'CAFE', name: '심해', category: '아이스크림 라떼', imageUrl: null, grade: null, restDay: '연중무휴', nearSpot: null, lat: 34.9666431, lng: 128.7059415 },
+]
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -58,7 +61,9 @@ beforeEach(() => {
   localStorage.setItem('gj_onboarded_v1', '2026-09-19')
   sessionStorage.clear() // 말풍선은 탭마다 한 번 — 테스트마다 새 탭
   api.pois.mockResolvedValue({ pois: POIS })
-  api.places.mockImplementation((kind) => Promise.resolve({ places: kind === 'STAY' ? STAYS : FOODS }))
+  api.places.mockImplementation((kind) =>
+    Promise.resolve({ places: { STAY: STAYS, FOOD: FOODS, CAFE: CAFES }[kind] ?? [] }),
+  )
   api.place.mockResolvedValue({
     placeId: 2578495, kind: 'STAY', name: '소노캄 거제', category: '콘도', grade: null, lat: 34.8433682, lng: 128.7029354,
     bookingUrl: 'https://www.yeogi.com/domestic-accommodations/6605', nearSpots: [],
@@ -295,7 +300,7 @@ describe('홈 — 거제9경 설명(2026-09-19)', () => {
   })
 })
 
-describe('홈 — 스팟 · 숙소 · 맛집 칩(2026-09-19)', () => {
+describe('홈 — 스팟 · 숙소 · 맛집 · 카페 칩(2026-09-19 · 카페는 09-20)', () => {
   function LocationProbe() {
     const location = useLocation()
     return <output data-testid="loc">{location.pathname + location.search}</output>
@@ -308,13 +313,32 @@ describe('홈 — 스팟 · 숙소 · 맛집 칩(2026-09-19)', () => {
       </MemoryRouter>,
     )
 
-  it('처음엔 「스팟」이 골라져 있고 맛집 · 숙소는 부르지 않는다', async () => {
+  it('처음엔 「스팟」이 골라져 있고 맛집 · 숙소 · 카페는 부르지 않는다', async () => {
     renderHome()
     await screen.findByRole('button', { name: '핀 학동몽돌해변' })
     const group = screen.getByRole('radiogroup', { name: '지도에 보일 곳' })
-    expect(within(group).getAllByRole('radio').map((r) => r.textContent)).toEqual(['관광지', '숙소', '맛집'])
+    expect(within(group).getAllByRole('radio').map((r) => r.textContent)).toEqual(['관광지', '숙소', '맛집', '카페'])
     expect(within(group).getByRole('radio', { name: '관광지' })).toHaveAttribute('aria-checked', 'true')
     expect(api.places).not.toHaveBeenCalled()
+  })
+
+  it('「카페」를 누르면 카페 핀만 남고 주소에 남는다 — 상세에서 뒤로 와도 그대로', async () => {
+    const user = userEvent.setup()
+    renderHome()
+    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
+
+    await user.click(screen.getByRole('radio', { name: '카페' }))
+
+    expect(await screen.findByRole('button', { name: '핀 심해' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '핀 학동몽돌해변' })).not.toBeInTheDocument()
+    expect(api.places).toHaveBeenCalledWith('CAFE')
+    expect(screen.getByTestId('loc')).toHaveTextContent('/?layer=cafe')
+  })
+
+  it('주소가 ?layer=cafe 면 카페가 골라진 채로 열린다 — 상세에서 뒤로 와도 그대로', async () => {
+    renderHome('/?layer=cafe')
+    expect(await screen.findByRole('button', { name: '핀 심해' })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: '카페' })).toHaveAttribute('aria-checked', 'true')
   })
 
   it('「숙소」를 누르면 숙소 핀과 고현터미널만 남고, 주소에 남는다', async () => {

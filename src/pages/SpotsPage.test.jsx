@@ -29,6 +29,14 @@ const STAY = [
     nearSpot: { poiId: 13, shortName: '포로수용소', distanceM: 2498 } },
 ]
 
+// 카페 7곳(2026-09-20) — 맛집과 같은 순위표 · 같은 카드 모양이다. 서버가 대표 메뉴를 category 로 준다.
+const CAFE = [
+  { placeId: 4070772, kind: 'CAFE', name: '씨야드', category: '씨야드라떼', imageUrl: null,
+    grade: null, restDay: '연중무휴', nearSpot: { poiId: 9, shortName: '거제식물원', distanceM: 334 } },
+  { placeId: 2783404, kind: 'CAFE', name: '심해', category: '아이스크림 라떼', imageUrl: null,
+    grade: null, restDay: '연중무휴', nearSpot: { poiId: 7, shortName: '매미성', distanceM: 191 } },
+]
+
 function Probe() {
   return <p>{`at ${useLocation().pathname}`}</p>
 }
@@ -48,17 +56,36 @@ function renderPage() {
 beforeEach(() => {
   vi.clearAllMocks()
   loadVisibleSpots.mockResolvedValue(SPOTS)
-  api.places.mockImplementation((kind) => Promise.resolve({ places: kind === 'FOOD' ? FOOD : STAY }))
+  api.places.mockImplementation((kind) =>
+    Promise.resolve({ places: { FOOD, STAY, CAFE }[kind] ?? [] }),
+  )
 })
 
-/** 2026-09-19 사용자 결정 — 맛집 12 · 숙소 7을 스팟 탭의 분류 칩 끝 「맛집」 「숙소」로 보여준다. */
-describe('스팟 탭 — 맛집 · 숙소 칩', () => {
-  it('분류 칩 끝에 「맛집」 「숙소」가 있고, 누르기 전에는 부르지 않는다', async () => {
+/** 2026-09-19 사용자 결정 — 맛집 13 · 숙소 7 · 카페 7(2026-09-20)을 스팟 탭의 분류 칩 끝으로 보여준다. */
+describe('스팟 탭 — 맛집 · 숙소 · 카페 칩', () => {
+  it('분류 칩 끝에 「맛집」 「숙소」 「카페」가 있고, 누르기 전에는 부르지 않는다', async () => {
     renderPage()
     const bar = await screen.findByRole('tablist', { name: '분류' })
     const names = within(bar).getAllByRole('tab').map((tab) => tab.textContent)
-    expect(names.slice(-2)).toEqual(['맛집', '숙소'])
+    expect(names.slice(-3)).toEqual(['맛집', '숙소', '카페'])
     expect(api.places).not.toHaveBeenCalled()
+  })
+
+  /* 카페는 맛집과 같은 카드다 — TourAPI 분류가 같은 음식점(39)이라 대표 메뉴 · 쉬는 날이 같은 자리에 온다.
+     가까운 스팟이 걸어갈 거리인 것이 카페를 넣은 이유다(씨야드 → 거제식물원 330m). */
+  it('「카페」를 누르면 인기순 카페 카드가 나오고, 대표 메뉴 · 가까운 스팟 · 쉬는 날을 말한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('tab', { name: '카페' }))
+
+    const cards = await screen.findAllByRole('button', { name: /씨야드|심해/ })
+    expect(cards.map((card) => card.querySelector('h3')?.textContent)).toEqual(['씨야드', '심해'])
+    expect(api.places).toHaveBeenCalledWith('CAFE')
+
+    const seayard = screen.getByRole('button', { name: /씨야드/ })
+    expect(seayard).toHaveTextContent('씨야드라떼')
+    expect(seayard).toHaveTextContent('거제식물원에서 직선 약 330m')
+    expect(seayard).toHaveTextContent('쉬는 날 연중무휴')
   })
 
   it('「맛집」을 누르면 서버 순서 그대로 맛집 카드가 나오고 스팟 카드는 사라진다', async () => {

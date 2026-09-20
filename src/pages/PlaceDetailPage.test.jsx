@@ -73,24 +73,22 @@ beforeEach(() => {
 })
 
 describe('맛집 · 숙소 상세 — 머리', () => {
-  it('이름 아래 한 줄: 숙소는 등급 · 종류와 읍면', async () => {
+  /* 읍면은 2026-09-20 에 뺐다(사용자) — 바로 아래 「위치」에 주소 전문이 있어 같은 말을 두 번 했다.
+     숙소 · 맛집 · 카페 모두 종류(또는 대표 메뉴)만 적는다. */
+  it('이름 아래 한 줄: 숙소는 종류 · 등급만 — 읍면을 붙이지 않는다', async () => {
     renderPage(913)
     expect(await screen.findByRole('heading', { level: 1, name: '소노캄 거제' })).toBeInTheDocument()
     expect(api.place).toHaveBeenCalledWith('913')
-    expect(screen.getByText('콘도 · 일운면')).toBeInTheDocument()
+    expect(screen.getByText('콘도')).toBeInTheDocument()
+    // 「위치」의 주소 줄에는 읍면이 그대로 있다 — 부제에만 없어야 한다
+    expect(screen.queryByText('콘도 · 일운면')).not.toBeInTheDocument()
   })
 
-  it('이름 아래 한 줄: 맛집은 대표 메뉴와 읍면 — 메뉴 줄을 따로 두지 않는다', async () => {
+  it('이름 아래 한 줄: 맛집은 대표 메뉴만 — 메뉴 줄을 따로 두지 않는다', async () => {
     renderPage(909)
     await screen.findByRole('heading', { level: 1 })
-    expect(screen.getByText('멸치쌈밥정식 A코스 · 일운면')).toBeInTheDocument()
+    expect(screen.getByText('멸치쌈밥정식 A코스')).toBeInTheDocument()
     expect(screen.getAllByText(/멸치쌈밥정식 A코스/)).toHaveLength(1)
-  })
-
-  it('주소에 읍면이 없으면(동 지역 도로명) 종류만 적는다', async () => {
-    api.place.mockResolvedValue({ ...STAY, detail: { ...STAY.detail, address: '경상남도 거제시 장평3로 80-37' } })
-    renderPage(913)
-    expect(await screen.findByText('콘도')).toBeInTheDocument()
   })
 
   it('숙소 — 체크인 · 체크아웃과 부대시설 칩(TourAPI 원문을 「/」로 나눈 것)', async () => {

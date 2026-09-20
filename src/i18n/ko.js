@@ -164,9 +164,12 @@ export default {
      위치는 동네 이름을 짓지 않고 **가까운 스팟과의 직선거리**로 말합니다(원문에 없는 이름을 만들지 않는다 — 절대규칙 1). */
   'places.chip.FOOD': '맛집',
   'places.chip.STAY': '숙소',
+  // 카페 7곳(2026-09-20 사용자 — 팀 의논). 맛집과 같은 순위표에서 같은 기준으로 골랐고 카드도 같은 모양입니다.
+  'places.chip.CAFE': '카페',
   'places.loading': '불러오는 중',
   'places.loadFailed.FOOD': '맛집을 불러오지 못했어요 — {error}',
   'places.loadFailed.STAY': '숙소를 불러오지 못했어요 — {error}',
+  'places.loadFailed.CAFE': '카페를 불러오지 못했어요 — {error}',
   // 타는 곳 카드의 「{place}에서 직선 약 {dist}」와 같은 말입니다(boarding.distance).
   'places.near': '{place}에서 직선 약 {dist}',
   'places.restDay': '쉬는 날 {day}',

@@ -47,8 +47,9 @@ function SpotCard({ spot, onOpen, tour }) {
   )
 }
 
-/* 맛집 · 숙소(2026-09-19 사용자 결정) — 분류 칩 끝의 두 칸. 스팟 분류가 아니라 시간표 탭 칩에는 넣지 않습니다. */
-const PLACE_KINDS = ['FOOD', 'STAY']
+/* 맛집 · 숙소(2026-09-19 사용자 결정) · 카페(2026-09-20) — 분류 칩 끝의 세 칸.
+   스팟 분류가 아니라 시간표 탭 칩에는 넣지 않습니다. 카페는 끝에 더합니다 — 앞의 둘은 이미 익은 자리입니다. */
+const PLACE_KINDS = ['FOOD', 'STAY', 'CAFE']
 const PLACE_CHIPS = PLACE_KINDS.map((key) => ({ key, label: t(`places.chip.${key}`) }))
 
 export default function SpotsPage() {
