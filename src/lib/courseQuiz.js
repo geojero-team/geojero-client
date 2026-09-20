@@ -93,9 +93,11 @@ function themeScorer(theme) {
  * 괄호 안은 2026-09-20 실측으로 그 선지가 점수를 줄 수 있는 코스 수입니다 — 0개가 되는 선지를 만들지 않으려고 적어 둡니다.
  */
 export const QUESTIONS = [
-  { id: 'scene', options: ['BEACH', 'VIEW', 'HISTORY', 'GARDEN'] }, // 19 · 33 · 19 · 5곳
-  { id: 'pace', options: ['easy', 'full', 'short'] }, // 16 · 17 · 11개 코스
-  { id: 'taste', options: ['nine', 'hidden', 'ferry', 'indoor'] }, // 5 · 13 · 1 · 20개 코스
+  { id: 'scene', options: ['BEACH', 'VIEW', 'HISTORY', 'GARDEN'], hint: true }, // 19 · 33 · 19 · 5곳
+  /* 2번 질문만 설명 줄이 없습니다(2026-09-20 사용자) — 「여유롭게 세 곳」이 이미 다 말합니다.
+     문구가 없는 키를 t() 로 부르면 키 이름이 그대로 화면에 나오므로 여기서 있고 없음을 정합니다. */
+  { id: 'pace', options: ['easy', 'full', 'short'], hint: false }, // 16 · 17 · 11개 코스
+  { id: 'taste', options: ['nine', 'hidden', 'ferry', 'indoor'], hint: true }, // 5 · 13 · 1 · 20개 코스
 ]
 
 /** 코스 하나의 성격 — 점수 계산이 보는 값 전부. 서버 응답에서 바로 셉니다(사람이 붙인 라벨이 없습니다). */

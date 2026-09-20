@@ -13,24 +13,44 @@ import { loadSpotPhotos, withPhotos } from '../lib/spots'
 import styles from './CourseQuizPage.module.css'
 
 /**
- * 성향으로 코스 찾기 — 질문 셋에 답하면 코스 하나를 골라 줍니다(2026-09-20 사용자). Figma 프레임 없음.
+ * 성향으로 코스 찾기 — 질문 셋에 답하면 33개 코스 중 맞는 것을 골라 줍니다(2026-09-20 사용자). Figma 프레임 없음.
  *
  * 코스 추천 목록(CoursesPage)과 나란히 있는 **다른 길**입니다. 목록은 이미 뭘 볼지 아는 사람이 고르는 곳이고,
  * 여기는 「거제 처음인데 뭘 봐야 하지」에 답하는 곳입니다. 그래서 목록을 대신하지 않고 목록 위에 입구만 둡니다.
+ * 화면 제목도 「코스 추천」으로 같습니다 — 같은 일을 다른 길로 하는 것이라 이름이 갈리면 다른 기능처럼 보입니다.
  *
  * 서버를 새로 만들지 않았습니다 — 점수에 필요한 값(분류 · 시간 · 9경 수 · 배)이 `/api/courses` 에 이미 다 옵니다.
- * 대표 10개가 아니라 **전량**을 받아 문구가 있는 코스(quizPool)에서 고릅니다. 10개만 보면 답 조합 48가지에
- * 코스가 10개뿐이라 무엇을 눌러도 같은 코스가 나옵니다.
+ * 대표 10개가 아니라 **전량**을 받아 문구가 있는 코스(quizPool)에서 고릅니다.
  *
- * 결과는 **하나만** 던지지 않습니다 — 1등 + 왜 골랐는지 + 다른 후보 둘입니다. 이유가 없으면 왜 이게 나왔는지
- * 알 수 없어 믿기 어렵고, 후보가 없으면 취향이 살짝 다를 때 되돌아갈 곳이 없습니다.
+ * 결과에서 고른 코스는 **코스 추천 목록과 같은 길**로 넘깁니다(2026-09-20 사용자) —
+ * 「코스 N개 선택하기」 → `/course-map?courses=…` → 지도에서 비교 → 코스 상세. 여기서만 곧장 상세로 보내면
+ * 같은 앱에 코스로 들어가는 길이 둘이 됩니다. 1등은 미리 골라 둡니다(가장 잘 맞는 코스라 그대로 넘기면 한 번 덜 누릅니다).
+ *
+ * 질문 화면 모양은 사용자가 준 참고 그림(personalizedreference.jpeg)을 따릅니다 —
+ * 회색 바탕 · 흰 카드 선지 · 오른쪽 체크 동그라미 · 큰 질문 제목. 색만 우리 파랑입니다.
+ * 고르면 **바로 다음 질문**으로 넘어갑니다(참고 그림의 「다음」 버튼은 두지 않았습니다) —
+ * 질문이 셋뿐이라 버튼을 두면 누르는 수가 세 번에서 여섯 번이 됩니다.
  */
 
 /** 질문에 답하는 중이면 그 번호(1~3), 다 답했으면 'result'. */
 const RESULT = 'result'
 
-/** 결과 카드 — 사진 · 제목 · 스팟 순서 · 이유. 목록 카드(CoursesPage)와 달리 고름 표시가 없습니다(고르는 화면이 아닙니다). */
-function ResultCard({ entry, photoUrl, onOpen, compact = false }) {
+/** 고름 표시 — 코스 추천 목록과 같은 32px 원(CoursesPage 의 Check 와 같은 모양). */
+function Check({ on }) {
+  return (
+    <span className={on ? `${styles.check} ${styles.checkOn}` : styles.check} aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M3.5 8.5L6.5 11.5L12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  )
+}
+
+/**
+ * 결과 카드 — 사진 · 제목 · 스팟 순서 · 고른 이유 · 고름 표시.
+ * 후보(compact)는 사진을 낮게 깔아 1등과 크기로 구분합니다 — 사진 자체는 셋 다 있습니다(2026-09-20 사용자).
+ */
+function ResultCard({ entry, photoUrl, selected, onToggle, compact = false }) {
   const { course, reasons } = entry
   const names = course.spots.map((spot) => spot.shortName)
   const title = courseTitle(course.title, names) ?? names[0]
@@ -38,22 +58,24 @@ function ResultCard({ entry, photoUrl, onOpen, compact = false }) {
   return (
     <button
       type="button"
-      className={compact ? `${styles.card} ${styles.cardCompact}` : styles.card}
-      onClick={() => onOpen(course.courseId)}
+      className={[styles.card, compact ? styles.cardCompact : '', selected ? styles.cardOn : ''].filter(Boolean).join(' ')}
+      onClick={() => onToggle(course.courseId)}
+      aria-pressed={selected}
       data-course={course.courseId}
     >
-      {!compact && (
-        <span className={styles.hero}>
-          {photoUrl ? (
-            /* alt="" — 장식입니다. 버튼 이름은 제목과 스팟 줄이 말합니다. */
-            <img className={styles.heroImg} src={photoUrl} alt="" />
-          ) : (
-            <span className={styles.noPhoto}>{t('courses.noPhoto')}</span>
-          )}
-        </span>
-      )}
+      <span className={styles.hero}>
+        {photoUrl ? (
+          /* alt="" — 장식입니다. 버튼 이름은 제목과 스팟 줄이 말합니다. */
+          <img className={styles.heroImg} src={photoUrl} alt="" />
+        ) : (
+          <span className={styles.noPhoto}>{t('courses.noPhoto')}</span>
+        )}
+      </span>
       <span className={styles.cardBody}>
-        <span className={styles.cardTitle}>{title}</span>
+        <span className={styles.titleRow}>
+          <span className={styles.cardTitle}>{title}</span>
+          <Check on={selected} />
+        </span>
         <span className={styles.chain}>{names.join(' → ')}</span>
         {/* 왜 이 코스인지 — 서버 값 그대로입니다(lib/courseQuiz). 점수가 0이면 이유가 없어 줄 자체를 그리지 않습니다. */}
         {reasons.length > 0 && (
@@ -76,6 +98,10 @@ export default function CourseQuizPage() {
   const [step, setStep] = useState(1)
   const [answers, setAnswers] = useState({})
   const [result, setResult] = useState({ status: 'loading', courses: [], error: '' })
+  /* 결과에서 고른 코스들. **null 이면 아직 손대지 않았다**는 뜻이고, 그때는 1등이 골라진 것으로 칩니다 —
+     가장 잘 맞는 코스라 그대로 넘기려는 사람이 한 번 덜 누릅니다. 효과로 넣지 않습니다(고름을 뗀 순간
+     효과가 다시 넣어 버립니다). 답을 바꾸면(다시 찾아보기) 다시 null 입니다. */
+  const [picked, setPicked] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -108,6 +134,12 @@ export default function CourseQuizPage() {
     else navigate('/courses', { replace: true })
   }
 
+  const ranked = step === RESULT ? rankCourses(result.courses, answers) : []
+  const [best, ...rest] = ranked
+  const others = rest.slice(0, 2)
+  // 사진은 보이는 카드 순서대로 정합니다 — 1등과 후보가 같은 사진을 쓰지 않게(목록 카드와 같은 규칙).
+  const photos = heroPhotos(ranked.slice(0, 3).map((entry) => entry.course))
+
   const pick = (questionId, optionId) => {
     setAnswers((prev) => ({ ...prev, [questionId]: optionId }))
     setStep((prev) => (prev >= QUESTIONS.length ? RESULT : prev + 1))
@@ -115,14 +147,24 @@ export default function CourseQuizPage() {
 
   const restart = () => {
     setAnswers({})
+    setPicked(null)
     setStep(1)
   }
 
-  const ranked = step === RESULT ? rankCourses(result.courses, answers) : []
-  const [best, ...rest] = ranked
-  const others = rest.slice(0, 2)
-  // 사진은 보이는 카드 순서대로 정합니다 — 1등과 후보가 같은 사진을 쓰지 않게(목록 카드와 같은 규칙).
-  const photos = heroPhotos(ranked.slice(0, 3).map((entry) => entry.course))
+  const selected = picked ?? new Set(best ? [best.course.courseId] : [])
+
+  const toggle = (courseId) => {
+    const next = new Set(selected)
+    if (next.has(courseId)) next.delete(courseId)
+    else next.add(courseId)
+    setPicked(next)
+  }
+
+  // 코스 추천 목록과 같은 길 — 고른 코스들을 지도로 넘깁니다. 순서는 누른 순서가 아니라 카드 순서입니다.
+  const openMap = () => {
+    const ids = ranked.filter((entry) => selected.has(entry.course.courseId)).map((entry) => entry.course.courseId)
+    navigate(`/course-map?courses=${ids.join(',')}`)
+  }
 
   const question = step === RESULT ? null : QUESTIONS[step - 1]
 
@@ -140,25 +182,34 @@ export default function CourseQuizPage() {
       </header>
 
       <div className={styles.scroll}>
-        <div className={styles.body}>
+        <div className={question ? `${styles.body} ${styles.bodyAsk}` : styles.body}>
           {result.status === 'error' ? (
             <p className={styles.notice}>{t('common.loadFailed', { error: result.error })}</p>
           ) : question ? (
             <>
               <h2 className={styles.question}>{t(`courseQuiz.q.${question.id}`)}</h2>
               <div className={styles.options}>
-                {question.options.map((optionId) => (
-                  <button
-                    key={optionId}
-                    type="button"
-                    className={answers[question.id] === optionId ? `${styles.option} ${styles.optionOn}` : styles.option}
-                    onClick={() => pick(question.id, optionId)}
-                    aria-pressed={answers[question.id] === optionId}
-                  >
-                    <span className={styles.optionLabel}>{t(`courseQuiz.opt.${question.id}.${optionId}`)}</span>
-                    <span className={styles.optionHint}>{t(`courseQuiz.hint.${question.id}.${optionId}`)}</span>
-                  </button>
-                ))}
+                {question.options.map((optionId) => {
+                  const on = answers[question.id] === optionId
+                  return (
+                    <button
+                      key={optionId}
+                      type="button"
+                      className={on ? `${styles.option} ${styles.optionOn}` : styles.option}
+                      onClick={() => pick(question.id, optionId)}
+                      aria-pressed={on}
+                    >
+                      <span className={styles.optionText}>
+                        <span className={styles.optionLabel}>{t(`courseQuiz.opt.${question.id}.${optionId}`)}</span>
+                        {/* 설명 줄이 없는 질문도 있습니다(2번 — QUESTIONS 의 hint). */}
+                        {question.hint && (
+                          <span className={styles.optionHint}>{t(`courseQuiz.hint.${question.id}.${optionId}`)}</span>
+                        )}
+                      </span>
+                      <Check on={on} />
+                    </button>
+                  )
+                })}
               </div>
             </>
           ) : result.status === 'loading' ? (
@@ -173,17 +224,20 @@ export default function CourseQuizPage() {
               <ResultCard
                 entry={best}
                 photoUrl={photos[0]}
-                onOpen={(courseId) => navigate(`/courses/${courseId}`)}
+                selected={selected.has(best.course.courseId)}
+                onToggle={toggle}
               />
               {others.length > 0 && (
                 <>
                   <p className={styles.othersTitle}>{t('courseQuiz.others')}</p>
                   <div className={styles.others}>
-                    {others.map((entry) => (
+                    {others.map((entry, i) => (
                       <ResultCard
                         key={entry.course.courseId}
                         entry={entry}
-                        onOpen={(courseId) => navigate(`/courses/${courseId}`)}
+                        photoUrl={photos[i + 1]}
+                        selected={selected.has(entry.course.courseId)}
+                        onToggle={toggle}
                         compact
                       />
                     ))}
@@ -198,9 +252,10 @@ export default function CourseQuizPage() {
         </div>
       </div>
 
-      {step === RESULT && best && (
+      {/* 하단 고정 바 — 코스 추천 목록과 같은 버튼 · 같은 말(2026-09-20 사용자). 0개면 바 자체가 없습니다. */}
+      {step === RESULT && selected.size > 0 && (
         <div className={styles.bar}>
-          <Button onClick={() => navigate(`/courses/${best.course.courseId}`)}>{t('courseQuiz.open')}</Button>
+          <Button onClick={openMap}>{t('courses.selectN', { count: selected.size })}</Button>
         </div>
       )}
     </Screen>

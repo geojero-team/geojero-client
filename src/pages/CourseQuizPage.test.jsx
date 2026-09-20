@@ -99,7 +99,7 @@ describe('성향으로 코스 찾기(2026-09-20)', () => {
     renderQuiz()
 
     // 1번 질문 — 몇 번째인지 보입니다.
-    expect(await screen.findByText('어떤 풍경을 보고 싶어요?')).toBeInTheDocument()
+    expect(await screen.findByText('어떤 풍경을 보고싶으세요?')).toBeInTheDocument()
     expect(screen.getByText('1 / 3')).toBeInTheDocument()
 
     await answer(user, '바다·해변', '여유롭게 세 곳', '덜 붐비는 곳')
@@ -115,7 +115,7 @@ describe('성향으로 코스 찾기(2026-09-20)', () => {
   it('대표 코스 밖이어도 고르고, 제목 · 소개가 없는 코스는 후보에서 뺀다', async () => {
     const user = userEvent.setup()
     renderQuiz()
-    await screen.findByText('어떤 풍경을 보고 싶어요?')
+    await screen.findByText('어떤 풍경을 보고싶으세요?')
 
     // 바다 세 곳인 3-07 이 점수로는 1등이지만 문구가 없어 빠지고, 문구가 있는 3-01 이 남습니다.
     await answer(user, '바다·해변', '이동이 짧은 쪽', '덜 붐비는 곳')
@@ -127,45 +127,67 @@ describe('성향으로 코스 찾기(2026-09-20)', () => {
   it('1등 말고 다른 후보 둘을 함께 보여준다', async () => {
     const user = userEvent.setup()
     renderQuiz()
-    await screen.findByText('어떤 풍경을 보고 싶어요?')
+    await screen.findByText('어떤 풍경을 보고싶으세요?')
     await answer(user, '전망·명소', '여유롭게 세 곳', '거제 9경 위주')
 
     expect(await screen.findByText('남쪽 바다를 내려다보며')).toBeInTheDocument()
-    expect(screen.getByText('이런 코스도 맞아요')).toBeInTheDocument()
+    expect(screen.getByText('이런 코스는 어떠세요?')).toBeInTheDocument()
     expect(screen.getByText('초록 사이를 걷는 하루')).toBeInTheDocument()
   })
 
-  it('결과에서 코스를 누르면 코스 상세로 간다', async () => {
+  /* 결과에서 고른 코스는 코스 추천 목록과 **같은 길**로 갑니다(2026-09-20 사용자) —
+     지도에서 비교한 뒤 상세로. 여기서만 곧장 상세로 보내면 코스로 들어가는 길이 둘이 됩니다. */
+  it('1등이 미리 골라져 있고, 「코스 N개 선택하기」를 누르면 코스 지도로 간다', async () => {
     const user = userEvent.setup()
     renderQuiz()
-    await screen.findByText('어떤 풍경을 보고 싶어요?')
+    await screen.findByText('어떤 풍경을 보고싶으세요?')
+    await answer(user, '정원·숲', '여유롭게 세 곳', '덜 붐비는 곳')
+
+    await user.click(await screen.findByRole('button', { name: '코스 1개 선택하기' }))
+    expect(screen.getByText('다른 화면 /course-map')).toBeInTheDocument()
+  })
+
+  it('후보도 같이 고르면 둘 다 지도로 넘긴다 — 목록에서 여러 개 고르던 것과 같다', async () => {
+    const user = userEvent.setup()
+    renderQuiz()
+    await screen.findByText('어떤 풍경을 보고싶으세요?')
+    await answer(user, '전망·명소', '여유롭게 세 곳', '거제 9경 위주')
+
+    await user.click(await screen.findByRole('button', { name: /초록 사이를 걷는 하루/ }))
+    expect(await screen.findByRole('button', { name: '코스 2개 선택하기' })).toBeInTheDocument()
+  })
+
+  it('고른 코스를 모두 떼면 아래 버튼이 사라진다 — 0개로 지도에 가지 않게', async () => {
+    const user = userEvent.setup()
+    renderQuiz()
+    await screen.findByText('어떤 풍경을 보고싶으세요?')
     await answer(user, '정원·숲', '여유롭게 세 곳', '덜 붐비는 곳')
 
     await user.click(await screen.findByRole('button', { name: /초록 사이를 걷는 하루/ }))
-    expect(screen.getByText('다른 화면 /courses/103')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /선택하기/ })).not.toBeInTheDocument()
   })
 
   it('뒤로는 앞 질문으로 돌아가고, 고른 답이 그대로 남는다', async () => {
     const user = userEvent.setup()
     renderQuiz()
-    await screen.findByText('어떤 풍경을 보고 싶어요?')
+    await screen.findByText('어떤 풍경을 보고싶으세요?')
     await answer(user, '바다·해변')
 
-    expect(await screen.findByText('하루를 어떻게 보내고 싶어요?')).toBeInTheDocument()
+    expect(await screen.findByText('하루를 어떻게 보내고 싶으세요?')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '뒤로' }))
 
-    expect(await screen.findByText('어떤 풍경을 보고 싶어요?')).toBeInTheDocument()
+    expect(await screen.findByText('어떤 풍경을 보고싶으세요?')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /바다·해변/ })).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('다시 답해 보기를 누르면 첫 질문으로', async () => {
     const user = userEvent.setup()
     renderQuiz()
-    await screen.findByText('어떤 풍경을 보고 싶어요?')
+    await screen.findByText('어떤 풍경을 보고싶으세요?')
     await answer(user, '바다·해변', '여유롭게 세 곳', '덜 붐비는 곳')
 
-    await user.click(await screen.findByRole('button', { name: '다시 답해 보기' }))
-    expect(await screen.findByText('어떤 풍경을 보고 싶어요?')).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: '다시 찾아보기' }))
+    expect(await screen.findByText('어떤 풍경을 보고싶으세요?')).toBeInTheDocument()
     expect(screen.getByText('1 / 3')).toBeInTheDocument()
   })
 
@@ -175,6 +197,6 @@ describe('성향으로 코스 찾기(2026-09-20)', () => {
     renderQuiz()
 
     expect(await screen.findByText(/500/)).toBeInTheDocument()
-    expect(screen.queryByText('어떤 풍경을 보고 싶어요?')).not.toBeInTheDocument()
+    expect(screen.queryByText('어떤 풍경을 보고싶으세요?')).not.toBeInTheDocument()
   })
 })

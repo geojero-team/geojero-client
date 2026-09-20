@@ -618,33 +618,37 @@ export default {
      선지는 **한 줄 이름 + 한 줄 설명**입니다 — 「여유롭게 세 곳」만으로는 무엇이 여유로운지 안 보입니다. */
   'courseQuiz.entry': '성향으로 코스 찾기',
   'courseQuiz.entryHint': '질문 세 개에 답하면 맞는 코스를 골라 드려요',
-  'courseQuiz.title': '성향으로 찾기',
+  // 화면 제목은 코스 추천과 **같은 말**입니다(2026-09-20 사용자) — 목록에서 들어온 같은 일이라 이름이 갈리면 다른 기능처럼 보입니다.
+  'courseQuiz.title': '코스 추천',
   'courseQuiz.step': '{n} / {total}',
   'courseQuiz.prev': '이전 질문',
 
-  'courseQuiz.q.scene': '어떤 풍경을 보고 싶어요?',
+  'courseQuiz.q.scene': '어떤 풍경을 보고싶으세요?',
   'courseQuiz.opt.scene.BEACH': '바다·해변',
-  'courseQuiz.hint.scene.BEACH': '몽돌 소리를 들으며 걸어요',
+  /* 바다와 전망이 겹치지 않게 갈랐습니다(2026-09-20 사용자) — 전에는 「몽돌 소리를 들으며」와 「탁 트인 바다를 내려다봐요」라
+     둘 다 바다 이야기였고, 몽돌은 학동에만 있는 말이라 너무 좁았습니다. 바다는 **곁에서 걷는 곳**, 전망은 **위에서 보는 곳**입니다. */
+  'courseQuiz.hint.scene.BEACH': '바닷가를 따라 걸어요',
   'courseQuiz.opt.scene.VIEW': '전망·명소',
-  'courseQuiz.hint.scene.VIEW': '탁 트인 바다를 내려다봐요',
+  'courseQuiz.hint.scene.VIEW': '높은 곳에서 내려다봐요',
   'courseQuiz.opt.scene.HISTORY': '역사·문화',
   'courseQuiz.hint.scene.HISTORY': '거제의 이야기를 따라가요',
   'courseQuiz.opt.scene.GARDEN': '정원·숲',
   'courseQuiz.hint.scene.GARDEN': '초록 사이를 천천히 걸어요',
 
-  'courseQuiz.q.pace': '하루를 어떻게 보내고 싶어요?',
+  /* 2번 질문은 **선지 이름만** 둡니다(2026-09-20 사용자) — 「여유롭게 세 곳」이 이미 다 말해서 설명 줄이 군더더기였습니다.
+     화면은 설명이 없는 선지를 그대로 그립니다(hint 키가 없으면 줄을 만들지 않습니다). */
+  'courseQuiz.q.pace': '하루를 어떻게 보내고 싶으세요?',
   'courseQuiz.opt.pace.easy': '여유롭게 세 곳',
-  'courseQuiz.hint.pace.easy': '한 곳에 오래 머물러요',
   'courseQuiz.opt.pace.full': '알차게 네다섯 곳',
-  'courseQuiz.hint.pace.full': '하루를 가득 채워요',
   'courseQuiz.opt.pace.short': '이동이 짧은 쪽',
-  'courseQuiz.hint.pace.short': '버스에 덜 앉아 있어요',
 
-  'courseQuiz.q.taste': '어느 쪽이 더 끌려요?',
+  'courseQuiz.q.taste': '어느 쪽이 더 끌리세요?',
   'courseQuiz.opt.taste.nine': '거제 9경 위주',
   'courseQuiz.hint.taste.nine': '이름난 곳부터 보고 싶어요',
   'courseQuiz.opt.taste.hidden': '덜 붐비는 곳',
-  'courseQuiz.hint.taste.hidden': '한적하게 둘러보고 싶어요',
+  /* 무엇을 「덜 붐비는」으로 보는지 기준을 적습니다(2026-09-20 사용자가 물음) — 사람 수를 세는 데이터가 없어
+     **거제 9경이 몇 곳인지**로 봅니다. 9경은 거제시가 뽑은 대표 경관이라 사람이 가장 많이 가는 곳입니다. */
+  'courseQuiz.hint.taste.hidden': '9경이 없거나 한 곳뿐인 코스로',
   'courseQuiz.opt.taste.ferry': '배 타고 섬까지',
   'courseQuiz.hint.taste.ferry': '유람선을 타고 외도에 가요',
   'courseQuiz.opt.taste.indoor': '실내 위주',
@@ -664,9 +668,8 @@ export default {
 
   'courseQuiz.resultTitle': '이 코스가 가장 잘 맞아요',
   'courseQuiz.why': '고른 이유',
-  'courseQuiz.others': '이런 코스도 맞아요',
-  'courseQuiz.open': '코스 자세히 보기',
-  'courseQuiz.again': '다시 답해 보기',
+  'courseQuiz.others': '이런 코스는 어떠세요?',
+  'courseQuiz.again': '다시 찾아보기',
   // 답이 모두 안 맞아 점수가 0인 코스뿐일 때 — 그래도 가장 가까운 코스를 보여주고 이 줄을 덧붙입니다.
   'courseQuiz.weakMatch': '딱 맞는 코스는 없어서 가장 가까운 코스를 골랐어요',
 
