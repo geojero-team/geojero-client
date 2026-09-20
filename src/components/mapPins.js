@@ -11,6 +11,13 @@ import styles from './MapView.module.css'
 /** 라벨 사이 최소 간격(px). 이보다 가까우면 뒤 순위 라벨을 숨깁니다. */
 const LABEL_GAP = 4
 
+/** 이름표를 놓아 볼 높이 — 마커 가운데부터 위아래로. 마커(28) 안에 이름표(18)가 남는 ±12 까지만 밉니다. */
+const LABEL_NUDGES = [0, 12, -12]
+
+/** 이름표가 동그란 핀에 이만큼까지 물려도 놓습니다. 원의 가장자리 3px 은 테두리 선이라 이름표 흰 면에 가려도 티가 안 납니다 —
+    이 3px 때문에 이름이 반대쪽으로 넘어가거나(공곶이·내도) 통째로 사라졌습니다(거제식물원, 2026-09-20 실측). */
+const MARKER_TOUCH = 3
+
 /**
  * 마커 기하 — Figma 285:208 실측.
  * SpotMarker·StopMarker 모두 28×28이고 **원의 중심이 지리 좌표**입니다
@@ -301,13 +308,21 @@ export function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
 
   // 4) 마커가 이름표보다 먼저 자리를 차지합니다. 이름표가 남의 마커에 걸치면 둘 다
   //    못 읽습니다. 숨긴 마커는 자리를 차지하지 않습니다 — 그리지 않으니까요.
+  //
+  //    스팟 핀은 **동그라미**라 네모로 재면 빈 모서리까지 막힌 것으로 셉니다 — 그 3~5px 때문에
+  //    9경 이름표가 통째로 사라졌습니다(2026-09-20 실측: 거제식물원 · 외도보타니아 · 바람의언덕).
+  //    그래서 원은 원으로 잽니다. 숙소 · 맛집 사진 액자는 진짜 네모라 그대로 네모로 잽니다.
   const halfW = (pin) => sizeOf(pin).width / 2
   const halfH = (pin) => sizeOf(pin).height / 2
   const occupied = []
   heads.forEach(({ pin }) => {
     const point = points.get(pin.spotId)
+    const round = sizeOf(pin).width === MARKER_SIZE && sizeOf(pin).height === MARKER_SIZE
     occupied.push({
       owner: pin.spotId,
+      nine: pin.isNineScenic,
+      kind: 'marker',
+      circle: round ? { cx: point.x, cy: point.y, r: MARKER_SIZE / 2 } : null,
       left: point.x - halfW(pin),
       right: point.x + halfW(pin),
       top: point.y - halfH(pin),
@@ -333,21 +348,41 @@ export function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
       bottom: boxTop + LABEL_HEIGHT,
     })
 
-    const right = boxAt(markerLeft + halfW(pin) * 2 + (LABEL_RIGHT_GAP - MARKER_SIZE))
-    const left = boxAt(markerLeft - LABEL_LEFT_GAP - width)
+    /* 오른쪽 · 왼쪽을 **위아래로 조금 밀어 가며** 찾습니다(2026-09-20 사용자 — 「9경 이름이 다 떴으면」).
+       가운데 높이 하나만 보면 몇 px 차이로 막혀 이름이 통째로 사라졌습니다. 실측(홈 8km · 390 폭):
+       거제식물원은 거제씨월드 핀과 5px, 공곶이·내도는 지심도 핀과 2px, 외도보타니아는 공곶이·내도 핀과 1px.
+       12px 밀면 그 옆을 비켜 가고, 이름표(18)가 마커(28) 높이 안에 남아 어느 핀의 이름인지도 흐려지지 않습니다.
+       오른쪽을 다 해 보고 왼쪽으로 갑니다 — 사용자가 공곶이 · 외도를 오른쪽에 두고 싶다고 했고,
+       Figma 기본도 오른쪽입니다. */
+    const rightX = markerLeft + halfW(pin) * 2 + (LABEL_RIGHT_GAP - MARKER_SIZE)
+    const leftX = markerLeft - LABEL_LEFT_GAP - width
+    const nudged = (x, side) => LABEL_NUDGES.map((dy) => ({ box: boxAt(x, top + dy), side, dy }))
+    // 아래 배치(고현터미널)는 CSS 가 자리를 잡습니다(.pinLabelBelow) — 여기서 또 밀면 두 번 내려갑니다.
     const below = pin.isTerminal
-      ? boxAt(point.x - width / 2, point.y + halfH(pin) + LABEL_BELOW_GAP)
-      : null
-    const candidates = below ? [below, right, left] : [right, left]
+      ? [{ box: boxAt(point.x - width / 2, point.y + halfH(pin) + LABEL_BELOW_GAP), side: 'below', dy: 0 }]
+      : []
+    const candidates = [...below, ...nudged(rightX, 'right'), ...nudged(leftX, 'left')]
 
-    const fits = (box) =>
+    /* 이름표끼리는 LABEL_GAP 을 띄웁니다 — 두 이름이 붙어 있으면 어디서 끊기는지 안 읽힙니다.
+       마커와는 **닿기만 안 하면** 됩니다(gap 0). 원은 중심까지의 거리로 잽니다. */
+    const hits = (box, other) => {
+      if (other.circle) {
+        const nearestX = Math.min(Math.max(other.circle.cx, box.left), box.right)
+        const nearestY = Math.min(Math.max(other.circle.cy, box.top), box.bottom)
+        return Math.hypot(other.circle.cx - nearestX, other.circle.cy - nearestY) < other.circle.r - MARKER_TOUCH
+      }
+      const gap = other.kind === 'marker' ? 0 : LABEL_GAP
+      return (
+        box.left < other.right + gap &&
+        box.right + gap > other.left &&
+        box.top < other.bottom + gap &&
+        box.bottom + gap > other.top
+      )
+    }
+
+    const fits = (box, { onlyNine = false } = {}) =>
       !occupied.some(
-        (other) =>
-          other.owner !== pin.spotId &&
-          box.left < other.right + LABEL_GAP &&
-          box.right + LABEL_GAP > other.left &&
-          box.top < other.bottom + LABEL_GAP &&
-          box.bottom + LABEL_GAP > other.top,
+        (other) => other.owner !== pin.spotId && (!onlyNine || other.nine) && hits(box, other),
       )
 
     const within = (box) =>
@@ -359,14 +394,27 @@ export function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
     // (터미널은 아래 →) 오른쪽 → 왼쪽 순으로 시도합니다.
     // 방금 탭한 스팟의 이름표는 자리가 없어도 보여줍니다. 숨겨버리면
     // "내가 뭘 눌렀는지"가 사라집니다. 나머지가 이걸 피해 가면 됩니다.
+    /* 9경은 홈에서 「이 아홉 곳을 보라」고 짚어 주는 곳이라 이름이 하나라도 빠지면 안 됩니다(2026-09-20 사용자).
+       빈 자리가 없으면 **9경이 아닌 핀 · 이름표 위로** 올라갑니다 — 9경끼리는 절대 겹치지 않습니다.
+       이름표 면이 92% 흰 바탕이라 아래 핀이 비쳐 보이고, 그 핀은 조금 당기면 다시 온전히 드러납니다. */
     const placement =
-      candidates.find((box) => within(box) && fits(box)) ??
-      (pin.spotId === selectedId ? (candidates.find(within) ?? candidates[candidates.length - 1]) : null)
+      candidates.find(({ box }) => within(box) && fits(box)) ??
+      (pin.isNineScenic
+        ? candidates.find(({ box }) => within(box) && fits(box, { onlyNine: true }))
+        : null) ??
+      (pin.spotId === selectedId
+        ? (candidates.find(({ box }) => within(box)) ?? candidates[candidates.length - 1])
+        : null)
 
-    pin.label.classList.toggle(styles.pinLabelLeft, placement === left)
-    pin.label.classList.toggle(styles.pinLabelBelow, placement != null && placement === below)
+    pin.label.classList.toggle(styles.pinLabelLeft, placement?.side === 'left')
+    pin.label.classList.toggle(styles.pinLabelBelow, placement?.side === 'below')
+    /* 위아래로 민 만큼 실제로 옮깁니다 — 잰 자리와 그린 자리가 어긋나면 이름표끼리 겹칩니다.
+       아래 배치는 CSS 가 translateX(-50%) 를 쓰므로 건드리지 않습니다(덮어쓰면 가운데 정렬이 풀립니다). */
+    pin.label.style.transform = placement?.dy ? `translateY(${placement.dy}px)` : ''
     pin.label.style.opacity = placement ? '1' : '0'
     pin.label.style.pointerEvents = placement ? '' : 'none'
-    if (placement) occupied.push({ ...placement, owner: pin.spotId })
+    if (placement) {
+      occupied.push({ ...placement.box, owner: pin.spotId, nine: pin.isNineScenic, kind: 'label' })
+    }
   })
 }

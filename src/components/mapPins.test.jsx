@@ -163,12 +163,13 @@ function fakeMap(width = 390, height = 780) {
 }
 
 function pinAt(spot, x, y, labelWidth) {
-  const { element, label, badge, isTerminal, size, framed } = createPinElement(spot, { order: null })
+  const { element, label, badge, isTerminal, isNineScenic, size, framed } = createPinElement(spot, { order: null })
   Object.defineProperty(label, 'offsetWidth', { value: labelWidth })
   return {
     spotId: spot.spotId,
     isStop: false,
     isTerminal,
+    isNineScenic,
     size,
     framed,
     element,
@@ -215,5 +216,54 @@ describe('고현터미널 이름표 — 마커 아래 가운데(Figma: 마커 �
     updateLabelVisibility(fakeMap(), [spot], null, 16)
     expect(spot.label.classList.contains(styles.pinLabelBelow)).toBe(false)
     expect(spot.label.style.opacity).toBe('1')
+  })
+})
+
+
+/* 이름표 자리 찾기(2026-09-20 사용자 — 「9경은 이름이 다 떴으면」).
+   홈 8km 에서 9경 넷(거제식물원 · 외도보타니아 · 공곶이·내도 · 바람의언덕)의 이름이 통째로 사라졌습니다.
+   재 보니 옆 핀과 1~5px 스치는 것이 원인이었고, 그나마도 **동그란 핀을 네모로 재서** 생긴 빈 모서리였습니다. */
+const NINE = { ...SPOT, spotId: 61, shortName: '거제식물원', nineScenic: 5 }
+
+describe('이름표 자리 — 동그란 핀은 동그라미로 잰다', () => {
+  it('옆 핀의 네모에는 걸쳐도 원에 닿지 않으면 이름표를 그대로 둔다', () => {
+    const pin = pinAt({ ...SPOT, spotId: 71 }, 100, 100, 60)
+    // (185,118) 핀의 네모(171~199 · 104~132)는 이름표 오른쪽 자리(116~176 · 91~109)와 겹치지만,
+    // 원까지의 거리는 12.7px 이라 닿지 않습니다.
+    const corner = pinAt({ ...SPOT, spotId: 72 }, 185, 118, 40)
+    updateLabelVisibility(fakeMap(), [pin, corner], null, 16)
+
+    expect(pin.label.style.opacity).toBe('1')
+    expect(pin.label.classList.contains(styles.pinLabelLeft)).toBe(false)
+  })
+
+  it('오른쪽이 막히면 12px 밀어서 놓는다 — 자리 하나만 보고 이름을 지우지 않는다', () => {
+    const pin = pinAt({ ...SPOT, spotId: 73 }, 100, 100, 60)
+    const right = pinAt({ ...SPOT, spotId: 74 }, 185, 88, 40) // 오른쪽 가운데 자리를 막는다
+    const left = pinAt({ ...SPOT, spotId: 75 }, 14, 100, 40) // 왼쪽 자리도 막는다
+    updateLabelVisibility(fakeMap(), [pin, right, left], null, 16)
+
+    expect(pin.label.style.opacity).toBe('1')
+    expect(pin.label.style.transform).toBe('translateY(12px)')
+  })
+})
+
+describe('이름표 자리 — 9경은 이름을 끝까지 남긴다', () => {
+  it('빈 자리가 없으면 9경 아닌 핀 위로 올라간다', () => {
+    const nine = pinAt(NINE, 100, 100, 60)
+    const blockRight = pinAt({ ...SPOT, spotId: 76 }, 146, 100, 40)
+    const blockLeft = pinAt({ ...SPOT, spotId: 77 }, 52, 100, 40)
+    updateLabelVisibility(fakeMap(), [nine, blockRight, blockLeft], null, 16)
+
+    expect(nine.label.style.opacity).toBe('1')
+  })
+
+  it('9경끼리는 겹치지 않는다 — 막은 쪽도 9경이면 이름표를 숨긴다', () => {
+    const nine = pinAt(NINE, 100, 100, 60)
+    const otherNine = pinAt({ ...NINE, spotId: 78, shortName: '매미성' }, 146, 100, 40)
+    const blockLeft = pinAt({ ...NINE, spotId: 79, shortName: '해금강' }, 52, 100, 40)
+    updateLabelVisibility(fakeMap(), [nine, otherNine, blockLeft], null, 16)
+
+    expect(nine.label.style.opacity).toBe('0')
   })
 })
