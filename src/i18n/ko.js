@@ -173,6 +173,14 @@ export default {
   // 타는 곳 카드의 「{place}에서 직선 약 {dist}」와 같은 말입니다(boarding.distance).
   'places.near': '{place}에서 직선 약 {dist}',
   'places.restDay': '쉬는 날 {day}',
+
+  /* 거제 9미 배지(2026-09-20 — 기준문서 §6). 9경은 **장소**라 스팟에 붙지만 9미는 **음식**입니다.
+     거제시가 식당을 지정하지 않아 어느 맛집이 어느 미인지는 서버가 줍니다(`nineTasteNos`, V47).
+     배지 글자는 짧은 이름 하나입니다 — 어느 음식인지는 상세에서만 이어 적습니다(코스재설계 §5-2 배지 원칙).
+     음식 아홉 가지의 이름은 거제시가 정한 데이터라 여기 두지 않습니다 — `lib/nineTastes.js` 입니다.
+     ⚠️ 「거제 9미란?」 설명 화면은 사용자가 나중에 따로 만듭니다(2026-09-20) — 여는 줄을 두지 않았습니다. */
+  'nineTaste.badge': '거제 9미',
+  'nineTaste.badgeAria': '거제 9미 — {names}',
   'placeDetail.loadFailed': '불러오지 못했어요 — {error}',
   'placeDetail.fallback': '{reason} · {time} 확인 — 기본 정보만 보여드려요',
   'placeDetail.checkInOut': '체크인 {in} · 체크아웃 {out}',

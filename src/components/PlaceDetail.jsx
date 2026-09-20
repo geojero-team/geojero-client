@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronLeft, Clock, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import NineTasteBadge from './NineTasteBadge'
 import PlaceMap from './PlaceMap'
 import { PinIcon } from './SpotDetail'
 import { t } from '../i18n'
@@ -133,6 +134,8 @@ function PlaceBody({ place, onBack, onClose }) {
       <div className={styles.body}>
         <div className={styles.head}>
           <h1 className={styles.name}>{place.name}</h1>
+          {/* 거제 9미(2026-09-20) — 상세는 자리가 넓어 배지 옆에 어느 음식인지를 거제시 원문 이름 그대로 적습니다. */}
+          <NineTasteBadge place={place} withNames />
           {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
         </div>
 

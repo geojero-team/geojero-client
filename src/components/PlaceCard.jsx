@@ -1,3 +1,4 @@
+import NineTasteBadge from './NineTasteBadge'
 import { t } from '../i18n'
 import { formatDistance } from '../lib/format'
 import styles from './PlaceCard.module.css'
@@ -23,6 +24,9 @@ export default function PlaceCard({ place, onOpen }) {
         )}
       </div>
       <div className={styles.info}>
+        {/* 거제 9미(2026-09-20) — 이름 위 한 줄. 사진 위에 얹지 않습니다: 맛집 사진은 자르지 않아(contain)
+            비율에 따라 위아래에 여백이 생기고, 그러면 배지가 사진이 아니라 흰 여백에 떠 보입니다. */}
+        <NineTasteBadge place={place} />
         <h3 className={styles.name}>{place.name}</h3>
         {place.category && <p className={styles.headline}>{place.category}</p>}
         {near && (

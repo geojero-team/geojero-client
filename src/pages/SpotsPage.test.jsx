@@ -19,7 +19,8 @@ const FOOD = [
   { placeId: 901, kind: 'FOOD', name: '대박난맛집', category: '문어해물칼국수', imageUrl: 'https://tong.visitkorea.or.kr/a.jpg',
     grade: null, restDay: '연중무휴', nearSpot: { poiId: 4, shortName: '학동몽돌해변', distanceM: 429 } },
   { placeId: 909, kind: 'FOOD', name: '거제멸치쌈밥', category: '멸치쌈밥정식 A코스', imageUrl: null,
-    grade: null, restDay: '매월 두번째·네번째 수요일', nearSpot: { poiId: 20, shortName: '조선해양문화관', distanceM: 120 } },
+    grade: null, restDay: '매월 두번째·네번째 수요일', nearSpot: { poiId: 20, shortName: '조선해양문화관', distanceM: 120 },
+    nineTasteNos: [6] },
 ]
 
 const STAY = [
@@ -152,6 +153,31 @@ describe('스팟 탭 — 맛집 · 숙소 · 카페 칩', () => {
     // 실패가 다음 호출을 부르지 않는다(무한 재시도 금지)
     await new Promise((resolve) => setTimeout(resolve, 50))
     expect(api.places).toHaveBeenCalledTimes(1)
+  })
+
+  /**
+   * 거제 9미(2026-09-20 사용자 결정) — 근거는 서버 V47(거제시 9미 목록 × TourAPI 대표메뉴 · 가게 이름).
+   * 배지 글자는 「거제 9미」 하나다 — 어느 음식인지는 상세가 말한다(코스재설계 §5-2 배지 원칙).
+   * ⚠️ 「거제 9미란?」 **설명 화면은 나중에 따로 만든다**(사용자) — 목록에 그걸 여는 줄을 두지 않는다.
+   */
+  it('9미인 맛집 카드에만 「거제 9미」 배지가 붙는다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('tab', { name: '맛집' }))
+
+    const melchi = await screen.findByRole('button', { name: /거제멸치쌈밥/ })
+    expect(within(melchi).getByText('거제 9미')).toBeInTheDocument()
+    // 9미가 아닌 곳에는 붙지 않는다 — 원문이 9미라고 말하지 않는다
+    const daebak = screen.getByRole('button', { name: /대박난맛집/ })
+    expect(within(daebak).queryByText('거제 9미')).not.toBeInTheDocument()
+  })
+
+  it('9미를 설명하는 줄은 목록에 두지 않는다 — 설명 화면은 나중에 따로 만든다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('tab', { name: '맛집' }))
+    await screen.findByRole('button', { name: /대박난맛집/ })
+    expect(screen.queryByRole('button', { name: /거제 9미란/ })).not.toBeInTheDocument()
   })
 
   it('다시 분류 칩(전체)을 누르면 스팟 목록으로 돌아온다', async () => {

@@ -1,0 +1,29 @@
+/* 「거제 9미」 배지 — Figma 프레임 없음(2026-09-20). 모양은 지도 시트의 9경 배지(SpotSheet .nineBadge)와 같은 꼴이고
+   색만 주황입니다(9경 보라와 갈립니다 — tokens.css 「거제9미」). */
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  margin: 0;
+  min-width: 0;
+}
+
+.badge {
+  flex: none;
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--nine-taste-tint);
+  font: var(--type-label);
+  font-weight: 700;
+  color: var(--nine-taste-on-tint);
+}
+
+/* 상세에서만 나오는 음식 이름 — 거제시 원문 그대로입니다(「거제멸치쌈밥&회무침」). */
+.names {
+  min-width: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}

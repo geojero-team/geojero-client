@@ -16,6 +16,7 @@ vi.mock('../lib/spots', () => ({
 
 const FOOD = {
   placeId: 909, kind: 'FOOD', name: '거제멸치쌈밥', category: '멸치쌈밥정식 A코스', grade: null, lat: 34.827, lng: 128.705,
+  nineTasteNos: [6], // 거제 9미 6미 멸치쌈밥&회무침 (서버 V47)
   // 가까운 우리 스팟 — 5km 안에서 가까운 순으로 최대 3곳(서버가 TourAPI 좌표로 계산한다).
   nearSpots: [
     { poiId: 20, shortName: '조선해양문화관', distanceM: 120, lat: 34.8245, lng: 128.7044 },
@@ -89,6 +90,21 @@ describe('맛집 · 숙소 상세 — 머리', () => {
     await screen.findByRole('heading', { level: 1 })
     expect(screen.getByText('멸치쌈밥정식 A코스')).toBeInTheDocument()
     expect(screen.getAllByText(/멸치쌈밥정식 A코스/)).toHaveLength(1)
+  })
+
+  /** 거제 9미 배지(2026-09-20) — 배지 글자는 카드와 같은 「거제 9미」이고,
+   *  상세는 자리가 넓으니 어느 음식인지를 **거제시 원문 이름 그대로** 이어 적는다. */
+  it('9미인 맛집은 이름 아래에 「거제 9미」 배지와 음식 이름이 붙는다', async () => {
+    renderPage(909)
+    await screen.findByRole('heading', { level: 1 })
+    expect(screen.getByText('거제 9미')).toBeInTheDocument()
+    expect(screen.getByText('거제멸치쌈밥&회무침')).toBeInTheDocument()
+  })
+
+  it('9미가 아닌 숙소에는 배지가 없다', async () => {
+    renderPage(913)
+    await screen.findByRole('heading', { level: 1 })
+    expect(screen.queryByText('거제 9미')).not.toBeInTheDocument()
   })
 
   it('숙소 — 체크인 · 체크아웃과 부대시설 칩(TourAPI 원문을 「/」로 나눈 것)', async () => {
