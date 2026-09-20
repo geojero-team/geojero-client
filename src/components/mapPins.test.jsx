@@ -100,20 +100,25 @@ describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
     expect(iconPin.label.classList.contains(styles.pinLabelLeft)).toBe(false)
   })
 
-  it('액자끼리 4px 넘게 겹치면 「+1」로 묶는다 — 원(중심 16px · 12px 겹침 허용)보다 엄격하게, 액자 크기로 잰다', () => {
+  /* 액자끼리는 **1px 이라도 겹치면** 묶는다(2026-09-20 사용자 — 「보통 겹치면 +1로 표시되지 않나」).
+     전에는 4px 까지 봐줬는데, 운영에서 씨야드 ↔ 엄마의 바다가 세로 3px · 고현터미널 ↔ 하면옥이 1px 겹친 채로
+     둘 다 그려져 사진이 잘려 보였다. 사진은 조금만 가려도 무엇인지 알 수 없다. */
+  it('액자끼리 1px 이라도 겹치면 「+1」로 묶는다 — 원(중심 16px · 12px 겹침 허용)보다 엄격하게, 액자 크기로 잰다', () => {
     const a = pinAt({ ...STAY, spotId: 'place-a', thumbnailUrl: 'https://x/a.jpg' }, 200, 300, 40)
     const b = pinAt({ ...STAY, spotId: 'place-b', thumbnailUrl: 'https://x/b.jpg' }, 224, 305, 40)
     updateLabelVisibility(fakeMap(), [a, b], null, 16)
     expect(a.badge.textContent).toBe('+1')
     expect(b.element.style.display).toBe('none')
 
-    // 27px 떨어져 5px 겹치는 액자(폭 32) 둘도 묶는다 — 28px(4px 겹침)부터 따로 그린다
+    // 운영에서 잡은 자리 — 폭 32 액자 둘이 **세로로 3px** 겹친다(씨야드 ↔ 엄마의 바다). 전에는 그냥 그렸다
     const e = pinAt({ ...STAY, spotId: 'place-e', thumbnailUrl: 'https://x/e.jpg' }, 200, 300, 40)
-    const f = pinAt({ ...STAY, spotId: 'place-f', thumbnailUrl: 'https://x/f.jpg' }, 227, 300, 40)
+    const f = pinAt({ ...STAY, spotId: 'place-f', thumbnailUrl: 'https://x/f.jpg' }, 200, 319, 40)
     updateLabelVisibility(fakeMap(), [e, f], null, 16)
     expect(f.element.style.display).toBe('none')
+
+    // 딱 붙어 닿기만 하면(겹침 0) 따로 그린다 — 가린 것이 없다
     const g = pinAt({ ...STAY, spotId: 'place-g', thumbnailUrl: 'https://x/g.jpg' }, 200, 300, 40)
-    const h = pinAt({ ...STAY, spotId: 'place-h', thumbnailUrl: 'https://x/h.jpg' }, 228, 300, 40)
+    const h = pinAt({ ...STAY, spotId: 'place-h', thumbnailUrl: 'https://x/h.jpg' }, 232, 300, 40)
     updateLabelVisibility(fakeMap(), [g, h], null, 16)
     expect(h.element.style.display).toBe('')
 
@@ -123,6 +128,29 @@ describe('숙소 · 맛집 마커 — 홈 칩(2026-09-19)', () => {
     updateLabelVisibility(fakeMap(), [c, d], null, 16)
     expect(d.element.style.display).toBe('')
     expect(c.badge.hidden).toBe(true)
+  })
+
+  /* 원인지 액자인지를 **폭이 28인가**로 가르면 안 된다 — 사진 비율에 따라 액자 폭이 마침 28이 될 수 있다
+     (운영의 엄마의 바다가 28 × 22 다). 그러면 높이를 안 보고 중심거리만 재 잘못 판정한다. */
+  it('폭이 28인 액자도 액자로 잰다 — 원으로 오인하지 않는다', () => {
+    // 사진이 와서 폭이 28(원 지름과 같은 값)이 된 액자 둘. 운영의 엄마의 바다가 28 × 22 다.
+    const load = (pin, w, h) => {
+      const photo = pin.element.querySelector('img')
+      Object.defineProperty(photo, 'naturalWidth', { value: w })
+      Object.defineProperty(photo, 'naturalHeight', { value: h })
+      photo.dispatchEvent(new Event('load'))
+    }
+    const a = pinAt({ ...STAY, spotId: 'place-w1', thumbnailUrl: 'https://x/w1.jpg' }, 200, 300, 40)
+    const b = pinAt({ ...STAY, spotId: 'place-w2', thumbnailUrl: 'https://x/w2.jpg' }, 200, 320, 40)
+    load(a, 940, 705) // 4:3 → 19 × 1.333 = 25.3 → 25 + 테두리 3 = 28
+    load(b, 940, 705)
+    expect(a.size).toEqual({ width: 28, height: 22 })
+
+    // 세로로 20px 띄웠으니 액자(높이 22)끼리는 2px 겹친다 → 묶여야 한다.
+    // 폭으로 원이라고 잘못 보면 중심거리 20px > 16px 이라 안 묶인다.
+    updateLabelVisibility(fakeMap(), [a, b], null, 16)
+    expect(a.badge.textContent).toBe('+1')
+    expect(b.element.style.display).toBe('none')
   })
 })
 
@@ -135,13 +163,14 @@ function fakeMap(width = 390, height = 780) {
 }
 
 function pinAt(spot, x, y, labelWidth) {
-  const { element, label, badge, isTerminal, size } = createPinElement(spot, { order: null })
+  const { element, label, badge, isTerminal, size, framed } = createPinElement(spot, { order: null })
   Object.defineProperty(label, 'offsetWidth', { value: labelWidth })
   return {
     spotId: spot.spotId,
     isStop: false,
     isTerminal,
     size,
+    framed,
     element,
     label,
     badge,

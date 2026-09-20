@@ -194,7 +194,7 @@ export function createPinElement(spot, { order, onResize } = {}) {
   badge.hidden = true
 
   element.append(dot, label, badge)
-  return { element, label, badge, isTerminal, isNineScenic, size }
+  return { element, label, badge, isTerminal, isNineScenic, size, framed }
 }
 
 /**
@@ -253,18 +253,19 @@ export function updateLabelVisibility(map, pins, selectedId, topReserved = 0) {
   const heads = []
   const hidden = new Set()
   /* 원끼리는 중심 거리 16px 안이면 묶는다(위 CLUSTER_GAP — 원은 12px 겹쳐도 둘 다 읽히고 눌린다).
-     숙소 · 맛집 사진 액자(42 × 28)가 끼면 두 핀의 폭 · 높이로 재고, 겹침은 4px 까지만 둔다 — 사진은 조금만 겹쳐도
-     지저분하고 가려진 사진이 무엇인지 알 수 없다(운영 미리보기 · 지세포 맛집 둘이 7px 겹침). */
-  const OVERLAP_ALLOWED = 4
+     숙소 · 맛집 · 카페 사진 액자가 끼면 두 핀의 폭 · 높이로 재고, **1px 이라도 겹치면 묶는다** —
+     사진은 조금만 가려도 무엇인지 알 수 없다. 딱 붙어 닿기만 한 것(겹침 0)은 가린 게 없으니 따로 그린다.
+     ⚠️ 2026-09-20: 전에는 4px 까지 봐줬는데 운영에서 씨야드 ↔ 엄마의 바다가 세로 3px,
+     고현터미널 ↔ 하면옥이 1px 겹친 채 둘 다 그려졌다(사용자가 화면에서 잡았다).
+     ⚠️ 원인지 액자인지는 **`framed` 플래그**로 가른다 — 폭이 28인가로 보면 안 된다.
+     사진 비율에 따라 액자 폭이 마침 28이 될 수 있고(운영의 엄마의 바다가 28 × 22),
+     그러면 높이(22)를 안 보고 중심거리만 재 잘못 판정한다. `size` 는 원에도 있어서(28 × 28) 판별에 못 쓴다. */
+  const isCircle = (pin) => !pin.framed
   const tooClose = (a, p, b, q) => {
-    const aw = sizeOf(a).width
-    const bw = sizeOf(b).width
-    if (aw === MARKER_SIZE && bw === MARKER_SIZE) return Math.hypot(p.x - q.x, p.y - q.y) < CLUSTER_GAP
-    const ah = sizeOf(a).height
-    const bh = sizeOf(b).height
-    return (
-      Math.abs(p.x - q.x) < (aw + bw) / 2 - OVERLAP_ALLOWED && Math.abs(p.y - q.y) < (ah + bh) / 2 - OVERLAP_ALLOWED
-    )
+    if (isCircle(a) && isCircle(b)) return Math.hypot(p.x - q.x, p.y - q.y) < CLUSTER_GAP
+    const { width: aw, height: ah } = sizeOf(a)
+    const { width: bw, height: bh } = sizeOf(b)
+    return Math.abs(p.x - q.x) < (aw + bw) / 2 && Math.abs(p.y - q.y) < (ah + bh) / 2
   }
 
   ordered.forEach((pin) => {
