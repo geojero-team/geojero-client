@@ -324,16 +324,23 @@ export default function MapView({
     const selected = pinsRef.current.find((pin) => pin.spotId === selectedSpotId)
     if (!selected) return
 
-    /* 배율은 늘 8km(레벨 9)로 맞춥니다 — 사용자가 정한 값입니다.
-       ⚠️ **축을 고른 핀에 둡니다.** 기준점을 안 주면 카카오는 **지도 한가운데**를 축으로 확대하는데,
-       그 가운데는 섬 전체를 맞춰 둔 자리(레벨 10)라 고른 핀과 멉니다 — 첫 탭에서 엉뚱한 곳이 확대된 뒤에야
-       아래 panTo 로 미끄러져 왔습니다. 두 번째부터는 이미 레벨 9 라 확대가 생략돼 멀쩡해 보였습니다
-       (2026-09-22 사용자가 운영에서 잡음). 겹친 핀을 갈라 볼 때 쓰던 anchor 와 같은 방식입니다. */
     const position = selected.overlay.getPosition()
-    if (map.getLevel() !== SELECTED_LEVEL) map.setLevel(SELECTED_LEVEL, { animate: true, anchor: position })
-    /* 지도 칸은 시트가 올라오는 0.22초 동안 **천천히** 줄어듭니다. 그래서 여기서 한 번 보내는 것만으로는
-       카드가 다 올라온 뒤의 가운데가 아닙니다 — 칸이 줄 때마다 아래 ResizeObserver 가 다시 가운데로 보냅니다. */
-    map.panTo(position)
+
+    /* 배율은 늘 8km(레벨 9)로 맞춥니다 — 사용자가 정한 값입니다.
+       ⚠️ **애니메이션 확대는 뒤따르는 이동을 삼킵니다.** 확대하면서 `panTo` 를 부르면 그 이동이 묻히고,
+       시트가 올라오며 ResizeObserver 가 부르는 `setCenter` 까지 함께 묻힙니다 — 첫 탭에서 핀이
+       **누르기 전 자리 그대로** 남았습니다(2026-09-22 사용자: 「엉뚱한 곳으로 확대됨」, 운영 실측으로 확인).
+       두 번째부터 멀쩡해 보인 이유는 이미 레벨 9 라 확대가 통째로 생략돼 `panTo` 만 돌았기 때문입니다.
+       그래서 **확대할 때는 먼저 가운데를 옮기고 확대**합니다 — 확대가 그 자리에서 시작해 그 자리에서 끝납니다.
+       배율이 이미 맞으면 전처럼 미끄러져 갑니다(삼킬 확대가 없습니다). */
+    if (map.getLevel() !== SELECTED_LEVEL) {
+      map.setCenter(position)
+      map.setLevel(SELECTED_LEVEL, { animate: true })
+    } else {
+      /* 지도 칸은 시트가 올라오는 0.22초 동안 **천천히** 줄어듭니다. 그래서 여기서 한 번 보내는 것만으로는
+         카드가 다 올라온 뒤의 가운데가 아닙니다 — 칸이 줄 때마다 아래 ResizeObserver 가 다시 가운데로 보냅니다. */
+      map.panTo(position)
+    }
   }, [selectedSpotId, spots, phase, topReserved])
 
   const zoom = useCallback((delta) => {
