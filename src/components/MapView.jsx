@@ -324,11 +324,16 @@ export default function MapView({
     const selected = pinsRef.current.find((pin) => pin.spotId === selectedSpotId)
     if (!selected) return
 
-    /* 배율은 늘 8km(레벨 9)로 맞춥니다 — 사용자가 정한 값입니다. */
-    if (map.getLevel() !== SELECTED_LEVEL) map.setLevel(SELECTED_LEVEL, { animate: true })
+    /* 배율은 늘 8km(레벨 9)로 맞춥니다 — 사용자가 정한 값입니다.
+       ⚠️ **축을 고른 핀에 둡니다.** 기준점을 안 주면 카카오는 **지도 한가운데**를 축으로 확대하는데,
+       그 가운데는 섬 전체를 맞춰 둔 자리(레벨 10)라 고른 핀과 멉니다 — 첫 탭에서 엉뚱한 곳이 확대된 뒤에야
+       아래 panTo 로 미끄러져 왔습니다. 두 번째부터는 이미 레벨 9 라 확대가 생략돼 멀쩡해 보였습니다
+       (2026-09-22 사용자가 운영에서 잡음). 겹친 핀을 갈라 볼 때 쓰던 anchor 와 같은 방식입니다. */
+    const position = selected.overlay.getPosition()
+    if (map.getLevel() !== SELECTED_LEVEL) map.setLevel(SELECTED_LEVEL, { animate: true, anchor: position })
     /* 지도 칸은 시트가 올라오는 0.22초 동안 **천천히** 줄어듭니다. 그래서 여기서 한 번 보내는 것만으로는
        카드가 다 올라온 뒤의 가운데가 아닙니다 — 칸이 줄 때마다 아래 ResizeObserver 가 다시 가운데로 보냅니다. */
-    map.panTo(selected.overlay.getPosition())
+    map.panTo(position)
   }, [selectedSpotId, spots, phase, topReserved])
 
   const zoom = useCallback((delta) => {
