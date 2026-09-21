@@ -4,7 +4,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import Button from '../components/Button'
 import MapLayerChips from '../components/MapLayerChips'
-import GuideSheet from '../components/GuideSheet'
 import MapView from '../components/MapView'
 import MascotButton from '../components/MascotButton'
 import NineScenicSheet from '../components/NineScenicSheet'
@@ -16,7 +15,6 @@ import { t } from '../i18n'
 import { api } from '../lib/api'
 import { poiIdsByNineScenic } from '../lib/nineScenic'
 import { useSheetHistory } from '../lib/useSheetHistory'
-import { useTodayGeoje } from '../lib/useTodayGeoje'
 import styles from './HomePage.module.css'
 
 /**
@@ -42,11 +40,6 @@ import styles from './HomePage.module.css'
  *     숙소 · 맛집은 스팟처럼 핀 + 이름표 + 시트인데, 핀이 원이 아니라 **사진을 통째로 담는 사각 액자**입니다
  *     (공공누리 3유형이라 원으로 자르지 않는다 — mapPins). 사진이 없으면 원에 아이콘.
  *   · 「거제9경이란?」은 오른쪽 아래 **몽꾸**(거제시 캐릭터 — 사용 승인 받음)가 엽니다(MascotButton).
- *
- * 2026-09-21(사용자 결정, Figma 프레임 없음 — 디자인브리프 부록 M 「몽꾸 가이드」): 몽꾸가 **여행 가이드**가 됐습니다.
- *   · 말풍선(「안녕, 난 몽꾸야! / 거제는 나한테 물어봐」)을 누르면 **몽꾸 시트**(GuideSheet) — 「오늘의 거제」 카드 + 질문 셋.
- *   · 9경은 그 질문 하나가 됐고 흐름은 그대로입니다(시트를 닫고 설명 두 마디 → 목록 시트). 9미 · 고현터미널은 시트 안에서 답합니다.
- *   · 「오늘의 거제」 값은 시트를 열 때 받습니다(useTodayGeoje — 남부1 시간표 · 알림 · 외도 배 · 데이터 시점).
  */
 
 /** 주소의 칩 값 ↔ 칩. 스팟이 기본이라 주소에 적지 않습니다. */
@@ -63,16 +56,8 @@ export default function HomePage() {
   const [result, setResult] = useState({ status: 'loading', spots: [], error: '' })
   // 핀을 누른 스팟. 화면을 옮기지 않고 시트만 올립니다(2026-09-13).
   const [picked, setPicked] = useState(null)
-  // 몽꾸 시트(2026-09-21). 열려 있는 동안만 「오늘의 거제」를 받습니다.
-  const [guideOpen, setGuideOpen] = useState(false)
-  const today = useTodayGeoje(guideOpen)
-  /* 폰 뒤로가기는 시트부터 닫습니다(2026-09-20 — 전에는 시트를 건너뛰고 홈 직전 화면으로 갔다).
-     스팟 시트와 몽꾸 시트를 **훅 하나**로 잇습니다 — 둘은 동시에 열리지 않고(몽꾸는 스팟 시트가 뜨면 숨고, 몽꾸 시트의 스크림이 핀을 막는다),
-     훅을 둘 두면 다른 화면에서 돌아올 때 마운트 이펙트가 둘 다 한 칸씩 물러나 홈 밖으로 나갑니다. */
-  useSheetHistory(picked != null || guideOpen, () => {
-    setPicked(null)
-    setGuideOpen(false)
-  })
+  // 폰 뒤로가기는 시트부터 닫습니다(2026-09-20 — 전에는 시트를 건너뛰고 홈 직전 화면으로 갔다).
+  useSheetHistory(picked != null, () => setPicked(null))
   /* 9경 시트가 열려 있는지는 **주소**(`?nine=1`)에 둡니다. 시트의 9경 이름은 스팟 상세로 가는 링크라,
      상세에서 뒤로 오면 홈이 새로 그려집니다 — 상태를 useState 에 두면 시트가 닫힌 채로 돌아와
      다음 9경을 보려면 버튼부터 다시 눌러야 합니다. 열고 닫을 때는 replace 라 기록이 쌓이지 않습니다. */
@@ -204,17 +189,6 @@ export default function HomePage() {
     nineButtonRef.current?.focus()
   }
 
-  // 몽꾸 시트를 닫으면 연 버튼(몽꾸)으로 포커스를 돌려줍니다 — 9경 시트와 같은 이유.
-  const closeGuide = () => {
-    setGuideOpen(false)
-    nineButtonRef.current?.focus()
-  }
-  // 시트의 「거제 9경이 뭐야?」 — 시트를 닫고 지금 흐름 그대로(설명 두 마디 → 목록 시트). 사용자: 「새 페이지 들어가서 눌러도 똑같이」.
-  const goNineScenic = () => {
-    setGuideOpen(false)
-    startTour()
-  }
-
   return (
     <Screen data-api="GET /api/pois">
       <div className={styles.mapArea}>
@@ -269,7 +243,7 @@ export default function HomePage() {
             문법이 깨집니다(MyPlansPage 에서 같은 실수를 한 적이 있습니다). */}
         {!picked && (
           <div className={styles.mascot} data-nine-mascot>
-            <MascotButton ref={nineButtonRef} onOpen={() => setGuideOpen(true)} />
+            <MascotButton ref={nineButtonRef} onOpen={startTour} />
           </div>
         )}
 
@@ -310,7 +284,6 @@ export default function HomePage() {
       />
 
       {/* 탭바까지 덮도록 지도 영역 밖(화면 껍데기 바로 아래)에 둡니다 — 로그인 시트와 같은 자리입니다. */}
-      <GuideSheet open={guideOpen} onClose={closeGuide} onNineScenic={goNineScenic} today={today} />
       <NineScenicSheet open={nineOpen} onClose={closeNine} links={nineLinks} />
     </Screen>
   )

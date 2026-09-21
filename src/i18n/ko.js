@@ -28,12 +28,9 @@ export default {
      한 문장이 390 화면에서 **한 줄**에 들어가게 줄였습니다. 두 줄로 넘어가면 "아홉 / 곳이에요"처럼
      말 중간에서 끊겨 문장마다 줄을 바꾼 의미가 없어집니다. */
   'nineScenic.title': '거제 9경',
+  // 몽꾸(거제시 캐릭터)를 누르면 뜨는 말풍선 — 이걸 눌러야 9경 시트가 열린다(2026-09-19)
+  'nineScenic.bubble': '거제 9경이 뭘까?',
   'mascot.name': '몽꾸',
-  /* 몽꾸(거제시 캐릭터)를 누르면 뜨는 말풍선 — 이걸 눌러야 몽꾸 시트가 열린다(2026-09-19 · 2026-09-21).
-     2026-09-21 사용자 결정: 「거제 9경이 뭘까?」 → 두 줄 인사. 9경은 시트 안 질문 하나가 됐다(guide.*).
-     「물어봐」는 시트 안에 질문 카드가 바로 있어 입력창을 약속하지 않는다(디자인브리프 부록 M 「몽꾸 가이드」). */
-  'mascot.bubble1': '안녕, 난 몽꾸야!',
-  'mascot.bubble2': '거제는 나한테 물어봐',
   /* 1단계는 제목 한 줄 + 한 문장입니다. 문장 가운데 **대표 경관 아홉 곳**만 굵게 하려고 키를 셋으로
      나눴습니다(2026-09-20 사용자) — 앞 · 굵은 곳 · 뒤. 굵게 할 말이 문장 가운데라 한 키로는 못 씁니다. */
   'nineScenic.lead1Title': '거제 9경이란',
@@ -61,55 +58,6 @@ export default {
   // 번호 원(①②④)은 2026-09-17 저녁 뺐습니다(사용자 결정 — 사진 위 배지에 숫자 없이). 「9」는 목록 이름의 일부라 남깁니다.
   'nineScenic.stamp': '거제 9경',
   'nineScenic.confirm': '확인',
-
-  /* ── 몽꾸 시트 — 몽꾸가 여행 가이드가 된다(2026-09-21 사용자 결정, Figma 프레임 없음 — 디자인브리프 부록 M 「몽꾸 가이드」).
-     목록: 「오늘의 거제」 카드 + 질문 셋. 9경은 지금 흐름(설명 두 마디 → 목록 시트)으로 넘기고, 9미 · 고현터미널은 시트 안에서 답한다.
-     몽꾸 말투(반말)다 — 말풍선과 같은 목소리. 챗봇이 아니라 가이드라 입력창이 없고 질문은 고른다(레퍼런스 Lovi · Shopee 초키).
-     「오늘의 거제」 문장은 전부 API 값에서만 나온다(절대규칙 1) — 요일은 그날 남부1 시간표(0편이면 쉰다), 운영상태는 /api/alerts 원문,
-     배는 /api/pois/5/ferries 의 도장포 편, 기준일은 /api/meta. 못 받은 줄은 「확인이 안 돼」로 둔다(절대규칙 3 — 빈칸 · 거짓 없음). */
-  'guide.title': '뭐가 궁금해?',
-  'guide.back': '목록으로',
-  'guide.q.nineScenic': '거제 9경이 뭐야?',
-  'guide.q.nineTaste': '거제 9미는 뭐야?',
-  'guide.q.terminal': '왜 고현터미널에서 시작해?',
-  'guide.today.title': '오늘의 거제',
-  'guide.today.loading': '몽꾸가 오늘 소식을 보는 중이야',
-  // 요일 줄 — 「휴일이니까 쉰다」가 아니라 그날 남부1 시간표에 편이 없다는 사실에서 나온다(southBusRuns).
-  'guide.today.day.WEEKDAY': '오늘은 평일이라 남부면 마을버스도 다녀',
-  'guide.today.day.HOLIDAY_NO_BUS': '오늘은 휴일이라 남부면 마을버스가 쉬어',
-  'guide.today.day.HOLIDAY_BUS': '오늘은 휴일이야. 남부면 마을버스는 다녀',
-  'guide.today.day.UNKNOWN': '오늘 시간표는 지금 확인이 안 돼',
-  'guide.today.alerts.none': '오늘 우회 · 운휴 알림은 없어',
-  // reason 은 /api/alerts 원문 그대로다(고치지 않는다). targets 는 정류장 · 노선 이름을 「 · 」로 이은 것.
-  'guide.today.alerts.DETOUR': '{targets} 쪽은 우회 중이야. {reason}',
-  'guide.today.alerts.SUSPENSION': '{targets} 쪽은 운휴야. {reason}',
-  'guide.today.alerts.CLOSURE': '{targets} 쪽은 휴장이야. {reason}',
-  'guide.today.alerts.unknown': '운영상태는 지금 확인이 안 돼',
-  // 배 — 도장포 선착장 외도상륙 편(우리 코스가 쓰는 선착장). 복귀는 원문이 「약」이라 늘 「약」.
-  'guide.today.ferry.NEXT': '{dock}에서 외도 가는 배, 다음은 {depart} (약 {returnApprox} 복귀)',
-  'guide.today.ferry.ALL_GONE': '오늘 {dock} 외도 배는 다 떠났어',
-  'guide.today.ferry.NONE_TODAY': '오늘은 {dock}에 예정된 외도 배가 없어',
-  // 공개 전 날은 「운행 없음」이 아니라 「시각 미확인」(기준문서 §6 유람선 시간표)
-  'guide.today.ferry.UNPUBLISHED': '오늘 {dock} 외도 배 시각은 아직 안 올라왔어',
-  'guide.today.ferry.UNKNOWN': '배 시각은 지금 확인이 안 돼',
-  'guide.today.source': '버스 시각 거제시 BIS 원문 {dataVersion} · 배 외도유람선 예약센터',
-  'guide.today.sourceNoVersion': '버스 시각 거제시 BIS 원문 · 배 외도유람선 예약센터',
-  // 9미 답 — 아홉 음식 이름 · 제철은 거제시 원문(lib/nineTastes), 어느 맛집인지는 서버(/api/places nineTasteNos, V47)
-  'guide.taste.title': '거제 9미',
-  'guide.taste.lead': '거제시가 정한 향토 음식 아홉 가지야. 어느 식당인지는 거제시가 정하지 않아서, 우리 맛집 중 대표 메뉴가 9미인 곳만 이었어.',
-  'guide.taste.rank': '{no}미',
-  'guide.taste.season': '제철 {season}',
-  'guide.taste.noPlace': '원문에 등록된 곳이 없어요',
-  'guide.taste.placeAria': '{name} 상세 보기',
-  'guide.taste.loading': '맛집을 불러오는 중',
-  // 0곳과 실패는 다른 답이다(절대규칙 3) — 실패면 아홉 줄 모두 이 한 줄로 말한다.
-  'guide.taste.loadFailed': '맛집을 불러오지 못했어요',
-  // 고현터미널 답 — 수치는 전부 기준문서 §2 · §3 확정 데이터(서울남부 20회 · 부산서부 40회 · 통영 22회 / 55 · 30번대 · 50-2)
-  'guide.terminal.title': '왜 고현터미널에서 시작해?',
-  'guide.terminal.p1': '거제로 들어오는 시외버스가 다 여기 닿아. 서울남부에서 하루 20회, 부산서부에서 40회, 통영에서 22회야.',
-  'guide.terminal.p2': '섬 곳곳으로 가는 시내버스도 여기서 떠나. 남부면은 55번, 매미성은 30번대, 거제식물원은 50-2번이야.',
-  'guide.terminal.p3': '그래서 우리 코스는 전부 고현터미널에서 출발해서 고현터미널로 돌아와.',
-  'guide.terminal.legend': '홈 지도의 파란 버스 핀이 그 정류장이야.',
 
   /* ── 첫 방문 튜토리얼 — Figma 02-2 558:200(09-14). 문장마다 키를 나눕니다(문장마다 한 줄). ──
      4단계 셋째 줄은 그림의 「모든 시간표는 거제시가 직접 제공하는 데이터예요.」에서 고쳤습니다(2026-09-15) —

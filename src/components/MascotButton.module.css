@@ -93,35 +93,26 @@
 }
 
 /* 말풍선 — 캐릭터 왼쪽(든 팔 옆), 꼬리는 캐릭터 쪽. 흰 면 + 그림자는 지도 위 칩과 같다. 팔이 올라가는 사이에 톡 튀어나온다.
-   누르면 몽꾸 시트가 열리는 버튼이라 둘째 줄 끝에 › 를 붙인다(누를 수 있다는 표시).
-   2026-09-21 부터 **두 줄**(인사 / 권유)이라 알약이 아니라 둥근 네모(16px)다 — 두 줄 알약은 위아래가 반원이 되어 글이 갇혀 보인다. */
+   누르면 9경 시트가 열리는 버튼이라 끝에 › 를 붙인다(누를 수 있다는 표시). */
 .bubble {
   position: absolute;
   right: calc(100% + 14px);
   top: 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   padding: 8px 8px 8px 12px;
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-pill);
   cursor: pointer;
   background: var(--bg-page);
   box-shadow: var(--elevation-chip);
   color: var(--text-primary);
   font: var(--type-caption);
   font-weight: 700;
-  text-align: left;
   white-space: nowrap;
   animation: pop 260ms ease-out 120ms both;
   transform-origin: 100% 50%;
-}
-
-.bubbleLine {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
 }
 
 .bubble::after {

@@ -7,14 +7,12 @@ import { t } from '../i18n'
 import styles from './MascotButton.module.css'
 
 /**
- * 몽꾸 — 거제시 캐릭터(2024-09-26 지정). 누르면 말풍선, **말풍선을 누르면** 몽꾸 시트(GuideSheet — 2026-09-21 사용자 결정. Figma 프레임 없음).
- * 사용 승인은 거제시에서 받았다(2026-09-21 승인 메일).
+ * 몽꾸 — 거제시 캐릭터(2024-09-26 지정). 누르면 말풍선, **말풍선을 누르면** 「거제9경이란?」 시트(2026-09-19 사용자 결정. Figma 프레임 없음).
+ * 사용 승인은 거제시에서 받았다(2026-09 팀 확인 — 따로 받은 파일은 없다).
  *
  * 전에는 지도 왼쪽 위 보라 글자 버튼 「거제9경이란?」이었습니다. 그 자리는 스팟 · 숙소 · 맛집 칩에 주고, 설명은 캐릭터가 맡습니다.
- * 2026-09-19 부터 2026-09-21 까지는 말풍선이 「거제 9경이 뭘까?」 하나였고 누르면 곧장 9경 설명이었습니다 — 이제 몽꾸가 **여행 가이드**라
- * 말풍선은 두 줄 인사 「안녕, 난 몽꾸야! / 거제는 나한테 물어봐」이고, 9경은 시트 안 질문 하나입니다(디자인브리프 부록 M 「몽꾸 가이드」).
  *
- * 평소엔 **왼팔(보는 쪽 왼쪽)을 내리고** 천천히 둥실, 누르면 **팔을 올려 흔들며** 말풍선이 뜹니다.
+ * 평소엔 **왼팔(보는 쪽 왼쪽)을 내리고** 천천히 둥실, 누르면 **팔을 올려 흔들며** 말풍선 「거제 9경이 뭘까?」가 뜹니다.
  * 시트는 **말풍선을 눌러야** 열립니다 — 캐릭터를 누르자마자 넘어가지 않습니다(2026-09-19 사용자). 캐릭터를 한 번 더 누르면
  * 말풍선을 닫고 팔을 내립니다. 처음 들어올 때 저절로 뜨는 말풍선은 없습니다 — 누를 때만.
  *
@@ -42,12 +40,8 @@ export default function MascotButton({ onOpen, ref }) {
     <div className={styles.wrap}>
       {raised && (
         <button id={bubbleId} type="button" className={styles.bubble} onClick={openSheet} aria-haspopup="dialog">
-          {/* 두 줄 — 인사 / 권유. 사이의 빈칸은 읽기 도구가 두 줄을 한 문장으로 잇게 하는 것이고 화면에는 안 보입니다(세로 flex). */}
-          <span className={styles.bubbleLine}>{t('mascot.bubble1')}</span>{' '}
-          <span className={styles.bubbleLine}>
-            {t('mascot.bubble2')}
-            <ChevronRight size={16} strokeWidth={2.25} aria-hidden="true" />
-          </span>
+          {t('nineScenic.bubble')}
+          <ChevronRight size={16} strokeWidth={2.25} aria-hidden="true" />
         </button>
       )}
       <button
