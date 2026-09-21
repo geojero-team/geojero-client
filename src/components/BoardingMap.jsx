@@ -35,6 +35,11 @@ import styles from './BoardingMap.module.css'
  * @param fromSpot 출발 쪽이 스팟일 때 그 스팟({ thumbnailUrl, theme }) — 지도에 점 + 이름 대신 **썸네일**(24px 원)을 찍습니다
  *                 (2026-09-15 사용자 결정: 글자 라벨이 카카오 지도 라벨과 겹쳐 두 번 말했고, 홈 지도의 사진 핀과 같은 모양이 맞다).
  *                 없으면(목록 실패 · 고현터미널 출발) 점 + 이름 그대로 — 거리만으론 방향을 모르니 기준점을 비우지 않습니다.
+ *
+ * ⚠️ **출발 곳이 곧 타는 곳일 때는 점을 따로 찍지 않고 그 마커가 이름을 답니다**(2026-09-22 사용자).
+ * 고현터미널 → 스팟 방향이 그렇습니다 — 고현터미널 좌표가 「터미널(일반)」 정류소 좌표 그 자체라(V22 · TAGO GJB500)
+ * 운영 19곳 중 **17곳이 거리 0m** 입니다(떨어진 곳은 포로수용소 터미널(순환) 42m · 김영삼 생가 2000번 70m 둘뿐이고,
+ * 그 둘은 전처럼 점 + 이름 + 점선이 그려집니다). 전에는 그 자리를 통째로 비워 지도가 핀 하나와 노선 태그뿐이었습니다.
  */
 
 /** 섬 전체가 아니라 정류장 몇 개를 보는 지도라 이보다 당기면 길 이름도 안 보이게 됩니다. */
@@ -55,6 +60,12 @@ const OPPOSITE_M = 50
 const MARKER_HEIGHT = 51
 const ICON_CENTER = 14
 const FROM_HEIGHT = 9
+/**
+ * 출발 곳이 **곧 타는 곳**일 때 마커가 아이콘 위에 다는 이름표(2026-09-22 사용자) — 한 줄 17px + 간격 2px.
+ * 고현터미널 좌표는 건물이 아니라 「터미널(일반)」 정류소 자신이라(V22 · TAGO GJB500) 두 점이 한 자리입니다.
+ */
+const NAME_HEIGHT = 17
+const NAME_GAP = 2
 /** 출발 곳 썸네일 지름 — 버스 마커(28)가 주인공이라 그보다 작게. */
 const FROM_THUMB = 24
 const BELOW_TOP = MARKER_HEIGHT - ICON_CENTER + 2 // 좌표에서 비킨 박스 윗변까지
@@ -71,11 +82,14 @@ const tagWidth = (text) =>
   Math.max(28, 16 + [...text].reduce((w, ch) => w + (/[가-힣]/.test(ch) ? 10 : ch === ' ' ? 3 : 6.5), 0))
 /** 출발 곳 이름표 폭 어림(11px Medium 한글 ≈ 11px) — 점 오른쪽 13px에서 시작합니다. */
 const fromLabelWidth = (text) => 13 + text.length * 11
+/** 마커가 다는 출발 곳 이름표는 아이콘 위 가운데라 자기 폭만 셉니다. */
+const nameWidth = (text) => text.length * 11
 /**
  * 화면 맞추기 여백. 좌표는 아이콘 가운데라 마커 몸통이 위로 14px · 아래로 37px · 옆으로 태그 반 폭만큼 나옵니다.
  * 몸통을 넣지 않으면 가장자리 정류장의 태그가 칸 밖으로 잘리거나 카카오 축척 막대에 덮였습니다(운영 매미성, 2026-09-14).
  */
-const FIT_TOP = FIT_PADDING + ICON_CENTER
+/** 위쪽은 가장 높이 솟은 마커를 기준으로 잽니다 — 출발 곳 이름표를 단 마커는 아이콘 위로 19px 더 올라갑니다. */
+const fitTop = (items) => FIT_PADDING + Math.max(...items.map((item) => item.center))
 const FIT_BOTTOM = FIT_PADDING + (MARKER_HEIGHT - ICON_CENTER)
 const FIT_SIDE = FIT_PADDING + 31
 
@@ -253,9 +267,19 @@ function DirectionsLink({ from, stop, className }) {
   )
 }
 
-function markerElement(tag) {
+/**
+ * 버스 마커. `fromName`이 있으면 아이콘 **위**에 출발 곳 이름을 답니다 — 출발 곳이 곧 이 정류장일 때입니다.
+ * 오른쪽이 아니라 위인 이유: 겹침 상자를 좌표 기준 **가운데 정렬**로 잡고 있어서(placement), 한쪽으로만 길어지면 상자가 틀어집니다.
+ */
+function markerElement(tag, fromName) {
   const element = document.createElement('span')
   element.className = styles.marker
+  if (fromName) {
+    const name = document.createElement('span')
+    name.className = styles.markerFrom
+    name.textContent = fromName
+    element.append(name)
+  }
   const icon = document.createElement('span')
   icon.className = styles.markerIcon
   icon.innerHTML = busMarkerSvg(28)
@@ -304,7 +328,7 @@ function fromItem(from, fromSpot) {
 }
 
 /** 펼쳤을 때만 마운트되는 지도 — 접으면 사라집니다. */
-function MapCanvas({ stops, exceptions, from, showFrom, fromSpot, linkStop }) {
+function MapCanvas({ stops, exceptions, from, showFrom, fromSpot, linkStop, atOrigin }) {
   const containerRef = useRef(null)
   const kakaoRef = useRef(null)
   const mapRef = useRef(null)
@@ -341,7 +365,18 @@ function MapCanvas({ stops, exceptions, from, showFrom, fromSpot, linkStop }) {
 
     // 1) 찍을 것을 모으고 2) 화면을 맞춘 뒤 3) 그 배율의 화면 좌표로 겹침을 잰다.
     //    미터(25m)로만 재면 운영 거제씨월드에서 26m 떨어진 두 지세포 핀이 몇 px 안에 겹쳐 4000 핀이 가려졌다(2026-09-14).
-    const markerItem = (at, tag) => ({ at, content: markerElement(tag), kind: 'marker', width: tagWidth(tag), height: MARKER_HEIGHT, center: ICON_CENTER })
+    const markerItem = (at, tag) => {
+      // 출발 곳과 같은 자리인 정류장이면 이 마커가 출발 곳 이름을 단다 — 점을 따로 찍을 자리가 없다(아래 links 주석).
+      const name = at === atOrigin ? from.name : null
+      return {
+        at,
+        content: markerElement(tag, name),
+        kind: 'marker',
+        width: name ? Math.max(tagWidth(tag), nameWidth(name)) : tagWidth(tag),
+        height: name ? MARKER_HEIGHT + NAME_HEIGHT + NAME_GAP : MARKER_HEIGHT,
+        center: name ? ICON_CENTER + NAME_HEIGHT + NAME_GAP : ICON_CENTER,
+      }
+    }
     const items = [
       ...stops.map((stop) => markerItem(stop, tagText(stop.routes))),
       ...exceptions.map((ex) => markerItem(ex, `${ex.routeNo} ${ex.depart}`)),
@@ -351,7 +386,11 @@ function MapCanvas({ stops, exceptions, from, showFrom, fromSpot, linkStop }) {
     /* 점선은 **갈 정류장이 한 곳으로 정해졌을 때만** 긋습니다(2026-09-16 사용자 결정).
        정류장이 여럿인데 다 그으면 한 선이 다른 마커 옆을 지나 「버스끼리 이은 선」으로 읽혔습니다(학동 실측).
        그래서 전체에서는 긋지 않고, 노선 칩을 고르면 그 노선 정류장으로 한 줄이 생깁니다.
-       출발 곳을 안 찍을 때(고현터미널 앞 30m)도 긋지 않습니다 — 두 점이 한 자리입니다. */
+       출발 곳을 안 찍을 때(고현터미널 앞 30m)도 긋지 않습니다 — **두 점이 정말 한 자리**입니다:
+       고현터미널 좌표가 「터미널(일반)」 정류소 좌표 그 자체라(V22) 운영 19곳 중 17곳이 거리 0m 입니다.
+       길이 0인 선을 그리려고 점을 하나 더 찍으면 겹침 규칙이 40~50px 옆으로 밀어내 같은 자리가 다른 자리처럼 보이고,
+       점선까지 그으면 「내려서 걸어가야 한다」로 읽힙니다 — 없는 걸음을 만드는 것입니다(절대규칙 1).
+       대신 그 마커가 출발 곳 이름을 답니다(2026-09-22 사용자 · markerItem). */
     const links =
       showFrom && linkStop
         ? [
@@ -365,7 +404,7 @@ function MapCanvas({ stops, exceptions, from, showFrom, fromSpot, linkStop }) {
 
     const bounds = new kakao.maps.LatLngBounds()
     items.forEach((item) => bounds.extend(item.position))
-    map.setBounds(bounds, FIT_TOP, FIT_SIDE, FIT_BOTTOM, FIT_SIDE)
+    map.setBounds(bounds, fitTop(items), FIT_SIDE, FIT_BOTTOM, FIT_SIDE)
     if (map.getLevel() < MIN_LEVEL) map.setLevel(MIN_LEVEL)
 
     const projection = map.getProjection?.()
@@ -384,7 +423,7 @@ function MapCanvas({ stops, exceptions, from, showFrom, fromSpot, linkStop }) {
       overlays.forEach((overlay) => overlay.setMap(null))
       links.forEach((line) => line.setMap(null))
     }
-  }, [phase, stops, exceptions, from, showFrom, fromSpot, linkStop])
+  }, [phase, stops, exceptions, from, showFrom, fromSpot, linkStop, atOrigin])
 
   // 지도는 이름 · 거리 · 길찾기와 같은 내용을 그림으로 보여줄 뿐이라 읽기 도구에서는 숨깁니다.
   return phase === 'error' ? (
@@ -409,7 +448,11 @@ export default function BoardingMap({ boarding, route = null, fromSpot = null })
   const from = walkTo ? { ...spotFrom, name: walkTo.name, lat: walkTo.lat, lng: walkTo.lng } : spotFrom
   const isTerminal = from.kind === 'TERMINAL'
   const isNear = (meters) => isTerminal && meters < TERMINAL_NEAR_M
-  const nearestM = Math.min(...[...stops, ...exceptions].map((p) => p.distanceM))
+  /* 출발 곳과 **같은 자리**인 정류장(있으면 가장 가까운 것 하나). 고현터미널 좌표가 「터미널(일반)」 정류소 자신이라
+     운영 19곳 중 17곳이 여기 걸립니다. 그 마커가 출발 곳 이름을 달고, 출발 곳 점은 따로 찍지 않습니다. */
+  const atOrigin = isTerminal
+    ? [...stops, ...exceptions].filter((p) => p.distanceM < TERMINAL_NEAR_M).sort((a, b) => a.distanceM - b.distanceM)[0] ?? null
+    : null
   // 걷기 출발이 옮겨졌으면 거리도 그 자리에서 다시 잽니다 — 서버 distanceM 은 스팟 ↔ 정류장입니다.
   const metersTo = (stop) => (walkTo ? distanceMeters(from, stop) : stop.distanceM)
   const where = (stop) =>
@@ -481,9 +524,10 @@ export default function BoardingMap({ boarding, route = null, fromSpot = null })
             stops={stops}
             exceptions={exceptions}
             from={from}
-            showFrom={!(isTerminal && nearestM < TERMINAL_NEAR_M)}
+            showFrom={!atOrigin}
             fromSpot={fromSpot}
             linkStop={single ? single.stop : null}
+            atOrigin={atOrigin}
           />
 
           {listed.length > 0 && (

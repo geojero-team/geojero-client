@@ -206,6 +206,19 @@
   gap: 2px;
 }
 
+/* 출발 곳이 곧 이 정류장일 때 마커가 아이콘 **위**에 다는 이름표(2026-09-22 사용자 — 고현터미널 앞 정류장).
+   출발 곳 점(.fromLabel)과 같은 글자 · 같은 흰 테두리라 지도에서 같은 것으로 읽힙니다. */
+.markerFrom {
+  height: 17px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 17px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  text-shadow: 0 0 2px var(--bg-page), 0 0 2px var(--bg-page);
+}
+
 .markerIcon {
   display: block;
   width: 28px;
