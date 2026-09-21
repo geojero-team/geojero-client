@@ -89,26 +89,27 @@ async function mountReady(fake, props = {}) {
  * 핀을 누르면 배율을 8km(레벨 9)로 맞추는데, 처음 한 번은 지도가 **전체 맞추기 배율**이라 그 확대가 실제로 일어난다.
  * 2026-09-22 사용자: *"처음 스팟 누르면 거기 중심으로 확대 안 되고 엉뚱한 곳으로 확대됨(두 번째부터는 정상)."*
  *
- * ⚠️ **애니메이션 확대는 뒤따르는 `panTo` 를 삼킨다**(운영 실측 — 첫 탭에서 핀이 누르기 전 자리 그대로 남고,
- * 시트가 열리며 ResizeObserver 가 부르는 `setCenter` 까지 함께 묻힌다). 두 번째부터 멀쩡해 보인 이유는
- * 이미 레벨 9 라 확대가 통째로 생략돼 `panTo` 만 돌았기 때문이다.
- * → 확대해야 할 때는 **먼저 가운데를 고른 핀으로 옮기고** 확대한다. 확대가 그 자리에서 시작해 그 자리에서 끝난다.
+ * ⚠️ **애니메이션 확대는 도는 동안 뒤따르는 이동을 전부 삼킨다** — 바로 뒤의 `panTo` 도, 시트가 열리며
+ * ResizeObserver 가 부르는 `setCenter` 도 묻혔다(운영 실측: 첫 탭 [245,282] 그대로 · 두 번째 [195,265] 정가운데).
+ * 두 번째부터 멀쩡해 보인 이유는 이미 레벨 9 라 확대가 통째로 생략돼 `panTo` 만 돌았기 때문이다.
+ * → **확대는 즉시 하고(축은 고른 핀), 움직임은 `panTo` 에 맡긴다.** 그러면 두 번째 탭과 같은 길을 탄다.
  */
 describe('MapView — 핀을 눌렀을 때의 확대', () => {
-  it('확대해야 하면 가운데를 먼저 고른 핀으로 옮긴다 — 확대가 panTo 를 삼킨다', async () => {
+  it('확대는 애니메이션 없이 고른 핀을 축으로 — 애니메이션이 뒤따르는 이동을 삼킨다', async () => {
     const fake = fakeKakao({ level: 10 })
     const { rerender } = await mountReady(fake)
 
     rerender(<MapView spots={SPOTS} selectedSpotId={7} />)
 
     await waitFor(() => expect(fake.map.setLevel).toHaveBeenCalled())
-    const center = fake.map.setCenter.mock.calls.at(-1)[0]
-    expect(center.lat).toBe(34.9682131)
-    expect(center.lng).toBe(128.7050934)
-    expect(fake.map.setLevel.mock.calls.at(-1)[0]).toBe(9)
-    // 순서가 중요하다 — 확대가 시작된 뒤에 옮기면 그 이동이 묻힌다.
-    expect(fake.map.setCenter.mock.invocationCallOrder.at(-1)).toBeLessThan(
-      fake.map.setLevel.mock.invocationCallOrder.at(-1),
+    const [level, options] = fake.map.setLevel.mock.calls.at(-1)
+    expect(level).toBe(9)
+    expect(options.animate).toBeUndefined()
+    expect(options.anchor.lat).toBe(34.9682131)
+    // 가운데로 보내는 일은 panTo 가 한다 — 확대 뒤라 삼켜지지 않는다.
+    expect(fake.map.panTo.mock.calls.at(-1)[0].lat).toBe(34.9682131)
+    expect(fake.map.setLevel.mock.invocationCallOrder.at(-1)).toBeLessThan(
+      fake.map.panTo.mock.invocationCallOrder.at(-1),
     )
   })
 

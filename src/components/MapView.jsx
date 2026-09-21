@@ -327,20 +327,17 @@ export default function MapView({
     const position = selected.overlay.getPosition()
 
     /* 배율은 늘 8km(레벨 9)로 맞춥니다 — 사용자가 정한 값입니다.
-       ⚠️ **애니메이션 확대는 뒤따르는 이동을 삼킵니다.** 확대하면서 `panTo` 를 부르면 그 이동이 묻히고,
-       시트가 올라오며 ResizeObserver 가 부르는 `setCenter` 까지 함께 묻힙니다 — 첫 탭에서 핀이
-       **누르기 전 자리 그대로** 남았습니다(2026-09-22 사용자: 「엉뚱한 곳으로 확대됨」, 운영 실측으로 확인).
+       ⚠️ **확대를 애니메이션으로 하지 않습니다.** 애니메이션이 도는 동안 카카오는 뒤따르는 이동을 전부 삼킵니다 —
+       바로 아래 `panTo` 도, 시트가 올라오며 ResizeObserver 가 부르는 `setCenter` 도 묻혔습니다.
+       그래서 첫 탭에서만 핀이 가운데로 오지 않았습니다(2026-09-22 사용자: 「엉뚱한 곳으로 확대됨」).
        두 번째부터 멀쩡해 보인 이유는 이미 레벨 9 라 확대가 통째로 생략돼 `panTo` 만 돌았기 때문입니다.
-       그래서 **확대할 때는 먼저 가운데를 옮기고 확대**합니다 — 확대가 그 자리에서 시작해 그 자리에서 끝납니다.
-       배율이 이미 맞으면 전처럼 미끄러져 갑니다(삼킬 확대가 없습니다). */
-    if (map.getLevel() !== SELECTED_LEVEL) {
-      map.setCenter(position)
-      map.setLevel(SELECTED_LEVEL, { animate: true })
-    } else {
-      /* 지도 칸은 시트가 올라오는 0.22초 동안 **천천히** 줄어듭니다. 그래서 여기서 한 번 보내는 것만으로는
-         카드가 다 올라온 뒤의 가운데가 아닙니다 — 칸이 줄 때마다 아래 ResizeObserver 가 다시 가운데로 보냅니다. */
-      map.panTo(position)
-    }
+       운영 실측: 첫 탭 [245,282] → 그대로 · 두 번째 [195,265](보이는 지도의 정가운데).
+       한 단계 확대라 즉시 바꿔도 눈에 띄지 않고, **축을 고른 핀에 둬서** 핀이 제자리에 남습니다
+       (겹친 핀을 갈라 볼 때 쓰던 anchor 와 같은 방식). 움직임은 그 뒤 panTo 가 맡아 두 번째 탭과 같아집니다. */
+    if (map.getLevel() !== SELECTED_LEVEL) map.setLevel(SELECTED_LEVEL, { anchor: position })
+    /* 지도 칸은 시트가 올라오는 0.22초 동안 **천천히** 줄어듭니다. 그래서 여기서 한 번 보내는 것만으로는
+       카드가 다 올라온 뒤의 가운데가 아닙니다 — 칸이 줄 때마다 아래 ResizeObserver 가 다시 가운데로 보냅니다. */
+    map.panTo(position)
   }, [selectedSpotId, spots, phase, topReserved])
 
   const zoom = useCallback((delta) => {
