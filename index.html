@@ -18,9 +18,14 @@
          매니페스트의 theme_color(#00A1FF)가 씁니다. -->
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <!-- 손가락 확대(pinch)를 막습니다(2026-09-21 사용자) — 앱은 390 폭 틀을 창에 맞춰 통째로 키우므로
+         더 확대해 봐야 잘린 부분만 보입니다. 시작화면이 1.8배로 확대돼 일부만 보이는 것을 사용자가 잡아냈습니다.
+         ⚠️ `user-scalable=no` 는 **아이폰 사파리가 무시합니다**(iOS 10~) — src/index.css 의
+         `touch-action: pan-x pan-y` 가 그쪽을 맡습니다. 둘이 한 쌍입니다(src/lib/pinchZoom.test.js).
+         카카오 지도의 두 손가락 확대는 지도가 터치를 직접 처리하므로 그대로입니다. -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <meta name="theme-color" content="#ffffff" />
     <meta

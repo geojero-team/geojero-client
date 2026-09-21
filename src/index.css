@@ -12,6 +12,15 @@ body,
   height: 100%;
 }
 
+/* 손가락 확대(pinch)를 막습니다(2026-09-21 사용자) — index.html 의 viewport 와 한 쌍입니다.
+   `user-scalable=no` 를 아이폰 사파리가 무시하기 때문에(iOS 10~) 여기서 한 번 더 막습니다.
+   위아래·좌우로 미는 것(pan)은 그대로 두고 확대만 뺍니다 — 목록 스크롤과 지도 끌기는 그대로여야 합니다.
+   카카오 지도는 자기 칸에 touch-action 을 따로 걸고 터치를 직접 처리하므로 지도 확대는 살아 있습니다. */
+html,
+body {
+  touch-action: pan-x pan-y;
+}
+
 /* 창이 844보다 길면 프레임이 위에 붙지 않고 가운데 놓이게 합니다. */
 #root {
   display: flex;
