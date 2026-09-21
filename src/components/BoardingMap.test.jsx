@@ -340,8 +340,6 @@ describe('BoardingMap — 펼친 카드(530:282 · 541:408)', () => {
 describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
   /** 마커 = 버스 아이콘 28 + 간격 2 + 태그 21 → 51px. 좌표는 아이콘 가운데(14px). */
   const ICON_CENTER = 14 / 51
-  /** 출발 곳 이름표(17 + 간격 2)가 아이콘 위에 붙은 마커 — 70px, 좌표는 여전히 아이콘 가운데(33px). */
-  const NAMED_ICON_CENTER = 33 / 70
 
   it('버스 마커 + 태그(노선 여럿이면 「33 +4」) · 예외 편(노선 + 시각) · 출발 곳 — 모두 들어오게 맞추고 너무 당기지 않는다', async () => {
     const user = userEvent.setup()
@@ -548,7 +546,7 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     expect(lines).toHaveLength(0)
   })
 
-  it('출발지가 고현터미널이고 가장 가까운 정류장이 30m 안이면 출발 곳을 따로 찍지 않는다', async () => {
+  it('출발지가 고현터미널이고 가장 가까운 정류장이 30m 안이면 출발 곳을 찍지 않는다', async () => {
     const user = userEvent.setup()
     const { kakao, map, overlays } = fakeKakao({ level: 5 })
     loadKakaoMaps.mockResolvedValue(kakao)
@@ -557,13 +555,11 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     await expand(user)
 
     await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
-    expect(overlays).toHaveLength(1) // 점 없음 — 이름은 그 마커가 단다(아래 「출발 곳이 곧 타는 곳」)
+    expect(overlays.map((o) => o.options.content.textContent)).toEqual(['55번 외 1'])
     expect(map.setLevel).not.toHaveBeenCalled()
   })
 
-  /* 지켜야 할 규칙은 **북쪽 정류장을 남쪽에 그리지 않는다**입니다. 2000번은 북동쪽이라 위 또는 오른쪽입니다.
-     2026-09-22 부터 터미널(일반) 마커가 출발 곳 이름표를 달아 커져서, 이 배율에서는 위가 0.5px 모자라 오른쪽으로 갑니다. */
-  it('고현터미널 → 김영삼 생가 — 북동쪽 70m 2000번 마커가 겹치면 북쪽·동쪽으로만 비킨다', async () => {
+  it('고현터미널 → 김영삼 생가 — 북동쪽 70m 2000번 마커가 겹치면 위로 비킨다(아래로 내리면 북쪽 정류장이 남쪽에 그려진다)', async () => {
     const user = userEvent.setup()
     const { kakao, map, overlays } = fakeKakao({ level: 3, pxPerDeg: 30000 })
     loadKakaoMaps.mockResolvedValue(kakao)
@@ -585,11 +581,9 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     await expand(user)
 
     await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
-    const at = (text) => overlays.find((o) => o.options.content.textContent === text).options
-    expect(at('고현터미널32').yAnchor).toBeCloseTo(NAMED_ICON_CENTER)
-    const moved = at('2000')
-    expect(moved.yAnchor).toBeGreaterThanOrEqual(ICON_CENTER) // 아래(남쪽)로는 내리지 않는다
-    expect(moved.yAnchor > 1 || /^translateX\(\d/.test(moved.content.style.transform)).toBe(true) // 위 또는 오른쪽
+    const byText = Object.fromEntries(overlays.map((o) => [o.options.content.textContent, o.options.yAnchor]))
+    expect(byText['32']).toBeCloseTo(ICON_CENTER)
+    expect(byText['2000']).toBeGreaterThan(1)
   })
 
   it('출발 곳 점이 마커와 겹치면 점 자기 높이(9px)로 비킨다 — 마커 비율로 재면 7px만 움직여 이름표가 마커를 덮는다', async () => {
@@ -866,112 +860,6 @@ describe('BoardingMap — 출발 곳 썸네일', () => {
     const from = overlays.find((o) => o.options.content.querySelector('img'))
     // 마커 박스(좌표 기준 -14 ~ +37px) 밖으로: 아래면 원 윗변이 +39px(= -39/24), 위면 원 아랫변이 -16px(= 40/24)
     expect(Math.abs(from.options.yAnchor - -39 / 24) < 1e-6 || Math.abs(from.options.yAnchor - 40 / 24) < 1e-6).toBe(true)
-  })
-})
-
-/**
- * 출발 곳이 곧 타는 곳일 때 — 고현터미널 → 스팟 (2026-09-22 사용자)
- *
- * 사용자: *"고현에서 가는 건 지도에 「고현 → 버스」로 연결되어 표현이 안 된다 — 반대 방향처럼 바꾸고 싶다."*
- * **선은 그을 수 없다.** 우리 데이터의 고현터미널 좌표가 「터미널(일반)」 정류소 좌표 그 자체라(V22 · TAGO GJB500)
- * 운영 19곳 중 **17곳이 거리 0m** 다(떨어진 곳은 포로수용소 터미널(순환) 42m · 김영삼 생가 2000번 70m 둘뿐이고 그 둘은 이미 점 + 선이 그려진다).
- * 같은 한 점에 점을 하나 더 찍으면 겹침 규칙이 40~50px 옆으로 밀어내 **같은 자리가 다른 자리처럼** 보이고,
- * 점선까지 그으면 「내려서 걸어가야 한다」로 읽힌다 — 없는 걸음을 만드는 것이다(절대규칙 1).
- *
- * 대신 **그 마커가 출발 곳 이름을 단다.** 전에는 핀 하나와 「55번 외 1」이 전부라 지도가 어디인지 한 글자도 말하지 않았다.
- */
-describe('BoardingMap — 출발 곳이 곧 타는 곳(고현터미널 앞)', () => {
-  const kakaoUp = (opts) => {
-    const fake = fakeKakao(opts)
-    loadKakaoMaps.mockResolvedValue(fake.kakao)
-    return fake
-  }
-
-  it('거리 0m 마커가 「고현터미널」 이름표를 단다 — 점을 따로 찍지 않고 좌표는 그대로 아이콘 가운데', async () => {
-    const user = userEvent.setup()
-    const { map, overlays } = kakaoUp({ level: 5 })
-
-    render(<BoardingMap boarding={FROM_TERMINAL} />)
-    await expand(user)
-
-    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
-    expect(overlays).toHaveLength(1)
-    const marker = overlays[0].options.content
-    expect(marker.textContent).toBe('고현터미널55번 외 1')
-    expect(marker.firstChild.textContent).toBe('고현터미널') // 이름은 아이콘 위, 노선 태그는 아래
-    expect(overlays[0].options.yAnchor).toBeCloseTo(33 / 70)
-  })
-
-  it('이름표만큼 위 여백을 더 준다 — 안 그러면 지도 칸 위로 잘린다', async () => {
-    const user = userEvent.setup()
-    const { map } = kakaoUp({ level: 5 })
-
-    render(<BoardingMap boarding={FROM_TERMINAL} />)
-    await expand(user)
-
-    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
-    const [, top, , bottom] = map.setBounds.mock.calls[0]
-    expect(top).toBeGreaterThanOrEqual(28 + 33)
-    expect(bottom).toBeGreaterThanOrEqual(28 + 37)
-  })
-
-  it('떨어진 정류장은 이름표를 달지 않는다 — 김영삼 생가는 터미널(일반) 0m 에만 붙고 2000번 70m 에는 없다', async () => {
-    const user = userEvent.setup()
-    const { map, overlays } = kakaoUp({ level: 3 })
-
-    render(
-      <BoardingMap
-        boarding={{
-          from: { name: '고현터미널', kind: 'TERMINAL', lat: 34.8906148, lng: 128.6242507 },
-          stops: [
-            { nodeId: 'GJB500', name: '터미널(일반)', lat: 34.89061475, lng: 128.62425069, distanceM: 0, routes: ['32'] },
-            { nodeId: 'GJB362', name: '터미널(순환)', lat: 34.8910729, lng: 128.62478237, distanceM: 70, routes: ['2000'] },
-          ],
-          exceptions: [],
-          unresolved: [],
-          source: SOURCE,
-        }}
-      />,
-    )
-    await expand(user)
-
-    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
-    expect(overlays.map((o) => o.options.content.textContent)).toEqual(['고현터미널32', '2000'])
-  })
-
-  it('고현터미널 출발이라도 정류장이 30m 밖뿐이면 전처럼 점 + 이름 + 점선 — 마커는 노선만 단다(포로수용소 42m)', async () => {
-    const user = userEvent.setup()
-    const { map, overlays, lines } = kakaoUp({ level: 3 })
-
-    render(
-      <BoardingMap
-        boarding={{
-          from: { name: '고현터미널', kind: 'TERMINAL', lat: 34.8906148, lng: 128.6242507 },
-          stops: [
-            { nodeId: 'GJB325', name: '터미널(순환)', lat: 34.89058454, lng: 128.62470858, distanceM: 42, routes: ['100-1', '110', '100', '132-2'] },
-          ],
-          exceptions: [],
-          unresolved: [],
-          source: SOURCE,
-        }}
-      />,
-    )
-    await expand(user)
-
-    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
-    expect(overlays.map((o) => o.options.content.textContent)).toEqual(['100-1번 외 3', '고현터미널'])
-    expect(lines).toHaveLength(1)
-  })
-
-  it('스팟 출발에는 이름표를 달지 않는다 — 스팟은 제 자리에 따로 찍힌다', async () => {
-    const user = userEvent.setup()
-    const { map, overlays } = kakaoUp({ level: 3 })
-
-    render(<BoardingMap boarding={BARAM} />)
-    await expand(user)
-
-    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
-    expect(overlays.map((o) => o.options.content.textContent)).toEqual(['55', '바람의언덕'])
   })
 })
 
