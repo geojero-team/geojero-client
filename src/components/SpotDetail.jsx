@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, Heart, X } from 'lucide-react'
+import { ChevronLeft, X } from 'lucide-react'
 import LikeCount from './LikeCount'
 import LoginSheet from './LoginSheet'
 import ScreenPortal from './ScreenPortal'
@@ -359,19 +359,15 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, onClose 
 
       <div className={styles.body}>
         {/* 제목 줄 — 이름 · 「권역 · 분류」가 왼쪽, 하트가 오른쪽 끝(2026-09-21 저녁 · 부록 Q 「자리를 고쳤다」).
-            배민 가게 상세 · 카카오 숙소예약이 같은 자리다. 수는 **버튼 밖**, 권역 줄 꼬리에 잇는다 —
-            수를 보여주는 앱(네이버 「189개의 클립」 · 당근 「관심 5」)이 예외 없이 그렇게 뗀다. */}
+            배민 가게 상세 · 카카오 숙소예약이 같은 자리다. **수는 버튼 안**에 붙는다 —
+            우리 하트는 내 목록에 담는 저장이 아니라 **추천**이라, 유튜브 좋아요 · 네이버 공감처럼
+            누르는 곳과 수가 바뀌는 곳이 같아야 한다(2026-09-21 사용자 결정 A).
+            권역 줄은 분류만 말한다 — 분류와 지표는 성격이 달라 한 줄에 섞지 않는다. */}
         <div className={styles.titleCol}>
           <div className={styles.titleMain}>
             <h1 className={styles.name}>{spot.shortName ?? spot.name}</h1>
             <p className={styles.category}>
               {isTerminal ? t('terminal.startPoint') : `${spot.region} · ${spot.category}`}
-              {showLike && (
-                <>
-                  {' · '}
-                  <LikeCount id={likeCountId} count={likeCount} filled={liked} className={styles.metaLike} />
-                </>
-              )}
             </p>
           </div>
           {showLike && (
@@ -385,7 +381,7 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, onClose 
               aria-describedby={likeCountId}
               data-api="PUT /api/pois/{id}/like"
             >
-              <Heart size={24} strokeWidth={2} fill={liked ? 'currentColor' : 'none'} aria-hidden="true" />
+              <LikeCount id={likeCountId} count={likeCount} size={16} filled={liked} className={styles.likeCount} />
             </button>
           )}
         </div>

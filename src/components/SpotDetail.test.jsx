@@ -358,22 +358,24 @@ describe('SpotDetail — 하트', () => {
   }
 
   /**
-   * 자리는 2026-09-21 저녁에 바뀌었다(부록 Q 「자리를 고쳤다」) — 제목 아래 알약 줄에서
-   * **제목 줄 오른쪽 끝 아이콘 + 수는 「권역 · 분류」 줄 꼬리**로. 버튼 안에 수를 넣지 않는다.
+   * 자리는 2026-09-21 저녁에 두 번 바뀌었다(부록 Q 「자리를 고쳤다」).
+   * 제목 아래 알약 줄 → 제목 줄 오른쪽 끝 아이콘(수는 권역 줄 꼬리) → **제목 줄 오른쪽 끝 「♡ 3」 알약**.
+   * 우리 하트는 저장이 아니라 **추천**이라 수가 버튼에 붙는다(유튜브 좋아요 · 네이버 공감) — 사용자 결정 A.
    */
-  it('제목 줄 오른쪽 끝의 하트 아이콘 — 버튼 안에는 수가 없고 수는 권역 줄 꼬리에 있다', async () => {
+  it('제목 줄 오른쪽 끝의 「♡ 3」 알약 — 수가 버튼 안에 있고 권역 줄에는 없다', async () => {
     renderLike(LIKABLE)
 
     const button = await screen.findByRole('button', { name: '하트 누르기' })
     expect(button).toHaveAttribute('aria-pressed', 'false')
-    expect(button).not.toHaveTextContent('3') // 수는 버튼 밖이다
+    expect(button).toHaveTextContent('3')
     expect(button).toHaveAccessibleDescription('하트 3')
     expect(button).toHaveAttribute('data-api', 'PUT /api/pois/{id}/like')
     expect(button.querySelector('svg')).toHaveAttribute('fill', 'none')
 
-    // 수는 「남부권 · 해수욕장 · ♥ 3」 — 권역 줄 안이다
+    // 수는 버튼 안 한 곳뿐이다 — 권역 줄은 분류만 말한다(성격이 다른 것을 한 줄에 섞지 않는다)
     const count = screen.getByRole('img', { name: '하트 3' })
-    expect(count.closest('p')).toHaveTextContent('남부권')
+    expect(count.closest('button')).toBe(button)
+    expect(screen.getByText(/남부권/)).not.toContainElement(count)
 
     const title = screen.getByRole('heading', { name: '학동몽돌해변' })
     const addr = screen.getByText('경상남도 거제시 남부면 어딘가길 1')

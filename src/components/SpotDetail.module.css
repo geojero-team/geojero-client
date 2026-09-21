@@ -209,21 +209,20 @@
   color: var(--text-secondary);
 }
 
-/* 하트 버튼(2026-09-21 사용자 결정 · Figma 프레임 없음 — 부록 Q) — **아이콘 하나**입니다. 수는 버튼 밖(권역 줄 꼬리)입니다.
-   손가락 칸 40×40 을 쓰되 음수 마진으로 **레이아웃 폭은 아이콘 24 만** 차지해, 아이콘 광학 중심이 body 오른쪽 여백(20) 선에 맞습니다.
-   margin-top 4 는 이름 첫 줄(24/32)의 세로 가운데와 아이콘 가운데를 맞춘 값입니다. */
+/* 하트 버튼(2026-09-21 사용자 결정 · Figma 프레임 없음 — 부록 Q) — 제목 줄 오른쪽 끝의 **「♡ 3」 알약**입니다.
+   수가 버튼 안에 붙는 이유는 우리 하트가 저장이 아니라 **추천**이기 때문입니다(유튜브 좋아요 · 네이버 공감).
+   높이 32 는 앱의 다른 알약(칩)과 같고, margin-top 2 가 이름 첫 줄(24/32)의 세로 가운데와 알약 가운데를 맞춥니다.
+   아래위 음수 마진은 손가락 칸만 넓혀(32 + 8 + 8) 레이아웃은 그대로 둡니다. */
 .like {
   display: inline-flex;
-  width: 40px;
-  height: 40px;
+  height: 32px;
   flex-shrink: 0;
   align-items: center;
-  justify-content: center;
-  margin: -4px -8px -8px 0;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: none;
+  margin: 2px -4px -8px 0;
+  padding: 0 var(--space-md);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
   color: var(--text-secondary);
   cursor: pointer;
 }
@@ -238,22 +237,19 @@
   cursor: default;
 }
 
-/* 누른 하트 — 채운 하트는 --like(경고 빨강 · 유람선 빨강과 뜻이 다른 색, tokens.css). */
-.likeOn {
-  color: var(--like);
+/* 알약 안의 「♡ 3」 — 하트 16 · 글자 14(카드의 12보다 한 단계 큽니다) · 사이 6. */
+.like .likeCount {
+  gap: 6px;
+  font: var(--type-caption);
+  font-weight: 500;
 }
 
-/* 권역 줄 꼬리의 수 「남부권 · 해수욕장 · ♥ 3」 — 줄 안에 이어 쓰므로 아래로 살짝 맞춥니다(당근 「신사동 · 112명」 방식).
-   누른 뒤에는 하트만 색이 차고 수는 보조색 그대로 — 줄의 다른 글과 같은 무게로 읽혀야 합니다. */
-.metaLike {
-  vertical-align: -1px;
+/* 누른 뒤 — 채운 하트는 --like(경고 빨강 · 유람선 빨강과 뜻이 다른 색, tokens.css), 수는 본문색으로 진해집니다. */
+.likeOn .likeCount {
+  color: var(--text-primary);
 }
 
-.metaLike svg {
-  color: inherit;
-}
-
-.likeOnMeta svg {
+.likeOn .likeCount svg {
   color: var(--like);
 }
 
