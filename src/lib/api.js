@@ -102,10 +102,13 @@ export const api = {
   /**
    * PoisRes { pois: [{ poiId, name, shortName, kind, theme, region, category,
    *                    tier, hasEnglish, lat, lng, imageUrl,
-   *                    alightLabel, timetableStop, boardStopDiffers, ferryDocks[] }] }
+   *                    alightLabel, timetableStop, boardStopDiffers, ferryDocks[],
+   *                    likeCount, liked, featuredCourseCount }] }
    *
    * alightLabel·timetableStop·boardStopDiffers 는 상세와 같은 값(시간표 탭 목록 둘째 줄).
    * ferryDocks 는 배로만 가는 곳(외도보타니아)의 선착장 이름 넷, 나머지는 빈 배열입니다.
+   * likeCount(정수 · 항상) · liked(토큰이 있고 내가 눌렀으면 true — 비로그인 · 깨진 토큰이면 false, 401 아님) ·
+   * featuredCourseCount(대표 코스 10개에 든 횟수)는 스팟 하트(2026-09-21 · 부록 Q)와 「추천순」(lib/listTools)의 값입니다.
    *
    * withImages=true면 서버가 POI마다 TourAPI를 부릅니다(24h 캐시). 사진이 필요한 화면만
    * 켭니다 — 이름→id 해석은 사진이 필요 없고, 켜면 첫 요청이 느려집니다.
@@ -116,11 +119,23 @@ export const api = {
   /**
    * PoiDetailRes { poiId, name, kind, tier, lang, langFallback,
    *                detail: { source, overview, imageUrl, images, address }, checkUrl, lastDeparture,
-   *                alightLabel, timetableStop, boardStopDiffers }
+   *                alightLabel, timetableStop, boardStopDiffers, likeCount, liked }
    * address 는 TourAPI addr1 런타임 값(폴백이면 없음). alightLabel·timetableStop 은 V18 하차 이름 둘 —
    * 스팟 상세의 「내리는 곳」 줄(Figma 607:4). boardStopDiffers 는 스팟 시간표와 같은 규칙입니다.
+   * likeCount · liked 는 목록과 같은 뜻 — 스팟 상세의 하트 버튼이 이 값으로 시작합니다(2026-09-21 · 부록 Q).
    */
   poi: (poiId, lang = 'ko') => request(`/api/pois/${poiId}?lang=${lang}`),
+
+  /**
+   * 스팟 하트 누르기(2026-09-21 사용자 결정 · 디자인브리프 부록 Q). **누르는 것만 로그인** — 보기 · 정렬은 비로그인입니다.
+   * PUT → 200 { poiId, likeCount, liked: true } (멱등 — 두 번 눌러도 한 번). 응답의 likeCount 가 곧 새 값이라
+   * 화면은 이걸로 자기 상태와 목록 캐시(lib/spots patchSpot)를 고칩니다.
+   * 401 = 토큰 없음 · 위조 · 만료 · 삭제된 계정(화면은 세션을 지우고 로그인 시트), 404 = 화면 스팟이 아님.
+   */
+  likeSpot: (poiId) => request(`/api/pois/${poiId}/like`, { method: 'PUT', session: true }),
+
+  /** 하트 취소 — DELETE → 200 { poiId, likeCount, liked: false }. 204 가 아니라 본문이 옵니다. 오류는 likeSpot 과 같습니다. */
+  unlikeSpot: (poiId) => request(`/api/pois/${poiId}/like`, { method: 'DELETE', session: true }),
 
   /**
    * 맛집 · 숙소(2026-09-19) · 카페(2026-09-20) — 기준문서 §6 「맛집 · 숙소」. kind = 'FOOD' | 'STAY' | 'CAFE'.

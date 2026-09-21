@@ -40,6 +40,19 @@ export async function loadVisibleSpots() {
     .map((poi) => ({ ...poi, thumbnailUrl: poi.imageUrl }))
 }
 
+/**
+ * 받아 둔 목록의 한 스팟을 고칩니다 — 스팟 상세에서 하트를 누른 뒤 likeCount · liked(2026-09-21 · 부록 Q).
+ * 뒤로 갔을 때 카드 · 줄의 수와 「추천순」이 맞으려면 목록 캐시도 같이 바뀌어야 합니다.
+ * 캐시가 없으면 아무것도 하지 않습니다 — 서버를 부르지도, 항목을 만들지도 않습니다(다음 loadSpots 가 서버 값을 받습니다).
+ * 주소(:spotId)에서 온 문자열 id 도 같은 항목입니다.
+ */
+export function patchSpot(poiId, patch) {
+  if (!cached) return
+  const id = Number(poiId)
+  const poi = cached.get(id)
+  if (poi) cached.set(id, { ...poi, ...patch })
+}
+
 /** poiId → imageUrl. 사진이 없는 스팟은 맵에 없습니다(저작권 Type3는 서버가 걸러 null로 줍니다). */
 export async function loadSpotPhotos() {
   const spots = await loadSpots()
@@ -121,5 +134,9 @@ export async function loadSpotDetail(poiId) {
     alightLabel: res?.alightLabel ?? base?.alightLabel ?? null,
     timetableStop: res?.timetableStop ?? base?.timetableStop ?? null,
     boardStopDiffers: Boolean(res?.boardStopDiffers ?? base?.boardStopDiffers),
+    // 하트(2026-09-21 · 부록 Q) — 상세가 목록보다 새 값입니다(목록은 세션 동안 캐시). 둘 다 없으면(옛 응답) null —
+    // 화면이 버튼을 그리지 않습니다(값 없이 하트만 남기지 않습니다).
+    likeCount: res?.likeCount ?? base?.likeCount ?? null,
+    liked: Boolean(res?.liked ?? base?.liked),
   }
 }

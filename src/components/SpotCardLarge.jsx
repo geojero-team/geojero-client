@@ -1,3 +1,4 @@
+import LikeCount from './LikeCount'
 import { t } from '../i18n'
 import { courseImage, onImageError } from '../lib/courseImage'
 import styles from './SpotCardLarge.module.css'
@@ -27,7 +28,13 @@ export default function SpotCardLarge({ spot, onOpen, tour }) {
         )}
       </span>
       <span className={styles.info}>
-        {meta && <span className={styles.meta}>{meta}</span>}
+        {(meta || spot.likeCount != null) && (
+          <span className={styles.metaRow}>
+            <span className={styles.meta}>{meta}</span>
+            {/* 하트 수 — 카드에는 수만(2026-09-21 · 부록 Q). 0 도 「♥ 0」, 값이 없으면(옛 응답) 그리지 않습니다. */}
+            <LikeCount count={spot.likeCount} />
+          </span>
+        )}
         <span className={styles.name}>{spot.shortName ?? spot.name}</span>
         {spot.summary && <span className={styles.summary}>{spot.summary}</span>}
       </span>

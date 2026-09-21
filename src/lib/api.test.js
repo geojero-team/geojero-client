@@ -194,6 +194,55 @@ describe('방문자 사진 호출', () => {
   })
 })
 
+/** 스팟 하트(2026-09-21 사용자 결정 · 부록 Q) — 누르기 · 취소 둘 다 200 본문 { poiId, likeCount, liked } 를 돌려준다(취소도 204 가 아니다). */
+describe('스팟 하트 호출', () => {
+  it('누르기는 PUT /api/pois/{id}/like 에 Bearer 를 붙이고 본문 없이 보내, 응답을 그대로 돌려준다', async () => {
+    const { api } = await loadApi()
+    localStorage.setItem('gj_token', 'tok')
+    const fetchMock = vi.fn(async () =>
+      respond(200, JSON.stringify({ poiId: 4, likeCount: 13, liked: true }), 'application/json'),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await api.likeSpot(4)
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${BASE}/api/pois/4/like`)
+    expect(init.method).toBe('PUT')
+    expect(init.headers).toEqual({ Authorization: 'Bearer tok' })
+    expect(init.body).toBeUndefined()
+    expect(res).toEqual({ poiId: 4, likeCount: 13, liked: true })
+  })
+
+  it('취소는 DELETE — 200 본문(likeCount · liked:false)을 돌려준다', async () => {
+    const { api } = await loadApi()
+    localStorage.setItem('gj_token', 'tok')
+    const fetchMock = vi.fn(async () =>
+      respond(200, JSON.stringify({ poiId: 4, likeCount: 12, liked: false }), 'application/json'),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await api.unlikeSpot(4)
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${BASE}/api/pois/4/like`)
+    expect(init.method).toBe('DELETE')
+    expect(init.headers).toEqual({ Authorization: 'Bearer tok' })
+    expect(res).toEqual({ poiId: 4, likeCount: 12, liked: false })
+  })
+
+  it('401 이면 ApiError(status 401) — 화면이 세션을 지우고 로그인 시트를 띄운다', async () => {
+    const { api, ApiError } = await loadApi()
+    vi.stubGlobal('fetch', vi.fn(async () => respond(401, JSON.stringify({ status: 401, code: 'UNAUTHORIZED' }), 'application/problem+json')))
+
+    const error = await api.likeSpot(4).catch((e) => e)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error.status).toBe(401)
+    expect(error.code).toBe('UNAUTHORIZED')
+  })
+})
+
 describe('유람선 시간표 호출', () => {
   it('값이 있는 파라미터만 붙여 GET /api/pois/{id}/ferries 를 부른다', async () => {
     const { api } = await loadApi()

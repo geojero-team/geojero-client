@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import CategoryBar from '../components/CategoryBar'
+import LikeCount from '../components/LikeCount'
 import ListTools from '../components/ListTools'
 import PlaceCard from '../components/PlaceCard'
 import Screen from '../components/Screen'
@@ -40,7 +41,11 @@ function SpotCard({ spot, onOpen, tour }) {
             그대로 두면 '학동흑진주몽돌해변'·'거제도포로수용소유적공원'이 카드에 들어갑니다. */}
         <span className={styles.name}>{spot.shortName ?? spot.name}</span>
         <span className={styles.meta}>
-          {spot.region} · {spot.category}
+          <span>
+            {spot.region} · {spot.category}
+          </span>
+          {/* 하트 수 — 카드에는 수만, 누르는 자리는 스팟 상세(2026-09-21 · 부록 Q). 0 도 「♥ 0」, 값이 없으면(옛 응답) 없음. */}
+          <LikeCount count={spot.likeCount} />
         </span>
       </div>
     </button>

@@ -9,13 +9,13 @@ vi.mock('../lib/api', () => ({ api: { pois: vi.fn() } }))
 
 const POIS = [
   { poiId: 1, name: '바람의언덕', shortName: '바람의언덕', kind: 'SPOT', theme: 'VIEW', region: '남부권', category: '언덕·전망', imageUrl: 'https://tong.visitkorea.or.kr/wind.jpg',
-    alightLabel: '도장포 정류장', timetableStop: '도장포', boardStopDiffers: false, ferryDocks: [] },
+    alightLabel: '도장포 정류장', timetableStop: '도장포', boardStopDiffers: false, ferryDocks: [], likeCount: 7, liked: false },
   // 외도보타니아는 버스 정류장이 없고 선착장 4곳의 배 시간표를 엽니다 — 이 화면이 「버스」라고 말하면 안 되는 이유.
   { poiId: 5, name: '외도보타니아', shortName: '외도보타니아', kind: 'SPOT', theme: 'GARDEN', region: '동부권', category: '식물원 · 유람선', imageUrl: null,
-    alightLabel: null, timetableStop: null, boardStopDiffers: false, ferryDocks: ['도장포', '와현', '장승포', '지세포'] },
+    alightLabel: null, timetableStop: null, boardStopDiffers: false, ferryDocks: ['도장포', '와현', '장승포', '지세포'], likeCount: 0, liked: false },
   // 거제씨월드는 신촌에서 내리지만 시간표는 지세포 기준 — 「신촌 정류장」만 적으면 신촌 시간표로 읽힙니다.
   { poiId: 18, name: '거제씨월드', shortName: '거제씨월드', kind: 'SPOT', theme: 'EXHIBIT', region: '동부권', category: '체험', imageUrl: null,
-    alightLabel: '신촌 정류장', timetableStop: '지세포', boardStopDiffers: true, ferryDocks: [] },
+    alightLabel: '신촌 정류장', timetableStop: '지세포', boardStopDiffers: true, ferryDocks: [], likeCount: 2, liked: false },
   { poiId: 23, name: '고현터미널', shortName: '고현터미널', kind: 'TERMINAL', theme: null, region: null, category: null, imageUrl: null,
     alightLabel: null, timetableStop: null, boardStopDiffers: false, ferryDocks: [] },
 ]
@@ -70,5 +70,21 @@ describe('시간표 탭', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: /바람의언덕/ }))
     expect(await screen.findByText('at /timetable/1')).toBeInTheDocument()
+  })
+
+  /** 스팟 하트(2026-09-21 사용자 결정 · 부록 Q) — 줄의 › 앞에 수만. 0 도 보인다. 추천순은 하트 수 순이다. */
+  it('줄의 › 앞에 「♥ 7」 — 0 도 「♥ 0」으로 보이고, 추천순은 하트 많은 순이다', async () => {
+    renderPage()
+
+    const wind = await screen.findByRole('button', { name: /바람의언덕/ })
+    expect(within(wind).getByRole('img', { name: '하트 7' })).toHaveTextContent('7')
+    expect(within(screen.getByRole('button', { name: /외도보타니아/ })).getByRole('img', { name: '하트 0' })).toHaveTextContent('0')
+
+    const rows = screen.getAllByRole('button', { name: /바람의언덕|외도보타니아|거제씨월드/ })
+    expect(rows.map((row) => row.textContent)).toEqual([
+      expect.stringContaining('바람의언덕'),
+      expect.stringContaining('거제씨월드'),
+      expect.stringContaining('외도보타니아'),
+    ])
   })
 })

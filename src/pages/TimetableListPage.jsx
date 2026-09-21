@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import CategoryBar from '../components/CategoryBar'
+import LikeCount from '../components/LikeCount'
 import ListTools from '../components/ListTools'
 import Screen from '../components/Screen'
 import SpotCardLarge from '../components/SpotCardLarge'
@@ -53,6 +54,8 @@ function SpotRow({ spot, onOpen, tour }) {
         <span className={styles.name}>{spot.shortName ?? spot.name}</span>
         {sub && <span className={styles.sub}>{sub}</span>}
       </span>
+      {/* 하트 수 — › 앞(2026-09-21 · 부록 Q). 줄에는 수만 보이고 누르는 자리는 스팟 상세다. 0 도 「♥ 0」. */}
+      <LikeCount count={spot.likeCount} />
       <span className={styles.chev} aria-hidden="true">
         ›
       </span>

@@ -1,0 +1,30 @@
+/* 하트 수 「♥ 12」(2026-09-21 · 부록 Q) — 12px 하트 + 수, 라벨 글자, 보조색. 자리는 부모가 정합니다
+   (카드 meta 줄 오른쪽 끝 · 시간표 줄의 › 앞). 스팟 상세의 버튼 안에서는 SpotDetail 이 크기와 색을 덮어씁니다(.like .likeCount). */
+
+.count {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3px;
+  font: var(--type-label);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.count svg {
+  flex-shrink: 0;
+}
+
+/* 읽기 도구에만 들리는 「하트 12」 — 화면에는 아이콘이 그 말을 합니다(SpotDetail .srOnly 와 같은 방식). */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

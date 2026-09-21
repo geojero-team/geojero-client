@@ -1,10 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ChevronLeft, X } from 'lucide-react'
+import LikeCount from './LikeCount'
+import LoginSheet from './LoginSheet'
+import ScreenPortal from './ScreenPortal'
 import TerminalMap from './TerminalMap'
 import VisitorPhotos from './VisitorPhotos'
 import { t } from '../i18n'
-import { loadSpotDetail } from '../lib/spots'
+import { api, beginKakaoLogin, beginKakaoLoginTo } from '../lib/api'
+import { clearSession, getToken } from '../lib/session'
+import { loadSpotDetail, patchSpot } from '../lib/spots'
 import { courseImage, onImageError } from '../lib/courseImage'
 import { sentenceLines } from '../lib/format'
 import { ICON_PATHS } from '../lib/spotIcons'
@@ -94,6 +99,14 @@ function FerryIcon() {
   )
 }
 
+/** 주소의 `?like=1` 을 켜고 끄는 updater — 다른 파라미터(방문자 사진의 `?upload=1`)는 건드리지 않습니다. */
+const withLikeParam = (on) => (prev) => {
+  const next = new URLSearchParams(prev)
+  if (on) next.set('like', '1')
+  else next.delete('like')
+  return next
+}
+
 /**
  * @param poiId   서버 poi_id. 주소의 :spotId가 곧 이 값입니다
  * @param seed    목록에서 이미 아는 것(이름·권역·분류). 있으면 사진을 기다리는 동안에도
@@ -127,6 +140,59 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, onClose 
       cancelled = true
     }
   }, [poiId])
+
+  /* ── 하트(2026-09-21 사용자 결정 · Figma 프레임 없음 — 디자인브리프 부록 Q) ──
+     값은 상세(likeCount · liked)에서 오고, 누른 뒤에는 서버 응답으로 덮습니다(like). 목록 캐시도 같이 고쳐(patchSpot)
+     뒤로 갔을 때 카드의 수와 「추천순」이 맞습니다. **누르는 것만 로그인**입니다 — 비로그인이면 로그인 시트를 띄우고,
+     돌아올 주소에 `?like=1` 을 실어 복귀하면 이어서 누릅니다(방문자 사진의 `?upload=1` 과 같은 방식).
+     지도 시트(uploadInUrl 아님)는 주소를 바꾸지 않으므로 `/spots/{id}?like=1` 로 돌려보냅니다 — 지도로는 돌아오지 않습니다(기준문서 §6). */
+  const likeCountId = useId()
+  const [like, setLike] = useState(null) // { likeCount, liked } — 서버 응답으로 덮은 값. null 이면 spot 값 그대로
+  const [likeBusy, setLikeBusy] = useState(false)
+  const [likeFailed, setLikeFailed] = useState(false)
+  const [likeLogin, setLikeLogin] = useState(false) // 지도 시트 호스트의 로그인 시트(주소를 안 쓰는 쪽)
+  const [autoLike, setAutoLike] = useState('idle') // 'idle' | 'done' — ?like=1 복귀에서 한 번만 누릅니다
+  const [searchParams, setSearchParams] = useSearchParams()
+  const likeInUrl = uploadInUrl && searchParams.get('like') === '1'
+  const hasToken = Boolean(getToken())
+
+  /* 응답 하나로 화면과 목록 캐시를 같이 고칩니다. 401 이면 세션을 지우고 false — 부른 쪽이 로그인 시트를 띄웁니다.
+     그 밖의 실패는 한 줄로 알리고(0 과 실패는 다른 답) 수는 그대로 둡니다. */
+  const settleLike = useCallback(
+    (promise) =>
+      promise
+        .then((res) => {
+          const patch = { likeCount: res.likeCount, liked: Boolean(res.liked) }
+          setLike(patch)
+          patchSpot(poiId, patch)
+          return true
+        })
+        .catch((error) => {
+          if (error.status === 401) {
+            clearSession()
+            return false
+          }
+          setLikeFailed(true)
+          return true
+        }),
+    [poiId],
+  )
+
+  /* ?like=1 로 돌아왔고 토큰이 있으면 저절로 누릅니다. 상태는 콜백에서만 바꿉니다(react-hooks/set-state-in-effect — VisitorPhotos 와 같은 방식). */
+  useEffect(() => {
+    if (!likeInUrl || !hasToken || autoLike !== 'idle') return
+    let cancelled = false
+    settleLike(api.likeSpot(poiId)).then((sessionOk) => {
+      if (cancelled) return
+      // 다시 그리면 hasToken 을 다시 읽습니다 — 401 이었으면 거짓이 되어 로그인 시트가 뜨고, ?like=1 은 남겨 두어
+      // 다시 로그인하면 이어서 누릅니다.
+      setAutoLike('done')
+      if (sessionOk) setSearchParams(withLikeParam(false), { replace: true })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [likeInUrl, hasToken, autoLike, poiId, settleLike, setSearchParams])
 
   const openTimetable = () => navigate(`/timetable/${poiId}`)
 
@@ -165,6 +231,34 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, onClose 
   const swipeable = photos.length > 1
   // 고현터미널은 사진이 없는 곳이라 사진 자리에 위치 지도를 둡니다(2026-09-19 사용자 결정). 좌표가 없거나 지도가 못 뜨면 자리그림.
   const showTerminalMap = isTerminal && !hasPhotos && spot.lat != null && spot.lng != null && !mapFailed
+
+  /* 하트 — 고현터미널은 화면 스팟이 아니라 없습니다(서버도 404). 값이 없으면(옛 응답) 버튼을 그리지 않습니다 —
+     값 없이 하트만 남기지 않습니다(절대규칙 3). 0 은 값이라 「♡ 0」으로 그립니다. */
+  const likeCount = like?.likeCount ?? spot.likeCount ?? null
+  const liked = like?.liked ?? Boolean(spot.liked)
+  const showLike = !isTerminal && likeCount != null
+  const autoLiking = likeInUrl && hasToken && autoLike === 'idle'
+  const likeLoginOpen = uploadInUrl ? likeInUrl && !hasToken : likeLogin
+
+  const askLikeLogin = () =>
+    uploadInUrl ? setSearchParams(withLikeParam(true), { replace: true }) : setLikeLogin(true)
+  const closeLikeLogin = () =>
+    uploadInUrl ? setSearchParams(withLikeParam(false), { replace: true }) : setLikeLogin(false)
+  const loginForLike = () => (uploadInUrl ? beginKakaoLogin() : beginKakaoLoginTo(`/spots/${poiId}?like=1`))
+
+  const toggleLike = () => {
+    setLikeFailed(false)
+    if (!getToken()) {
+      askLikeLogin()
+      return
+    }
+    setLikeBusy(true)
+    settleLike(liked ? api.unlikeSpot(poiId) : api.likeSpot(poiId))
+      .then((sessionOk) => {
+        if (!sessionOk) askLikeLogin()
+      })
+      .finally(() => setLikeBusy(false))
+  }
 
   /* 스크롤 위치로 현재 장을 셉니다. 스크롤 이벤트마다 setState가 불리지만 값이 같으면
      React가 리렌더를 걸러주므로, 장이 바뀌는 순간에만 실제로 다시 그려집니다. */
@@ -269,6 +363,28 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, onClose 
           <p className={styles.category}>
             {isTerminal ? t('terminal.startPoint') : `${spot.region} · ${spot.category}`}
           </p>
+          {/* 하트 「♡ 3」 — 제목 블록 아래 한 줄(부록 Q). 이름은 「하트 누르기 / 하트 취소」, 수는 설명으로 들립니다. */}
+          {showLike && (
+            <div className={styles.likeRow}>
+              <button
+                type="button"
+                className={liked ? `${styles.like} ${styles.likeOn}` : styles.like}
+                onClick={toggleLike}
+                disabled={likeBusy || autoLiking}
+                aria-pressed={liked}
+                aria-label={t(liked ? 'spotLike.unlike' : 'spotLike.like')}
+                aria-describedby={likeCountId}
+                data-api="PUT /api/pois/{id}/like"
+              >
+                <LikeCount id={likeCountId} count={likeCount} size={16} filled={liked} className={styles.likeCount} />
+              </button>
+              {likeFailed && (
+                <p className={styles.likeNotice} role="status">
+                  {t('spotLike.failed')}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 주소 · 내리는 곳(613:3, 2026-09-14 밤). 주소는 TourAPI addr1 런타임 값 그대로, 내리는 곳은 V18 alight_label.
@@ -342,6 +458,13 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, onClose 
           uploadInUrl={uploadInUrl}
         />
       </div>
+
+      {/* 하트의 로그인 시트 — 지도 시트 안에 갇히지 않게 화면 프레임에 그립니다(방문자 사진과 같은 ScreenPortal). */}
+      {likeLoginOpen && (
+        <ScreenPortal>
+          <LoginSheet open onClose={closeLikeLogin} onLogin={loginForLike} title={t('spotLike.loginTitle')} />
+        </ScreenPortal>
+      )}
     </div>
   )
 }

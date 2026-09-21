@@ -63,6 +63,14 @@
   padding: 12px 14px 14px;
 }
 
+/* 권역 · 분류(브랜드 색)가 왼쪽, 하트 수(LikeCount — 보조색 그대로)가 오른쪽 끝(2026-09-21 · 부록 Q). */
+.metaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
 .meta {
   font: var(--type-label);
   color: var(--brand-strong);

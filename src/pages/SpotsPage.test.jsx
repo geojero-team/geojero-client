@@ -10,8 +10,8 @@ vi.mock('../lib/api', () => ({ api: { places: vi.fn() } }))
 vi.mock('../lib/spots', () => ({ loadVisibleSpots: vi.fn() }))
 
 const SPOTS = [
-  { poiId: 1, name: '바람의언덕', shortName: '바람의언덕', theme: 'VIEW', region: '남부권', category: '언덕·전망', imageUrl: null },
-  { poiId: 20, name: '거제조선해양문화관', shortName: '조선해양문화관', theme: 'EXHIBIT', region: '동부권', category: '전시', imageUrl: null },
+  { poiId: 1, name: '바람의언덕', shortName: '바람의언덕', theme: 'VIEW', region: '남부권', category: '언덕·전망', imageUrl: null, likeCount: 12, liked: false },
+  { poiId: 20, name: '거제조선해양문화관', shortName: '조선해양문화관', theme: 'EXHIBIT', region: '동부권', category: '전시', imageUrl: null, likeCount: 0, liked: false },
 ]
 
 // 서버 순서 = T맵 인기순(기준문서 §6 「맛집 · 숙소」). 화면은 그 순서를 바꾸지 않는다.
@@ -187,5 +187,49 @@ describe('스팟 탭 — 맛집 · 숙소 · 카페 칩', () => {
     await screen.findByRole('button', { name: /대박난맛집/ })
     await user.click(screen.getByRole('tab', { name: '전체' }))
     expect(await screen.findByRole('button', { name: /바람의언덕/ })).toBeInTheDocument()
+  })
+})
+
+/** 스팟 하트(2026-09-21 사용자 결정 · 부록 Q) — 카드에는 수만 보이고 누를 수 없다. 0 도 「♥ 0」. 누르는 자리는 스팟 상세뿐이다. */
+describe('스팟 탭 — 하트 수', () => {
+  it('격자 카드에 「♥ 12」 — 0 도 「♥ 0」으로 보이고, 카드 안에 누를 것은 없다', async () => {
+    renderPage()
+
+    const wind = await screen.findByRole('button', { name: /바람의언덕/ })
+    expect(within(wind).getByRole('img', { name: '하트 12' })).toHaveTextContent('12')
+    const museum = screen.getByRole('button', { name: /조선해양문화관/ })
+    expect(within(museum).getByRole('img', { name: '하트 0' })).toHaveTextContent('0')
+    expect(within(wind).queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('크게 보기 카드에도 같은 수가 붙는다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('button', { name: /바람의언덕/ })
+
+    await user.click(screen.getByRole('button', { name: '크게 보기' }))
+
+    const wind = await screen.findByRole('button', { name: /바람의언덕/ })
+    expect(within(wind).getByRole('img', { name: '하트 12' })).toHaveTextContent('12')
+  })
+
+  it('추천순은 하트 많은 순이다 — 서버 순서가 반대여도', async () => {
+    loadVisibleSpots.mockResolvedValue([SPOTS[1], SPOTS[0]])
+    renderPage()
+
+    const cards = await screen.findAllByRole('button', { name: /바람의언덕|조선해양문화관/ })
+    expect(cards.map((card) => card.textContent)).toEqual([
+      expect.stringContaining('바람의언덕'),
+      expect.stringContaining('조선해양문화관'),
+    ])
+  })
+
+  it('likeCount 가 없는 옛 응답이면 수를 그리지 않는다', async () => {
+    const old = SPOTS.map((spot) => Object.fromEntries(Object.entries(spot).filter(([key]) => key !== 'likeCount' && key !== 'liked')))
+    loadVisibleSpots.mockResolvedValue(old)
+    renderPage()
+
+    const wind = await screen.findByRole('button', { name: /바람의언덕/ })
+    expect(within(wind).queryByRole('img', { name: /하트/ })).not.toBeInTheDocument()
   })
 })

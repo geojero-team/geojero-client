@@ -2,18 +2,18 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { api } from '../lib/api'
+import { api, beginKakaoLogin, beginKakaoLoginTo } from '../lib/api'
 import { loadKakaoMaps } from '../lib/kakaoLoader'
-import { loadSpotDetail } from '../lib/spots'
+import { loadSpotDetail, patchSpot } from '../lib/spots'
 import SpotDetail from './SpotDetail'
 
 vi.mock('../lib/api', () => ({
-  api: { getVisitorPhotos: vi.fn(), me: vi.fn() },
+  api: { getVisitorPhotos: vi.fn(), me: vi.fn(), likeSpot: vi.fn(), unlikeSpot: vi.fn() },
   beginKakaoLogin: vi.fn(),
   beginKakaoLoginTo: vi.fn(),
 }))
 
-vi.mock('../lib/spots', () => ({ loadSpotDetail: vi.fn() }))
+vi.mock('../lib/spots', () => ({ loadSpotDetail: vi.fn(), patchSpot: vi.fn() }))
 
 // 고현터미널의 위치 지도만 부릅니다. 기본은 실패(지도 도구 없음) — 지도 테스트만 가짜 SDK 를 줍니다.
 vi.mock('../lib/kakaoLoader', () => ({ loadKakaoMaps: vi.fn() }))
@@ -314,5 +314,214 @@ describe('SpotDetail — 주소 · 내리는 곳', () => {
     const row = await screen.findByRole('button', { name: '시간표 보기' })
     expect(screen.queryByText(/에서 내려요$/)).not.toBeInTheDocument()
     expect(row.closest('[data-info]')).not.toBeNull()
+  })
+})
+
+/**
+ * 스팟 하트(2026-09-21 사용자 결정 · Figma 프레임 없음 — 디자인브리프 부록 Q).
+ * 상세에서 누르고 카드에는 수만. 누르는 것만 로그인, 보기는 비로그인. 0 도 「♡ 0」으로 보인다.
+ * 로그인 복귀는 방문자 사진의 `?upload=1` 과 같은 방식 — `?like=1` 을 주소에 실어 돌아오면 이어서 누른다.
+ */
+describe('SpotDetail — 하트', () => {
+  const LIKABLE = { ...SPOT, address: '경상남도 거제시 남부면 어딘가길 1', likeCount: 3, liked: false }
+  const LIKE_TITLE = '하트를 누르려면 로그인 해주세요'
+  const FAILED = '하트를 누르지 못했어요. 잠시 뒤 다시 시도해 주세요'
+  const httpError = (status) => Object.assign(new Error(`PUT /api/pois/4/like → ${status}`), { status })
+  const follows = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+
+  /* `<p>` 인 이유 — `<output>` 은 암묵적 role=status 라 실패 한 줄(role=status)과 겹칩니다. */
+  function LocationProbe() {
+    const location = useLocation()
+    return <p data-testid="loc">{location.pathname + location.search}</p>
+  }
+
+  /** 지도 시트 호스트(주소 그대로)면 uploadInUrl 없이, 스팟 상세 화면이면 uploadInUrl 로 그립니다. */
+  function renderLike(spot, { route = '/spots/4', uploadInUrl = false } = {}) {
+    loadSpotDetail.mockResolvedValue(spot)
+    api.getVisitorPhotos.mockResolvedValue({ poiId: spot.poiId, count: 0, photos: [] })
+    render(
+      <MemoryRouter initialEntries={[route]}>
+        <Routes>
+          <Route
+            path="*"
+            element={
+              <>
+                <SpotDetail poiId={4} uploadInUrl={uploadInUrl} />
+                <LocationProbe />
+              </>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    )
+    return userEvent.setup()
+  }
+
+  it('제목 블록 아래 「♡ 3」 알약 버튼 — 안 누른 상태, 이름 「하트 누르기」, 설명 「하트 3」', async () => {
+    renderLike(LIKABLE)
+
+    const button = await screen.findByRole('button', { name: '하트 누르기' })
+    expect(button).toHaveAttribute('aria-pressed', 'false')
+    expect(button).toHaveTextContent('3')
+    expect(button).toHaveAccessibleDescription('하트 3')
+    expect(button).toHaveAttribute('data-api', 'PUT /api/pois/{id}/like')
+    expect(button.querySelector('svg')).toHaveAttribute('fill', 'none')
+    const title = screen.getByRole('heading', { name: '학동몽돌해변' })
+    const addr = screen.getByText('경상남도 거제시 남부면 어딘가길 1')
+    expect(follows(title, button)).toBe(true)
+    expect(follows(button, addr)).toBe(true)
+  })
+
+  it('0 도 「♡ 0」으로 보인다 — 값이 없을 때만 숨긴다', async () => {
+    renderLike({ ...LIKABLE, likeCount: 0 })
+
+    expect(await screen.findByRole('button', { name: '하트 누르기' })).toHaveTextContent('0')
+  })
+
+  it('likeCount 가 없는 옛 응답이면 버튼을 그리지 않는다 — 값 없이 하트만 남기지 않는다', async () => {
+    renderLike(SPOT)
+
+    await screen.findByRole('heading', { name: '학동몽돌해변' })
+    expect(screen.queryByRole('button', { name: /하트/ })).not.toBeInTheDocument()
+  })
+
+  it('고현터미널에는 하트가 없다 — 화면 스팟이 아니다(서버도 404)', async () => {
+    renderLike({ ...TERMINAL, likeCount: 0, liked: false })
+
+    await screen.findByRole('heading', { name: '고현터미널' })
+    expect(screen.queryByRole('button', { name: /하트/ })).not.toBeInTheDocument()
+  })
+
+  it('비로그인이면 누를 때 로그인 시트 — 지도 시트 호스트는 주소를 두고 /spots/4?like=1 로 돌아오게 맡긴다', async () => {
+    const user = renderLike(LIKABLE)
+
+    await user.click(await screen.findByRole('button', { name: '하트 누르기' }))
+
+    expect(screen.getByRole('heading', { name: LIKE_TITLE })).toBeInTheDocument()
+    expect(api.likeSpot).not.toHaveBeenCalled()
+    expect(screen.getByTestId('loc')).toHaveTextContent(/^\/spots\/4$/)
+
+    await user.click(screen.getByRole('button', { name: '카카오로 로그인' }))
+    expect(beginKakaoLoginTo).toHaveBeenCalledWith('/spots/4?like=1')
+    expect(beginKakaoLogin).not.toHaveBeenCalled()
+  })
+
+  it('스팟 상세 화면(uploadInUrl)이면 주소에 ?like=1 을 싣고 beginKakaoLogin — 「나중에」면 지운다', async () => {
+    const user = renderLike(LIKABLE, { uploadInUrl: true })
+
+    await user.click(await screen.findByRole('button', { name: '하트 누르기' }))
+    expect(screen.getByTestId('loc')).toHaveTextContent('/spots/4?like=1')
+    expect(screen.getByRole('heading', { name: LIKE_TITLE })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '카카오로 로그인' }))
+    expect(beginKakaoLogin).toHaveBeenCalledTimes(1)
+    expect(beginKakaoLoginTo).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: '나중에' }))
+    expect(screen.queryByRole('heading', { name: LIKE_TITLE })).not.toBeInTheDocument()
+    expect(screen.getByTestId('loc')).toHaveTextContent(/^\/spots\/4$/)
+  })
+
+  it('토큰이 있으면 PUT 을 부르고 응답대로 「♥ 4」 · 눌림 — 목록 캐시도 같이 고친다', async () => {
+    localStorage.setItem('gj_token', 'tok')
+    api.likeSpot.mockResolvedValue({ poiId: 4, likeCount: 4, liked: true })
+    const user = renderLike(LIKABLE)
+
+    await user.click(await screen.findByRole('button', { name: '하트 누르기' }))
+
+    const button = await screen.findByRole('button', { name: '하트 취소' })
+    expect(api.likeSpot).toHaveBeenCalledWith(4)
+    expect(button).toHaveAttribute('aria-pressed', 'true')
+    expect(button).toHaveTextContent('4')
+    expect(button).toHaveAccessibleDescription('하트 4')
+    expect(button.querySelector('svg')).toHaveAttribute('fill', 'currentColor')
+    expect(patchSpot).toHaveBeenCalledWith(4, { likeCount: 4, liked: true })
+    expect(screen.queryByRole('heading', { name: LIKE_TITLE })).not.toBeInTheDocument()
+  })
+
+  it('요청 중에는 버튼이 비활성이다', async () => {
+    localStorage.setItem('gj_token', 'tok')
+    let resolve
+    api.likeSpot.mockReturnValue(new Promise((r) => { resolve = r }))
+    const user = renderLike(LIKABLE)
+
+    const button = await screen.findByRole('button', { name: '하트 누르기' })
+    await user.click(button)
+    expect(button).toBeDisabled()
+
+    resolve({ poiId: 4, likeCount: 4, liked: true })
+    await waitFor(() => expect(screen.getByRole('button', { name: '하트 취소' })).toBeEnabled())
+  })
+
+  it('눌린 상태에서 누르면 DELETE — 「♡ 3」으로 돌아온다', async () => {
+    localStorage.setItem('gj_token', 'tok')
+    api.unlikeSpot.mockResolvedValue({ poiId: 4, likeCount: 3, liked: false })
+    const user = renderLike({ ...LIKABLE, likeCount: 4, liked: true })
+
+    await user.click(await screen.findByRole('button', { name: '하트 취소' }))
+
+    const button = await screen.findByRole('button', { name: '하트 누르기' })
+    expect(api.unlikeSpot).toHaveBeenCalledWith(4)
+    expect(api.likeSpot).not.toHaveBeenCalled()
+    expect(button).toHaveTextContent('3')
+    expect(button.querySelector('svg')).toHaveAttribute('fill', 'none')
+  })
+
+  it('401 이면 토큰을 지우고 로그인 시트 — 수는 그대로', async () => {
+    localStorage.setItem('gj_token', 'tok')
+    api.likeSpot.mockRejectedValue(httpError(401))
+    const user = renderLike(LIKABLE)
+
+    await user.click(await screen.findByRole('button', { name: '하트 누르기' }))
+
+    expect(await screen.findByRole('heading', { name: LIKE_TITLE })).toBeInTheDocument()
+    expect(localStorage.getItem('gj_token')).toBeNull()
+    expect(screen.getByRole('button', { name: '하트 누르기' })).toHaveTextContent('3')
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('그 밖의 실패면 버튼 아래 한 줄로 말하고 수는 그대로 — 다시 누르면 문구가 사라진다', async () => {
+    localStorage.setItem('gj_token', 'tok')
+    api.likeSpot.mockRejectedValueOnce(httpError(502)).mockResolvedValue({ poiId: 4, likeCount: 4, liked: true })
+    const user = renderLike(LIKABLE)
+
+    await user.click(await screen.findByRole('button', { name: '하트 누르기' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent(FAILED)
+    expect(screen.getByRole('button', { name: '하트 누르기' })).toHaveTextContent('3')
+    expect(patchSpot).not.toHaveBeenCalled()
+    expect(screen.queryByRole('heading', { name: LIKE_TITLE })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '하트 누르기' }))
+    await screen.findByRole('button', { name: '하트 취소' })
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('?like=1 로 돌아오면(로그인 복귀) 저절로 누르고 주소에서 like 를 지운다', async () => {
+    localStorage.setItem('gj_token', 'tok')
+    api.likeSpot.mockResolvedValue({ poiId: 4, likeCount: 4, liked: true })
+    renderLike(LIKABLE, { route: '/spots/4?like=1', uploadInUrl: true })
+
+    expect(await screen.findByRole('button', { name: '하트 취소' })).toHaveTextContent('4')
+    expect(api.likeSpot).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(screen.getByTestId('loc')).toHaveTextContent(/^\/spots\/4$/))
+    expect(screen.queryByRole('heading', { name: LIKE_TITLE })).not.toBeInTheDocument()
+  })
+
+  it('?like=1 인데 토큰이 없으면 로그인 시트만 — 부르지 않는다', async () => {
+    renderLike(LIKABLE, { route: '/spots/4?like=1', uploadInUrl: true })
+
+    expect(await screen.findByRole('heading', { name: LIKE_TITLE })).toBeInTheDocument()
+    expect(api.likeSpot).not.toHaveBeenCalled()
+  })
+
+  it('?like=1 복귀에서 401 이면 세션을 지우고 로그인 시트 — ?like=1 은 남겨 다시 로그인하면 이어서 누른다', async () => {
+    localStorage.setItem('gj_token', 'tok')
+    api.likeSpot.mockRejectedValue(httpError(401))
+    renderLike(LIKABLE, { route: '/spots/4?like=1', uploadInUrl: true })
+
+    expect(await screen.findByRole('heading', { name: LIKE_TITLE })).toBeInTheDocument()
+    expect(localStorage.getItem('gj_token')).toBeNull()
+    expect(screen.getByTestId('loc')).toHaveTextContent('/spots/4?like=1')
   })
 })

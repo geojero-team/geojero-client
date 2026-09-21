@@ -9,10 +9,61 @@ const SPOTS = [
 ]
 const names = (list) => list.map((s) => s.shortName)
 
-describe('filterAndSort', () => {
-  it('기본은 서버 순서 그대로 — 9경과 대표 스팟이 앞에 오는 순서를 지킨다', () => {
-    expect(names(filterAndSort(SPOTS, {}))).toEqual(['바람의언덕', '매미성', '학동몽돌해변', '외도보타니아'])
+/**
+ * 「추천순」(default) = 하트 수 순(2026-09-21 사용자 결정 · 부록 Q). 같으면 거제 9경 번호 순(9경이 아닌 곳은 뒤) →
+ * 대표 코스에 든 횟수 → 가나다. 셋 다 서버 값(likeCount · nineScenicNo · featuredCourseCount)이라 화면이 만드는 수가 없다.
+ */
+describe('filterAndSort — 추천순', () => {
+  const ranked = (list) => names(filterAndSort(list, {}))
+
+  it('하트 많은 순', () => {
+    expect(ranked([
+      { shortName: '학동몽돌해변', likeCount: 5 },
+      { shortName: '바람의언덕', likeCount: 12 },
+      { shortName: '해금강', likeCount: 7 },
+    ])).toEqual(['바람의언덕', '해금강', '학동몽돌해변'])
   })
+
+  it('하트가 같으면 9경 번호 순 — 9경이 아닌 곳은 뒤', () => {
+    expect(ranked([
+      { shortName: '거제씨월드', likeCount: 5, nineScenicNo: null },
+      { shortName: '학동몽돌해변', likeCount: 5, nineScenicNo: 4 },
+      { shortName: '해금강', likeCount: 5, nineScenicNo: 1 },
+    ])).toEqual(['해금강', '학동몽돌해변', '거제씨월드'])
+  })
+
+  it('9경도 같으면(둘 다 아니면) 대표 코스에 든 횟수 순', () => {
+    expect(ranked([
+      { shortName: '청마기념관', likeCount: 5, nineScenicNo: null, featuredCourseCount: 0 },
+      { shortName: '거제씨월드', likeCount: 5, nineScenicNo: null, featuredCourseCount: 3 },
+    ])).toEqual(['거제씨월드', '청마기념관'])
+  })
+
+  it('그것도 같으면 가나다', () => {
+    expect(ranked([
+      { shortName: '조선해양문화관', likeCount: 5, nineScenicNo: null, featuredCourseCount: 3 },
+      { shortName: '거제씨월드', likeCount: 5, nineScenicNo: null, featuredCourseCount: 3 },
+    ])).toEqual(['거제씨월드', '조선해양문화관'])
+  })
+
+  it('네 규칙이 차례로 적용된다', () => {
+    expect(ranked([
+      { shortName: '학동몽돌해변', likeCount: 5, nineScenicNo: 4, featuredCourseCount: 6 },
+      { shortName: '바람의언덕', likeCount: 12, nineScenicNo: 2, featuredCourseCount: 5 },
+      { shortName: '해금강', likeCount: 12, nineScenicNo: 1, featuredCourseCount: 4 },
+      { shortName: '거제씨월드', likeCount: 5, nineScenicNo: null, featuredCourseCount: 3 },
+      { shortName: '조선해양문화관', likeCount: 5, nineScenicNo: null, featuredCourseCount: 3 },
+      { shortName: '거제식물원', likeCount: 0, nineScenicNo: 5, featuredCourseCount: 1 },
+      { shortName: '청마기념관', likeCount: 5, nineScenicNo: null, featuredCourseCount: 0 },
+    ])).toEqual(['해금강', '바람의언덕', '학동몽돌해변', '거제씨월드', '조선해양문화관', '청마기념관', '거제식물원'])
+  })
+
+  it('필드가 없는 옛 응답(undefined)도 깨지지 않는다 — 전부 같은 값으로 보아 가나다', () => {
+    expect(ranked(SPOTS)).toEqual(['매미성', '바람의언덕', '외도보타니아', '학동몽돌해변'])
+  })
+})
+
+describe('filterAndSort', () => {
 
   it('이름 일부로 찾는다 — 띄어 써도 찾는다', () => {
     expect(names(filterAndSort(SPOTS, { query: '몽돌' }))).toEqual(['학동몽돌해변'])
