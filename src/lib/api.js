@@ -291,14 +291,42 @@ export const api = {
    *     rows: [{ date, status, sailings: [{ depart, courseId, returnApprox }] }],
    *     coverage: { publishedThrough, fetchedAt, source, sourceUrl, crossCheckUrl } }] }
    */
-  spotFerries: (poiId, { date, after, toPoiId } = {}) => {
+  spotFerries: (poiId, { date, after, toPoiId, days } = {}) => {
     const query = new URLSearchParams()
     if (date) query.set('date', date)
     if (after) query.set('after', after)
     if (toPoiId != null) query.set('toPoiId', String(toPoiId))
+    // 날짜 창(1~62, 기본 14). 「오늘의 거제」(2026-09-21)는 오늘 하루만 물어 응답을 줄입니다.
+    if (days != null) query.set('days', String(days))
     const qs = query.toString()
     return request(`/api/pois/${poiId}/ferries${qs ? `?${qs}` : ''}`)
   },
+
+  /**
+   * 운영상태 — 우회 · 운휴 · 휴장. 시간표와 **다른 레이어**라 시간표 조회는 이걸 보지 않습니다(디자인브리프 §4).
+   * AlertsRes { alerts: [{ kind: 'DETOUR' | 'SUSPENSION' | 'CLOSURE', stop: string | null, route: string | null,
+   *                        dateFrom, dateTo: string | null, reason }] }
+   * 대상은 stop 또는 route 중 하나. dateTo=null 은 해제 시점 미정. **reason 은 항상 있습니다** — 이유 없는 알림은 데이터상 없습니다.
+   * 「오늘의 거제」(2026-09-21 — 몽꾸 안내 시트의 오늘 카드)가 씁니다.
+   */
+  alerts: (date) => request(`/api/alerts?date=${date}`),
+
+  /**
+   * 노선 시간표 — 「오늘의 거제」가 남부1 로 그날 남부면 마을버스가 도는지를 **시간표 사실**로 묻습니다
+   * (휴일이면 trips 가 빕니다 — 「휴일 ⇒ 운휴」를 화면에 박지 않고 원문 결과로 말합니다, 기준문서 §2).
+   * 노선 번호에 한글(남부1 · 남부2)이 있어 URL 인코딩합니다.
+   * RouteTimetableRes { routeNo, date, dayClass: 'WEEKDAY' | 'HOLIDAY',
+   *                     trips: [{ direction, note, stops: [{ stop, status: TIME|SKIP|EMPTY|TEXT, time }] }] }
+   * 양방향이 한 배열에 옵니다(55번은 12개 — direction 0 · 1). 회차마다 stops 구성이 다른 것은 사실이지 오류가 아닙니다(디자인브리프 §3).
+   */
+  routeTimetable: (routeNo, date) =>
+    request(`/api/routes/${encodeURIComponent(routeNo)}/timetable?date=${date}`),
+
+  /**
+   * 상태 점검 — MetaRes { ok, dataVersion: '2026-08-18', sessionKey }.
+   * dataVersion 이 시간표 원문의 시점(BIS 「2026.8.18 기준」)입니다. 「오늘의 거제」가 출처 줄에 적습니다.
+   */
+  meta: () => request('/api/meta'),
 
   /**
    * 저장 일정. 판정 제거(2026-09-12)로 verdictAtSave·verdictNow가 응답에서 빠졌습니다 —

@@ -1,9 +1,10 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, useLocation } from 'react-router-dom'
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../lib/api'
 import { loadSpotDetail } from '../lib/spots'
+import { useTodayGeoje } from '../lib/useTodayGeoje'
 import { peekHeightOf } from '../components/spotSheetHeight'
 import HomePage from './HomePage'
 
@@ -14,6 +15,15 @@ vi.mock('../lib/api', () => ({
 }))
 
 vi.mock('../lib/spots', () => ({ loadSpotDetail: vi.fn(), loadVisibleSpots: vi.fn(() => Promise.resolve([])) }))
+
+// 「오늘의 거제」는 홈이 훅으로 받아 몽꾸 시트에 넘깁니다 — 여기서는 받는 중으로 둡니다(문장은 GuideSheet.test 가 봅니다).
+vi.mock('../lib/useTodayGeoje', () => ({
+  useTodayGeoje: vi.fn(() => ({ status: 'loading', date: null, summary: null })),
+}))
+
+/* 몽꾸 말풍선(2026-09-21) — 두 줄 「안녕, 난 몽꾸야! / 거제는 나한테 물어봐」. 누르면 몽꾸 시트가 뜨고,
+   9경 설명은 그 시트의 질문 「거제 9경이 뭐야?」로 들어갑니다. */
+const BUBBLE = '안녕, 난 몽꾸야! 거제는 나한테 물어봐'
 
 // 맛집 · 숙소 상세의 위치 지도도 카카오라 jsdom 에서 뜨지 않습니다.
 vi.mock('../components/PlaceMap', () => ({ default: () => null }))
@@ -137,8 +147,9 @@ describe('홈 — 거제9경(2026-09-14)', () => {
     await screen.findByRole('button', { name: '핀 학동몽돌해변' })
 
     await user.click(screen.getByRole('button', { name: '몽꾸' }))
-    await user.click(screen.getByRole('button', { name: '거제 9경이 뭘까?' }))
-    // 말풍선 다음은 **9경 설명** 두 단계입니다(2026-09-19) — 넘겨야 목록 시트가 나옵니다.
+    await user.click(screen.getByRole('button', { name: BUBBLE }))
+    await user.click(screen.getByRole('button', { name: '거제 9경이 뭐야?' }))
+    // 질문 다음은 **9경 설명** 두 단계입니다(2026-09-19) — 넘겨야 목록 시트가 나옵니다.
     await user.click(screen.getByRole('button', { name: '다음' }))
     await user.click(screen.getByRole('button', { name: '다음' }))
     const dialog = screen.getByRole('dialog', { name: '거제 9경' })
@@ -179,7 +190,8 @@ describe('홈 — 거제9경(2026-09-14)', () => {
 
     const opener = screen.getByRole('button', { name: '몽꾸' })
     await user.click(opener)
-    await user.click(screen.getByRole('button', { name: '거제 9경이 뭘까?' }))
+    await user.click(screen.getByRole('button', { name: BUBBLE }))
+    await user.click(screen.getByRole('button', { name: '거제 9경이 뭐야?' }))
     // 설명 두 단계를 넘겨야 목록 시트입니다(2026-09-19).
     await user.click(screen.getByRole('button', { name: '다음' }))
     await user.click(screen.getByRole('button', { name: '다음' }))
@@ -214,18 +226,25 @@ describe('홈 — 몽꾸(거제시 캐릭터) → 말풍선 → 「거제9경이
     ])
     expect(mascot).toHaveAttribute('data-arm', 'down')
     expect(mascot).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.queryByRole('button', { name: '거제 9경이 뭘까?' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: BUBBLE })).not.toBeInTheDocument()
 
     await user.click(mascot)
     expect(mascot).toHaveAttribute('data-arm', 'up')
     expect(mascot).toHaveAttribute('aria-expanded', 'true')
-    const bubble = screen.getByRole('button', { name: '거제 9경이 뭘까?' })
+    const bubble = screen.getByRole('button', { name: BUBBLE })
     // 기다려도 저절로 열리지 않는다
     await new Promise((resolve) => setTimeout(resolve, 900))
-    expect(screen.queryByRole('dialog', { name: '거제 9경' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
-    // 말풍선을 누르면 목록이 아니라 **설명**이 먼저 뜹니다(2026-09-19 사용자).
+    // 말풍선을 누르면 **몽꾸 시트**(2026-09-21) — 9경 설명은 그 안의 질문으로 들어갑니다. 말풍선은 닫히고 팔을 내립니다.
     await user.click(bubble)
+    expect(screen.getByRole('dialog', { name: '뭐가 궁금해?' })).toBeInTheDocument()
+    expect(mascot).toHaveAttribute('data-arm', 'down')
+    expect(screen.queryByText('거제 9경이란')).not.toBeInTheDocument()
+
+    // 질문을 누르면 시트가 닫히고 목록이 아니라 **설명**이 먼저 뜹니다(2026-09-19 사용자 — 흐름은 그대로).
+    await user.click(screen.getByRole('button', { name: '거제 9경이 뭐야?' }))
+    expect(screen.queryByRole('dialog', { name: '뭐가 궁금해?' })).not.toBeInTheDocument()
     expect(screen.getByText('거제 9경이란')).toBeInTheDocument()
     expect(screen.queryByRole('dialog', { name: '거제 9경' })).not.toBeInTheDocument()
   })
@@ -239,7 +258,7 @@ describe('홈 — 몽꾸(거제시 캐릭터) → 말풍선 → 「거제9경이
     await user.click(mascot)
     await user.click(mascot)
     expect(mascot).toHaveAttribute('data-arm', 'down')
-    expect(screen.queryByRole('button', { name: '거제 9경이 뭘까?' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: BUBBLE })).not.toBeInTheDocument()
   })
 
   it('스팟 시트가 올라오면 캐릭터와 칩을 감춘다', async () => {
@@ -264,7 +283,8 @@ describe('홈 — 거제9경 설명(2026-09-19)', () => {
   const openTour = async (user) => {
     await screen.findByRole('button', { name: '핀 학동몽돌해변' })
     await user.click(screen.getByRole('button', { name: '몽꾸' }))
-    await user.click(screen.getByRole('button', { name: '거제 9경이 뭘까?' }))
+    await user.click(screen.getByRole('button', { name: BUBBLE }))
+    await user.click(screen.getByRole('button', { name: '거제 9경이 뭐야?' }))
   }
 
   it('지도를 9경 아홉 곳에만 맞추고, 두 번에 나눠 말한 뒤 목록으로 넘어간다', async () => {
@@ -297,6 +317,73 @@ describe('홈 — 거제9경 설명(2026-09-19)', () => {
     await user.click(screen.getByRole('button', { name: '다음' }))
 
     expect(mapProps.fitSpots.every((spot) => spot.nineScenic != null)).toBe(true)
+  })
+})
+
+/* 몽꾸 시트(2026-09-21 사용자 결정) — 말풍선을 누르면 「오늘의 거제」 + 질문 셋. 문장 내용은 GuideSheet.test 가 보고,
+   여기서는 홈이 잇는 것만 봅니다: 열림 · 오늘 훅 · 닫힘(Esc · 뒤로가기) · 포커스. */
+describe('홈 — 몽꾸 시트(2026-09-21)', () => {
+  function LocationProbe() {
+    const location = useLocation()
+    const navigate = useNavigate()
+    return (
+      <>
+        <output data-testid="loc">{location.pathname + location.search}</output>
+        <button type="button" onClick={() => navigate(-1)}>
+          폰 뒤로가기
+        </button>
+      </>
+    )
+  }
+  const renderHome = () =>
+    render(
+      <MemoryRouter>
+        <HomePage />
+        <LocationProbe />
+      </MemoryRouter>,
+    )
+
+  it('말풍선을 누르면 오늘의 거제와 질문 셋이 있는 시트가 뜨고, 오늘 소식을 그때 받는다', async () => {
+    const user = userEvent.setup()
+    renderHome()
+    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
+    expect(useTodayGeoje).toHaveBeenLastCalledWith(false)
+
+    await user.click(screen.getByRole('button', { name: '몽꾸' }))
+    await user.click(screen.getByRole('button', { name: BUBBLE }))
+    const dialog = screen.getByRole('dialog', { name: '뭐가 궁금해?' })
+    expect(within(dialog).getByRole('region', { name: '오늘의 거제' })).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: '거제 9미는 뭐야?' })).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: '왜 고현터미널에서 시작해?' })).toBeInTheDocument()
+    expect(useTodayGeoje).toHaveBeenLastCalledWith(true)
+  })
+
+  it('Esc 로 닫히면 포커스가 몽꾸로 돌아온다', async () => {
+    const user = userEvent.setup()
+    renderHome()
+    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
+    const opener = screen.getByRole('button', { name: '몽꾸' })
+    await user.click(opener)
+    await user.click(screen.getByRole('button', { name: BUBBLE }))
+    expect(screen.getByRole('heading', { name: '뭐가 궁금해?' })).toHaveFocus()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: '뭐가 궁금해?' })).not.toBeInTheDocument()
+    expect(opener).toHaveFocus()
+  })
+
+  it('폰 뒤로가기는 시트를 닫고 홈에 남는다 — 지도 시트와 같은 규칙(2026-09-20)', async () => {
+    const user = userEvent.setup()
+    renderHome()
+    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
+    await user.click(screen.getByRole('button', { name: '몽꾸' }))
+    await user.click(screen.getByRole('button', { name: BUBBLE }))
+    expect(screen.getByRole('dialog', { name: '뭐가 궁금해?' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '폰 뒤로가기' }))
+    expect(screen.queryByRole('dialog', { name: '뭐가 궁금해?' })).not.toBeInTheDocument()
+    expect(screen.getByTestId('loc')).toHaveTextContent(/^\/$/)
+    // 한 번 더 뒤로 가도 홈 안에서 헛돌지 않게 기록은 하나만 쌓였다 — 여기서는 시트가 닫힌 것까지만 본다
   })
 })
 

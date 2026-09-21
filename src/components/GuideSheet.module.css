@@ -1,0 +1,327 @@
+/* 몽꾸 시트 — Figma 프레임 없음(2026-09-21). 9경 시트(NineScenicSheet)의 틀을 그대로 씁니다:
+   스크림 값 · z 순서 · 손잡이 · 안쪽 여백 · 모서리 · 등장 동작 없음. 새로 정한 건 머리의 몽꾸 · 오늘 카드 · 질문 줄 · 답 화면뿐입니다. */
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  padding: 0;
+  border: 0;
+  background: rgba(16, 24, 40, 0.4);
+}
+
+.sheet {
+  position: absolute;
+  z-index: 7;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-height: calc(100% - var(--space-2xl));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-sm) 20px calc(env(safe-area-inset-bottom, 0px) + var(--space-xl));
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--bg-page);
+  box-shadow: var(--elevation-sheet);
+  transition: transform 160ms ease;
+}
+
+.handleRow {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 24px;
+  margin: -10px 0;
+  cursor: grab;
+}
+
+.handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-default);
+}
+
+/* 머리 — 몽꾸 옆에 「뭐가 궁금해?」. 몽꾸가 말하는 사람이라는 걸 자리로 말합니다(캐릭터 + 인사 — Lovi · Speak). */
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+/* 몸 · 팔 두 장을 같은 칸(원본 300 × 323 비율)에 겹칩니다(MascotButton 과 같은 방식). 지도 위 몽꾸(64)보다 조금 작게. */
+.mascot {
+  position: relative;
+  flex: none;
+  display: block;
+  width: 52px;
+  height: 56px;
+}
+
+.mascotLayer {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+.title {
+  margin: 0;
+  font: var(--type-title);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+/* 제목은 열릴 때 포커스를 받지만 눌러서 쓰는 요소가 아니라 테두리를 그리지 않습니다. */
+.title:focus {
+  outline: none;
+}
+
+/* 오늘의 거제 — 회색 면 카드. 몽꾸가 오늘 해 주는 말이라 질문 줄보다 위에 둡니다. */
+.today {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--radius-card);
+  background: var(--bg-surface);
+}
+
+.todayHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.todayTitle {
+  margin: 0;
+  font: var(--type-body-strong);
+  color: var(--text-primary);
+}
+
+.todayDate {
+  font: var(--type-label);
+  color: var(--text-secondary);
+}
+
+/* 한 줄에 한 사실. 글머리표 대신 줄 사이 틈으로 가릅니다 — 문장이 길면 두 줄로 접히므로 표 대신 문단이 맞습니다. */
+.todayLines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: var(--type-caption);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+.todaySource,
+.todayLoading {
+  margin: 0;
+  font: var(--type-label);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+.todayLoading {
+  font: var(--type-caption);
+}
+
+/* 질문 줄 — 9경 시트의 목록 줄과 같은 문법(44px 이상 · 구분선 · 끝에 화살표). 줄 전체가 버튼입니다. */
+.questions {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border-default);
+}
+
+.question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-sm) var(--space-xs);
+  border: 0;
+  border-bottom: 1px solid var(--border-default);
+  background: transparent;
+  font: var(--type-body);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  word-break: keep-all;
+}
+
+.question:active {
+  background: var(--bg-pressed);
+}
+
+.chevron {
+  flex: none;
+  color: var(--text-secondary);
+}
+
+/* 답 화면 머리 — ‹ 는 목록으로(시트를 닫지 않습니다). 36px 은 스팟 상세의 사진 위 뒤로 버튼과 같은 크기입니다. */
+.pageHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-left: -8px;
+}
+
+.back {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.back:active {
+  background: var(--bg-pressed);
+}
+
+.lead {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+
+.notice {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* 9미 아홉 줄 — 9경 목록과 같은 틀(번호 칸 · 이름 · 구분선). 번호는 9미 배지 색(주황)입니다. */
+.tastes {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border-default);
+}
+
+.taste {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: 10px var(--space-xs);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.rank {
+  flex: none;
+  width: 28px;
+  margin-top: 3px;
+  font: var(--type-label);
+  font-weight: 700;
+  color: var(--nine-taste-on-tint);
+}
+
+.tasteBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  word-break: keep-all;
+}
+
+.tasteName {
+  font: var(--type-body);
+  color: var(--text-primary);
+}
+
+.season,
+.noPlace {
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+/* 우리 맛집 — 이름이 곧 링크(파란 글씨, 밑줄 없음 — 9경 시트 링크와 같은 방식). 둘 이상이면 줄바꿈해 나란히. */
+.shops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--space-md);
+}
+
+.shop {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font: var(--type-caption);
+  font-weight: 500;
+  color: var(--brand-strong);
+  text-decoration: none;
+}
+
+.paragraphs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  font: var(--type-body);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+.paragraphs p {
+  margin: 0;
+}
+
+/* 범례 — 홈 지도의 고현터미널 핀과 같은 모양(파란 원 · 흰 버스). 9경 시트의 보라 고리 범례와 같은 자리입니다. */
+.legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: var(--space-md);
+  border-radius: var(--radius-card);
+  background: var(--brand-tint);
+  font: var(--type-caption);
+  color: var(--text-primary);
+  word-break: keep-all;
+}
+
+.legendPin {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--bg-page);
+  border-radius: var(--radius-pill);
+  background: var(--brand-strong);
+  color: var(--text-on-brand);
+  box-shadow: var(--elevation-pin);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    transition: none;
+  }
+}
