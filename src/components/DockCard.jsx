@@ -135,14 +135,16 @@ export default function DockCard({ name, address, lat = null, lng = null, note =
       {open && mappable && (
         <div id={bodyId} className={styles.body}>
           <DockMap name={name} lat={lat} lng={lng} />
+          {/* 선착장은 출발점을 알 수 없어 길찾기를 줄 수 없습니다 — 그 자리를 지도에 띄웁니다(2026-09-21 사용자).
+              전에 쓰던 `/link/to`(목적지만)는 카카오가 `?target=car&rt1=` 로 펴서 **출발지가 빈 자동차 길찾기**를 열었습니다. */}
           <a
             className={styles.directions}
-            href={`https://map.kakao.com/link/to/${encodeURIComponent(title)},${lat},${lng}`}
+            href={`https://map.kakao.com/link/map/${encodeURIComponent(title)},${lat},${lng}`}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={t('boat.directionsA11y', { name })}
+            aria-label={t('boat.viewA11y', { name })}
           >
-            {t('boarding.directions')}
+            {t('boarding.view')}
           </a>
         </div>
       )}

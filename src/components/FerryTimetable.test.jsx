@@ -282,7 +282,10 @@ describe('FerryTimetable — 예약 · 이용 안내 · 각주', () => {
 })
 
 describe('FerryTimetable — 타는 곳 · 주의 · 출처', () => {
-  it('타는 곳은 선착장 지도 카드 — 이름 · 주소, 펼치면 지도와 카카오맵 길찾기(선착장 좌표)', async () => {
+  /* 2026-09-21 — 「길찾기」가 아니라 「보기」다. 목적지만 넘기는 `/link/to` 는 카카오가
+     `?target=car&rt1=`(자동차 · 출발지 빈 값)으로 펴서 출발지가 빈 화면이 열렸다(실측).
+     선착장은 출발점을 알 수 없어 길찾기를 줄 수 없다 — 그 자리를 지도에 띄운다. */
+  it('타는 곳은 선착장 지도 카드 — 이름 · 주소, 펼치면 지도와 「카카오맵에서 보기」(선착장 좌표)', async () => {
     const user = userEvent.setup()
     renderFerry(destination())
 
@@ -291,8 +294,11 @@ describe('FerryTimetable — 타는 곳 · 주의 · 출처', () => {
     expect(within(card).getByText('경남 거제시 남부면 도장포1길 55')).toBeInTheDocument()
 
     await user.click(within(card).getByRole('button', { expanded: false }))
-    const directions = within(card).getByRole('link', { name: '도장포 선착장 카카오맵 길찾기 — 새 창에서 열려요' })
-    expect(directions.getAttribute('href')).toContain('34.7421508,128.6626096')
+    const view = within(card).getByRole('link', { name: '도장포 선착장 위치 — 카카오맵에서 열려요' })
+    expect(view).toHaveTextContent('카카오맵에서 보기 ↗')
+    expect(view.getAttribute('href')).toBe(
+      `https://map.kakao.com/link/map/${encodeURIComponent('도장포 선착장')},34.7421508,128.6626096`,
+    )
     expect(await within(card).findByText('지도를 불러오지 못했어요')).toBeInTheDocument()
   })
 

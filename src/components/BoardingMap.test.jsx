@@ -244,15 +244,46 @@ describe('BoardingMap — 펼친 카드(530:282 · 541:408)', () => {
     expect(screen.getByText('32번 20:37 버스는 길 건너편 정류장에서 타요.')).toBeInTheDocument()
   })
 
-  it('출발이 고현터미널이면 도보 길찾기가 아니라 전처럼 정류장만 넘긴다 — 터미널 앞 30m 는 도보 안내가 뜻이 없다', async () => {
+  /* 2026-09-21 사용자: 고현터미널 → 스팟 방향에서 이 버튼을 누르면 **출발지가 빈칸**으로 뜬다.
+     목적지만 넘기는 `/link/to` 를 카카오가 `?target=car&rt1=`(자동차 · 출발지 빈 값)으로 펴기 때문이다(실측).
+     터미널 앞 정류장은 출발지와 도착지가 **같은 점**이라(고현터미널 좌표가 그 정류소 자신이다) 길찾기가 성립하지 않는다.
+     → 길찾기 대신 **그 자리를 지도에 띄운다**(`/link/map`). */
+  it('타는 곳이 출발지와 같은 자리면 길찾기가 아니라 지도에서 보기 — 출발지가 빈 자동차 길찾기가 열리던 것', async () => {
     const user = userEvent.setup()
     render(<BoardingMap boarding={FROM_TERMINAL} />)
 
     await expand(user)
-    const link = screen.getByRole('link', { name: '터미널(일반) 정류장 카카오맵 길찾기 — 새 창에서 열려요' })
-    expect(link).toHaveTextContent('카카오맵으로 길찾기 ↗')
-    expect(link).not.toHaveTextContent('도보')
-    expect(link).toHaveAttribute('href', `https://map.kakao.com/link/to/${encodeURIComponent('터미널(일반) 정류장')},34.8906148,128.6242507`)
+    const link = screen.getByRole('link', { name: '터미널(일반) 정류장 위치 — 카카오맵에서 열려요' })
+    expect(link).toHaveTextContent('카카오맵에서 보기 ↗')
+    expect(link).not.toHaveTextContent('길찾기')
+    expect(link).toHaveAttribute('href', `https://map.kakao.com/link/map/${encodeURIComponent('터미널(일반) 정류장')},34.8906148,128.6242507`)
+  })
+
+  /* 고현터미널 출발이라도 정류장이 떨어져 있으면 도보 길찾기가 뜻이 있다 — 운영에 실제로 둘 있다:
+     포로수용소 터미널(순환) 42m · 김영삼 생가 터미널(순환) 70m. 그래서 기준을 출발 종류가 아니라 **거리**로 잡는다. */
+  it('고현터미널 출발이라도 정류장이 30m 밖이면 도보 길찾기 — 포로수용소 터미널(순환) 42m', async () => {
+    const user = userEvent.setup()
+    render(
+      <BoardingMap
+        boarding={{
+          from: { name: '고현터미널', kind: 'TERMINAL', lat: 34.8906148, lng: 128.6242507 },
+          stops: [
+            { nodeId: 'GJB362', name: '터미널(순환)', lat: 34.8910729, lng: 128.6247824, distanceM: 42, routes: ['11'] },
+          ],
+          exceptions: [],
+          unresolved: [],
+          source: SOURCE,
+        }}
+      />,
+    )
+
+    await expand(user)
+    const link = screen.getByRole('link', { name: '고현터미널에서 터미널(순환) 정류장까지 카카오맵 도보 길찾기 — 새 창에서 열려요' })
+    expect(link).toHaveTextContent('카카오맵으로 도보 길찾기 ↗')
+    expect(link).toHaveAttribute(
+      'href',
+      `https://map.kakao.com/link/by/walk/${encodeURIComponent('고현터미널')},34.8906148,128.6242507/${encodeURIComponent('터미널(순환) 정류장')},34.8910729,128.6247824`,
+    )
   })
 
   it('정류장이 여럿이면 정류장마다 목록 줄과 길찾기 — 카드 아래 버튼 하나로 어디로 보낼지 정할 수 없다', async () => {

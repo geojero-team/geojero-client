@@ -205,29 +205,37 @@ function tagText(routes) {
 }
 
 /**
- * 출발이 스팟이면 스팟 → 정류장 **도보** 길찾기를 바로 엽니다(2026-09-16 사용자 결정 — 우리 지도는 두 점 사이 직선만 알고
+ * 출발 → 정류장 **도보** 길찾기를 바로 엽니다(2026-09-16 사용자 결정 — 우리 지도는 두 점 사이 직선만 알고
  * 길은 카카오가 그립니다. 우리가 선을 그려도 카카오맵 안에서 보는 것보다 정확할 수 없어 경로 API 는 넣지 않았습니다).
- * 고현터미널 출발은 전처럼 정류장만 넘깁니다 — 터미널 앞 30m 는 도보 안내가 뜻이 없습니다.
+ *
+ * ⚠️ **가르는 기준은 출발 종류가 아니라 거리입니다**(2026-09-21 — 전에는 `kind === 'SPOT'` 이었습니다).
+ * 고현터미널 좌표는 건물이 아니라 **그 정류소 자신**이라(기준문서 §9 · V22) 터미널 앞 정류장은 출발지와
+ * 도착지가 같은 점이고, 거기에 길찾기를 걸면 카카오가 **출발지가 빈 자동차 길찾기**를 엽니다(사용자가 잡음).
+ * 그렇다고 고현터미널 출발을 통째로 막으면 틀립니다 — 운영에 **떨어진 정류장이 둘** 있습니다
+ * (포로수용소 터미널(순환) 42m · 김영삼 생가 터미널(순환) 70m). 거기서는 도보 안내가 뜻이 있습니다.
  */
-function walkable(from) {
-  return from.kind === 'SPOT' && from.lat != null && from.lng != null
+function walkable(from, stop) {
+  return from.lat != null && from.lng != null && stop.distanceM >= TERMINAL_NEAR_M
 }
 
 /**
  * 카카오맵 웹 링크(apis.map.kakao.com/web/guide 「URL로 카카오맵 사용하기」). `/link/by/walk/출발/도착` 이 도보 길찾기,
- * `/link/to/도착` 은 목적지만. 카카오가 PC · 모바일 웹을 알아서 고르므로 앱 스킴(kakaomap://)은 쓰지 않습니다.
+ * `/link/map/자리` 가 그 자리를 지도에 띄우기입니다. 카카오가 PC · 모바일 웹을 알아서 고르므로 앱 스킴(kakaomap://)은 쓰지 않습니다.
  * 도착 이름은 두 갈래 다 카드와 같은 「{이름} 정류장」입니다.
+ *
+ * ⚠️ **`/link/to/도착`(목적지만)은 쓰지 않습니다** — 카카오가 `?target=car&rt1=` 로 펴서
+ * **자동차 길찾기에 출발지가 빈 화면**이 열립니다(2026-09-21 실측). 뚜벅이 서비스에서 자차 화면을 여는 셈이기도 합니다.
  */
 function directionsUrl(from, stop) {
   const point = (name, { lat, lng }) => `${encodeURIComponent(name)},${lat},${lng}`
   const to = point(t('boarding.stopName', { name: stop.name }), stop)
-  return walkable(from)
+  return walkable(from, stop)
     ? `https://map.kakao.com/link/by/walk/${point(from.name, from)}/${to}`
-    : `https://map.kakao.com/link/to/${to}`
+    : `https://map.kakao.com/link/map/${to}`
 }
 
 function DirectionsLink({ from, stop, className }) {
-  const walk = walkable(from)
+  const walk = walkable(from, stop)
   return (
     <a
       className={className}
@@ -237,10 +245,10 @@ function DirectionsLink({ from, stop, className }) {
       aria-label={
         walk
           ? t('boarding.walkA11y', { place: from.name, name: stop.name })
-          : t('boarding.directionsA11y', { name: stop.name })
+          : t('boarding.viewA11y', { name: stop.name })
       }
     >
-      {t(walk ? 'boarding.walk' : 'boarding.directions')}
+      {t(walk ? 'boarding.walk' : 'boarding.view')}
     </a>
   )
 }
