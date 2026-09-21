@@ -109,12 +109,15 @@ export const api = {
    * ferryDocks 는 배로만 가는 곳(외도보타니아)의 선착장 이름 넷, 나머지는 빈 배열입니다.
    * likeCount(정수 · 항상) · liked(토큰이 있고 내가 눌렀으면 true — 비로그인 · 깨진 토큰이면 false, 401 아님) ·
    * featuredCourseCount(대표 코스 10개에 든 횟수)는 스팟 하트(2026-09-21 · 부록 Q)와 「추천순」(lib/listTools)의 값입니다.
+   * ⚠️ 그래서 **비로그인 조회인데도 `session: true`** 입니다 — 토큰을 보내야 서버가 `liked` 를 계산합니다.
+   * 서버는 verify 만 하므로(require 아님) 토큰이 없거나 깨져도 200 이고, 인증 장애가 조회를 막지 않습니다.
    *
    * withImages=true면 서버가 POI마다 TourAPI를 부릅니다(24h 캐시). 사진이 필요한 화면만
    * 켭니다 — 이름→id 해석은 사진이 필요 없고, 켜면 첫 요청이 느려집니다.
    * 저작권 보류(cpyrhtDivCd Type3)인 POI는 imageUrl이 null로 옵니다.
    */
-  pois: (withImages = false) => request(`/api/pois${withImages ? '?withImages=true' : ''}`),
+  pois: (withImages = false) =>
+    request(`/api/pois${withImages ? '?withImages=true' : ''}`, { session: true }),
 
   /**
    * PoiDetailRes { poiId, name, kind, tier, lang, langFallback,
@@ -124,7 +127,7 @@ export const api = {
    * 스팟 상세의 「내리는 곳」 줄(Figma 607:4). boardStopDiffers 는 스팟 시간표와 같은 규칙입니다.
    * likeCount · liked 는 목록과 같은 뜻 — 스팟 상세의 하트 버튼이 이 값으로 시작합니다(2026-09-21 · 부록 Q).
    */
-  poi: (poiId, lang = 'ko') => request(`/api/pois/${poiId}?lang=${lang}`),
+  poi: (poiId, lang = 'ko') => request(`/api/pois/${poiId}?lang=${lang}`, { session: true }),
 
   /**
    * 스팟 하트 누르기(2026-09-21 사용자 결정 · 디자인브리프 부록 Q). **누르는 것만 로그인** — 보기 · 정렬은 비로그인입니다.

@@ -34,6 +34,9 @@ function SpotCard({ spot, onOpen, tour }) {
     <button type="button" className={styles.card} onClick={() => onOpen(spot)} data-tour={tour}>
       <div className={styles.photo}>
         <img className={styles.photoImg} src={courseImage(spot)} alt="" onError={onImageError(spot)} />
+        {/* 하트 수 — 사진 왼쪽 아래(2026-09-21 저녁 · 부록 Q). 카드에는 **수만** 보이고 누르는 자리는 스팟 상세다.
+            0 도 「♥ 0」, 값이 없으면(옛 응답) 그리지 않는다. 글줄 밖이라 분류가 두 줄이어도 안 밀린다. */}
+        <LikeCount count={spot.likeCount} overlay />
       </div>
       <div className={styles.info}>
         {/* 화면에 쓰는 이름은 short_name 입니다(기준문서 §7) — 목은 name 에 짧은 이름을
@@ -41,11 +44,7 @@ function SpotCard({ spot, onOpen, tour }) {
             그대로 두면 '학동흑진주몽돌해변'·'거제도포로수용소유적공원'이 카드에 들어갑니다. */}
         <span className={styles.name}>{spot.shortName ?? spot.name}</span>
         <span className={styles.meta}>
-          <span>
-            {spot.region} · {spot.category}
-          </span>
-          {/* 하트 수 — 카드에는 수만, 누르는 자리는 스팟 상세(2026-09-21 · 부록 Q). 0 도 「♥ 0」, 값이 없으면(옛 응답) 없음. */}
-          <LikeCount count={spot.likeCount} />
+          {spot.region} · {spot.category}
         </span>
       </div>
     </button>

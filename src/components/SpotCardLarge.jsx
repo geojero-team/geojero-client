@@ -26,15 +26,12 @@ export default function SpotCardLarge({ spot, onOpen, tour }) {
         {spot.nineScenicNo != null && (
           <span className={styles.nine}>{t('nineScenic.badge', { rank: spot.nineScenicNo })}</span>
         )}
+        {/* 하트 수 — 사진 **왼쪽** 아래(2026-09-21 저녁 · 부록 Q). 오른쪽 아래는 9경 배지라 좌우로 갈려 서로 안 싸웁니다.
+            전에는 이름 **위** 메타 줄 오른쪽 끝이라 시선이 이름에 닿기 전에 수부터 만났습니다. */}
+        <LikeCount count={spot.likeCount} overlay />
       </span>
       <span className={styles.info}>
-        {(meta || spot.likeCount != null) && (
-          <span className={styles.metaRow}>
-            <span className={styles.meta}>{meta}</span>
-            {/* 하트 수 — 카드에는 수만(2026-09-21 · 부록 Q). 0 도 「♥ 0」, 값이 없으면(옛 응답) 그리지 않습니다. */}
-            <LikeCount count={spot.likeCount} />
-          </span>
-        )}
+        {meta && <span className={styles.meta}>{meta}</span>}
         <span className={styles.name}>{spot.shortName ?? spot.name}</span>
         {spot.summary && <span className={styles.summary}>{spot.summary}</span>}
       </span>

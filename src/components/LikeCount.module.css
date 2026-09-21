@@ -16,6 +16,19 @@
   flex-shrink: 0;
 }
 
+/* 사진 위에 얹는 모양(2026-09-21 저녁 · 부록 Q) — 스팟 상세 히어로의 장수 칩(「1 / 13」)과 **같은 재료**입니다
+   (검정 55% 알약 · 라벨 글자 · 흰 글씨). 자리(left · bottom)는 부모 카드가 정합니다.
+   글줄이 아니라 사진 위라 분류가 두 줄인 카드에서도 수가 밀리지 않습니다. */
+.overlay {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(16, 24, 40, 0.55);
+  color: var(--text-on-brand);
+}
+
 /* 읽기 도구에만 들리는 「하트 12」 — 화면에는 아이콘이 그 말을 합니다(SpotDetail .srOnly 와 같은 방식). */
 .srOnly {
   position: absolute;

@@ -72,7 +72,9 @@
   background: var(--bg-pressed);
 }
 
+/* 하트 수(LikeCount overlay)가 사진 왼쪽 아래에 앉으므로 기준 칸입니다(2026-09-21 · 부록 Q). */
 .photo {
+  position: relative;
   height: 110px;
   overflow: hidden;
 }
@@ -97,12 +99,8 @@
   color: var(--text-primary);
 }
 
-/* 권역 · 분류가 왼쪽, 하트 수(LikeCount)가 오른쪽 끝(2026-09-21 · 부록 Q). 수가 없으면(옛 응답) 글만 남습니다. */
+/* 「권역 · 분류」. 하트 수는 2026-09-21 저녁에 사진 위로 옮겼습니다(부록 Q) — 이 줄은 글만 씁니다. */
 .meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
   font: var(--type-label);
   color: var(--text-secondary);
 }

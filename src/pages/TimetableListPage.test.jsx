@@ -72,13 +72,16 @@ describe('시간표 탭', () => {
     expect(await screen.findByText('at /timetable/1')).toBeInTheDocument()
   })
 
-  /** 스팟 하트(2026-09-21 사용자 결정 · 부록 Q) — 줄의 › 앞에 수만. 0 도 보인다. 추천순은 하트 수 순이다. */
-  it('줄의 › 앞에 「♥ 7」 — 0 도 「♥ 0」으로 보이고, 추천순은 하트 많은 순이다', async () => {
+  /**
+   * 하트 수는 **이 화면에 그리지 않는다**(2026-09-21 사용자 결정 · 부록 Q).
+   * 시간표 탭은 「어느 정류장 시간표를 볼지」 고르는 곳이라 인기와 무관하다 — 줄에 하트를 두면 고를 근거가 아닌 것이 줄에 앉는다.
+   * 순서는 그대로 추천순(하트 많은 순)이다 — 스팟 탭과 같은 filterAndSort 를 쓴다.
+   */
+  it('줄에 하트 수를 그리지 않는다 — 순서는 추천순 그대로다', async () => {
     renderPage()
 
-    const wind = await screen.findByRole('button', { name: /바람의언덕/ })
-    expect(within(wind).getByRole('img', { name: '하트 7' })).toHaveTextContent('7')
-    expect(within(screen.getByRole('button', { name: /외도보타니아/ })).getByRole('img', { name: '하트 0' })).toHaveTextContent('0')
+    await screen.findByRole('button', { name: /바람의언덕/ })
+    expect(screen.queryAllByRole('img', { name: /하트/ })).toHaveLength(0)
 
     const rows = screen.getAllByRole('button', { name: /바람의언덕|외도보타니아|거제씨월드/ })
     expect(rows.map((row) => row.textContent)).toEqual([

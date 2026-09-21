@@ -357,25 +357,34 @@ describe('SpotDetail — 하트', () => {
     return userEvent.setup()
   }
 
-  it('제목 블록 아래 「♡ 3」 알약 버튼 — 안 누른 상태, 이름 「하트 누르기」, 설명 「하트 3」', async () => {
+  /**
+   * 자리는 2026-09-21 저녁에 바뀌었다(부록 Q 「자리를 고쳤다」) — 제목 아래 알약 줄에서
+   * **제목 줄 오른쪽 끝 아이콘 + 수는 「권역 · 분류」 줄 꼬리**로. 버튼 안에 수를 넣지 않는다.
+   */
+  it('제목 줄 오른쪽 끝의 하트 아이콘 — 버튼 안에는 수가 없고 수는 권역 줄 꼬리에 있다', async () => {
     renderLike(LIKABLE)
 
     const button = await screen.findByRole('button', { name: '하트 누르기' })
     expect(button).toHaveAttribute('aria-pressed', 'false')
-    expect(button).toHaveTextContent('3')
+    expect(button).not.toHaveTextContent('3') // 수는 버튼 밖이다
     expect(button).toHaveAccessibleDescription('하트 3')
     expect(button).toHaveAttribute('data-api', 'PUT /api/pois/{id}/like')
     expect(button.querySelector('svg')).toHaveAttribute('fill', 'none')
+
+    // 수는 「남부권 · 해수욕장 · ♥ 3」 — 권역 줄 안이다
+    const count = screen.getByRole('img', { name: '하트 3' })
+    expect(count.closest('p')).toHaveTextContent('남부권')
+
     const title = screen.getByRole('heading', { name: '학동몽돌해변' })
     const addr = screen.getByText('경상남도 거제시 남부면 어딘가길 1')
     expect(follows(title, button)).toBe(true)
     expect(follows(button, addr)).toBe(true)
   })
 
-  it('0 도 「♡ 0」으로 보인다 — 값이 없을 때만 숨긴다', async () => {
+  it('0 도 「♥ 0」으로 보인다 — 값이 없을 때만 숨긴다', async () => {
     renderLike({ ...LIKABLE, likeCount: 0 })
 
-    expect(await screen.findByRole('button', { name: '하트 누르기' })).toHaveTextContent('0')
+    expect(await screen.findByRole('img', { name: '하트 0' })).toHaveTextContent('0')
   })
 
   it('likeCount 가 없는 옛 응답이면 버튼을 그리지 않는다 — 값 없이 하트만 남기지 않는다', async () => {
@@ -432,7 +441,7 @@ describe('SpotDetail — 하트', () => {
     const button = await screen.findByRole('button', { name: '하트 취소' })
     expect(api.likeSpot).toHaveBeenCalledWith(4)
     expect(button).toHaveAttribute('aria-pressed', 'true')
-    expect(button).toHaveTextContent('4')
+    expect(screen.getByRole('img', { name: '하트 4' })).toBeInTheDocument()
     expect(button).toHaveAccessibleDescription('하트 4')
     expect(button.querySelector('svg')).toHaveAttribute('fill', 'currentColor')
     expect(patchSpot).toHaveBeenCalledWith(4, { likeCount: 4, liked: true })
@@ -453,7 +462,7 @@ describe('SpotDetail — 하트', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: '하트 취소' })).toBeEnabled())
   })
 
-  it('눌린 상태에서 누르면 DELETE — 「♡ 3」으로 돌아온다', async () => {
+  it('눌린 상태에서 누르면 DELETE — 「♥ 3」으로 돌아온다', async () => {
     localStorage.setItem('gj_token', 'tok')
     api.unlikeSpot.mockResolvedValue({ poiId: 4, likeCount: 3, liked: false })
     const user = renderLike({ ...LIKABLE, likeCount: 4, liked: true })
@@ -463,7 +472,7 @@ describe('SpotDetail — 하트', () => {
     const button = await screen.findByRole('button', { name: '하트 누르기' })
     expect(api.unlikeSpot).toHaveBeenCalledWith(4)
     expect(api.likeSpot).not.toHaveBeenCalled()
-    expect(button).toHaveTextContent('3')
+    expect(screen.getByRole('img', { name: '하트 3' })).toBeInTheDocument()
     expect(button.querySelector('svg')).toHaveAttribute('fill', 'none')
   })
 
@@ -476,7 +485,7 @@ describe('SpotDetail — 하트', () => {
 
     expect(await screen.findByRole('heading', { name: LIKE_TITLE })).toBeInTheDocument()
     expect(localStorage.getItem('gj_token')).toBeNull()
-    expect(screen.getByRole('button', { name: '하트 누르기' })).toHaveTextContent('3')
+    expect(screen.getByRole('img', { name: '하트 3' })).toBeInTheDocument()
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
@@ -488,7 +497,7 @@ describe('SpotDetail — 하트', () => {
     await user.click(await screen.findByRole('button', { name: '하트 누르기' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent(FAILED)
-    expect(screen.getByRole('button', { name: '하트 누르기' })).toHaveTextContent('3')
+    expect(screen.getByRole('img', { name: '하트 3' })).toBeInTheDocument()
     expect(patchSpot).not.toHaveBeenCalled()
     expect(screen.queryByRole('heading', { name: LIKE_TITLE })).not.toBeInTheDocument()
 
@@ -502,7 +511,8 @@ describe('SpotDetail — 하트', () => {
     api.likeSpot.mockResolvedValue({ poiId: 4, likeCount: 4, liked: true })
     renderLike(LIKABLE, { route: '/spots/4?like=1', uploadInUrl: true })
 
-    expect(await screen.findByRole('button', { name: '하트 취소' })).toHaveTextContent('4')
+    await screen.findByRole('button', { name: '하트 취소' })
+    expect(screen.getByRole('img', { name: '하트 4' })).toBeInTheDocument()
     expect(api.likeSpot).toHaveBeenCalledTimes(1)
     await waitFor(() => expect(screen.getByTestId('loc')).toHaveTextContent(/^\/spots\/4$/))
     expect(screen.queryByRole('heading', { name: LIKE_TITLE })).not.toBeInTheDocument()

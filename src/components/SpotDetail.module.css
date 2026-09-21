@@ -180,9 +180,19 @@
   padding: 20px 20px 28px;
 }
 
-/* title(264:252) — gap 4 */
+/* title(264:252) — 이름 · 「권역 · 분류」가 왼쪽 칸, 하트가 오른쪽 끝(2026-09-21 저녁 · 부록 Q).
+   전에는 세로 한 칸이었고 하트가 그 아래 알약 줄이었습니다 — 선례가 없어 「덩그러니」 떠 보였습니다(사용자). */
 .titleCol {
   display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+/* 이름 · 권역 줄. min-width 0 이 있어야 긴 이름이 하트를 밀어내지 않습니다. */
+.titleMain {
+  display: flex;
+  min-width: 0;
+  flex: 1;
   flex-direction: column;
   gap: var(--space-xs);
 }
@@ -199,25 +209,22 @@
   color: var(--text-secondary);
 }
 
-/* 하트(2026-09-21 사용자 결정 · Figma 프레임 없음 — 디자인브리프 부록 Q) — 제목 블록 아래 한 줄, 알약 버튼 하나.
-   제목 · 권역 줄(gap 4)보다 한 칸 더 띄워 붙이고(4 + 4), 아래 주소 덩어리와는 body 의 gap 22 로 갈립니다.
-   누르는 것만 로그인이고 보기는 아닙니다. 32px 알약 — 손가락이 닿을 최소 높이이자, 카드의 수(12px)보다 한 단계 큰 글자(14). */
-.likeRow {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  margin-top: var(--space-xs);
-}
-
+/* 하트 버튼(2026-09-21 사용자 결정 · Figma 프레임 없음 — 부록 Q) — **아이콘 하나**입니다. 수는 버튼 밖(권역 줄 꼬리)입니다.
+   손가락 칸 40×40 을 쓰되 음수 마진으로 **레이아웃 폭은 아이콘 24 만** 차지해, 아이콘 광학 중심이 body 오른쪽 여백(20) 선에 맞습니다.
+   margin-top 4 는 이름 첫 줄(24/32)의 세로 가운데와 아이콘 가운데를 맞춘 값입니다. */
 .like {
   display: inline-flex;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
   align-items: center;
-  height: 32px;
-  padding: 0 var(--space-md);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-pill);
-  background: var(--bg-page);
+  justify-content: center;
+  margin: -4px -8px -8px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-secondary);
   cursor: pointer;
 }
 
@@ -231,26 +238,29 @@
   cursor: default;
 }
 
-/* 안에 든 수는 LikeCount(12px 하트 · 라벨 글자 · 보조색)를 버튼 크기로 키웁니다 — 하트 16 · 글자 14 · 사이 6. */
-.like .likeCount {
-  gap: 6px;
-  font: var(--type-caption);
-  font-weight: 500;
-}
-
-/* 누른 하트 — 채운 하트는 --like(경고 빨강 · 유람선 빨강과 뜻이 다른 색, tokens.css), 수는 본문색.
-   안 누른 하트와 수는 보조색 그대로입니다. */
-.likeOn .likeCount {
-  color: var(--text-primary);
-}
-
-.likeOn .likeCount svg {
+/* 누른 하트 — 채운 하트는 --like(경고 빨강 · 유람선 빨강과 뜻이 다른 색, tokens.css). */
+.likeOn {
   color: var(--like);
 }
 
-/* 실패 한 줄(role=status) — 방문자 사진의 .notice 와 같은 모양. 0 과 실패는 다른 답이라 수를 지우지 않고 아래에 말합니다. */
+/* 권역 줄 꼬리의 수 「남부권 · 해수욕장 · ♥ 3」 — 줄 안에 이어 쓰므로 아래로 살짝 맞춥니다(당근 「신사동 · 112명」 방식).
+   누른 뒤에는 하트만 색이 차고 수는 보조색 그대로 — 줄의 다른 글과 같은 무게로 읽혀야 합니다. */
+.metaLike {
+  vertical-align: -1px;
+}
+
+.metaLike svg {
+  color: inherit;
+}
+
+.likeOnMeta svg {
+  color: var(--like);
+}
+
+/* 실패 한 줄(role=status) — 방문자 사진의 .notice 와 같은 모양. 0 과 실패는 다른 답이라 수를 지우지 않고 아래에 말합니다.
+   제목 줄과 주소 덩어리 사이에 끼므로 위 여백만 살짝 줍니다(body gap 22 는 그대로). */
 .likeNotice {
-  margin: 0;
+  margin: -16px 0 0;
   font: var(--type-caption);
   color: var(--text-secondary);
 }

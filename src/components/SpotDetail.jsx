@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, X } from 'lucide-react'
+import { ChevronLeft, Heart, X } from 'lucide-react'
 import LikeCount from './LikeCount'
 import LoginSheet from './LoginSheet'
 import ScreenPortal from './ScreenPortal'
@@ -358,34 +358,43 @@ export default function SpotDetail({ poiId, seed = null, onBack = null, onClose 
       </div>
 
       <div className={styles.body}>
+        {/* 제목 줄 — 이름 · 「권역 · 분류」가 왼쪽, 하트가 오른쪽 끝(2026-09-21 저녁 · 부록 Q 「자리를 고쳤다」).
+            배민 가게 상세 · 카카오 숙소예약이 같은 자리다. 수는 **버튼 밖**, 권역 줄 꼬리에 잇는다 —
+            수를 보여주는 앱(네이버 「189개의 클립」 · 당근 「관심 5」)이 예외 없이 그렇게 뗀다. */}
         <div className={styles.titleCol}>
-          <h1 className={styles.name}>{spot.shortName ?? spot.name}</h1>
-          <p className={styles.category}>
-            {isTerminal ? t('terminal.startPoint') : `${spot.region} · ${spot.category}`}
-          </p>
-          {/* 하트 「♡ 3」 — 제목 블록 아래 한 줄(부록 Q). 이름은 「하트 누르기 / 하트 취소」, 수는 설명으로 들립니다. */}
-          {showLike && (
-            <div className={styles.likeRow}>
-              <button
-                type="button"
-                className={liked ? `${styles.like} ${styles.likeOn}` : styles.like}
-                onClick={toggleLike}
-                disabled={likeBusy || autoLiking}
-                aria-pressed={liked}
-                aria-label={t(liked ? 'spotLike.unlike' : 'spotLike.like')}
-                aria-describedby={likeCountId}
-                data-api="PUT /api/pois/{id}/like"
-              >
-                <LikeCount id={likeCountId} count={likeCount} size={16} filled={liked} className={styles.likeCount} />
-              </button>
-              {likeFailed && (
-                <p className={styles.likeNotice} role="status">
-                  {t('spotLike.failed')}
-                </p>
+          <div className={styles.titleMain}>
+            <h1 className={styles.name}>{spot.shortName ?? spot.name}</h1>
+            <p className={styles.category}>
+              {isTerminal ? t('terminal.startPoint') : `${spot.region} · ${spot.category}`}
+              {showLike && (
+                <>
+                  {' · '}
+                  <LikeCount id={likeCountId} count={likeCount} filled={liked} className={styles.metaLike} />
+                </>
               )}
-            </div>
+            </p>
+          </div>
+          {showLike && (
+            <button
+              type="button"
+              className={liked ? `${styles.like} ${styles.likeOn}` : styles.like}
+              onClick={toggleLike}
+              disabled={likeBusy || autoLiking}
+              aria-pressed={liked}
+              aria-label={t(liked ? 'spotLike.unlike' : 'spotLike.like')}
+              aria-describedby={likeCountId}
+              data-api="PUT /api/pois/{id}/like"
+            >
+              <Heart size={24} strokeWidth={2} fill={liked ? 'currentColor' : 'none'} aria-hidden="true" />
+            </button>
           )}
         </div>
+        {/* 실패 한 줄은 제목 줄 아래 — 0 과 실패는 다른 답이라 수를 지우지 않고 따로 말합니다. */}
+        {likeFailed && (
+          <p className={styles.likeNotice} role="status">
+            {t('spotLike.failed')}
+          </p>
+        )}
 
         {/* 주소 · 내리는 곳(613:3, 2026-09-14 밤). 주소는 TourAPI addr1 런타임 값 그대로, 내리는 곳은 V18 alight_label.
             둘째 줄은 내리는 정류장과 시간표를 읽는 정류장이 다를 때만(씨월드 — 신촌에서 내리고 시각은 지세포).

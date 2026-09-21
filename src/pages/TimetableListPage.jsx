@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import CategoryBar from '../components/CategoryBar'
-import LikeCount from '../components/LikeCount'
 import ListTools from '../components/ListTools'
 import Screen from '../components/Screen'
 import SpotCardLarge from '../components/SpotCardLarge'
@@ -54,8 +53,8 @@ function SpotRow({ spot, onOpen, tour }) {
         <span className={styles.name}>{spot.shortName ?? spot.name}</span>
         {sub && <span className={styles.sub}>{sub}</span>}
       </span>
-      {/* 하트 수 — › 앞(2026-09-21 · 부록 Q). 줄에는 수만 보이고 누르는 자리는 스팟 상세다. 0 도 「♥ 0」. */}
-      <LikeCount count={spot.likeCount} />
+      {/* 하트 수는 여기 두지 않는다(2026-09-21 사용자 결정 · 부록 Q) — 이 화면은 「어느 정류장 시간표를 볼지」 고르는 곳이라
+          인기는 고를 근거가 아니다. 순서는 스팟 탭과 같은 추천순(하트 수 순)이다. */}
       <span className={styles.chev} aria-hidden="true">
         ›
       </span>

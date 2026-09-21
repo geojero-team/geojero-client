@@ -196,6 +196,25 @@ describe('방문자 사진 호출', () => {
 
 /** 스팟 하트(2026-09-21 사용자 결정 · 부록 Q) — 누르기 · 취소 둘 다 200 본문 { poiId, likeCount, liked } 를 돌려준다(취소도 204 가 아니다). */
 describe('스팟 하트 호출', () => {
+  /**
+   * **목록 · 상세도 토큰을 보낸다** — 서버가 토큰으로 `liked`(내가 눌렀는가)를 계산하기 때문이다.
+   * 안 보내면 로그인한 사람에게도 늘 빈 하트가 보인다(2026-09-21 로컬 렌더에서 잡았다).
+   * 쿠키는 프론트와 API 가 다른 사이트라 붙지 않으므로 Bearer 여야 한다. 서버는 verify 만 하므로
+   * 토큰이 없거나 깨져도 200 이다 — 비로그인 조회가 막히지 않는다.
+   */
+  it('스팟 목록 · 상세도 토큰이 있으면 Bearer 를 붙인다 — liked 를 받으려면 필요하다', async () => {
+    const { api } = await loadApi()
+    localStorage.setItem('gj_token', 'tok')
+    const fetchMock = vi.fn(async () => respond(200, JSON.stringify({ pois: [] }), 'application/json'))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await api.pois()
+    await api.poi(4)
+
+    expect(fetchMock.mock.calls[0][1].headers).toEqual({ Authorization: 'Bearer tok' })
+    expect(fetchMock.mock.calls[1][1].headers).toEqual({ Authorization: 'Bearer tok' })
+  })
+
   it('누르기는 PUT /api/pois/{id}/like 에 Bearer 를 붙이고 본문 없이 보내, 응답을 그대로 돌려준다', async () => {
     const { api } = await loadApi()
     localStorage.setItem('gj_token', 'tok')

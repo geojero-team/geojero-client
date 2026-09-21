@@ -192,17 +192,25 @@ describe('스팟 탭 — 맛집 · 숙소 · 카페 칩', () => {
 
 /** 스팟 하트(2026-09-21 사용자 결정 · 부록 Q) — 카드에는 수만 보이고 누를 수 없다. 0 도 「♥ 0」. 누르는 자리는 스팟 상세뿐이다. */
 describe('스팟 탭 — 하트 수', () => {
-  it('격자 카드에 「♥ 12」 — 0 도 「♥ 0」으로 보이고, 카드 안에 누를 것은 없다', async () => {
+  /**
+   * 자리는 2026-09-21 저녁에 바뀌었다(부록 Q 「자리를 고쳤다」) — 「권역 · 분류」 줄 오른쪽 끝에서 **사진 왼쪽 아래**로.
+   * 글줄을 건드리지 않아 분류가 두 줄인 카드(외도보타니아 「동부권 · 식물원 · 유람선」)에서도 수가 안 밀린다.
+   */
+  it('격자 카드의 수는 사진 위에 얹힌다 — 0 도 보이고, 카드 안에 누를 것은 없다', async () => {
     renderPage()
 
     const wind = await screen.findByRole('button', { name: /바람의언덕/ })
-    expect(within(wind).getByRole('img', { name: '하트 12' })).toHaveTextContent('12')
+    const count = within(wind).getByRole('img', { name: '하트 12' })
+    expect(count).toHaveTextContent('12')
+    expect(wind.querySelector('img').parentElement).toContainElement(count) // 사진 칸 안이다
+    expect(within(wind).getByText(/남부권/)).not.toContainElement(count) // 글줄에는 없다
+
     const museum = screen.getByRole('button', { name: /조선해양문화관/ })
     expect(within(museum).getByRole('img', { name: '하트 0' })).toHaveTextContent('0')
     expect(within(wind).queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it('크게 보기 카드에도 같은 수가 붙는다', async () => {
+  it('크게 보기 카드도 사진 위에 — 오른쪽 아래 9경 배지와 좌우로 갈린다', async () => {
     const user = userEvent.setup()
     renderPage()
     await screen.findByRole('button', { name: /바람의언덕/ })
@@ -210,7 +218,9 @@ describe('스팟 탭 — 하트 수', () => {
     await user.click(screen.getByRole('button', { name: '크게 보기' }))
 
     const wind = await screen.findByRole('button', { name: /바람의언덕/ })
-    expect(within(wind).getByRole('img', { name: '하트 12' })).toHaveTextContent('12')
+    const count = within(wind).getByRole('img', { name: '하트 12' })
+    expect(count).toHaveTextContent('12')
+    expect(wind.querySelector('img').parentElement).toContainElement(count)
   })
 
   it('추천순은 하트 많은 순이다 — 서버 순서가 반대여도', async () => {
