@@ -82,11 +82,16 @@ function ReportButton({ label, onClick }) {
 }
 
 /**
- * @param poiId        서버 poi_id
+ * @param poiId        서버 poi_id (스팟)
+ * @param placeId      서버 places.content_id (맛집 · 숙소 · 카페 — 2026-09-22). poiId 대신 이것을 주면 장소 쪽 길을 탑니다.
+ *                     사진은 스팟과 **같은 표**(서버 V51)라 보기 · 삭제 · 신고는 같은 함수이고, 목록 · 올리기만 갈립니다.
  * @param spotName     올리기 시트 제목에 들어갈 이름(shortName) — 「바람의언덕에서 찍은 사진」
- * @param uploadInUrl  `/spots/:id` 화면이면 참. 지도 시트에서는 주지 않습니다
+ * @param uploadInUrl  `/spots/:id` · `/places/:id` 화면이면 참. 지도 시트에서는 주지 않습니다
  */
-export default function VisitorPhotos({ poiId, spotName, uploadInUrl = false }) {
+export default function VisitorPhotos({ poiId, placeId, spotName, uploadInUrl = false }) {
+  const isPlace = placeId != null
+  // 로그인하고 돌아올 자리 — 지도 시트에서 시작했어도 상세 화면으로 옵니다(기준문서 §6 의 예외).
+  const backPath = isPlace ? `/places/${placeId}` : `/spots/${poiId}`
   const headingId = useId()
   const stripRef = useRef(null)
   const dragHandlers = useDragScroll(stripRef)
@@ -107,11 +112,10 @@ export default function VisitorPhotos({ poiId, spotName, uploadInUrl = false }) 
      react-hooks/set-state-in-effect 에 걸립니다(MyPlansPage 와 같은 방식). */
   const load = useCallback(
     () =>
-      api
-        .getVisitorPhotos(poiId)
+      (isPlace ? api.getPlaceVisitorPhotos(placeId) : api.getVisitorPhotos(poiId))
         .then((res) => setList({ status: 'ready', photos: res.photos ?? [] }))
         .catch(() => setList({ status: 'error', photos: [] })),
-    [poiId],
+    [isPlace, placeId, poiId],
   )
 
   useEffect(() => {
@@ -182,7 +186,7 @@ export default function VisitorPhotos({ poiId, spotName, uploadInUrl = false }) 
   }
 
   const login = () =>
-    uploadInUrl ? beginKakaoLogin() : beginKakaoLoginTo(`/spots/${poiId}?upload=1`)
+    uploadInUrl ? beginKakaoLogin() : beginKakaoLoginTo(`${backPath}?upload=1`)
 
   const onUploaded = () => {
     cancelUpload()
@@ -265,7 +269,7 @@ export default function VisitorPhotos({ poiId, spotName, uploadInUrl = false }) 
   }
 
   const loginToReport = () =>
-    uploadInUrl ? beginKakaoLogin() : beginKakaoLoginTo(`/spots/${poiId}`)
+    uploadInUrl ? beginKakaoLogin() : beginKakaoLoginTo(backPath)
 
   const deleteAction = (photo) =>
     photo.isMine && (
@@ -430,6 +434,7 @@ export default function VisitorPhotos({ poiId, spotName, uploadInUrl = false }) 
         <ScreenPortal>
           <VisitorPhotoUploadSheet
             poiId={poiId}
+            placeId={placeId}
             spotName={spotName}
             onClose={cancelUpload}
             onUploaded={onUploaded}

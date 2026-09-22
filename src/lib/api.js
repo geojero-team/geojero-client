@@ -147,7 +147,7 @@ export const api = {
    * placeId 는 TourAPI 국문 contentId 다(서버 V40 — 환경마다 같은 자연키).
    * 순서는 서버가 정한다(T맵 인기순) — 화면은 바꾸지 않는다. category 는 맛집이면 대표 메뉴, 숙소면 「4성 호텔」 · 「콘도」.
    */
-  places: (kind) => request(`/api/places?kind=${kind}`),
+  places: (kind) => request(`/api/places?kind=${kind}`, { session: true }),
 
   /**
    * PlaceDetailRes { placeId, kind, name, category, grade, lat, lng, bookingUrl(숙소만 · 여기어때 숙소 페이지),
@@ -161,7 +161,17 @@ export const api = {
    * bookingUrl · nearSpots 는 TourAPI 상세 값이 아니라 서버가 들고 있는 값이다 — 관광정보가 실패해도(FALLBACK) 온다.
    * 소개문은 보내지 않는다(숙소는 자기 홍보 글, 맛집도 싣지 않기로). 전화 · 주차 · 객실 수는 화면이 쓰지 않는다(2026-09-19 사용자 — 정보를 줄인다).
    */
-  place: (placeId) => request(`/api/places/${placeId}`),
+  place: (placeId) => request(`/api/places/${placeId}`, { session: true }),
+
+  /**
+   * 맛집 · 숙소 · 카페 하트(2026-09-22 사용자 · 서버 V51) — 스팟 하트와 같은 규칙입니다.
+   * PUT → 200 { placeId, likeCount, liked: true } · DELETE → 200 { …, liked: false }. 둘 다 멱등입니다.
+   * ⚠️ 목록 · 상세가 `session: true` 인 이유도 이것입니다 — 토큰을 보내야 서버가 `liked` 를 계산합니다.
+   */
+  likePlace: (placeId) => request(`/api/places/${placeId}/like`, { method: 'PUT', session: true }),
+
+  /** 하트 취소 — 204 가 아니라 본문이 옵니다. 오류는 likePlace 와 같습니다. */
+  unlikePlace: (placeId) => request(`/api/places/${placeId}/like`, { method: 'DELETE', session: true }),
 
   /**
    * 카카오 인증 화면으로 보내는 앞단. REST 키가 서버에만 있으므로 서버가 302합니다.
@@ -340,6 +350,30 @@ export const api = {
   getVisitorPhotos: async (poiId) => {
     const res = await request(`/api/pois/${poiId}/visitor-photos`, { session: true })
     return { ...res, photos: res.photos.map(withAbsoluteImage) }
+  },
+
+  /**
+   * 맛집 · 숙소 · 카페의 방문자 사진 목록(2026-09-22 · 서버 V51) — 스팟과 **같은 표**라
+   * 사진 주소 · 삭제 · 신고는 스팟과 같은 함수를 씁니다. 첫 필드 이름만 placeId 입니다.
+   */
+  getPlaceVisitorPhotos: async (placeId) => {
+    const res = await request(`/api/places/${placeId}/visitor-photos`, { session: true })
+    return { ...res, photos: res.photos.map(withAbsoluteImage) }
+  },
+
+  /** 맛집 · 숙소 · 카페에 사진 올리기 — 본문 · 오류는 uploadVisitorPhoto 와 같습니다. */
+  uploadPlaceVisitorPhoto: async (placeId, blob, caption) => {
+    const form = new FormData()
+    form.append('file', blob, 'photo.jpg')
+    const trimmed = caption?.trim()
+    if (trimmed) form.append('caption', trimmed)
+    const photo = await request(`/api/places/${placeId}/visitor-photos`, {
+      method: 'POST',
+      body: form,
+      session: true,
+      timeoutMs: UPLOAD_TIMEOUT_MS,
+    })
+    return withAbsoluteImage(photo)
   },
 
   /**

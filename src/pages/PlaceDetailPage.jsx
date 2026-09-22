@@ -15,7 +15,7 @@ export default function PlaceDetailPage() {
 
   return (
     <Screen data-api="GET /api/places/{placeId}">
-      <PlaceDetail placeId={placeId} onBack={goBack} />
+      <PlaceDetail placeId={placeId} onBack={goBack} inUrl />
     </Screen>
   )
 }

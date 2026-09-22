@@ -5,7 +5,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../lib/api'
 import PlaceDetailPage from './PlaceDetailPage'
 
-vi.mock('../lib/api', () => ({ api: { place: vi.fn() } }))
+// 하트 · 방문자 사진(2026-09-22 · 서버 V51)도 이 화면이 부른다 — 사진은 0장으로, 하트는 상세 값 그대로 둔다.
+vi.mock('../lib/api', () => ({
+  api: {
+    place: vi.fn(),
+    likePlace: vi.fn(),
+    unlikePlace: vi.fn(),
+    getPlaceVisitorPhotos: vi.fn(() => Promise.resolve({ count: 0, photos: [] })),
+  },
+  beginKakaoLogin: vi.fn(),
+  beginKakaoLoginTo: vi.fn(),
+}))
 // 위치 지도 — 카카오 지도 도구는 테스트에서 오지 않는다(지도 자체는 PlaceMap.test). 스팟 사진은 스팟 목록에서 꺼낸다.
 vi.mock('../lib/kakaoLoader', () => ({ loadKakaoMaps: vi.fn(() => new Promise(() => {})) }))
 vi.mock('../lib/spots', () => ({
@@ -327,5 +337,89 @@ describe('맛집 · 숙소 상세 — 예약 · 소개 · 출처', () => {
     await screen.findByRole('heading', { level: 1 })
     await user.click(screen.getByRole('button', { name: '뒤로' }))
     expect(await screen.findByText('at /spots')).toBeInTheDocument()
+  })
+})
+
+/**
+ * 하트 · 방문자 사진 (2026-09-22 사용자 · 서버 V51)
+ *
+ * 스팟 상세와 **같은 규칙**이다(디자인브리프 부록 Q · 부록 F): 수는 비로그인으로 보이고, **누르는 것만 로그인**이다.
+ * 값은 상세 응답(likeCount · liked)에서 오고 누른 뒤에는 서버 응답으로 덮는다 — 화면이 수를 스스로 세지 않는다.
+ */
+describe('맛집 · 숙소 상세 — 하트', () => {
+  const WITH_LIKES = { ...FOOD, likeCount: 3, liked: false }
+
+  beforeEach(() => {
+    localStorage.clear()
+    api.place.mockResolvedValue(WITH_LIKES)
+  })
+
+  it('제목 줄 오른쪽 끝에 「♡ 3」 — 비로그인으로도 수가 보인다', async () => {
+    renderPage(909)
+    await screen.findByRole('heading', { level: 1 })
+    const button = screen.getByRole('button', { name: '하트 누르기' })
+    expect(button).toHaveAttribute('aria-pressed', 'false')
+    expect(within(button).getByRole('img', { name: '하트 3' })).toBeInTheDocument()
+  })
+
+  /** 0 도 값이라 「♡ 0」으로 그린다. 값이 아예 없으면(옛 응답) 버튼을 그리지 않는다 — 값 없이 하트만 남기지 않는다. */
+  it('0 은 그리고, 값이 없으면 버튼이 없다', async () => {
+    api.place.mockResolvedValue({ ...FOOD, likeCount: 0, liked: false })
+    renderPage(909)
+    await screen.findByRole('heading', { level: 1 })
+    expect(screen.getByRole('img', { name: '하트 0' })).toBeInTheDocument()
+
+    api.place.mockResolvedValue(FOOD) // likeCount 없음
+    renderPage(909)
+    await screen.findAllByRole('heading', { level: 1 })
+    expect(screen.queryAllByRole('button', { name: /하트/ })).toHaveLength(1) // 앞 화면 것 하나뿐
+  })
+
+  it('비로그인으로 누르면 로그인 시트 — 누르지 않는다', async () => {
+    const user = userEvent.setup()
+    renderPage(909)
+    await screen.findByRole('heading', { level: 1 })
+    await user.click(screen.getByRole('button', { name: '하트 누르기' }))
+    expect(await screen.findByRole('heading', { name: '하트를 누르려면 로그인 해주세요' })).toBeInTheDocument()
+    expect(api.likePlace).not.toHaveBeenCalled()
+  })
+
+  it('로그인 상태에서 누르면 서버 응답으로 수를 덮고, 다시 누르면 취소한다', async () => {
+    const user = userEvent.setup()
+    localStorage.setItem('gj_token', '1.9999999999.abc')
+    api.likePlace.mockResolvedValue({ placeId: 909, likeCount: 4, liked: true })
+    api.unlikePlace.mockResolvedValue({ placeId: 909, likeCount: 3, liked: false })
+    renderPage(909)
+    await screen.findByRole('heading', { level: 1 })
+
+    await user.click(screen.getByRole('button', { name: '하트 누르기' }))
+    expect(api.likePlace).toHaveBeenCalledWith('909')
+    const on = await screen.findByRole('button', { name: '하트 취소' })
+    expect(on).toHaveAttribute('aria-pressed', 'true')
+    expect(within(on).getByRole('img', { name: '하트 4' })).toBeInTheDocument()
+
+    await user.click(on)
+    expect(api.unlikePlace).toHaveBeenCalledWith('909')
+    expect(await screen.findByRole('button', { name: '하트 누르기' })).toBeInTheDocument()
+  })
+
+  /** 0 과 실패는 다른 답이다 — 수를 지우지 않고 아래에 한 줄로 말한다(절대규칙 3). */
+  it('누르기가 실패하면 수는 그대로 두고 한 줄로 알린다', async () => {
+    const user = userEvent.setup()
+    localStorage.setItem('gj_token', '1.9999999999.abc')
+    api.likePlace.mockRejectedValue(Object.assign(new Error('HTTP 500'), { status: 500 }))
+    renderPage(909)
+    await screen.findByRole('heading', { level: 1 })
+    await user.click(screen.getByRole('button', { name: '하트 누르기' }))
+    expect(await screen.findByRole('status')).toHaveTextContent(/하트를 누르지 못했어요/)
+    expect(screen.getByRole('img', { name: '하트 3' })).toBeInTheDocument()
+  })
+
+  /** 스팟과 같은 조각을 쓴다 — 사진이 0장인 것이 정상 상태다(부록 F). */
+  it('방문자 사진 칸이 있고, 0장이어도 그 칸이 나온다', async () => {
+    renderPage(909)
+    await screen.findByRole('heading', { level: 1 })
+    expect(await screen.findByRole('region', { name: '방문자 사진' })).toBeInTheDocument()
+    expect(api.getPlaceVisitorPhotos).toHaveBeenCalledWith('909')
   })
 })

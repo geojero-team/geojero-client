@@ -1,3 +1,4 @@
+import LikeCount from './LikeCount'
 import NineTasteBadge from './NineTasteBadge'
 import { t } from '../i18n'
 import { formatDistance } from '../lib/format'
@@ -22,6 +23,9 @@ export default function PlaceCard({ place, onOpen }) {
         ) : (
           <span className={styles.noPhoto}>{t('courses.noPhoto')}</span>
         )}
+        {/* 하트 수(2026-09-22) — 스팟 카드와 **같은 자리**(사진 왼쪽 아래 · 부록 Q)입니다. 누를 수 없습니다 —
+            누르는 자리는 상세 하나입니다. 값이 없으면(옛 응답) 그리지 않습니다. */}
+        <LikeCount count={place.likeCount} overlay className={styles.likeCount} />
       </div>
       <div className={styles.info}>
         {/* 거제 9미(2026-09-20) — 이름 위 한 줄. 사진 위에 얹지 않습니다: 맛집 사진은 자르지 않아(contain)

@@ -37,6 +37,7 @@ function uploadErrorKey(error) {
 
 export default function VisitorPhotoUploadSheet({
   poiId,
+  placeId,
   spotName,
   onClose,
   onUploaded,
@@ -87,7 +88,10 @@ export default function VisitorPhotoUploadSheet({
   const submit = () => {
     setSubmitting(true)
     setError(null)
-    api.uploadVisitorPhoto(poiId, picked.blob, caption).then(onUploaded, (failure) => {
+    const send = placeId != null
+      ? api.uploadPlaceVisitorPhoto(placeId, picked.blob, caption)
+      : api.uploadVisitorPhoto(poiId, picked.blob, caption)
+    send.then(onUploaded, (failure) => {
       if (failure.status === 401) {
         onSessionExpired()
         return

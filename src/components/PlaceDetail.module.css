@@ -119,6 +119,65 @@
   gap: 4px;
 }
 
+/* 이름 줄 — 이름이 왼쪽, 하트가 오른쪽 끝(스팟 상세 .titleCol 과 같은 기하).
+   min-width 0 이 있어야 긴 이름이 하트를 밀어내지 않습니다. */
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.titleRow .name {
+  min-width: 0;
+  flex: 1;
+}
+
+/* 하트 알약 — 스팟 상세와 같은 모양 · 같은 색(2026-09-21 사용자 결정 A). 수는 버튼 안에 붙습니다. */
+.like {
+  display: inline-flex;
+  height: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  margin: 2px -4px 0 0;
+  padding: 0 var(--space-md);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.like:active {
+  background: var(--bg-pressed);
+}
+
+/* 요청 중 — 두 번 누르지 않게 잠급니다. 흐리게만 하고 자리는 그대로. */
+.like:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.like .likeCount {
+  gap: 6px;
+  font: var(--type-caption);
+  font-weight: 500;
+}
+
+/* 누른 뒤 — 채운 하트만 --like, 수는 본문색. 알약이 통째로 빨개지면 경고로 읽힙니다. */
+.likeOn .likeCount {
+  color: var(--text-primary);
+}
+
+.likeOn .likeCount svg {
+  color: var(--like);
+}
+
+.likeNotice {
+  margin: 0;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+}
+
 .subtitle {
   margin: 0;
   font: var(--type-caption);

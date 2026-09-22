@@ -8,7 +8,16 @@ import { peekHeightOf } from '../components/spotSheetHeight'
 import HomePage from './HomePage'
 
 vi.mock('../lib/api', () => ({
-  api: { pois: vi.fn(), getVisitorPhotos: vi.fn(), me: vi.fn(), places: vi.fn(), place: vi.fn() },
+  api: {
+    pois: vi.fn(),
+    getVisitorPhotos: vi.fn(),
+    me: vi.fn(),
+    places: vi.fn(),
+    place: vi.fn(),
+    likePlace: vi.fn(),
+    unlikePlace: vi.fn(),
+    getPlaceVisitorPhotos: vi.fn(() => Promise.resolve({ count: 0, photos: [] })),
+  },
   beginKakaoLogin: vi.fn(),
   beginKakaoLoginTo: vi.fn(),
 }))

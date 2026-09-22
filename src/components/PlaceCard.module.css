@@ -29,6 +29,14 @@
   background: var(--bg-surface);
 }
 
+/* 사진 왼쪽 아래 「♥ N」 — 스팟 카드와 같은 자리 · 같은 재료(LikeCount overlay). 사진을 자르지 않아(contain)
+   비율에 따라 여백이 생기지만, 칸 기준 왼쪽 아래라 자리가 흔들리지 않습니다. */
+.likeCount {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+}
+
 .photoImg {
   display: block;
   width: 100%;
