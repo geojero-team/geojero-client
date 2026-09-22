@@ -309,6 +309,59 @@ describe('홈 — 거제9경 설명(2026-09-19)', () => {
   })
 })
 
+/* 고현터미널 설명(2026-09-22 사용자) — 몽꾸가 묻는 것이 둘이 되었습니다.
+   9경과 같은 모양(지도를 짚고 두 번에 나눠 말하기)이되, 넘길 목록이 없어 그냥 닫습니다. */
+describe('홈 — 고현터미널 설명(2026-09-22)', () => {
+  const renderHome = () =>
+    render(
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>,
+    )
+
+  const openTour = async (user) => {
+    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
+    await user.click(screen.getByRole('button', { name: '몽꾸' }))
+    await user.click(screen.getByRole('button', { name: '고현터미널?' }))
+  }
+
+  it('말풍선이 둘이다 — 몽꾸를 누르면 9경과 고현터미널을 고를 수 있다', async () => {
+    const user = userEvent.setup()
+    renderHome()
+    await screen.findByRole('button', { name: '핀 학동몽돌해변' })
+    await user.click(screen.getByRole('button', { name: '몽꾸' }))
+
+    const asks = screen.getByRole('group', { name: '몽꾸에게 물어보기' })
+    expect(within(asks).getAllByRole('button').map((b) => b.textContent)).toEqual([
+      '거제 9경이 뭘까?',
+      '고현터미널?',
+    ])
+  })
+
+  it('지도를 고현터미널 한 곳에만 맞추고, 두 번에 나눠 말한 뒤 닫는다 — 9경 목록으로 가지 않는다', async () => {
+    const user = userEvent.setup()
+    renderHome()
+    await openTour(user)
+
+    // 한 곳만 짚습니다. 한 점에 그냥 맞추면 500m 까지 당겨지므로 배율을 따로 줍니다(fitLevel).
+    expect(mapProps.fitSpots.map((spot) => spot.kind)).toEqual(['TERMINAL'])
+    expect(mapProps.fitLevel).toBe(8)
+    expect(screen.getByText('관광객들은 고현터미널로만 방문해요.')).toBeInTheDocument()
+
+    // 2단계 — 본 것(1단계) 다음에 그래서 우리가 한 가정(2단계)입니다.
+    await user.click(screen.getByRole('button', { name: '다음' }))
+    expect(screen.getByText('고현터미널 시작을 가정한답니다!')).toBeInTheDocument()
+    expect(screen.queryByText('관광객들은 고현터미널로만 방문해요.')).not.toBeInTheDocument()
+
+    /* 마지막 글자는 「알겠어요」 — 뒤에 아무것도 없는데 「다음」이라고 적으면 한 번 더 누릅니다.
+       9경과 달리 목록 시트로 넘기지 않고, 포커스는 몽꾸로 돌아옵니다. */
+    await user.click(screen.getByRole('button', { name: '알겠어요' }))
+    expect(screen.queryByText('고현터미널 시작을 가정한답니다!')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: '거제 9경' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '몽꾸' })).toHaveFocus()
+  })
+})
+
 describe('홈 — 스팟 · 숙소 · 맛집 · 카페 칩(2026-09-19 · 카페는 09-20)', () => {
   function LocationProbe() {
     const location = useLocation()

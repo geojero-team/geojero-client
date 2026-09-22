@@ -12,9 +12,13 @@ import styles from './MascotButton.module.css'
  *
  * 전에는 지도 왼쪽 위 보라 글자 버튼 「거제9경이란?」이었습니다. 그 자리는 스팟 · 숙소 · 맛집 칩에 주고, 설명은 캐릭터가 맡습니다.
  *
- * 평소엔 **왼팔(보는 쪽 왼쪽)을 내리고** 천천히 둥실, 누르면 **팔을 올려 흔들며** 말풍선 「거제 9경이 뭘까?」가 뜹니다.
- * 시트는 **말풍선을 눌러야** 열립니다 — 캐릭터를 누르자마자 넘어가지 않습니다(2026-09-19 사용자). 캐릭터를 한 번 더 누르면
+ * 평소엔 **왼팔(보는 쪽 왼쪽)을 내리고** 천천히 둥실, 누르면 **팔을 올려 흔들며** 말풍선이 뜹니다.
+ * 설명은 **말풍선을 눌러야** 시작합니다 — 캐릭터를 누르자마자 넘어가지 않습니다(2026-09-19 사용자). 캐릭터를 한 번 더 누르면
  * 말풍선을 닫고 팔을 내립니다. 처음 들어올 때 저절로 뜨는 말풍선은 없습니다 — 누를 때만.
+ *
+ * 말풍선은 **둘**입니다(2026-09-22 사용자) — 「거제 9경이 뭘까?」와 「고현터미널?」. 누른 쪽을 `onOpen(topic)` 으로 알립니다
+ * ('nine' · 'terminal'). 몽꾸가 묻고 사용자가 고르는 자리라, 세로로 쌓고 오른쪽 끝(몽꾸 쪽)을 맞춰 꼬리가 한 줄에 서게 둡니다.
+ * 9경을 위에 둡니다 — 먼저 있던 말이고, 지금까지 그 자리(몽꾸 머리 높이)에 떴습니다.
  *
  * 그림: 거제시청 캐릭터 페이지의 공식 PNG(팔을 든 모습 한 장)를 세 장으로 나눴습니다. 색 · 선은 원본 그대로입니다.
  *   몸        — 든 팔만 떼어 낸 원본
@@ -30,19 +34,28 @@ export default function MascotButton({ onOpen, ref }) {
   const [raised, setRaised] = useState(false)
   const bubbleId = useId()
 
-  const openSheet = () => {
-    // 시트 뒤에서 말풍선을 닫고 팔을 내립니다 — 시트를 닫으면 처음 모습입니다.
+  const start = (topic) => () => {
+    // 설명 뒤에서 말풍선을 닫고 팔을 내립니다 — 설명을 닫으면 처음 모습입니다.
     setRaised(false)
-    onOpen()
+    onOpen(topic)
   }
 
   return (
     <div className={styles.wrap}>
       {raised && (
-        <button id={bubbleId} type="button" className={styles.bubble} onClick={openSheet} aria-haspopup="dialog">
-          {t('nineScenic.bubble')}
-          <ChevronRight size={16} strokeWidth={2.25} aria-hidden="true" />
-        </button>
+        /* 말풍선 둘 — 세로로 쌓고 몽꾸 쪽(오른쪽) 끝을 맞춥니다. 글 길이가 달라도 꼬리가 한 줄에 섭니다.
+           둘 다 꼬리를 답니다: 각각이 몽꾸가 건네는 말이라, 하나만 꼬리를 달면 나머지는 누가 하는 말인지 흐려집니다.
+           읽기 도구에는 묶음 이름(「몽꾸에게 물어보기」)을 줘 버튼 둘이 무엇의 목록인지 먼저 알립니다. */
+        <div id={bubbleId} className={styles.bubbles} role="group" aria-label={t('mascot.asks')}>
+          <button type="button" className={styles.bubble} onClick={start('nine')} aria-haspopup="dialog">
+            {t('nineScenic.bubble')}
+            <ChevronRight size={16} strokeWidth={2.25} aria-hidden="true" />
+          </button>
+          <button type="button" className={styles.bubble} onClick={start('terminal')} aria-haspopup="dialog">
+            {t('terminal.bubble')}
+            <ChevronRight size={16} strokeWidth={2.25} aria-hidden="true" />
+          </button>
+        </div>
       )}
       <button
         ref={ref}

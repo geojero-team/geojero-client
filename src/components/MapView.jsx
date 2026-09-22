@@ -43,7 +43,7 @@ const FIT_PADDING = 56
  * 남쪽 스팟(해금강·도장포)이 둘러보기 안내 카드 뒤로 들어갔습니다.
  * 배율은 38e0255 그대로 두고 보정만 뺐습니다.
  */
-function fitToSpots(kakao, map, spots, topReserved, bottomReserved = 0) {
+function fitToSpots(kakao, map, spots, topReserved, bottomReserved = 0, fitLevel = null) {
   const points = spots.filter(
     (spot) => Number.isFinite(spot.lat) && Number.isFinite(spot.lng),
   )
@@ -56,6 +56,14 @@ function fitToSpots(kakao, map, spots, topReserved, bottomReserved = 0) {
 
   // (bounds, top, right, bottom, left)
   map.setBounds(bounds, topReserved + FIT_TOP_EXTRA, FIT_PADDING, FIT_PADDING + bottomReserved, FIT_PADDING)
+
+  /* 맞춘 **가운데는 두고 배율만** 정해 주고 싶을 때(2026-09-22 고현터미널 설명) — 한 점에 맞추면
+     setBounds 가 끝까지 당겨 500m 가 되어, 거제 어디인지가 사라집니다. 그 한 곳을 가운데 두되
+     섬이 보이는 배율로 물러섭니다. */
+  if (fitLevel != null) {
+    map.setLevel(fitLevel)
+    return
+  }
 
   const level = map.getLevel()
   if (level < MIN_FIT_LEVEL) map.setLevel(MIN_FIT_LEVEL)
@@ -86,6 +94,8 @@ export default function MapView({
   /** 화면을 맞출 때 **아래쪽**으로 비워 둘 높이(px). 9경 설명의 말풍선처럼 아래에 덮개가 있을 때 씁니다 —
       비워 두지 않으면 맞춘 핀 일부가 그 뒤로 숨습니다(2026-09-19). 위쪽은 topReserved 가 같은 일을 합니다. */
   bottomReserved = 0,
+  /** 맞춘 뒤 **이 배율로** 물러섭니다(설명이 한 곳만 짚을 때 — 2026-09-22). null 이면 지금까지대로 잠금 범위 안에서 맞춥니다. */
+  fitLevel = null,
 }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
@@ -298,7 +308,7 @@ export default function MapView({
 
     map.relayout()
     if (liveRef.current.selectedSpotId == null) {
-      fitToSpots(window.kakao, map, fitSpots ?? spots, topReserved, bottomReserved)
+      fitToSpots(window.kakao, map, fitSpots ?? spots, topReserved, bottomReserved, fitLevel)
     }
     updateLabelVisibility(
       map,
@@ -306,7 +316,7 @@ export default function MapView({
       liveRef.current.selectedSpotId,
       topReserved,
     )
-  }, [spots, fitSpots, topReserved, bottomReserved, phase])
+  }, [spots, fitSpots, topReserved, bottomReserved, fitLevel, phase])
 
   // ── 선택 상태를 마커에 반영 + 선택한 핀으로 이동 ────────────────────────
   useEffect(() => {

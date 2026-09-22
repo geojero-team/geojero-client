@@ -32,7 +32,21 @@ function rectPath({ x, y, w, h }) {
 }
 
 /**
- * 거제9경 설명 — 지도에서 **9경 핀만 남기고 흐리게** 하고, 몽꾸가 두 번에 나눠 말합니다(2026-09-19 사용자).
+ * 설명이 짚는 곳 — 주제마다 **어떤 핀을 남길지**만 다릅니다(2026-09-22 둘이 되면서 뽑아냈습니다).
+ * 나머지(흐리기 · 구멍 · 말풍선 자리 · 되풀이 재기)는 똑같아 한 벌로 둡니다.
+ */
+const TOPICS = {
+  nine: { dot: '[data-nine]', label: '[data-nine-label]' },
+  terminal: { dot: '[data-terminal]', label: '[data-terminal-label]' },
+}
+
+/**
+ * 몽꾸 설명 — 지도에서 **짚는 핀만 남기고 흐리게** 하고, 몽꾸가 두 번에 나눠 말합니다(2026-09-19 사용자).
+ *
+ * 주제는 둘입니다(2026-09-22 사용자):
+ *   nine      거제 9경 아홉 곳 — 끝나면 목록 시트로 넘깁니다
+ *   terminal  고현터미널 한 곳 — 「관광객들은 고현터미널로만 방문해요 → 그래서 코스도 거기서 시작합니다」.
+ *             넘길 목록이 없어 그냥 닫습니다.
  *
  * 전에는 몽꾸 말풍선을 누르면 곧장 목록 시트였습니다. 시트는 「지도의 보라색 테두리 스팟이 9경이에요」라고
  * 말하면서 정작 그 지도를 자기가 덮고 있었습니다 — 확인하려면 시트를 닫아야 했습니다.
@@ -47,11 +61,13 @@ function rectPath({ x, y, w, h }) {
  *
  * 지도가 움직이는 동안 핀 자리가 바뀌므로 잠시 되풀이해 잽니다(튜토리얼과 같은 방법).
  *
- *   step   1 · 2. 2 에서 다음을 누르면 onDone — 홈이 목록 시트를 엽니다
+ *   topic  'nine' · 'terminal' — 어떤 핀을 남길지와 무슨 말을 할지
+ *   step   1 · 2. 2 에서 다음을 누르면 onDone — 9경이면 홈이 목록 시트를 엽니다
  */
-export default function NineScenicTour({ step, onNext, onDone }) {
+export default function NineScenicTour({ step, topic = 'nine', onNext, onDone }) {
   const [layout, setLayout] = useState(null)
   const titleId = useId()
+  const pick = TOPICS[topic] ?? TOPICS.nine
 
   useEffect(() => {
     if (!step) return undefined
@@ -83,9 +99,9 @@ export default function NineScenicTour({ step, onNext, onDone }) {
         return r.width > 0 && r.height > 0 ? r : null
       }
 
-      const circles = [...frame.querySelectorAll('[data-nine]')].map(visible).filter(Boolean).map(toCircle)
+      const circles = [...frame.querySelectorAll(pick.dot)].map(visible).filter(Boolean).map(toCircle)
       // 이름표는 겹치면 숨습니다(updateLabelVisibility) — 그때는 뚫을 것도 없습니다.
-      const rects = [...frame.querySelectorAll('[data-nine-label]')].map(visible).filter(Boolean).map(toRect)
+      const rects = [...frame.querySelectorAll(pick.label)].map(visible).filter(Boolean).map(toRect)
       const mascotEl = frame.querySelector('[data-nine-mascot]')
       const mascotRect = mascotEl ? visible(mascotEl) : null
       const mascot = mascotRect ? toCircle(mascotRect) : null
@@ -104,7 +120,7 @@ export default function NineScenicTour({ step, onNext, onDone }) {
       clearInterval(timer)
       window.removeEventListener('resize', tick)
     }
-  }, [step])
+  }, [step, pick.dot, pick.label])
 
   if (!step) return null
 
@@ -156,7 +172,18 @@ export default function NineScenicTour({ step, onNext, onDone }) {
 
       <div className={styles.bubble} style={bubbleStyle}>
         <p id={titleId} className={styles.lines}>
-          {step === 1 ? (
+          {topic === 'terminal' ? (
+            /* 고현터미널 — 1단계는 **본 것**(관광객은 여기로만 온다), 2단계는 **그래서 우리가 한 가정**입니다.
+               가정을 먼저 말하면 「왜 하필 고현터미널?」이 남습니다. 순서를 바꾸지 않습니다. */
+            step === 1 ? (
+              <span>{t('terminal.lead1')}</span>
+            ) : (
+              <>
+                <span>{t('terminal.lead2')}</span>
+                <span>{t('terminal.lead3')}</span>
+              </>
+            )
+          ) : step === 1 ? (
             <>
               <span>{t('nineScenic.lead1Title')}</span>
               {/* 문장 가운데 「대표 경관 아홉 곳」만 굵게(2026-09-20 사용자). 줄은 하나라 span 을 나누지 않습니다. */}
@@ -174,8 +201,10 @@ export default function NineScenicTour({ step, onNext, onDone }) {
             </>
           )}
         </p>
+        {/* 마지막 걸음의 글자 — 9경은 뒤에 목록 시트가 있어 「다음」이고, 고현터미널은 여기서 끝이라 「알겠어요」입니다.
+            끝인데 「다음」이라고 적으면 다음이 있는 줄 알고 한 번 더 누릅니다. */}
         <button type="button" className={styles.next} onClick={advance}>
-          {t('nineScenic.tourNext')}
+          {t(topic === 'terminal' && step === 2 ? 'nineScenic.tourDone' : 'nineScenic.tourNext')}
           <ChevronRight size={16} strokeWidth={2.25} aria-hidden="true" />
         </button>
         <span className={styles.tail} aria-hidden="true" />

@@ -69,8 +69,10 @@ export default function HomePage() {
      맞춰 보여주며 두 번에 나눠 말합니다. 0 이면 꺼짐, 1·2 가 단계입니다.
      주소에 싣지 않습니다 — 설명은 한 번 보는 것이고, 스팟 상세에 갔다 오면 목록(?nine=1)부터가 맞습니다. */
   const [tour, setTour] = useState(0)
-  /* 지도를 9경 아홉 곳에만 맞출지. 설명을 시작하면 켜고 **끄지 않습니다** — 끄면 지도가 섬 전체로
-     다시 튕겨 나가, 방금 「이 아홉 곳」이라고 가리킨 화면이 사라집니다. */
+  /* 어느 설명인지(2026-09-22 사용자로 둘이 되었습니다) — 'nine' 아홉 곳 · 'terminal' 고현터미널 한 곳. */
+  const [tourTopic, setTourTopic] = useState('nine')
+  /* 지도를 **설명이 짚는 곳에만** 맞출지. 설명을 시작하면 켜고 **끄지 않습니다** — 끄면 지도가 섬 전체로
+     다시 튕겨 나가, 방금 「여기예요」라고 가리킨 화면이 사라집니다. */
   const [fitNine, setFitNine] = useState(false)
   const layer = LAYER_OF_PARAM[searchParams.get('layer')] ?? 'SPOT'
   // 숙소 · 맛집 목록 — 그 칩을 처음 누를 때 한 번 받습니다(스팟만 보는 사람에게 TourAPI 호출을 늘리지 않게).
@@ -165,10 +167,20 @@ export default function HomePage() {
     [result.spots],
   )
 
-  /* 설명 시작 — 숙소 · 맛집 칩을 고른 상태면 지도에 9경 핀이 없습니다. 스팟 칩으로 되돌려야
-     흐린 화면에 뚫을 동그라미가 생깁니다. */
-  const startTour = () => {
+  /* 고현터미널 설명이 지도를 맞출 한 곳. 한 점에 맞춰도 배율은 fitToSpots 가 가둡니다(MIN_FIT_LEVEL) —
+     끝까지 당겨 건물만 보이는 일은 없습니다. */
+  const terminalSpots = useMemo(
+    () => result.spots.filter((spot) => spot.kind === 'TERMINAL'),
+    [result.spots],
+  )
+
+  const tourSpots = tourTopic === 'terminal' ? terminalSpots : nineSpots
+
+  /* 설명 시작 — 숙소 · 맛집 칩을 고른 상태면 지도에 스팟 핀이 없습니다(고현터미널도 스팟 층에 있습니다).
+     스팟 칩으로 되돌려야 흐린 화면에 뚫을 동그라미가 생깁니다. */
+  const startTour = (topic = 'nine') => {
     if (layer !== 'SPOT') setLayer('SPOT')
+    setTourTopic(topic)
     setFitNine(true)
     setTour(1)
   }
@@ -211,7 +223,11 @@ export default function HomePage() {
             topReserved={16}
             /* 9경 설명을 시작하면 지도를 **아홉 곳에만** 맞춥니다(2026-09-19 사용자) — 기본 배율에서는
                가까운 핀들이 묶여(+1) 아홉 개가 다 보이지 않습니다. 맞추면 4km 쯤에서 전부 갈라집니다. */
-            fitSpots={fitNine ? nineSpots : null}
+            fitSpots={fitNine ? tourSpots : null}
+            /* 고현터미널은 **한 곳**이라 그냥 맞추면 500m 까지 당겨져 거제 어디인지가 사라집니다.
+               터미널을 가운데 두고 섬이 보이는 배율(8 = 축척 4km)로 물러섭니다 — 「관광객들은 여기로만 온다」는
+               말은 주변이 보여야 읽힙니다. 9경은 아홉 곳이 스스로 폭을 만들어 이 값이 필요 없습니다. */
+            fitLevel={fitNine && tourTopic === 'terminal' ? 8 : null}
             /* 말풍선과 몽꾸가 아래를 덮으므로 그만큼 비우고 맞춥니다 — 안 그러면 남쪽 9경(학동 · 바람의언덕 ·
                해금강)이 말풍선 뒤로 숨습니다. fitNine 과 함께 켜고 끄지 않습니다(끄면 지도가 다시 맞춰집니다). */
             /* 말풍선을 몽꾸 왼쪽 가로로 옮기면서(2026-09-19) 아래를 덜 비워도 됩니다 —
@@ -272,14 +288,17 @@ export default function HomePage() {
 
       <BottomNav />
 
-      {/* 9경 설명 — 지도를 아홉 곳에 맞춘 채 흐리게 하고 몽꾸가 두 번에 나눠 말합니다.
-          끝나면 목록 시트로 넘깁니다(설명은 투어가, 목록·범례는 시트가). */}
+      {/* 몽꾸 설명 — 지도를 짚는 곳에 맞춘 채 흐리게 하고 두 번에 나눠 말합니다.
+          9경은 끝나면 목록 시트로 넘기고(설명은 투어가, 목록·범례는 시트가),
+          고현터미널은 넘길 목록이 없어 그냥 닫고 몽꾸로 포커스를 돌려줍니다(시트를 닫을 때와 같은 자리). */}
       <NineScenicTour
         step={tour}
+        topic={tourTopic}
         onNext={() => setTour(2)}
         onDone={() => {
           setTour(0)
-          setNine(true)
+          if (tourTopic === 'terminal') nineButtonRef.current?.focus()
+          else setNine(true)
         }}
       />
 

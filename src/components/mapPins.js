@@ -147,6 +147,9 @@ export function createPinElement(spot, { order, onResize } = {}) {
      핀 버튼이 아니라 이 동그라미에 다는 이유: 버튼 상자에는 옆에 붙는 이름표까지 들어가
      구멍이 길쭉한 네모가 됩니다. 클래스로 찾지 않는 것은 CSS Modules 가 이름을 해시로 바꾸기 때문입니다. */
   if (isNineScenic) dot.dataset.nine = ''
+  /* 고현터미널 설명(MascotTour topic='terminal' · 2026-09-22)이 뚫을 자리 — 9경과 같은 이유로 **동그라미에** 답니다.
+     9경은 아홉 곳이라 표시가 여럿이고 이쪽은 하나뿐이지만, 찾는 방법은 같아야 설명 코드가 하나로 남습니다. */
+  if (isTerminal) dot.dataset.terminal = ''
   if (isTerminal) {
     dot.innerHTML = TERMINAL_MARKER_SVG
   } else if (isStop) {
@@ -194,6 +197,8 @@ export function createPinElement(spot, { order, onResize } = {}) {
   /* 9경 설명이 이름표도 뚫습니다(2026-09-19 사용자 — 동그라미만 선명하고 이름이 흐리면 어디인지 모릅니다).
      동그라미는 원, 이름표는 둥근 네모로 뚫습니다(NineScenicTour). */
   if (isNineScenic) label.dataset.nineLabel = ''
+  // 터미널도 이름표를 뚫습니다 — 동그라미만 선명하고 이름이 흐리면 그 핀이 고현터미널인지 알 수 없습니다.
+  if (isTerminal) label.dataset.terminalLabel = ''
 
   // 겹친 곳 수. 배율마다 달라지므로 여기서는 빈 채로 두고 updateLabelVisibility가 채웁니다.
   const badge = document.createElement('span')

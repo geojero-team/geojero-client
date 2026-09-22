@@ -92,12 +92,28 @@
   }
 }
 
-/* 말풍선 — 캐릭터 왼쪽(든 팔 옆), 꼬리는 캐릭터 쪽. 흰 면 + 그림자는 지도 위 칩과 같다. 팔이 올라가는 사이에 톡 튀어나온다.
-   누르면 9경 시트가 열리는 버튼이라 끝에 › 를 붙인다(누를 수 있다는 표시). */
-.bubble {
+/* 말풍선 묶음 — 캐릭터 왼쪽(든 팔 옆)에 세로로 쌓는다(2026-09-22 둘이 되면서).
+   오른쪽 끝을 맞춰(align-items: flex-end) 글 길이가 달라도 꼬리가 한 줄에 선다.
+
+   **몽꾸 높이 가운데**에 건다. 하나였을 때처럼 머리 높이(top 4)에서 아래로 늘어뜨리면 둘째 말풍선이
+   「코스 추천 받기」 버튼과 3px 겹쳤다(2026-09-22 실측 — 390 화면에서 말풍선 아래 719, 버튼 위 716).
+   가운데에 걸면 묶음(80)이 몽꾸(69) 위아래로 5~6씩만 넘쳐 버튼과 10 가까이 뜨고, 두 꼬리가 캐릭터를 사이에 두고 선다. */
+.bubbles {
   position: absolute;
   right: calc(100% + 14px);
-  top: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+/* 말풍선 — 꼬리는 캐릭터 쪽. 흰 면 + 그림자는 지도 위 칩과 같다. 팔이 올라가는 사이에 톡 튀어나온다.
+   누르면 설명이 시작되는 버튼이라 끝에 › 를 붙인다(누를 수 있다는 표시).
+   둘째는 조금 늦게 떠 **위에서 아래로 차례로** 나온다 — 둘이 한꺼번에 튀면 어느 것을 먼저 읽을지 눈이 헤맨다. */
+.bubble {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -113,6 +129,10 @@
   white-space: nowrap;
   animation: pop 260ms ease-out 120ms both;
   transform-origin: 100% 50%;
+}
+
+.bubble:nth-child(2) {
+  animation-delay: 220ms;
 }
 
 .bubble::after {
