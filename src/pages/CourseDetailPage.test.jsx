@@ -770,6 +770,98 @@ describe('CourseDetailPage — 09-14 확정(547:200)', () => {
   })
 })
 
+/**
+ * 도선 구간(2026-09-22 · 서버 V52 · V53) — 섬으로 건너가는 배. 유람선(FERRY)과 모양이 다릅니다:
+ * 편마다 시각이 있어 **들어가는 편 · 나오는 편이 구간 하나씩**이고, 뭍 쪽 끝은 스팟이 아니라 선착장입니다.
+ * 값은 운영 응답(코스 2-01 지심도 · 양지암조각공원) 그대로입니다.
+ */
+describe('CourseDetailPage — 도선 구간(섬 코스)', () => {
+  const SHUTTLE = {
+    dockName: '장승포',
+    islandName: '지심도',
+    operatorName: '지심도 터미널',
+    phone: '055-681-6007',
+    fareText: null,
+    bookingUrl: 'https://booking.naver.com/booking/12/bizes/56835?area=bns',
+    notice: '성수기 미예약 시, 탑승이 어려울 수 있습니다.',
+  }
+  const ISLAND_RIDE = (routeNo, boardStop, boardAt, alightStop, alightAt) => ({
+    routeNo,
+    boardStop,
+    boardAt,
+    boardEstimated: false,
+    alightStop,
+    alightAt,
+    alightEstimated: false,
+  })
+  const COURSE_201 = {
+    ...COURSE_301,
+    courseId: 134,
+    courseCode: '2-01',
+    name: '지심도 · 양지암조각공원',
+    title: '동백섬 지심도와 능포 바닷가 조각공원',
+    spotCount: 2,
+    legCount: 5,
+    ferryMinTotal: 40,
+    stops: [
+      { seq: 1, poiId: 25, name: '지심도', shortName: '지심도', theme: 'VIEW', lat: 34.8179994, lng: 128.7485335 },
+      { seq: 2, poiId: 16, name: '양지암조각공원', shortName: '양지암조각공원', theme: 'VIEW', lat: 34.8804, lng: 128.7383 },
+    ],
+    // 버스 구간과 들어가는 도선 구간이 **같은 섬에 닿습니다** — 점은 배가 내려 주는 곳에 한 번만 찍힙니다.
+    legs: [
+      {
+        seq: 1, mode: 'BUS', fromPoiId: null, fromName: '고현터미널', toPoiId: 25, toName: '지심도',
+        departAt: '07:06', arriveAt: '07:46', durationMin: 40, estimated: false,
+        rides: [ISLAND_RIDE('11', '고현', '07:06', '능포', '07:46')],
+      },
+      {
+        seq: 2, mode: 'SHUTTLE', fromPoiId: null, fromName: '장승포', toPoiId: 25, toName: '지심도',
+        departAt: '08:30', arriveAt: '08:50', durationMin: 20, estimated: false, rides: [], shuttle: SHUTTLE,
+      },
+      {
+        seq: 3, mode: 'SHUTTLE', fromPoiId: 25, fromName: '지심도', toPoiId: null, toName: '장승포',
+        departAt: '10:50', arriveAt: '11:10', durationMin: 20, estimated: false, rides: [], shuttle: SHUTTLE,
+      },
+      { seq: 4, mode: 'SAME_STOP', fromPoiId: 25, fromName: '지심도', toPoiId: 16, toName: '양지암조각공원', durationMin: 0, estimated: false, rides: [] },
+      {
+        seq: 5, mode: 'BUS', fromPoiId: 16, fromName: '양지암조각공원', toPoiId: null, toName: '고현터미널',
+        departAt: '13:04', arriveAt: '13:43', durationMin: 39, estimated: false,
+        rides: [ISLAND_RIDE('10', '능포', '13:04', '고현', '13:43')],
+        board: { stop: '능포종점', distanceM: 303, lat: 34.88288545, lng: 128.73692573 },
+      },
+    ],
+  }
+
+  it('들어가는 배는 타는 선착장 점 + 「지심도행 배」 한 줄 — 어느 섬으로 가는지가 상품 이름 자리에 온다', async () => {
+    api.course.mockResolvedValue(COURSE_201)
+    renderCourse(134)
+
+    expect(await screen.findByText('장승포 선착장에서 08:30 배를 타요')).toBeInTheDocument()
+    const line = screen.getByText('지심도행 배 · 약 20분')
+    expect(line.closest(`.${styles.legRow}`).querySelector(`.${styles.lineFerry}`)).not.toBeNull()
+  })
+
+  it('나오는 배는 떠난 선착장에 내려준다 — 그 선착장이 점이고 스팟 번호를 다시 쓰지 않는다', async () => {
+    api.course.mockResolvedValue(COURSE_201)
+    renderCourse(134)
+
+    expect(await screen.findByText('배로 돌아와요 · 약 20분')).toBeInTheDocument()
+    expect(screen.getByText('장승포 선착장에서 내려요')).toBeInTheDocument()
+    // 스팟은 둘뿐이다 — 버스 · 들어가는 배가 같은 섬에 닿아도 점은 하나, 나오는 배는 점을 만들지 않는다
+    expect(document.querySelectorAll('[data-stop]')).toHaveLength(2)
+    // 나오는 배는 toPoiId 가 없지만 되짚기가 아니다 — 터미널 줄을 그리면 안 된다
+    expect(screen.queryByText('고현터미널에서 갈아타요')).not.toBeInTheDocument()
+  })
+
+  it('타는 곳 표에 없는 섬이라도 **내리는 정류장**은 편 사슬이 안다 — 거리는 모르니 「도보」만 적는다', async () => {
+    api.course.mockResolvedValue(COURSE_201)
+    renderCourse(134)
+
+    expect(await screen.findByText('능포 정류장에서 내려요')).toBeInTheDocument()
+    expect(walkAfter(screen.getByText('능포 정류장에서 내려요'))).toBe('도보')
+  })
+})
+
 describe('CourseDetailPage — 되짚기: 가운데 고현터미널 줄(코스재설계 §3-3 · §5-3)', () => {
   /**
    * 되짚기는 구간 둘로 온다 — `A → 고현터미널`(toPoiId null) + `고현터미널 → B`(fromPoiId null).

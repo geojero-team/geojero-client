@@ -333,14 +333,17 @@ function WalkLink({ from, to }) {
  * 타는 정류장은 버스(파란 원) — 다음이 버스다. 내리는 정류장 · 선착장은 걷기(회색 원) — 다음이 걷기다.
  * 스팟(40px 사진) · 고현터미널(22px 원)과 같은 레일 가운데에 22px 로 선다.
  *
- * @param next 'bus' · 'walk'
+ * 배를 타는 선착장도 같은 규칙으로 **탈 것 색(파란 원)**입니다 — 다음이 배라서입니다.
+ *
+ * @param next 'bus' · 'ferry' · 'walk'
  */
 function StationRow({ next, action = null, children }) {
+  const boarding = next === 'bus' || next === 'ferry'
   return (
     <div className={styles.stationRow}>
       <span className={styles.rail}>
-        <span className={next === 'bus' ? `${styles.stationNode} ${styles.stationNodeBus}` : styles.stationNode}>
-          {next === 'bus' ? <StopBusIcon /> : <StopWalkIcon />}
+        <span className={boarding ? `${styles.stationNode} ${styles.stationNodeBus}` : styles.stationNode}>
+          {next === 'bus' ? <StopBusIcon /> : next === 'ferry' ? <StopFerryIcon /> : <StopWalkIcon />}
         </span>
       </span>
       <span className={styles.stationName}>{children}</span>
@@ -406,6 +409,37 @@ function LegRow({ leg, prev, origin, stops = [], dest = null, onOpenTimetable })
 
   if (leg.mode === 'SAME_STOP') return walkSeg(spotDistance(leg, stops, dest), fromSpot, byId(leg.toPoiId) ?? dest)
 
+  /*
+   * 도선 칸(SHUTTLE · 서버 V52) — 섬으로 건너가는 배입니다. 유람선(FERRY)과 두 가지가 다릅니다:
+   *  · 편마다 시각이 있어(shuttle_departures) 들어가는 편 · 나오는 편이 **구간 하나씩**입니다 — 왕복 한 덩어리가 아닙니다.
+   *  · 뭍 쪽 끝이 스팟이 아니라 **선착장**이라 그 점은 스팟 사진이 아니라 배 아이콘으로 섭니다.
+   * 들어가는 편은 타는 선착장 점이 앞에, 나오는 편은 내리는 선착장 점이 뒤에 옵니다(유람선 왕복과 같은 자리).
+   */
+  if (leg.mode === 'SHUTTLE') {
+    const dock = leg.shuttle?.dockName
+    const boat = (
+      <SegmentRow line={<span className={styles.lineFerry} />} icon={<StopFerryIcon />}>
+        <span className={styles.legText}>
+          {leg.toPoiId == null
+            ? t('courseDetail.shuttleReturn', { min: leg.durationMin })
+            : t('courseDetail.shuttleLeg', { island: leg.shuttle?.islandName, min: leg.durationMin })}
+        </span>
+      </SegmentRow>
+    )
+    if (!dock) return boat
+    return leg.toPoiId == null ? (
+      <>
+        {boat}
+        <StationRow next="walk">{t('courseDetail.dockAlight', { dock })}</StationRow>
+      </>
+    ) : (
+      <>
+        <StationRow next="ferry">{t('courseDetail.dockBoard', { dock, time: leg.departAt })}</StationRow>
+        {boat}
+      </>
+    )
+  }
+
   const ferry = leg.mode === 'FERRY' ? ferryLine(leg) : null
   if (ferry) {
     const ferrySeg = (
@@ -434,6 +468,24 @@ function LegRow({ leg, prev, origin, stops = [], dest = null, onOpenTimetable })
   const toward = sameNameOther ? (leg.toName ?? (leg.toPoiId == null ? origin : null)) : null
   const board = stationText(leg.board, 'board', toward)
   const alight = stationText(leg.alight, 'alight')
+  /*
+   * 타는 곳 표(boarding_stops)에 없는 스팟으로 가는 버스 — 섬(지심도 · 공곶이·내도)이 그렇습니다.
+   * 거기까지 걸어갈 수 없으니 정류장 ↔ 스팟 거리가 없고, 그래서 위 `alight` 가 비어 「11번 · 약 40분」만 남아
+   * **어디서 내리는지가 사라집니다**. 코스가 저장한 편 사슬은 내리는 정류장을 알고 있으므로 그것만 점으로 찍습니다.
+   * 거리는 모르므로 걷는 칸은 그리지 않습니다 — 없는 값을 지어내지 않습니다(절대규칙 1 · 3).
+   */
+  const rideAlight =
+    !leg.alight?.stop && leg.toPoiId != null ? stationText({ stop: leg.rides?.at(-1)?.alightStop }, 'alight') : null
+  /*
+   * 정류장 ↔ 스팟(선착장) 거리를 모르는 구간에도 **걷는다는 것만은 사실**이라 걷는 칸을 그립니다 —
+   * 내린 정류장에서 곧장 배에 오르는 것으로 읽히면 안 됩니다(능포 정류장에서 장승포 선착장까지 1.9km 입니다).
+   * 거리는 모르므로 「도보」만 적습니다 — 값 없이 「약」을 남기지 않습니다(절대규칙 3).
+   */
+  const walkIn = rideAlight ? walkSeg(null, null, dest) : null
+  const walkOut = !board && fromSpot ? walkSeg(null, null, null) : null
+  // 타는 곳도 같은 이유로 비어 있을 수 있습니다 — 편 사슬이 아는 정류장만 점으로 찍고 거리는 적지 않습니다.
+  // 고현터미널에서 출발하는 첫 구간은 바로 위 「고현터미널 출발」 줄이 이미 말하므로 스팟에서 타는 구간만입니다.
+  const rideBoard = !board && leg.fromPoiId != null ? stationText({ stop: leg.rides?.[0]?.boardStop }, 'board') : null
 
   return (
     <>
@@ -447,6 +499,15 @@ function LegRow({ leg, prev, origin, stops = [], dest = null, onOpenTimetable })
             {board}
           </StationRow>
         </>
+      )}
+      {walkOut}
+      {rideBoard && (
+        <StationRow
+          next="bus"
+          action={fromSpot && <TimetableButton spot={fromSpot} nextPoiId={leg.toPoiId ?? null} onOpen={onOpenTimetable} />}
+        >
+          {rideBoard}
+        </StationRow>
       )}
       <SegmentRow
         line={<span className={styles.line} />}
@@ -468,6 +529,12 @@ function LegRow({ leg, prev, origin, stops = [], dest = null, onOpenTimetable })
         <>
           <StationRow next="walk">{alight}</StationRow>
           {walkSeg(leg.alight.distanceM, stopPoint(leg.alight), dest)}
+        </>
+      )}
+      {rideAlight && (
+        <>
+          <StationRow next="walk">{rideAlight}</StationRow>
+          {walkIn}
         </>
       )}
     </>
@@ -812,18 +879,27 @@ export default function CourseDetailPage() {
                   // 마지막 복귀 구간은 어느 스팟에도 닿지 않아 번호가 없습니다(전체 경로에서만 보입니다).
                   let seg = 0
                   return legs.map((leg, i) => {
+                    const after = legs[i + 1]
                     const ferryReturn = leg.mode === 'FERRY' && leg.durationMin === 0
-                    const viaTerminal = i < legs.length - 1 && leg.toPoiId === null
+                    /* 나오는 도선은 선착장으로 나오므로 닿는 스팟이 없습니다(to_poi_id 가 NULL · 서버 V53).
+                       유람선의 돌아오는 편과 같은 자리라 스팟 줄도 터미널 줄도 그리지 않습니다. */
+                    const shuttleReturn = leg.mode === 'SHUTTLE' && leg.toPoiId === null
+                    /* 버스 구간과 도선 구간이 **같은 섬에 닿을 때**는 점을 한 번만 찍습니다 — 버스는 뭍의 정류장까지
+                       데려다줄 뿐이고, 스팟에 내려 주는 것은 배입니다(서버 V53 구간 모양). */
+                    const dupArrival = leg.toPoiId != null && after?.toPoiId === leg.toPoiId
+                    const viaTerminal = i < legs.length - 1 && leg.toPoiId === null && !shuttleReturn
                     const lastLeg = i === legs.length - 1
-                    const stop = ferryReturn || viaTerminal ? null : stops[si++]
+                    const noStop = ferryReturn || shuttleReturn || viaTerminal || dupArrival
+                    const stop = noStop ? null : stops[si++]
                     const mySeg = lastLeg ? null : seg
-                    if (!ferryReturn && !viaTerminal && !lastLeg) seg += 1
+                    if (!noStop && !lastLeg) seg += 1
                     if (segment != null && mySeg !== segment) return null
                     // 다음 스팟을 목적지로 넘겨 그 스팟 시간표가 「여기 → 다음」을 열게 합니다.
                     // 같은 정류장·배로 이어지는 구간, 고현터미널로 가는 구간에는 넘기지 않습니다 — 버스로 바로 가는 구간이 아니라
                     // 서버가 NO_SERVICE 를 줍니다. 터미널로 가는 구간이면 목적지 없이 열어야 「여기 → 고현터미널」이 열려 그 구간과 맞습니다.
-                    const next = legs[i + 1]
-                    const walkNext = next?.mode === 'SAME_STOP' || next?.mode === 'FERRY' || next?.toPoiId === null
+                    const next = after
+                    const walkNext =
+                      next?.mode === 'SAME_STOP' || next?.mode === 'FERRY' || next?.mode === 'SHUTTLE' || next?.toPoiId === null
                     return (
                       <Fragment key={leg.seq}>
                         <LegRow
@@ -842,9 +918,13 @@ export default function CourseDetailPage() {
                             sub={stayLine(leg)}
                             nextPoiId={walkNext ? null : stops[si]?.poiId}
                             onOpenTimetable={openTimetable}
-                            // 다음이 걷기면 없음, 다음 버스에 타는 정류장 점이 있으면 그 점이 갖는다
+                            // 다음이 걷기면 없음, 다음 버스에 타는 정류장 점이 있으면 그 점이 갖는다.
+                            // 다음이 도선이면 없음 — 섬에서 떠나는 것은 버스가 아니라 배라 버스 시간표가 답이 되지 않는다.
                             showTimetable={
-                              next != null && next.mode !== 'SAME_STOP' && !(next.mode === 'BUS' && next.board?.stop && next.fromPoiId != null)
+                              next != null &&
+                              next.mode !== 'SAME_STOP' &&
+                              next.mode !== 'SHUTTLE' &&
+                              !(next.mode === 'BUS' && (next.board?.stop || next.rides?.[0]?.boardStop) && next.fromPoiId != null)
                             }
                           />
                         )}

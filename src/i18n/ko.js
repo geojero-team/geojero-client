@@ -560,6 +560,13 @@ export default {
   'courseDetail.ferryStay': '{stay} 머물러요 · 입장료 별도',
   // 돌아오는 구간. 「같은 배로」라고 적지 않습니다 — 원문이 같은 배인지 말하지 않습니다(기준문서 §3).
   'courseDetail.ferryReturn': '배로 돌아와요',
+  /* 도선 칸(2026-09-22 · 서버 V52~V54) — 섬으로 건너가는 배입니다. 유람선과 달리 **편마다 시각이 있어**
+     들어가는 편 · 나오는 편을 따로 적고, 타는 선착장 점에 그 편의 시각을 답니다.
+     상품 이름이 없는 대신 **어느 섬으로 가는지**가 이름 자리에 옵니다 — 「지심도행 배」.
+     분은 운항사 안내에서 온 값이지만 편마다 바다가 다르니 「약」을 답니다(버스 구간과 같은 규칙). */
+  'courseDetail.shuttleLeg': '{island}행 배 · 약 {min}분',
+  'courseDetail.shuttleReturn': '배로 돌아와요 · 약 {min}분',
+  'courseDetail.dockBoard': '{dock} 선착장에서 {time} 배를 타요',
   'courseDetail.ferryChip': '배 약 {time}',
   'courseDetail.timetable': '시간표',
   'courseDetail.timetableA11y': '{name} 시간표',
