@@ -47,7 +47,7 @@ const OPPOSITE_M = 50
 
 /**
  * 마커 기하 — Figma 530:318: 버스 아이콘 28 + 간격 2 + 태그 21 = 51px, **좌표는 아이콘 가운데**(위에서 14px).
- * 마커끼리 가까우면 좌표는 옮기지 않고(위치가 정확하다는 전제) 겹친 마커만 비켜 답니다. 아래로 달 때는 앞 마커 박스
+ * 마커끼리 가까우면 좌표는 옮기지 않고(위치가 정확하다는 전제) 겹친 마커만 비켜 답니다(**출발 곳 핀은 예외 — 아래 placeFrom**). 아래로 달 때는 앞 마커 박스
  * (좌표 기준 -14 ~ +37px) 밑 2px에서, 위로 달 때는 위 2px에서 끝나게 합니다.
  * yAnchor는 **자기 높이**의 비율이라 높이가 다른 출발 곳 점(9px)은 따로 계산합니다 — 마커 비율을 그대로 쓰면 7px만
  * 움직여 이름표가 마커를 덮었습니다(2026-09-14 리뷰).
@@ -158,6 +158,45 @@ function placeByBox(item, point, placed, mapSize) {
   const clean = options.find((o) => overlap(o.box) === 0 && inside(o.box))
   if (clean) return clean
   return [center, ...options.filter((o) => inside(o.box))].reduce((best, o) => (overlap(o.box) < overlap(best.box) ? o : best))
+}
+
+/**
+ * ★ **출발 곳 핀은 좌표에서 움직이지 않습니다** (2026-09-22 사용자 결정 — 운영에서 사용자가 잡았습니다).
+ *
+ * 전에는 마커와 같은 규칙으로 비켰습니다. 그런데 이 핀은 「거리만으론 방향을 모르니」 두는 **기준점**이고(부록 K),
+ * 비킴은 화면에서 51px(위는 28px) 고정이라 **미터로는 배율만큼 커집니다.** 운영 실측(2026-09-22 · 19곳 × 방향 × 칩 89경우):
+ *  · 학동 기본 화면(8 m/px) — 106m 를 **514m** 로, 방향은 **북동을 남동으로 뒤집어** 말했다(핀 [209,423], 제자리는 [209,372])
+ *  · 거제식물원 168m → 372m · 학동 67-1 은 **모서리 3.8% 겹침**에 102m 를 밀었다 · 거제현 관아 40m → 96m · 포로수용소 33m → 84m
+ *  · 그리고 점선은 참좌표로 그려져 **핀에 닿지 않고 허공에서 끝났다**
+ * 버스 마커를 비키는 것은 **태그(노선 번호)를 읽히게** 하려는 것인데(부록 H #22), 사진 원에는 읽을 글자가 없어 비킬 이유가 없습니다.
+ *
+ * 대신 **자리를 가리키는 조각**(사진 원 24 · 점 9 — 이름표는 옆으로 뻗어 상자로 재면 가려짐이 실제보다 작게 나옵니다)이
+ * 절반 이상 마커에 가려지면 **아예 찍지 않습니다**. 그 배율에서 두 곳이 사실상 한 자리이고,
+ * 「고현터미널 앞 30m 면 출발 곳을 안 찍는다」(TERMINAL_NEAR_M)와 같은 처리입니다 — 89경우 중 6경우가 여기 해당합니다
+ * (학동 전체 100% · 거제현 관아 전체 87% · 포로수용소 스팟 출발 68% × 칩 4). 어디서 얼마인지는 카드 줄이 그대로 말합니다.
+ */
+const FROM_HIDE_COVERED = 0.5
+
+function placeFrom(item, point, placed) {
+  const yAnchor = anchorOf('center', item.height, item.center)
+  if (!point) return { slot: 'center', dx: 0, yAnchor, box: null, hidden: false }
+  const at = placement(item, point, 'center')
+  const r = item.height / 2
+  const hit = { x0: point.x - r, x1: point.x + r, y0: point.y - r, y1: point.y + r }
+  // 마커가 서로 겹친 자리는 두 번 세지만(넉넉한 쪽) 마커는 이미 서로 비켜 달려 있어 그런 자리가 드뭅니다.
+  const covered = placed.reduce((sum, p) => {
+    if (!p.box) return sum
+    const w = Math.min(hit.x1, p.box.x1) - Math.max(hit.x0, p.box.x0)
+    const h = Math.min(hit.y1, p.box.y1) - Math.max(hit.y0, p.box.y0)
+    return w > 0 && h > 0 ? sum + w * h : sum
+  }, 0)
+  return { ...at, hidden: covered >= item.height * item.height * FROM_HIDE_COVERED }
+}
+
+/** 한 조각의 자리 — 마커는 겹치면 비키고, 출발 곳은 늘 제자리입니다(위 placeFrom). */
+function placeItem(item, point, placed, mapSize) {
+  if (item.kind === 'from') return placeFrom(item, point, placed)
+  return point ? placeByBox(item, point, placed, mapSize) : placeByDistance(item, placed)
 }
 
 /** SDK가 투영을 주지 않을 때 — 거리로 겹침을 재고, 북쪽이면 위 · 그쪽을 이미 썼으면 반대쪽. */
@@ -348,21 +387,6 @@ function MapCanvas({ stops, exceptions, from, showFrom, fromSpot, linkStop }) {
       ...(showFrom ? [fromItem(from, fromSpot)] : []),
     ].map((item) => ({ ...item, position: new kakao.maps.LatLng(item.at.lat, item.at.lng) }))
 
-    /* 점선은 **갈 정류장이 한 곳으로 정해졌을 때만** 긋습니다(2026-09-16 사용자 결정).
-       정류장이 여럿인데 다 그으면 한 선이 다른 마커 옆을 지나 「버스끼리 이은 선」으로 읽혔습니다(학동 실측).
-       그래서 전체에서는 긋지 않고, 노선 칩을 고르면 그 노선 정류장으로 한 줄이 생깁니다.
-       출발 곳을 안 찍을 때(고현터미널 앞 30m)도 긋지 않습니다 — 두 점이 한 자리입니다. */
-    const links =
-      showFrom && linkStop
-        ? [
-            new kakao.maps.Polyline({
-              map,
-              path: [new kakao.maps.LatLng(from.lat, from.lng), new kakao.maps.LatLng(linkStop.lat, linkStop.lng)],
-              ...LINK_LINE,
-            }),
-          ]
-        : []
-
     const bounds = new kakao.maps.LatLngBounds()
     items.forEach((item) => bounds.extend(item.position))
     map.setBounds(bounds, FIT_TOP, FIT_SIDE, FIT_BOTTOM, FIT_SIDE)
@@ -371,14 +395,38 @@ function MapCanvas({ stops, exceptions, from, showFrom, fromSpot, linkStop }) {
     const projection = map.getProjection?.()
     const mapSize = { width: containerRef.current?.clientWidth ?? 0, height: containerRef.current?.clientHeight ?? 0 }
     const placed = []
-    const overlays = items.map((item) => {
-      const point = projection?.containerPointFromCoords(item.position)
-      const { slot, dx, yAnchor, box } = point ? placeByBox(item, point, placed, mapSize) : placeByDistance(item, placed)
-      placed.push({ at: item.at, point, slot, box })
-      // 옆으로 비킨 만큼은 내용을 px 로 밀어 둡니다(앵커는 늘 가운데).
-      if (dx) item.content.style.transform = `translateX(${Math.round(dx)}px)`
-      return new kakao.maps.CustomOverlay({ map, position: item.position, content: item.content, xAnchor: 0.5, yAnchor })
-    })
+    let fromDrawn = true
+    const overlays = items
+      .map((item) => {
+        const point = projection?.containerPointFromCoords(item.position)
+        const { slot, dx, yAnchor, box, hidden } = placeItem(item, point, placed, mapSize)
+        placed.push({ at: item.at, point, slot, box })
+        // 마커에 절반 이상 가려진 출발 곳 — 비키지 않고 찍지 않습니다(위 placeFrom).
+        if (hidden) {
+          fromDrawn = false
+          return null
+        }
+        // 옆으로 비킨 만큼은 내용을 px 로 밀어 둡니다(앵커는 늘 가운데).
+        if (dx) item.content.style.transform = `translateX(${Math.round(dx)}px)`
+        return new kakao.maps.CustomOverlay({ map, position: item.position, content: item.content, xAnchor: 0.5, yAnchor })
+      })
+      .filter(Boolean)
+
+    /* 점선은 **갈 정류장이 한 곳으로 정해졌을 때만** 긋습니다(2026-09-16 사용자 결정).
+       정류장이 여럿인데 다 그으면 한 선이 다른 마커 옆을 지나 「버스끼리 이은 선」으로 읽혔습니다(학동 실측).
+       그래서 전체에서는 긋지 않고, 노선 칩을 고르면 그 노선 정류장으로 한 줄이 생깁니다.
+       **출발 곳 핀을 안 찍으면 긋지 않습니다** — 고현터미널 앞 30m(두 점이 한 자리)든, 마커에 가려 안 찍었든
+       점선만 남으면 닿을 핀이 없습니다(2026-09-22 — 밀린 핀에 닿지 않던 그 선이 이 규칙의 출발점입니다). */
+    const links =
+      showFrom && fromDrawn && linkStop
+        ? [
+            new kakao.maps.Polyline({
+              map,
+              path: [new kakao.maps.LatLng(from.lat, from.lng), new kakao.maps.LatLng(linkStop.lat, linkStop.lng)],
+              ...LINK_LINE,
+            }),
+          ]
+        : []
 
     return () => {
       overlays.forEach((overlay) => overlay.setMap(null))

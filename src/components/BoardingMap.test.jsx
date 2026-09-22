@@ -605,9 +605,10 @@ describe('BoardingMap — 카카오 지도(펼칠 때)', () => {
     await expand(user)
 
     await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
-    const from = overlays.find((o) => o.options.content.textContent === '고현터미널')
-    // 마커 박스(좌표 기준 -14 ~ +37px) 밖으로: 아래면 점 윗변이 +39px(= -39/9), 위면 점 아랫변이 -16px(= 25/9)
-    expect(Math.abs(from.options.yAnchor - -39 / 9) < 1e-6 || Math.abs(from.options.yAnchor - 25 / 9) < 1e-6).toBe(true)
+    // 점(9px)이 마커 상자에 78% 가려진다 → **비키지 않고 아예 찍지 않는다**(2026-09-22 사용자 결정).
+    // 전에는 마커 상자 밖으로 비켰는데, 그 42m 가 운영에서 62m 로 보였다(포로수용소 고현터미널 출발).
+    expect(overlays.find((o) => o.options.content.textContent === '고현터미널')).toBeUndefined()
+    expect(overlays).toHaveLength(1) // 버스 마커만
   })
 
   it('거제씨월드 — 26m 떨어진 두 지세포(거의 같은 높이)는 옆으로 나란히 · 위로 비키면 신촌 마커와 부딪힌다(운영 실측, 2026-09-14)', async () => {
@@ -836,17 +837,24 @@ describe('BoardingMap — 출발 곳 썸네일', () => {
     expect(terminal.options.content.querySelector('img')).toBeNull()
   })
 
-  it('썸네일이 마커와 겹치면 자기 높이(24px)로 비킨다', async () => {
+  /**
+   * ★ 출발 곳 핀은 **좌표에서 움직이지 않는다** (2026-09-22 사용자 결정 — 운영에서 사용자가 잡음).
+   * 전에는 마커와 겹치면 마커와 같은 규칙으로 비켰다. 비킴은 화면에서 51px(위는 28px) 고정이라
+   * **미터로는 배율만큼 커진다** — 운영 학동 기본 화면(8 m/px)에서 106m 를 514m 로, 방향은 북동을 남동으로 말했고
+   * (실측 [209,423], 제자리는 [209,372]) 참좌표로 그린 점선은 핀에 닿지 않았다.
+   * 대신 자리를 가리키는 조각이 절반 이상 가려지면 **아예 찍지 않는다** — 그 배율에서 두 곳이 한 자리다.
+   */
+  it('썸네일이 마커와 조금 겹쳐도 비키지 않는다 — 이 핀이 방향의 기준이다', async () => {
     const user = userEvent.setup()
-    const { kakao, map, overlays } = fakeKakao({ level: 3, pxPerDeg: 100000 })
+    const { kakao, map, overlays } = fakeKakao({ level: 3, pxPerDeg: 10000 })
     loadKakaoMaps.mockResolvedValue(kakao)
 
     render(
       <BoardingMap
         boarding={{
-          from: { name: '어딘가', kind: 'SPOT', lat: 34.8906, lng: 128.6242 },
-          // 5px 옆 · 4px 위 — 점 + 이름표는 오른쪽으로 길어 38px 옆 정류장과도 겹쳤지만, 썸네일은 24px 원이라 더 붙어야 겹친다
-          stops: [{ nodeId: 'GJB370', name: '어딘가 앞', lat: 34.89063, lng: 128.62425, distanceM: 6, routes: ['100'] }],
+          // 마커 상자(x ±14 · y -14~+37) 에 사진 원(24px)의 모서리만 걸린다 — 576px² 중 76px²(13%)
+          from: { name: '어딘가', kind: 'SPOT', lat: 34.7975, lng: 128.7022 },
+          stops: [{ nodeId: 'GJB370', name: '어딘가 앞', lat: 34.8, lng: 128.7, distanceM: 40, routes: ['1'] }],
           exceptions: [],
           unresolved: [],
           source: SOURCE,
@@ -858,8 +866,37 @@ describe('BoardingMap — 출발 곳 썸네일', () => {
 
     await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
     const from = overlays.find((o) => o.options.content.querySelector('img'))
-    // 마커 박스(좌표 기준 -14 ~ +37px) 밖으로: 아래면 원 윗변이 +39px(= -39/24), 위면 원 아랫변이 -16px(= 40/24)
-    expect(Math.abs(from.options.yAnchor - -39 / 24) < 1e-6 || Math.abs(from.options.yAnchor - 40 / 24) < 1e-6).toBe(true)
+    expect(from.options.yAnchor).toBe(0.5)
+    expect(from.options.content.style.transform).toBe('')
+  })
+
+  it('마커에 절반 이상 가려지면 찍지 않는다 — 점선도 없고, 거리는 카드 줄이 말한다', async () => {
+    const user = userEvent.setup()
+    const { kakao, map, overlays, lines } = fakeKakao({ level: 3, pxPerDeg: 10000 })
+    loadKakaoMaps.mockResolvedValue(kakao)
+
+    render(
+      <BoardingMap
+        boarding={{
+          // 사진 원이 마커 상자에 83% 가려진다(운영 학동 전체 100% · 포로수용소 68%)
+          from: { name: '어딘가', kind: 'SPOT', lat: 34.7996667, lng: 128.7006 },
+          stops: [{ nodeId: 'GJB370', name: '어딘가 앞', lat: 34.8, lng: 128.7, distanceM: 106, routes: ['1'] }],
+          exceptions: [],
+          unresolved: [],
+          source: SOURCE,
+        }}
+        fromSpot={CASTLE}
+      />,
+    )
+    await expand(user)
+
+    await waitFor(() => expect(map.setBounds).toHaveBeenCalled())
+    expect(overlays).toHaveLength(1)
+    expect(overlays[0].options.content.querySelector('img')).toBeNull()
+    // 이을 핀이 없으면 점선도 없다 — 「고현터미널 앞 30m」와 같은 처리
+    expect(lines).toHaveLength(0)
+    // 빈칸으로 두지 않는다(절대규칙 3) — 어디서 얼마인지는 접힌 줄이 그대로 말한다
+    expect(screen.getByText(/어딘가에서 직선 약/)).toBeInTheDocument()
   })
 })
 
