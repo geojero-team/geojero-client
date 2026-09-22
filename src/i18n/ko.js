@@ -677,11 +677,18 @@ export default {
   'courseQuiz.hint.scene.HISTORY': '거제의 이야기를 따라가요',
   'courseQuiz.opt.scene.GARDEN': '정원·숲',
   'courseQuiz.hint.scene.GARDEN': '초록 사이를 천천히 걸어요',
+  /* 2026-09-22 더했습니다 — 섬 스팟(지심도 · 공곶이·내도 · 외도보타니아)의 분류가 CRUISE 인데 선지가 없어서
+     그 코스들은 **1번 답을 하나도 못 가져 늘 뒤로 밀렸습니다**(점수가 2등보다 높은데 20위였습니다. 실측으로 잡음).
+     아래 taste.ferry 와 겹쳐 보이지만 다른 것을 묻습니다 — 여기는 **무엇을 보는가**(섬), 저기는 **배를 타는가**입니다.
+     공곶이는 섬 곁이지만 걸어가므로 배 구간이 없습니다. */
+  'courseQuiz.opt.scene.CRUISE': '섬·유람선',
+  'courseQuiz.hint.scene.CRUISE': '바다 건너 섬에 들어가요',
 
   /* 2번 질문은 **선지 이름만** 둡니다(2026-09-20 사용자) — 「여유롭게 세 곳」이 이미 다 말해서 설명 줄이 군더더기였습니다.
      화면은 설명이 없는 선지를 그대로 그립니다(hint 키가 없으면 줄을 만들지 않습니다). */
   'courseQuiz.q.pace': '하루를 어떻게 보내고 싶으세요?',
-  'courseQuiz.opt.pace.easy': '여유롭게 세 곳',
+  // 2026-09-22 「세 곳」 → 「두세 곳」 — 두 곳짜리 섬 코스가 생겨 이 선지가 두 곳도 고릅니다(서버 V54).
+  'courseQuiz.opt.pace.easy': '여유롭게 두세 곳',
   'courseQuiz.opt.pace.full': '알차게 네다섯 곳',
   'courseQuiz.opt.pace.short': '이동이 짧은 쪽',
 
@@ -693,7 +700,9 @@ export default {
      **거제 9경이 몇 곳인지**로 봅니다. 9경은 거제시가 뽑은 대표 경관이라 사람이 가장 많이 가는 곳입니다. */
   'courseQuiz.hint.taste.hidden': '9경이 없거나 한 곳뿐인 코스로',
   'courseQuiz.opt.taste.ferry': '배 타고 섬까지',
-  'courseQuiz.hint.taste.ferry': '유람선을 타고 외도에 가요',
+  /* 2026-09-22 고쳤습니다 — 전에는 배 코스가 외도(유람선) 하나뿐이라 「외도에 가요」라고 적었는데,
+     지심도 · 내도로 건너가는 도선 코스가 생겨(서버 V54) 더는 사실이 아닙니다. 섬 이름을 세지 않습니다. */
+  'courseQuiz.hint.taste.ferry': '배를 타고 바다를 건너요',
   'courseQuiz.opt.taste.indoor': '실내 위주',
   'courseQuiz.hint.taste.indoor': '비가 와도 괜찮게 다녀요',
 

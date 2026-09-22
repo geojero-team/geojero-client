@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { t } from '../i18n'
 import { QUESTIONS, profileOf, quizPool, rankCourses } from './courseQuiz'
 
 /** 서버 /api/courses 응답에서 점수가 보는 값만 추린 코스 하나(2026-09-20 실측 모양). */
@@ -122,11 +123,46 @@ describe('rankCourses — 답에 가까운 코스가 위로', () => {
 })
 
 describe('QUESTIONS — 화면이 이 목록만 보고 그린다', () => {
-  it('질문 셋, 선지는 셋이나 넷', () => {
+  it('질문 셋, 선지는 셋에서 다섯', () => {
     expect(QUESTIONS).toHaveLength(3)
     for (const question of QUESTIONS) {
       expect(question.options.length).toBeGreaterThanOrEqual(3)
-      expect(question.options.length).toBeLessThanOrEqual(4)
+      expect(question.options.length).toBeLessThanOrEqual(5)
     }
+  })
+
+  /* 문구 없는 선지를 막습니다 — t() 는 없는 키를 **키 이름 그대로** 돌려주므로
+     화면에 「courseQuiz.opt.scene.CRUISE」가 그대로 찍힙니다(선지를 늘릴 때 실제로 겪을 수 있는 실수). */
+  it('선지마다 문구가 있고, 설명 줄을 쓰는 질문은 설명도 있다', () => {
+    for (const { id, options, hint } of QUESTIONS) {
+      for (const option of options) {
+        const labelKey = `courseQuiz.opt.${id}.${option}`
+        expect(t(labelKey), labelKey).not.toBe(labelKey)
+        if (hint) {
+          const hintKey = `courseQuiz.hint.${id}.${option}`
+          expect(t(hintKey), hintKey).not.toBe(hintKey)
+        }
+      }
+    }
+  })
+})
+
+/**
+ * 2026-09-22 회귀 — 섬 코스(서버 V54)는 스팟이 **섬(CRUISE) + 전시(EXHIBIT)** 뿐이라
+ * 1번 질문에 섬 선지가 없던 동안 **답을 하나도 못 가져 늘 뒤로 밀렸습니다**.
+ * 점수가 2등보다 높은데도 20위였습니다(운영 37개 코스 실측) — sceneHit 가 점수보다 먼저 정렬되기 때문입니다.
+ * 그래서 「어떤 풍경」의 선지는 **후보 코스에 실제로 있는 분류를 덮어야** 합니다.
+ */
+describe('1번 질문은 코스가 가진 분류를 덮는다', () => {
+  it('섬을 고르면 섬 스팟이 있는 코스가 1등 — 점수만 높고 순위는 밀리는 일이 없다', () => {
+    const island = course({ code: '2-01', themes: ['CRUISE', 'EXHIBIT'], spotCount: 2, ferryMin: 40, busMin: 79, nine: 1 })
+    const land = course({ code: '3-12', themes: ['VIEW', 'VIEW', 'VIEW'], nine: 3 })
+    expect(rankCourses([land, island], { scene: 'CRUISE' })[0].course.courseCode).toBe('2-01')
+  })
+
+  it('후보 코스의 분류 가운데 1번 질문이 묻지 않는 것은 실내(EXHIBIT)뿐이다 — 그건 3번 질문이 묻는다', () => {
+    const asked = new Set(QUESTIONS[0].options)
+    const inCourses = new Set(['BEACH', 'VIEW', 'HISTORY', 'GARDEN', 'CRUISE', 'EXHIBIT'])
+    expect([...inCourses].filter((theme) => !asked.has(theme))).toEqual(['EXHIBIT'])
   })
 })

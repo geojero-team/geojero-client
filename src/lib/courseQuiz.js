@@ -35,6 +35,7 @@ const SCORERS = {
     VIEW: themeScorer('VIEW'),
     HISTORY: themeScorer('HISTORY'),
     GARDEN: themeScorer('GARDEN'),
+    CRUISE: themeScorer('CRUISE'),
   },
   /* Q2 — 하루를 어떻게. 곳 수 · 총 시간 · 버스 시간은 서로 다른 축이라 답마다 보는 값이 다릅니다. */
   pace: {
@@ -93,7 +94,9 @@ function themeScorer(theme) {
  * 괄호 안은 2026-09-20 실측으로 그 선지가 점수를 줄 수 있는 코스 수입니다 — 0개가 되는 선지를 만들지 않으려고 적어 둡니다.
  */
 export const QUESTIONS = [
-  { id: 'scene', options: ['BEACH', 'VIEW', 'HISTORY', 'GARDEN'], hint: true }, // 19 · 33 · 19 · 5곳
+  /* 2026-09-22 섬(CRUISE)을 더했습니다 — 섬 스팟의 분류가 CRUISE 인데 선지가 없어서, 섬 코스는 1번 답을 하나도
+     못 가져 **점수가 2등보다 높아도 20위**였습니다(아래 sceneHit 정렬 때문. 실측으로 잡음). 스팟 6곳 · 코스 5개. */
+  { id: 'scene', options: ['BEACH', 'VIEW', 'HISTORY', 'GARDEN', 'CRUISE'], hint: true }, // 19 · 33 · 19 · 5 · 6곳
   /* 2번 질문만 설명 줄이 없습니다(2026-09-20 사용자) — 「여유롭게 세 곳」이 이미 다 말합니다.
      문구가 없는 키를 t() 로 부르면 키 이름이 그대로 화면에 나오므로 여기서 있고 없음을 정합니다. */
   { id: 'pace', options: ['easy', 'full', 'short'], hint: false }, // 16 · 17 · 11개 코스
