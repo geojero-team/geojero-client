@@ -27,8 +27,9 @@ export default function SpotCardLarge({ spot, onOpen, tour }) {
           <span className={styles.nine}>{t('nineScenic.badge', { rank: spot.nineScenicNo })}</span>
         )}
         {/* 하트 수 — 사진 **왼쪽** 아래(2026-09-21 저녁 · 부록 Q). 오른쪽 아래는 9경 배지라 좌우로 갈려 서로 안 싸웁니다.
-            전에는 이름 **위** 메타 줄 오른쪽 끝이라 시선이 이름에 닿기 전에 수부터 만났습니다. */}
-        <LikeCount count={spot.likeCount} overlay />
+            전에는 이름 **위** 메타 줄 오른쪽 끝이라 시선이 이름에 닿기 전에 수부터 만났습니다.
+            **내가 누른 하트는 채우고 빨갛게**(2026-09-22 사용자) — 누르는 자리는 여전히 상세 하나입니다. */}
+        <LikeCount count={spot.likeCount} filled={Boolean(spot.liked)} overlay />
       </span>
       <span className={styles.info}>
         {meta && <span className={styles.meta}>{meta}</span>}

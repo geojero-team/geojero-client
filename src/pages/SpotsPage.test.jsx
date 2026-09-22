@@ -234,6 +234,26 @@ describe('스팟 탭 — 하트 수', () => {
     ])
   })
 
+  /**
+   * 2026-09-22 사용자 — 「내가 하트 누른 경우는 스팟에서 하트가 빨간색으로 칠해져 있어야 하는데 그렇지 않다」.
+   * 카드는 `liked` 를 아예 넘기지 않아 **눌렀어도 늘 빈 하트**였습니다. 수(모두의 것)와 달리
+   * 채운 빨간 하트는 **보는 사람이 눌렀는가**를 말합니다. 누를 수 없는 것은 그대로입니다.
+   */
+  it('내가 누른 하트는 카드에서도 채워져 빨갛다 — 안 누른 것은 빈 하트', async () => {
+    loadVisibleSpots.mockResolvedValue([{ ...SPOTS[0], liked: true }, SPOTS[1]])
+    renderPage()
+
+    const wind = await screen.findByRole('button', { name: /바람의언덕/ })
+    const mine = within(wind).getByRole('img', { name: '하트 12' })
+    expect(mine.querySelector('svg')).toHaveAttribute('fill', 'currentColor')
+    expect(mine.className).toContain('filled')
+
+    const museum = screen.getByRole('button', { name: /조선해양문화관/ })
+    const others = within(museum).getByRole('img', { name: '하트 0' })
+    expect(others.querySelector('svg')).toHaveAttribute('fill', 'none')
+    expect(others.className).not.toContain('filled')
+  })
+
   it('likeCount 가 없는 옛 응답이면 수를 그리지 않는다', async () => {
     const old = SPOTS.map((spot) => Object.fromEntries(Object.entries(spot).filter(([key]) => key !== 'likeCount' && key !== 'liked')))
     loadVisibleSpots.mockResolvedValue(old)

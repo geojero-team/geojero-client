@@ -35,8 +35,9 @@ function SpotCard({ spot, onOpen, tour }) {
       <div className={styles.photo}>
         <img className={styles.photoImg} src={courseImage(spot)} alt="" onError={onImageError(spot)} />
         {/* 하트 수 — 사진 왼쪽 아래(2026-09-21 저녁 · 부록 Q). 카드에는 **수만** 보이고 누르는 자리는 스팟 상세다.
-            0 도 「♥ 0」, 값이 없으면(옛 응답) 그리지 않는다. 글줄 밖이라 분류가 두 줄이어도 안 밀린다. */}
-        <LikeCount count={spot.likeCount} overlay />
+            0 도 「♥ 0」, 값이 없으면(옛 응답) 그리지 않는다. 글줄 밖이라 분류가 두 줄이어도 안 밀린다.
+            **내가 누른 하트는 채우고 빨갛게**(2026-09-22 사용자) — 누를 수 없는 것은 그대로다. */}
+        <LikeCount count={spot.likeCount} filled={Boolean(spot.liked)} overlay />
       </div>
       <div className={styles.info}>
         {/* 화면에 쓰는 이름은 short_name 입니다(기준문서 §7) — 목은 name 에 짧은 이름을

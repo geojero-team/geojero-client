@@ -17,11 +17,15 @@ import styles from './LikeCount.module.css'
  * 그 설명은 브라우저마다 이름(aria-label)을 쓰기도, 글 내용을 쓰기도 해서 같은 이름을 숨은 글로도 두고 보이는 수는 읽기 도구에서 뺍니다
  * (어느 쪽이든 「하트 12」 한 번).
  * 크기 · 색은 부모가 덮어씁니다(className) — 기본은 12px 하트 · 라벨 글자 · 보조색.
+ *
+ * `filled` 은 **보는 사람이 누른 하트**입니다 — 채우고 빨갛게(--like) 그립니다(2026-09-22 사용자:
+ * 「내가 하트 누른 경우는 빨간색으로 칠해져 있어야 한다」). 전에는 채우기만 하고 색은 부모를 따라가서,
+ * 상세의 버튼 밖(카드 · 격자 · 줄)에서는 눌렀는지 알 수 없었습니다. 수와 달리 이 표시는 사람마다 다릅니다.
  */
 export default function LikeCount({ count, size = 12, filled = false, id, className, overlay = false }) {
   if (count == null) return null
   const label = t('spotLike.count', { n: count })
-  const classes = [styles.count, overlay && styles.overlay, className].filter(Boolean).join(' ')
+  const classes = [styles.count, overlay && styles.overlay, filled && styles.filled, className].filter(Boolean).join(' ')
   return (
     <span id={id} className={classes} role="img" aria-label={label}>
       <Heart size={size} strokeWidth={2} fill={filled ? 'currentColor' : 'none'} aria-hidden="true" />

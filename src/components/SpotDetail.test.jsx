@@ -383,6 +383,16 @@ describe('SpotDetail — 하트', () => {
     expect(follows(button, addr)).toBe(true)
   })
 
+  /* 이미 누른 스팟을 **처음 열 때**도 채운 하트다 — 눌러서 바뀌는 경우(아래)와 다른 길이라 따로 지킵니다.
+     서버가 liked 를 주는데 화면이 안 읽으면 「내가 눌렀는지」가 사라집니다(2026-09-22 사용자 지적의 자리). */
+  it('이미 누른 스팟은 열자마자 채운 하트다', async () => {
+    renderLike({ ...LIKABLE, likeCount: 4, liked: true })
+
+    const button = await screen.findByRole('button', { name: '하트 취소' })
+    expect(button).toHaveAttribute('aria-pressed', 'true')
+    expect(button.querySelector('svg')).toHaveAttribute('fill', 'currentColor')
+  })
+
   it('0 도 「♥ 0」으로 보인다 — 값이 없을 때만 숨긴다', async () => {
     renderLike({ ...LIKABLE, likeCount: 0 })
 
