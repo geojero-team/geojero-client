@@ -42,7 +42,15 @@ import styles from './CoursesPage.module.css'
  * 요구하는데 이 화면엔 둘 다 없습니다.)
  */
 
-const SPOT_COUNTS = [3, 4, 5]
+/* 칩에 걸 곳 수는 **받은 코스에서 만듭니다**(2026-09-22) — 전에는 [3, 4, 5] 로 박혀 있어서
+   여섯 곳 코스(6-01)는 칩이 없어 걸러 볼 수 없었고, 두 곳 코스가 들어오면 또 손으로 고쳐야 했습니다.
+   저장해서 뺀 코스의 곳 수도 함께 셉니다 — 저장하는 순간 칩이 사라지면 목록이 들썩입니다
+   (0개인 칩은 지우지 않고 비활성으로 남깁니다 — 2026-09-16 사용자 결정). */
+function spotCountsOf(courses, hidden) {
+  return [...new Set([...courses.map((course) => course.spotCount), ...hidden])]
+    .filter((n) => Number.isInteger(n) && n > 0)
+    .sort((a, b) => a - b)
+}
 
 /* 칩 줄(sticky 띠)의 아래 끝과 상태줄 사이 — 띠 margin-bottom −8 + 본문 gap 16. 칩(40)과 상태줄 사이가 그림처럼 16 이 됩니다.
    CoursesPage.module.css 의 .chips 를 바꾸면 같이 바꿉니다. */
@@ -289,9 +297,10 @@ export default function CoursesPage() {
 
   const courses = result.data ?? []
   const countOf = (n) => courses.filter((course) => course.spotCount === n).length
+  const spotCounts = spotCountsOf(courses, result.hidden)
   // 주소 값이 3·4·5 가 아니거나 그 개수 코스가 0개면 「전체」 — 비활성 칩이 골라진 채로 빈 목록을 보이지 않게.
   const wanted = Number(searchParams.get('spots'))
-  const spotCount = SPOT_COUNTS.includes(wanted) && countOf(wanted) > 0 ? wanted : null
+  const spotCount = spotCounts.includes(wanted) && countOf(wanted) > 0 ? wanted : null
   const shown = spotCount ? courses.filter((course) => course.spotCount === spotCount) : courses
   // 칩으로 걸렀으면 그 곳 수에서 뺀 코스만 셉니다 — 4곳 코스를 뺐는데 3곳 목록 아래 「1개는 빼고」라 적지 않게.
   const hiddenCount = spotCount ? result.hidden.filter((n) => n === spotCount).length : result.hidden.length
@@ -396,7 +405,7 @@ export default function CoursesPage() {
                 <OptionChip selected={spotCount === null} onClick={() => pickCount(null)}>
                   {t('courses.countAll')}
                 </OptionChip>
-                {SPOT_COUNTS.map((n) => (
+                {spotCounts.map((n) => (
                   <OptionChip
                     key={n}
                     selected={spotCount === n}

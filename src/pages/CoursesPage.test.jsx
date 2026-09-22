@@ -423,22 +423,47 @@ describe('CoursesPage — 개수 칩(Figma 623:444 · 메모 623:520, 2026-09-16
     api.courses.mockResolvedValue(THREE)
   })
 
-  it('「전체 · 3곳 · 4곳 · 5곳」 — 「전체」가 기본이고 대표 코스가 다 보인다 · 코스가 0개인 5곳은 비활성', async () => {
+  /* 칩에 걸 곳 수는 **받은 코스에서 만듭니다**(2026-09-22) — 전에는 [3, 4, 5] 로 박혀 있어
+     여섯 곳 코스는 칩이 없고, 두 곳 코스가 들어오면 손으로 고쳐야 했습니다. */
+  it('칩은 받은 코스의 곳 수로 만든다 — 「전체」가 기본이고 대표 코스가 다 보인다', async () => {
     renderPage()
 
     expect(await screen.findByText('대표 코스 3가지 · 여러 개 고를 수 있어요')).toBeInTheDocument()
     const group = screen.getByRole('group', { name: '코스 곳 수' })
-    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual(['전체', '3곳', '4곳', '5곳'])
+    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual(['전체', '3곳', '4곳'])
     expect(chip('전체')).toHaveAttribute('aria-pressed', 'true')
     expect(chip('3곳')).toHaveAttribute('aria-pressed', 'false')
     expect(chip('3곳')).toBeEnabled()
-    expect(chip('5곳')).toBeDisabled()
     expect(card(101)).toBeInTheDocument()
     expect(card(104)).toBeInTheDocument()
     expect(card(120)).toBeInTheDocument()
     // 서버에 다시 묻지 않는다 — 대표 코스 응답 하나를 화면에서 거른다
     expect(api.courses).toHaveBeenCalledTimes(1)
     expect(api.courses).toHaveBeenCalledWith({ featured: true })
+  })
+
+
+  /* 2026-09-22: 지심도 · 공곶이·내도 코스가 들어오면서 **두 곳짜리 코스**가 처음 생겼습니다. */
+  it('두 곳 코스가 있으면 「2곳」 칩이 생기고, 누르면 그 코스만 남는다', async () => {
+    const user = userEvent.setup()
+    const twoSpot = {
+      ...COURSE_301,
+      courseId: 201,
+      courseCode: '2-01',
+      spotCount: 2,
+      title: '동백섬 지심도와 능포 바닷가 조각공원',
+      spots: COURSE_301.spots.slice(0, 2),
+    }
+    api.courses.mockResolvedValue({ ...TWO, courses: [COURSE_301, COURSE_302, twoSpot] })
+    renderPage()
+
+    await screen.findByText('동백섬 지심도와 능포 바닷가 조각공원')
+    const group = screen.getByRole('group', { name: '코스 곳 수' })
+    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual(['전체', '2곳', '3곳'])
+
+    await user.click(chip('2곳'))
+    expect(card(201)).toBeInTheDocument()
+    expect(screen.queryByTestId('card-101')).not.toBeInTheDocument()
   })
 
   it('3곳을 누르면 3곳 코스만 · 상태줄이 「3곳 코스 2가지」 · 주소에 남는다 → 전체로 돌아오면 다시 전부', async () => {
