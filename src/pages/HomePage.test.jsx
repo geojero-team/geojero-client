@@ -343,9 +343,10 @@ describe('홈 — 고현터미널 설명(2026-09-22)', () => {
     renderHome()
     await openTour(user)
 
-    // 한 곳만 짚습니다. 한 점에 그냥 맞추면 500m 까지 당겨지므로 배율을 따로 줍니다(fitLevel).
+    /* 한 곳만 짚습니다. 한 점에 그냥 맞추면 500m 까지 당겨지므로 배율을 따로 줍니다(fitLevel) —
+       9경 설명과 **같은 축척 4km**(레벨 9)입니다(2026-09-22 사용자). 두 설명이 같은 배율이라야 같은 지도로 읽힙니다. */
     expect(mapProps.fitSpots.map((spot) => spot.kind)).toEqual(['TERMINAL'])
-    expect(mapProps.fitLevel).toBe(8)
+    expect(mapProps.fitLevel).toBe(9)
     expect(screen.getByText('관광객들은 고현터미널로만 방문해요.')).toBeInTheDocument()
 
     // 2단계 — 본 것(1단계) 다음에 그래서 우리가 한 가정(2단계)입니다.
